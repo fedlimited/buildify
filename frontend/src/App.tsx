@@ -27,13 +27,25 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           
+
+
+
           
           {/* Protected app routes - require authentication */}
-          <Route path="/dashboard/*" element={
-            <AuthGate>
-              <Index />
-            </AuthGate>
-          } />
+<Route path="/dashboard" element={
+  <AuthGate>
+    <Index />
+  </AuthGate>
+} />
+<Route path="/dashboard/*" element={
+  <AuthGate>
+    <Index />
+  </AuthGate>
+} />
+
+
+
+
           
           <Route path="*" element={<NotFound />} />
         </Routes>
