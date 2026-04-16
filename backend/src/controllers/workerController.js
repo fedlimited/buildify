@@ -54,7 +54,7 @@ const WorkerController = {
       
       const result = await db.run(
         `INSERT INTO workers (company_id, name, phone, category_id, project_id, day_rate, is_active, date_added)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
         [company_id, name, phone, category_id, project_id, day_rate, is_active !== false ? 1 : 0, date_added || new Date().toISOString().split('T')[0]]
       );
       
