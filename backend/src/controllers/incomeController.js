@@ -64,7 +64,7 @@ const IncomeController = {
           company_id, project_id, certificate_no, date, gross_amount,
           retention_percent, amount_received, payment_date,
           payment_method, status, notes, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()) RETURNING id`,
         [company_id, project_id, certificate_no, date, gross_amount,
          retention_percent || 0, amount_received, payment_date,
          payment_method, status || 'Pending', notes]
