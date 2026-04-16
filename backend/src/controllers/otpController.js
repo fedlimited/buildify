@@ -52,14 +52,22 @@ async function verifyLoginOTP(req, res) {
     }
     
     const db = await getDb();
-    
-    const otpRecord = await db.get(
-      `SELECT * FROM otp_codes 
-       WHERE email = ? AND code = ? AND purpose = 'login' 
-       AND used = 0 AND expires_at > datetime('now')
-       ORDER BY id DESC LIMIT 1`,
-      [email, code]
-    );
+
+
+
+
+
+const otpRecord = await db.get(
+  `SELECT * FROM otp_codes 
+   WHERE email = ? AND code = ? AND purpose = 'login' 
+   AND used = 0 AND expires_at > NOW()
+   ORDER BY id DESC LIMIT 1`,
+  [email, code]
+);
+
+
+
+
     
     if (!otpRecord) {
       console.log('❌ Invalid or expired OTP for:', email);
