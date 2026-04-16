@@ -116,7 +116,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
           fetchCurrencySettings()
         ]).catch(err => console.error('Fetch error:', err));
         
-        window.location.href = '/';
+        window.location.href = '/dashboard';
       } else {
         setError(response?.message || 'Invalid OTP code');
       }
