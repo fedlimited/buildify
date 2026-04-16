@@ -65,7 +65,7 @@ const ExpenseController = {
           company_id, project_id, project_name, date, category,
           description, amount, vat, payment_method, status,
           reference, subcontractor_id, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()) RETURNING id`,
         [
           company_id, project_id, project_name, date, category,
           description, amount, vat || 0, payment_method,
