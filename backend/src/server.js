@@ -207,11 +207,17 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     
     const projectIds = [];
     for (const p of projects) {
+
+
+
       const result = await db.run(
         `INSERT INTO projects (company_id, name, client, contract_sum, location, start_date, end_date, status, project_manager, description, progress)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
         [company_id, p.name, p.client, p.contract_sum, p.location, p.start_date, p.end_date, p.status, p.project_manager, p.description, p.progress]
       );
+
+
+
       projectIds.push({ id: result.lastID, name: p.name });
     }
     console.log(`✅ Added ${projects.length} projects`);
@@ -227,11 +233,17 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     
     const categoryIds = [];
     for (const c of categories) {
-      const result = await db.run(
-        `INSERT INTO worker_categories (company_id, name, day_rate, color, is_active)
-         VALUES (?, ?, ?, ?, ?)`,
-        [company_id, c.name, c.day_rate, c.color, c.is_active]
-      );
+
+
+
+const result = await db.run(
+  `INSERT INTO worker_categories (company_id, name, day_rate, color, is_active)
+   VALUES (?, ?, ?, ?, ?) RETURNING id`,
+  [company_id, c.name, c.day_rate, c.color, c.is_active]
+);
+
+
+
       categoryIds.push({ id: result.lastID, name: c.name, day_rate: c.day_rate });
     }
     console.log(`✅ Added ${categories.length} worker categories`);
@@ -271,7 +283,7 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     for (const sub of subcontractors) {
       const result = await db.run(
         `INSERT INTO subcontractors (company_id, name, phone, email, kra_pin, specialization, address, contact_person, is_active)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
         [company_id, sub.name, sub.phone, sub.email, sub.kra_pin, sub.specialization, sub.address, sub.contact_person, sub.is_active]
       );
       subcontractorIds.push({ id: result.lastID, name: sub.name });
