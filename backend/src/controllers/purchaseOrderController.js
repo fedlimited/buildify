@@ -79,7 +79,7 @@ const PurchaseOrderController = {
           company_id, order_number, supplier_id, supplier_name,
           project_id, project_name, order_date, expected_date,
           items, subtotal, vat, total, status, payment_status, notes, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Ordered', 'Unpaid', ?, datetime('now'))`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Ordered', 'Unpaid', ?, NOW()) RETURNING id`,
         [
           company_id, order_number, supplier_id, supplier_name,
           project_id, project_name, order_date, expected_date,
@@ -211,7 +211,7 @@ const PurchaseOrderController = {
               item_id, item_name, unit, category,
               quantity_supplied, quantity_issued, quantity_returned,
               balance, reference, date, notes, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
             [
               company_id,
               order.project_id,
