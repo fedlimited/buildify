@@ -35,7 +35,7 @@ const storeTransactionController = {
           item_id, item_name, unit, category,
           quantity_supplied, quantity_issued, quantity_returned,
           balance, reference, issued_to, returned_by, notes, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
         [
           company_id, date, project_id, project_name, transaction_type,
           item_id, item_name, unit, category,

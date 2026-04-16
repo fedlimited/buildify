@@ -16,11 +16,17 @@ const PayrollController = {
       const db = await getDb();
       const { company_id } = req.user;
       const { week_number, year, week_start, week_end, project_id, project_name, entries, total_gross_pay } = req.body;
+
+
+
       const result = await db.run(
         `INSERT INTO payroll_records (company_id, week_number, year, week_start, week_end, project_id, project_name, entries, total_gross_pay, status, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Draft', datetime('now'))`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Draft', NOW())`,
         [company_id, week_number, year, week_start, week_end, project_id, project_name, JSON.stringify(entries || []), total_gross_pay || 0]
       );
+
+
+
       res.status(201).json({ id: result.lastID });
     } catch (error) {
       res.status(500).json({ error: error.message });
