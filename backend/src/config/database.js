@@ -22,11 +22,17 @@ async function query(sql, params = []) {
     const pgSql = convertPlaceholders(sql, params);
     const result = await client.query(pgSql, params);
     
+    // Extract lastID from INSERT RETURNING statements
+    let lastID = null;
+    if (pgSql.toUpperCase().includes('RETURNING') && result.rows.length > 0) {
+      lastID = result.rows[0].id;
+    }
+    
     // Return an object compatible with SQLite's API
     return {
       rows: result.rows,
       rowCount: result.rowCount,
-      lastID: result.rows[0]?.id || null,
+      lastID: lastID,
       changes: result.rowCount
     };
   } finally {
@@ -325,6 +331,21 @@ async function initializeDatabase() {
 
     CREATE INDEX IF NOT EXISTS idx_otp_codes_email_code ON otp_codes(email, code);
     CREATE INDEX IF NOT EXISTS idx_otp_codes_expires_at ON otp_codes(expires_at);
+
+    CREATE TABLE IF NOT EXISTS company_settings (
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      name TEXT DEFAULT 'My Company',
+      address TEXT,
+      phone TEXT,
+      email TEXT,
+      kra_pin TEXT,
+      currency TEXT DEFAULT 'KES',
+      currency_symbol TEXT DEFAULT 'KES',
+      logo_url TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
 
     CREATE TABLE IF NOT EXISTS currency_settings (
       id SERIAL PRIMARY KEY,
