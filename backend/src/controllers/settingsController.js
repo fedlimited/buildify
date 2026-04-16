@@ -6,28 +6,30 @@ const SettingsController = {
     try {
       const db = await getDb();
       const company_id = req.user?.companyId || req.user?.company_id;
-      
+
       console.log('Fetching settings for company:', company_id);
-      
-      // Your table doesn't have company_id, so we need to handle differently
-      // For now, get the first row (assuming one company per database)
+
+      // Get settings for this specific company
       let settings = await db.get(
-        'SELECT * FROM company_settings LIMIT 1'
+        'SELECT * FROM company_settings WHERE company_id = ? LIMIT 1',
+        [company_id]
       );
-      
+
       if (!settings) {
-        // Create default settings if none exist
+        // Create default settings for this company
         const result = await db.run(
-          `INSERT INTO company_settings (name, currency, currency_symbol)
-           VALUES (?, ?, ?)`,
-          ['My Company', 'KES', 'KES']
+          `INSERT INTO company_settings (company_id, name, currency, currency_symbol)
+           VALUES (?, ?, ?, ?) RETURNING id`,
+          [company_id, 'My Company', 'KES', 'KES']
         );
+        
+        // Fetch the newly created settings
         settings = await db.get(
           'SELECT * FROM company_settings WHERE id = ?',
           [result.lastID]
         );
       }
-      
+
       res.json(settings);
     } catch (error) {
       console.error('Error in getSettings:', error);
@@ -39,6 +41,7 @@ const SettingsController = {
   updateSettings: async (req, res) => {
     try {
       const db = await getDb();
+      const company_id = req.user?.companyId || req.user?.company_id;
       const {
         name,
         address,
@@ -48,38 +51,40 @@ const SettingsController = {
         currency,
         logo_url
       } = req.body;
-      
-      console.log('Updating settings:', { name, address, phone, email, currency });
-      
-      // Check if settings exist
+
+      console.log('Updating settings for company:', company_id);
+
+      // Check if settings exist for this company
       const existing = await db.get(
-        'SELECT * FROM company_settings LIMIT 1'
+        'SELECT * FROM company_settings WHERE company_id = ? LIMIT 1',
+        [company_id]
       );
-      
+
       let result;
       if (existing) {
         // Update existing
         result = await db.run(
           `UPDATE company_settings SET
             name = ?, address = ?, phone = ?, email = ?,
-            kra_pin = ?, currency = ?, currency_symbol = ?, logo_url = ?
-          WHERE id = ?`,
-          [name, address, phone, email, kra_pin, currency, currency, logo_url, existing.id]
+            kra_pin = ?, currency = ?, currency_symbol = ?, logo_url = ?, updated_at = CURRENT_TIMESTAMP
+          WHERE company_id = ?`,
+          [name, address, phone, email, kra_pin, currency, currency, logo_url, company_id]
         );
       } else {
         // Insert new
         result = await db.run(
           `INSERT INTO company_settings (
-            name, address, phone, email, kra_pin, currency, currency_symbol, logo_url
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [name, address, phone, email, kra_pin, currency, currency, logo_url]
+            company_id, name, address, phone, email, kra_pin, currency, currency_symbol, logo_url
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [company_id, name, address, phone, email, kra_pin, currency, currency, logo_url]
         );
       }
-      
+
       const updatedSettings = await db.get(
-        'SELECT * FROM company_settings LIMIT 1'
+        'SELECT * FROM company_settings WHERE company_id = ? LIMIT 1',
+        [company_id]
       );
-      
+
       res.json(updatedSettings);
     } catch (error) {
       console.error('Error in updateSettings:', error);
