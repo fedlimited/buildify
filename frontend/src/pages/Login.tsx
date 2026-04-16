@@ -7,7 +7,17 @@ import api from '@/services/api';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { fetchProjects, fetchIncome, fetchExpenses, fetchInvoices, fetchPurchaseOrders, fetchCompanySettings, fetchCurrencySettings } = useAppStore();
+  const { 
+    fetchProjects, 
+    fetchIncome, 
+    fetchExpenses, 
+    fetchInvoices, 
+    fetchPurchaseOrders, 
+    fetchCompanySettings, 
+    fetchCurrencySettings,
+    setAuthUser
+  } = useAppStore();
+  
   const [email, setEmail] = useState('');
   const [subdomain, setSubdomain] = useState('');
   const [otpCode, setOtpCode] = useState('');
@@ -88,6 +98,7 @@ const Login: React.FC = () => {
 
         if (response.user) {
           localStorage.setItem('authUser', JSON.stringify(response.user));
+          setAuthUser(response.user);
         }
 
         await Promise.all([
@@ -99,11 +110,6 @@ const Login: React.FC = () => {
           fetchCompanySettings(),
           fetchCurrencySettings()
         ]).catch(err => console.error('Fetch error:', err));
-
-
-
-
-
 
         window.location.href = '/';
       } else {
