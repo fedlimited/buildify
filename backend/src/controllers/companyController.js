@@ -13,10 +13,10 @@ class CompanyController {
         return res.status(400).json({ error: 'Subdomain already taken. Please choose another.' });
       }
       
-      // Create company
+      // Create company with RETURNING id for PostgreSQL
       const result = await db.run(
         `INSERT INTO companies (name, subdomain, email, phone, address, kra_pin, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id`,
         [name, subdomain, email, phone, address, kra_pin, new Date().toISOString()]
       );
       

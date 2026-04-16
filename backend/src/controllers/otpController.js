@@ -1,4 +1,4 @@
-const { getDb } = require('../config/database');  // ← ADD THIS LINE
+const { getDb } = require('../config/database');
 const { sendOTP } = require('../services/emailService');
 const jwt = require('jsonwebtoken');
 
@@ -18,7 +18,7 @@ async function sendLoginOTP(req, res) {
   try {
     await db.run(
       `INSERT INTO otp_codes (email, code, purpose, expires_at, used) 
-       VALUES (?, ?, 'login', ?, 0)`,
+       VALUES (?, ?, 'login', ?, 0) RETURNING id`,
       [email, code, expiresAt.toISOString()]
     );
     console.log('✅ OTP saved to database');
@@ -81,10 +81,6 @@ async function verifyLoginOTP(req, res) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-
-
-
-    
     const token = jwt.sign(
       { 
         id: user.id,
@@ -98,9 +94,6 @@ async function verifyLoginOTP(req, res) {
       { expiresIn: '24h' }
     );
 
-
-
-    
     res.json({ 
       success: true, 
       message: 'Login successful', 
