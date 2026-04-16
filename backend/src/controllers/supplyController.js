@@ -77,7 +77,7 @@ const SupplyController = {
           company_id, supplier_id, supplier_name, project_id, project_name,
           date, item_id, item_name, unit, quantity, unit_price,
           total_amount, vat, status, paid, order_id, delivery_note, notes, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()) RETURNING id`,
         [
           company_id, supplier_id, supplier_name, project_id, project_name,
           date, item_id, item_name, unit, quantity, unit_price,
