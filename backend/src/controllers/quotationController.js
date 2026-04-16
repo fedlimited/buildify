@@ -72,7 +72,7 @@ const quotationController = {
           status, 
           notes, 
           created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()) RETURNING id`,
         [
           company_id,
           subcontractor_id,
@@ -128,7 +128,7 @@ const quotationController = {
           date = ?, 
           status = ?, 
           notes = ?,
-          updated_at = datetime('now')
+          updated_at = NOW()
         WHERE id = ? AND company_id = ?`,
         [
           subcontractor_id,
