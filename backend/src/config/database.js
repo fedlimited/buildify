@@ -198,16 +198,23 @@ async function initializeDatabase() {
       expense_id INTEGER
     );
 
-    CREATE TABLE IF NOT EXISTS approved_items (
-      id SERIAL PRIMARY KEY,
-      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      name TEXT NOT NULL,
-      category TEXT NOT NULL,
-      unit TEXT NOT NULL,
-      default_price REAL NOT NULL,
-      description TEXT,
-      is_active INTEGER DEFAULT 1
-    );
+
+
+
+CREATE TABLE IF NOT EXISTS approved_items (
+  id SERIAL PRIMARY KEY,
+  company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  category TEXT NOT NULL,
+  unit TEXT NOT NULL,
+  default_price REAL NOT NULL,
+  description TEXT,
+  is_active INTEGER DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
 
     CREATE TABLE IF NOT EXISTS suppliers (
       id SERIAL PRIMARY KEY,
@@ -373,24 +380,32 @@ async function initializeDatabase() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS site_diary_entries (
-      id SERIAL PRIMARY KEY,
-      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      date TEXT NOT NULL,
-      project_id INTEGER NOT NULL REFERENCES projects(id),
-      project_name TEXT NOT NULL,
-      weather TEXT,
-      total_workers INTEGER DEFAULT 0,
-      activities TEXT,
-      inspections TEXT,
-      deliveries TEXT,
-      incidents TEXT,
-      challenges TEXT,
-      summary TEXT,
-      status TEXT DEFAULT 'Draft',
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
+
+
+
+CREATE TABLE IF NOT EXISTS site_diary_entries (
+  id SERIAL PRIMARY KEY,
+  company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  date TEXT NOT NULL,
+  project_id INTEGER NOT NULL REFERENCES projects(id),
+  project_name TEXT NOT NULL,
+  weather TEXT,
+  total_workers INTEGER DEFAULT 0,
+  activities TEXT,
+  inspections TEXT,
+  deliveries TEXT,
+  incidents TEXT,
+  challenges TEXT,
+  site_workers TEXT,
+  site_subcontractors TEXT,
+  summary TEXT,
+  status TEXT DEFAULT 'Draft',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
 
   console.log('PostgreSQL database initialized with all tables');
   return pool;
