@@ -1,0 +1,338 @@
+import { create } from 'zustand';
+import { Project, Income, Expense, ModuleId, WorkerCategory, Worker, PayrollRecord, ApprovedItem, Supplier, PurchaseOrder, Supply, StoreTransaction, SiteDiaryEntry, CompanySettings, AuthUser, AppUser, Subcontractor, SubcontractorQuotation, Invoice } from '@/lib/types';
+import { storage } from '@/lib/storage';
+import { sampleProjects, sampleIncome, sampleExpenses, sampleWorkerCategories, sampleWorkers, samplePayrollRecords, sampleApprovedItems, sampleSuppliers, samplePurchaseOrders, sampleSupplies, sampleStoreTransactions, sampleSiteDiaryEntries } from '@/lib/sample-data';
+import api from '@/services/api';
+
+function nextId(arr: { id: number }[]): number {
+  return arr.length ? Math.max(...arr.map(x => x.id)) + 1 : 1;
+}
+
+const initTheme = storage.getTheme() as 'light' | 'dark';
+if (initTheme === 'dark') document.documentElement.classList.add('dark');
+
+// Load or seed
+let initProjects = storage.getProjects();
+if (!initProjects.length) {
+  initProjects = sampleProjects; storage.setProjects(initProjects);
+  storage.setIncome(sampleIncome); storage.setExpenses(sampleExpenses);
+  storage.setWorkerCategories(sampleWorkerCategories); storage.setWorkers(sampleWorkers);
+  storage.setPayrollRecords(samplePayrollRecords); storage.setApprovedItems(sampleApprovedItems);
+  storage.setSuppliers(sampleSuppliers); storage.setPurchaseOrders(samplePurchaseOrders);
+  storage.setSupplies(sampleSupplies); storage.setStoreTransactions(sampleStoreTransactions);
+  storage.setSiteDiaryEntries(sampleSiteDiaryEntries);
+}
+
+// Seed default users if none
+let initAppUsers = storage.getAppUsers();
+if (!initAppUsers.length) {
+  initAppUsers = [
+    { id: 1, name: 'Admin User', email: 'admin@bochaberi.co.ke', password: 'admin123', role: 'admin', permissions: [], isActive: true, createdAt: '2024-01-01' },
+    { id: 2, name: 'Site Manager', email: 'user@bochaberi.co.ke', password: 'user123', role: 'user', permissions: ['dashboard', 'projects', 'income', 'expenses', 'payroll', 'procurement', 'stores', 'sitediary', 'vat', 'reports'], isActive: true, createdAt: '2024-01-01' },
+  ];
+  storage.setAppUsers(initAppUsers);
+}
+
+interface AppState {
+  activeModule: ModuleId;
+  setActiveModule: (m: ModuleId) => void;
+  sidebarCollapsed: boolean;
+  toggleSidebar: () => void;
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
+  selectedProjectId: number | null;
+  setSelectedProjectId: (id: number | null) => void;
+  authUser: AuthUser | null;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => void;
+
+  projects: Project[];
+  income: Income[];
+  expenses: Expense[];
+  workerCategories: WorkerCategory[];
+  workers: Worker[];
+  payrollRecords: PayrollRecord[];
+  approvedItems: ApprovedItem[];
+  suppliers: Supplier[];
+  purchaseOrders: PurchaseOrder[];
+  supplies: Supply[];
+  storeTransactions: StoreTransaction[];
+  siteDiaryEntries: SiteDiaryEntry[];
+  companySettings: CompanySettings;
+  appUsers: AppUser[];
+  subcontractors: Subcontractor[];
+  quotations: SubcontractorQuotation[];
+  invoices: Invoice[];
+
+  // Projects
+  addProject: (p: Omit<Project, 'id' | 'createdAt'>) => Promise<void>;
+  updateProject: (p: Project) => Promise<void>;
+  deleteProject: (id: number) => Promise<void>;
+  fetchProjects: () => Promise<void>;
+  
+  // Income
+  addIncome: (i: Omit<Income, 'id' | 'createdAt'>) => void;
+  updateIncome: (i: Income) => void;
+  deleteIncome: (id: number) => void;
+  // Expenses
+  addExpense: (e: Omit<Expense, 'id' | 'createdAt'>) => void;
+  updateExpense: (e: Expense) => void;
+  deleteExpense: (id: number) => void;
+  // Worker Categories
+  addWorkerCategory: (c: Omit<WorkerCategory, 'id'>) => void;
+  updateWorkerCategory: (c: WorkerCategory) => void;
+  deleteWorkerCategory: (id: number) => void;
+  // Workers
+  addWorker: (w: Omit<Worker, 'id' | 'dateAdded'>) => void;
+  updateWorker: (w: Worker) => void;
+  deleteWorker: (id: number) => void;
+  // Payroll
+  addPayrollRecord: (r: Omit<PayrollRecord, 'id' | 'createdAt'>) => void;
+  updatePayrollRecord: (r: PayrollRecord) => void;
+  deletePayrollRecord: (id: number) => void;
+  // Approved Items
+  addApprovedItem: (i: Omit<ApprovedItem, 'id'>) => void;
+  updateApprovedItem: (i: ApprovedItem) => void;
+  deleteApprovedItem: (id: number) => void;
+  // Suppliers
+  addSupplier: (s: Omit<Supplier, 'id'>) => void;
+  updateSupplier: (s: Supplier) => void;
+  deleteSupplier: (id: number) => void;
+  // Purchase Orders
+  addPurchaseOrder: (o: Omit<PurchaseOrder, 'id' | 'createdAt'>) => void;
+  updatePurchaseOrder: (o: PurchaseOrder) => void;
+  deletePurchaseOrder: (id: number) => void;
+  // Supplies
+  addSupply: (s: Omit<Supply, 'id' | 'createdAt'>) => void;
+  updateSupply: (s: Supply) => void;
+  deleteSupply: (id: number) => void;
+  // Store
+  addStoreTransaction: (t: Omit<StoreTransaction, 'id' | 'createdAt'>) => void;
+  // Site Diary
+  addSiteDiaryEntry: (e: Omit<SiteDiaryEntry, 'id' | 'createdAt'>) => void;
+  updateSiteDiaryEntry: (e: SiteDiaryEntry) => void;
+  deleteSiteDiaryEntry: (id: number) => void;
+  // Settings
+  updateCompanySettings: (s: CompanySettings) => void;
+  // Users
+  addAppUser: (u: Omit<AppUser, 'id' | 'createdAt'>) => void;
+  updateAppUser: (u: AppUser) => void;
+  deleteAppUser: (id: number) => void;
+  // Subcontractors
+  addSubcontractor: (s: Omit<Subcontractor, 'id' | 'createdAt'>) => void;
+  updateSubcontractor: (s: Subcontractor) => void;
+  deleteSubcontractor: (id: number) => void;
+  // Quotations
+  addQuotation: (q: Omit<SubcontractorQuotation, 'id' | 'createdAt'>) => void;
+  updateQuotation: (q: SubcontractorQuotation) => void;
+  deleteQuotation: (id: number) => void;
+  // Invoices
+  addInvoice: (i: Omit<Invoice, 'id' | 'createdAt'>) => void;
+  updateInvoice: (i: Invoice) => void;
+  deleteInvoice: (id: number) => void;
+
+  // Clearing Actions
+  clearWorkersLedger: () => void;
+  clearStoresRecords: () => void;
+  clearAllProjectData: () => void;
+
+  loadSampleData: () => void;
+  resetData: () => void;
+}
+
+export const useAppStore = create<AppState>((set, get) => ({
+  activeModule: 'dashboard',
+  setActiveModule: (m) => set({ activeModule: m }),
+  sidebarCollapsed: storage.getSidebarCollapsed(),
+  toggleSidebar: () => { const v = !get().sidebarCollapsed; storage.setSidebarCollapsed(v); set({ sidebarCollapsed: v }); },
+  theme: initTheme,
+  toggleTheme: () => { const t = get().theme === 'light' ? 'dark' : 'light'; storage.setTheme(t); document.documentElement.classList.toggle('dark', t === 'dark'); set({ theme: t }); },
+  selectedProjectId: null,
+  setSelectedProjectId: (id) => set({ selectedProjectId: id }),
+  authUser: storage.getAuthUser(),
+  
+  // Updated login to use API
+login: async (email, password, subdomain) => {
+  try {
+    const user = await api.login(email, password, subdomain);
+    set({ authUser: user });
+    return true;
+  } catch (error) {
+    console.error('Login failed:', error);
+    return false;
+  }
+},
+  
+  // Updated logout to use API
+  logout: () => {
+    api.logout();
+    set({ authUser: null });
+  },
+
+  projects: initProjects,
+  income: storage.getIncome().length ? storage.getIncome() : sampleIncome,
+  expenses: storage.getExpenses().length ? storage.getExpenses() : sampleExpenses,
+  workerCategories: storage.getWorkerCategories().length ? storage.getWorkerCategories() : sampleWorkerCategories,
+  workers: storage.getWorkers().length ? storage.getWorkers() : sampleWorkers,
+  payrollRecords: storage.getPayrollRecords().length ? storage.getPayrollRecords() : samplePayrollRecords,
+  approvedItems: storage.getApprovedItems().length ? storage.getApprovedItems() : sampleApprovedItems,
+  suppliers: storage.getSuppliers().length ? storage.getSuppliers() : sampleSuppliers,
+  purchaseOrders: storage.getPurchaseOrders().length ? storage.getPurchaseOrders() : samplePurchaseOrders,
+  supplies: storage.getSupplies().length ? storage.getSupplies() : sampleSupplies,
+  storeTransactions: storage.getStoreTransactions().length ? storage.getStoreTransactions() : sampleStoreTransactions,
+  siteDiaryEntries: storage.getSiteDiaryEntries().length ? storage.getSiteDiaryEntries() : sampleSiteDiaryEntries,
+  companySettings: storage.getCompanySettings(),
+  appUsers: initAppUsers,
+  subcontractors: storage.getSubcontractors(),
+  quotations: storage.getQuotations(),
+  invoices: storage.getInvoices(),
+
+  // --- Updated Project CRUD with API ---
+  fetchProjects: async () => {
+    try {
+      const projects = await api.getProjects();
+      set({ projects });
+    } catch (error) {
+      console.error('Failed to fetch projects:', error);
+    }
+  },
+
+  addProject: async (p) => {
+    try {
+      const newProject = await api.createProject(p);
+      set((state) => ({ projects: [...state.projects, newProject] }));
+    } catch (error) {
+      console.error('Failed to add project:', error);
+    }
+  },
+  
+  updateProject: async (p) => {
+    try {
+      const updated = await api.updateProject(p.id, p);
+      set((state) => ({
+        projects: state.projects.map((x) => x.id === updated.id ? updated : x)
+      }));
+    } catch (error) {
+      console.error('Failed to update project:', error);
+    }
+  },
+  
+  deleteProject: async (id) => {
+    try {
+      await api.deleteProject(id);
+      set((state) => ({
+        projects: state.projects.filter((x) => x.id !== id)
+      }));
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+    }
+  },
+
+  // --- Local storage CRUD (keep these for backward compatibility) ---
+  addIncome: (i) => { const d = [...get().income, { ...i, id: nextId(get().income), createdAt: new Date().toISOString() }]; storage.setIncome(d); set({ income: d }); },
+  updateIncome: (i) => { const d = get().income.map(x => x.id === i.id ? i : x); storage.setIncome(d); set({ income: d }); },
+  deleteIncome: (id) => { const d = get().income.filter(x => x.id !== id); storage.setIncome(d); set({ income: d }); },
+
+  addExpense: (e) => { const proj = get().projects.find(p => p.id === e.projectId); const d = [...get().expenses, { ...e, id: nextId(get().expenses), projectName: proj?.name || e.projectName || '', createdAt: new Date().toISOString() }]; storage.setExpenses(d); set({ expenses: d }); },
+  updateExpense: (e) => { const d = get().expenses.map(x => x.id === e.id ? e : x); storage.setExpenses(d); set({ expenses: d }); },
+  deleteExpense: (id) => { const d = get().expenses.filter(x => x.id !== id); storage.setExpenses(d); set({ expenses: d }); },
+
+  addWorkerCategory: (c) => { const d = [...get().workerCategories, { ...c, id: nextId(get().workerCategories) }]; storage.setWorkerCategories(d); set({ workerCategories: d }); },
+  updateWorkerCategory: (c) => { const d = get().workerCategories.map(x => x.id === c.id ? c : x); storage.setWorkerCategories(d); set({ workerCategories: d }); },
+  deleteWorkerCategory: (id) => { const d = get().workerCategories.filter(x => x.id !== id); storage.setWorkerCategories(d); set({ workerCategories: d }); },
+
+  addWorker: (w) => { const d = [...get().workers, { ...w, id: nextId(get().workers), dateAdded: new Date().toISOString().split('T')[0] }]; storage.setWorkers(d); set({ workers: d }); },
+  updateWorker: (w) => { const d = get().workers.map(x => x.id === w.id ? w : x); storage.setWorkers(d); set({ workers: d }); },
+  deleteWorker: (id) => { const d = get().workers.filter(x => x.id !== id); storage.setWorkers(d); set({ workers: d }); },
+
+  addPayrollRecord: (r) => { const d = [...get().payrollRecords, { ...r, id: nextId(get().payrollRecords), createdAt: new Date().toISOString() }]; storage.setPayrollRecords(d); set({ payrollRecords: d }); },
+  updatePayrollRecord: (r) => { const d = get().payrollRecords.map(x => x.id === r.id ? r : x); storage.setPayrollRecords(d); set({ payrollRecords: d }); },
+  deletePayrollRecord: (id) => { const d = get().payrollRecords.filter(x => x.id !== id); storage.setPayrollRecords(d); set({ payrollRecords: d }); },
+
+  addApprovedItem: (i) => { const d = [...get().approvedItems, { ...i, id: nextId(get().approvedItems) }]; storage.setApprovedItems(d); set({ approvedItems: d }); },
+  updateApprovedItem: (i) => { const d = get().approvedItems.map(x => x.id === i.id ? i : x); storage.setApprovedItems(d); set({ approvedItems: d }); },
+  deleteApprovedItem: (id) => { const d = get().approvedItems.filter(x => x.id !== id); storage.setApprovedItems(d); set({ approvedItems: d }); },
+
+  addSupplier: (s) => { const d = [...get().suppliers, { ...s, id: nextId(get().suppliers) }]; storage.setSuppliers(d); set({ suppliers: d }); },
+  updateSupplier: (s) => { const d = get().suppliers.map(x => x.id === s.id ? s : x); storage.setSuppliers(d); set({ suppliers: d }); },
+  deleteSupplier: (id) => { const d = get().suppliers.filter(x => x.id !== id); storage.setSuppliers(d); set({ suppliers: d }); },
+
+  addPurchaseOrder: (o) => { const d = [...get().purchaseOrders, { ...o, id: nextId(get().purchaseOrders), createdAt: new Date().toISOString() }]; storage.setPurchaseOrders(d); set({ purchaseOrders: d }); },
+  updatePurchaseOrder: (o) => { const d = get().purchaseOrders.map(x => x.id === o.id ? o : x); storage.setPurchaseOrders(d); set({ purchaseOrders: d }); },
+  deletePurchaseOrder: (id) => { const d = get().purchaseOrders.filter(x => x.id !== id); storage.setPurchaseOrders(d); set({ purchaseOrders: d }); },
+
+  addSupply: (s) => { const d = [...get().supplies, { ...s, id: nextId(get().supplies), createdAt: new Date().toISOString() }]; storage.setSupplies(d); set({ supplies: d }); },
+  updateSupply: (s) => { const d = get().supplies.map(x => x.id === s.id ? s : x); storage.setSupplies(d); set({ supplies: d }); },
+  deleteSupply: (id) => { const d = get().supplies.filter(x => x.id !== id); storage.setSupplies(d); set({ supplies: d }); },
+
+  addStoreTransaction: (t) => { const d = [...get().storeTransactions, { ...t, id: nextId(get().storeTransactions), createdAt: new Date().toISOString() }]; storage.setStoreTransactions(d); set({ storeTransactions: d }); },
+
+  addSiteDiaryEntry: (e) => { const d = [...get().siteDiaryEntries, { ...e, id: nextId(get().siteDiaryEntries), createdAt: new Date().toISOString() }]; storage.setSiteDiaryEntries(d); set({ siteDiaryEntries: d }); },
+  updateSiteDiaryEntry: (e) => { const d = get().siteDiaryEntries.map(x => x.id === e.id ? e : x); storage.setSiteDiaryEntries(d); set({ siteDiaryEntries: d }); },
+  deleteSiteDiaryEntry: (id) => { const d = get().siteDiaryEntries.filter(x => x.id !== id); storage.setSiteDiaryEntries(d); set({ siteDiaryEntries: d }); },
+
+  updateCompanySettings: (s) => { storage.setCompanySettings(s); set({ companySettings: s }); },
+
+  // Users
+  addAppUser: (u) => { const d = [...get().appUsers, { ...u, id: nextId(get().appUsers), createdAt: new Date().toISOString() }]; storage.setAppUsers(d); set({ appUsers: d }); },
+  updateAppUser: (u) => { const d = get().appUsers.map(x => x.id === u.id ? u : x); storage.setAppUsers(d); set({ appUsers: d }); },
+  deleteAppUser: (id) => { const d = get().appUsers.filter(x => x.id !== id); storage.setAppUsers(d); set({ appUsers: d }); },
+
+  // Subcontractors
+  addSubcontractor: (s) => { const d = [...get().subcontractors, { ...s, id: nextId(get().subcontractors), createdAt: new Date().toISOString() }]; storage.setSubcontractors(d); set({ subcontractors: d }); },
+  updateSubcontractor: (s) => { const d = get().subcontractors.map(x => x.id === s.id ? s : x); storage.setSubcontractors(d); set({ subcontractors: d }); },
+  deleteSubcontractor: (id) => { const d = get().subcontractors.filter(x => x.id !== id); storage.setSubcontractors(d); set({ subcontractors: d }); },
+
+  // Quotations
+  addQuotation: (q) => { const d = [...get().quotations, { ...q, id: nextId(get().quotations), createdAt: new Date().toISOString() }]; storage.setQuotations(d); set({ quotations: d }); },
+  updateQuotation: (q) => { const d = get().quotations.map(x => x.id === q.id ? q : x); storage.setQuotations(d); set({ quotations: d }); },
+  deleteQuotation: (id) => { const d = get().quotations.filter(x => x.id !== id); storage.setQuotations(d); set({ quotations: d }); },
+
+  // Invoices
+  addInvoice: (i) => { const d = [...get().invoices, { ...i, id: nextId(get().invoices), createdAt: new Date().toISOString() }]; storage.setInvoices(d); set({ invoices: d }); },
+  updateInvoice: (i) => { const d = get().invoices.map(x => x.id === i.id ? i : x); storage.setInvoices(d); set({ invoices: d }); },
+  deleteInvoice: (id) => { const d = get().invoices.filter(x => x.id !== id); storage.setInvoices(d); set({ invoices: d }); },
+
+  // Clearing Actions
+  clearWorkersLedger: () => {
+    storage.clearWorkers();
+    set({ 
+      workers: storage.getWorkers(), 
+      payrollRecords: storage.getPayrollRecords() 
+    });
+  },
+
+  clearStoresRecords: () => {
+    storage.clearStores();
+    set({ storeTransactions: storage.getStoreTransactions() });
+  },
+
+  clearAllProjectData: () => {
+    storage.clearAllProjectData();
+    set({
+      projects: storage.getProjects(),
+      income: storage.getIncome(),
+      expenses: storage.getExpenses(),
+      workers: storage.getWorkers(),
+      payrollRecords: storage.getPayrollRecords(),
+      purchaseOrders: storage.getPurchaseOrders(),
+      supplies: storage.getSupplies(),
+      storeTransactions: storage.getStoreTransactions(),
+      siteDiaryEntries: storage.getSiteDiaryEntries(),
+    });
+  },
+
+  loadSampleData: () => {
+    storage.setProjects(sampleProjects); storage.setIncome(sampleIncome); storage.setExpenses(sampleExpenses);
+    storage.setWorkerCategories(sampleWorkerCategories); storage.setWorkers(sampleWorkers);
+    storage.setPayrollRecords(samplePayrollRecords); storage.setApprovedItems(sampleApprovedItems);
+    storage.setSuppliers(sampleSuppliers); storage.setPurchaseOrders(samplePurchaseOrders);
+    storage.setSupplies(sampleSupplies); storage.setStoreTransactions(sampleStoreTransactions);
+    storage.setSiteDiaryEntries(sampleSiteDiaryEntries);
+    set({ projects: sampleProjects, income: sampleIncome, expenses: sampleExpenses, workerCategories: sampleWorkerCategories, workers: sampleWorkers, payrollRecords: samplePayrollRecords, approvedItems: sampleApprovedItems, suppliers: sampleSuppliers, purchaseOrders: samplePurchaseOrders, supplies: sampleSupplies, storeTransactions: sampleStoreTransactions, siteDiaryEntries: sampleSiteDiaryEntries });
+  },
+  resetData: () => {
+    storage.clearAll();
+    set({ projects: [], income: [], expenses: [], workerCategories: [], workers: [], payrollRecords: [], approvedItems: [], suppliers: [], purchaseOrders: [], supplies: [], storeTransactions: [], siteDiaryEntries: [], subcontractors: [], quotations: [], invoices: [] });
+  },
+}));

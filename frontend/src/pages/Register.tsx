@@ -1,0 +1,349 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertCircle, CheckCircle, Building2, Mail, Phone, MapPin, Key, User, Globe } from 'lucide-react';
+import { API_BASE_URL } from '@/config/api';
+
+interface RegisterProps {
+  onBackToLogin?: () => void;
+}
+
+export function Register({ onBackToLogin }: RegisterProps) {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState({
+    name: '',
+    subdomain: '',
+    email: '',
+    phone: '',
+    address: '',
+    kra_pin: '',
+    admin_name: '',
+    admin_email: '',
+    admin_password: '',
+    confirm_password: ''
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    if (id === 'subdomain') {
+      const formatted = value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+      setForm({ ...form, subdomain: formatted });
+    } else {
+      setForm({ ...form, [id]: value });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (form.admin_password !== form.confirm_password) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    if (form.admin_password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    if (form.subdomain.length < 3) {
+      setError('Subdomain must be at least 3 characters');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/companies/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name,
+          subdomain: form.subdomain,
+          email: form.email,
+          phone: form.phone,
+          address: form.address,
+          kra_pin: form.kra_pin.toUpperCase(),
+          admin_name: form.admin_name,
+          admin_email: form.admin_email,
+          admin_password: form.admin_password
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Registration failed');
+      }
+
+      setSuccess("Welcome to BOCHABERI! Your company " + form.name + " has been successfully registered.");
+
+      setTimeout(() => {
+        if (onBackToLogin) {
+          onBackToLogin();
+        } else {
+          navigate('/login', { state: { subdomain: form.subdomain, email: form.admin_email } });
+        }
+      }, 3000);
+
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const isStep1Valid = form.name && form.subdomain;
+  const isStep2Valid = form.admin_name && form.admin_email && form.admin_password && form.confirm_password;
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+      <Card className="w-full max-w-2xl shadow-xl">
+        <CardHeader className="text-center border-b">
+          <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+            <Building2 size={32} className="text-primary" />
+          </div>
+          <CardTitle className="text-3xl font-bold">Start Your Free Trial</CardTitle>
+          <CardDescription className="text-base mt-2">
+            Join thousands of construction companies using BOCHABERI Suite
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="flex justify-between mb-8">
+            <div className={"flex-1 text-center " + (step >= 1 ? 'text-primary' : 'text-muted-foreground')}>
+              <div className={"w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center " + (step >= 1 ? 'bg-primary text-white' : 'bg-muted')}>
+                1
+              </div>
+              <span className="text-xs font-medium">Company Details</span>
+            </div>
+            <div className={"flex-1 text-center " + (step >= 2 ? 'text-primary' : 'text-muted-foreground')}>
+              <div className={"w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center " + (step >= 2 ? 'bg-primary text-white' : 'bg-muted')}>
+                2
+              </div>
+              <span className="text-xs font-medium">Admin Account</span>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            {step === 1 && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="name" className="flex items-center gap-2 mb-2">
+                    <Building2 size={16} /> Company Name *
+                  </Label>
+                  <Input
+                    id="name"
+                    placeholder="e.g., Acme Construction Ltd"
+                    value={form.name}
+                    onChange={handleChange}
+                    required
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="subdomain" className="flex items-center gap-2 mb-2">
+                    <Globe size={16} /> Your Company URL (Subdomain) *
+                  </Label>
+                  <div className="flex">
+                    <Input
+                      id="subdomain"
+                      placeholder="acme"
+                      value={form.subdomain}
+                      onChange={handleChange}
+                      required
+                      className="rounded-r-none"
+                    />
+                    <span className="inline-flex items-center px-3 bg-muted border border-l-0 border-border rounded-r-md text-sm text-muted-foreground">
+                      .bochaberi.com
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    This will be your unique URL. Use only letters, numbers, and hyphens.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="email" className="flex items-center gap-2 mb-2">
+                      <Mail size={16} /> Company Email
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="info@acme.com"
+                      value={form.email}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone" className="flex items-center gap-2 mb-2">
+                      <Phone size={16} /> Phone
+                    </Label>
+                    <Input
+                      id="phone"
+                      placeholder="+254 700 000 000"
+                      value={form.phone}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="address" className="flex items-center gap-2 mb-2">
+                    <MapPin size={16} /> Address
+                  </Label>
+                  <Input
+                    id="address"
+                    placeholder="Nairobi, Kenya"
+                    value={form.address}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="kra_pin">KRA PIN (Optional)</Label>
+                  <Input
+                    id="kra_pin"
+                    placeholder="P051012345Z"
+                    value={form.kra_pin}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <Button
+                  type="button"
+                  className="w-full mt-4"
+                  onClick={() => setStep(2)}
+                  disabled={!isStep1Valid}
+                >
+                  Continue to Admin Account
+                </Button>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="admin_name" className="flex items-center gap-2 mb-2">
+                    <User size={16} /> Admin Name *
+                  </Label>
+                  <Input
+                    id="admin_name"
+                    placeholder="John Doe"
+                    value={form.admin_name}
+                    onChange={handleChange}
+                    required
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="admin_email" className="flex items-center gap-2 mb-2">
+                    <Mail size={16} /> Admin Email *
+                  </Label>
+                  <Input
+                    id="admin_email"
+                    type="email"
+                    placeholder="admin@acme.com"
+                    value={form.admin_email}
+                    onChange={handleChange}
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    This will be your login email. You can add more users later.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="admin_password" className="flex items-center gap-2 mb-2">
+                      <Key size={16} /> Password *
+                    </Label>
+                    <Input
+                      id="admin_password"
+                      type="password"
+                      placeholder="********"
+                      value={form.admin_password}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="confirm_password">Confirm Password *</Label>
+                    <Input
+                      id="confirm_password"
+                      type="password"
+                      placeholder="********"
+                      value={form.confirm_password}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-6">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setStep(1)}
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                    disabled={isLoading || !isStep2Valid}
+                  >
+                    {isLoading ? 'Creating Account...' : 'Start Free Trial'}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {error && (
+              <div className="mt-4 p-3 bg-destructive/10 text-destructive rounded-lg text-sm flex items-center gap-2">
+                <AlertCircle size={16} />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {success && (
+              <div className="mt-4 p-3 bg-success/10 text-success rounded-lg text-sm flex items-center gap-2">
+                <CheckCircle size={16} />
+                <span>{success}</span>
+              </div>
+            )}
+          </form>
+
+          <div className="mt-6 pt-4 border-t text-center">
+            <p className="text-xs text-muted-foreground">
+              By registering, you agree to our{' '}
+              <a href="/terms" className="text-primary hover:underline">Terms of Service</a> and{' '}
+              <a href="/privacy" className="text-primary hover:underline">Privacy Policy</a>
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Already have an account?{' '}
+              <button
+                onClick={onBackToLogin}
+                className="text-primary hover:underline font-medium"
+              >
+                Sign in
+              </button>
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

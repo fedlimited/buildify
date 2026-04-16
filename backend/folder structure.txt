@@ -1,0 +1,19 @@
+C:\Users\Atai\site-builder-suite\backend\
+├── .env
+├── package.json
+├── database.sqlite (will be created automatically)
+└── src/
+    ├── server.js
+    ├── config/
+    │   └── database.js
+    ├── controllers/
+    │   ├── authController.js
+    │   ├── projectController.js
+    │   ├── workerController.js
+    │   ├── workerCategoryController.js
+    │   └── expenseController.js
+    ├── models/
+    │   └── Project.js          ← JUST CREATED
+    ├── middleware/
+    │   └── auth.js
+    └── utils/ (optional)

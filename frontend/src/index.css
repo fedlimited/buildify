@@ -1,0 +1,149 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 20% 96%;
+    --foreground: 215 25% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 15%;
+    --primary: 215 80% 22%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 20% 93%;
+    --secondary-foreground: 215 25% 15%;
+    --muted: 210 15% 93%;
+    --muted-foreground: 215 12% 46%;
+    --accent: 38 92% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214 20% 88%;
+    --input: 214 20% 88%;
+    --ring: 215 80% 22%;
+    --radius: 0.5rem;
+
+    /* ========== LIGHT MODE SIDEBAR COLORS ========== */
+    --sidebar-bg: 0 0% 100%;           /* White background for light mode */
+    --sidebar-fg: 215 25% 15%;         /* Dark text for light mode */
+    --sidebar-active: 38 92% 50%;      /* Orange accent stays the same */
+    --sidebar-hover: 210 20% 96%;      /* Light gray hover */
+    /* ============================================= */
+    
+    --sidebar-width: 260px;
+    --sidebar-collapsed: 68px;
+
+    --success: 152 60% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 210 80% 52%;
+    --info-foreground: 0 0% 100%;
+
+    --chart-1: 210 80% 52%;
+    --chart-2: 152 60% 40%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 0 72% 51%;
+    --chart-5: 270 60% 55%;
+
+    /* Sidebar component variables for light mode */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 215 25% 15%;
+    --sidebar-primary: 38 92% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 20% 96%;
+    --sidebar-accent-foreground: 215 25% 15%;
+    --sidebar-border: 214 20% 88%;
+    --sidebar-ring: 38 92% 50%;
+  }
+
+  .dark {
+    --background: 215 30% 8%;
+    --foreground: 210 15% 92%;
+    --card: 215 28% 13%;
+    --card-foreground: 210 15% 92%;
+    --popover: 215 28% 13%;
+    --popover-foreground: 210 15% 92%;
+    --primary: 38 92% 50%;
+    --primary-foreground: 215 30% 8%;
+    --secondary: 215 25% 18%;
+    --secondary-foreground: 210 15% 92%;
+    --muted: 215 20% 18%;
+    --muted-foreground: 215 12% 55%;
+    --accent: 38 92% 50%;
+    --accent-foreground: 215 30% 8%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 215 20% 20%;
+    --input: 215 20% 20%;
+    --ring: 38 92% 50%;
+
+    /* ========== DARK MODE SIDEBAR COLORS ========== */
+    --sidebar-bg: 215 35% 10%;         /* Dark background for dark mode */
+    --sidebar-fg: 210 15% 80%;         /* Light text for dark mode */
+    --sidebar-active: 38 92% 50%;      /* Orange accent */
+    --sidebar-hover: 215 30% 16%;      /* Slightly lighter dark hover */
+    /* ============================================ */
+
+    --success: 152 55% 45%;
+    --warning: 38 92% 50%;
+    --info: 210 80% 60%;
+
+    /* Sidebar component variables for dark mode */
+    --sidebar-background: 215 35% 10%;
+    --sidebar-foreground: 210 15% 80%;
+    --sidebar-primary: 38 92% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 30% 16%;
+    --sidebar-accent-foreground: 210 15% 90%;
+    --sidebar-border: 215 25% 18%;
+    --sidebar-ring: 38 92% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .sidebar-transition {
+    transition: width 0.2s ease, padding 0.2s ease;
+  }
+  .fade-in {
+    animation: fadeIn 0.2s ease-out;
+  }
+  .slide-up {
+    animation: slideUp 0.25s ease-out;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
+
+/* Print styles */
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; color: black; }
+}

@@ -1,0 +1,560 @@
+import { useAppStore } from '@/hooks/useAppStore';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Scale, FileText, Shield, Printer, AlertCircle, CheckCircle, Globe, Lock, Copyright, Gavel, BookOpen, MapPin } from 'lucide-react';
+
+export function LegalModule() {
+  const { companySettings } = useAppStore();
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const currentYear = new Date().getFullYear();
+
+  return (
+    <div className="space-y-6 fade-in">
+      <div className="flex justify-between items-center">
+        <h2 className="text-lg font-semibold">Legal & Compliance</h2>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handlePrint}>
+            <Printer size={14} className="mr-1" /> Print
+          </Button>
+        </div>
+      </div>
+
+      <Tabs defaultValue="terms" className="space-y-4">
+        <TabsList className="flex flex-wrap">
+          <TabsTrigger value="terms">Terms of Service</TabsTrigger>
+          <TabsTrigger value="privacy">Privacy Policy</TabsTrigger>
+          <TabsTrigger value="disclaimer">Disclaimer & Liability</TabsTrigger>
+          <TabsTrigger value="copyright">Copyright & IP</TabsTrigger>
+          <TabsTrigger value="compliance">Legal Compliance</TabsTrigger>
+        </TabsList>
+
+        {/* Terms of Service */}
+        <TabsContent value="terms">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText size={20} className="text-primary" />
+                Terms of Service
+              </CardTitle>
+              <CardDescription>Last updated: April 1, 2026 | Effective Date: April 1, 2026</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 prose prose-sm max-w-none">
+              <div className="bg-primary/5 rounded-lg p-4 mb-4 border-l-4 border-primary">
+                <p className="text-sm font-semibold mb-2">⚠️ IMPORTANT LEGAL NOTICE</p>
+                <p className="text-xs text-muted-foreground">
+                  By accessing or using the BOCHABERI Construction Suite ("the Software"), you acknowledge that you have read, 
+                  understood, and agree to be bound by these Terms of Service. If you do not agree to these terms, you must 
+                  immediately cease using the Software.
+                </p>
+              </div>
+
+              <h3 className="text-base font-semibold mt-4">1. DEFINITIONS</h3>
+              <p className="text-sm text-muted-foreground">
+                <strong>"Company"</strong> means Finite Element Designs Ltd, a company duly registered in the Republic of Kenya.<br/>
+                <strong>"Software"</strong> means the BOCHABERI Construction Suite, including all source code, documentation, and related materials.<br/>
+                <strong>"User"</strong> means any individual or entity accessing or using the Software.<br/>
+                <strong>"Data"</strong> means all information, records, and content input into the Software by the User.
+              </p>
+
+              <h3 className="text-base font-semibold mt-4">2. LICENSE GRANT</h3>
+              <p className="text-sm text-muted-foreground">
+                Finite Element Designs Ltd grants you a non-exclusive, non-transferable, revocable license to use the Software 
+                for your internal business operations only. This license does not permit:
+              </p>
+              <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                <li>Commercial resale, sublicensing, or distribution of the Software</li>
+                <li>Modification, reverse engineering, decompilation, or disassembly of the Software</li>
+                <li>Use of the Software for any unlawful purpose or in violation of any applicable laws</li>
+                <li>Creation of derivative works based on the Software</li>
+                <li>Access to the Software by unauthorized third parties</li>
+              </ul>
+
+              <h3 className="text-base font-semibold mt-4">3. NO WARRANTY & DISCLAIMER</h3>
+              <p className="text-sm text-muted-foreground">
+                THE SOFTWARE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT ANY WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
+                INCLUDING BUT NOT LIMITED TO:
+              </p>
+              <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                <li>WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT</li>
+                <li>WARRANTIES THAT THE SOFTWARE WILL BE ERROR-FREE, UNINTERRUPTED, OR SECURE</li>
+                <li>WARRANTIES REGARDING THE ACCURACY, RELIABILITY, OR COMPLETENESS OF ANY DATA GENERATED BY THE SOFTWARE</li>
+                <li>WARRANTIES THAT THE SOFTWARE WILL MEET YOUR SPECIFIC REQUIREMENTS</li>
+              </ul>
+              <p className="text-sm text-muted-foreground mt-2">
+                No advice or information, whether oral or written, obtained from the Company shall create any warranty not expressly stated herein.
+              </p>
+
+              <h3 className="text-base font-semibold mt-4">4. LIMITATION OF LIABILITY</h3>
+              <p className="text-sm text-muted-foreground">
+                TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL FINITE ELEMENT DESIGNS LTD, ITS DIRECTORS, 
+                OFFICERS, EMPLOYEES, AGENTS, OR AFFILIATES BE LIABLE FOR ANY:
+              </p>
+              <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                <li>DIRECT, INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES</li>
+                <li>LOSS OF PROFITS, REVENUE, DATA, OR BUSINESS OPPORTUNITIES</li>
+                <li>COSTS OF PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES</li>
+                <li>DAMAGES ARISING FROM THE USE OR INABILITY TO USE THE SOFTWARE</li>
+                <li>DAMAGES RESULTING FROM UNAUTHORIZED ACCESS TO OR ALTERATION OF YOUR DATA</li>
+                <li>DAMAGES ARISING FROM ERRORS, OMISSIONS, OR INACCURACIES IN THE SOFTWARE</li>
+              </ul>
+              <p className="text-sm text-muted-foreground mt-2">
+                This limitation of liability applies regardless of the legal theory (contract, tort, negligence, or otherwise) and 
+                whether or not the Company has been advised of the possibility of such damages.
+              </p>
+
+              <h3 className="text-base font-semibold mt-4">5. INDEMNIFICATION</h3>
+              <p className="text-sm text-muted-foreground">
+                You agree to indemnify, defend, and hold harmless Finite Element Designs Ltd and its directors, officers, employees, 
+                and agents from and against any and all claims, damages, losses, liabilities, costs, and expenses (including reasonable 
+                legal fees) arising from:
+              </p>
+              <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                <li>Your use of the Software</li>
+                <li>Your violation of these Terms of Service</li>
+                <li>Your violation of any applicable laws or regulations</li>
+                <li>Your data or content input into the Software</li>
+                <li>Your infringement of any third-party rights</li>
+              </ul>
+
+              <h3 className="text-base font-semibold mt-4">6. DATA RESPONSIBILITY</h3>
+              <p className="text-sm text-muted-foreground">
+                You bear sole responsibility for:
+              </p>
+              <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                <li>The accuracy, completeness, and legality of all data entered into the Software</li>
+                <li>Maintaining backups of your data (the Company recommends weekly backups)</li>
+                <li>Compliance with all applicable data protection laws regarding your data</li>
+                <li>Any consequences arising from incorrect, incomplete, or unlawful data</li>
+              </ul>
+
+              <h3 className="text-base font-semibold mt-4">7. GOVERNING LAW & JURISDICTION</h3>
+              <p className="text-sm text-muted-foreground">
+                These Terms of Service shall be governed by and construed in accordance with the laws of the Republic of Kenya, 
+                without regard to its conflict of law principles. Any dispute arising from these terms shall be subject to the 
+                exclusive jurisdiction of the courts of the Republic of Kenya.
+              </p>
+
+              <h3 className="text-base font-semibold mt-4">8. SEVERABILITY</h3>
+              <p className="text-sm text-muted-foreground">
+                If any provision of these Terms is found to be unenforceable or invalid, that provision shall be limited or eliminated 
+                to the minimum extent necessary, and the remaining provisions shall remain in full force and effect.
+              </p>
+
+              <h3 className="text-base font-semibold mt-4">9. MODIFICATIONS TO TERMS</h3>
+              <p className="text-sm text-muted-foreground">
+                Finite Element Designs Ltd reserves the right to modify these Terms at any time. Continued use of the Software after 
+                any such modifications constitutes acceptance of the modified Terms.
+              </p>
+
+              <h3 className="text-base font-semibold mt-4">10. CONTACT INFORMATION</h3>
+              <p className="text-sm text-muted-foreground">
+                For legal inquiries regarding these Terms of Service, please contact:<br/>
+                <strong>Finite Element Designs Ltd</strong><br/>
+                Deep Blue Building, Thika Road<br/>
+                Nairobi, Kenya<br/>
+                Email: finiteelementdesignsltd@gmail.com<br/>
+                Phone: +254 772 041 005
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Privacy Policy */}
+        <TabsContent value="privacy">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield size={20} className="text-primary" />
+                Privacy Policy
+              </CardTitle>
+              <CardDescription>Last updated: April 1, 2026</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 prose prose-sm max-w-none">
+              <div className="bg-primary/5 rounded-lg p-4 mb-4 border-l-4 border-primary">
+                <p className="text-sm font-semibold mb-2">🔒 PRIVACY COMMITMENT</p>
+                <p className="text-xs text-muted-foreground">
+                  Finite Element Designs Ltd is committed to protecting your privacy. This Privacy Policy explains how we handle 
+                  information collected through the BOCHABERI Construction Suite.
+                </p>
+              </div>
+
+              <h3 className="text-base font-semibold mt-4">1. INFORMATION WE COLLECT</h3>
+              <p className="text-sm text-muted-foreground">
+                <strong>Business Information:</strong> Project details, financial records, worker information, subcontractor details, 
+                operational data, and all content you voluntarily input into the Software.<br/><br/>
+                <strong>Account Information:</strong> Name, email address, role, and permissions when you create a user account.<br/><br/>
+                <strong>Usage Data:</strong> Information about how you interact with the Software (collected locally only).
+              </p>
+
+              <h3 className="text-base font-semibold mt-4">2. HOW WE USE YOUR INFORMATION</h3>
+              <p className="text-sm text-muted-foreground">
+                We use your information solely for:
+              </p>
+              <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                <li>Providing and maintaining the Software's functionality</li>
+                <li>Processing transactions and generating reports</li>
+                <li>Improving and optimizing the Software (anonymized data only)</li>
+                <li>Responding to your support inquiries</li>
+              </ul>
+              <p className="text-sm text-muted-foreground mt-2">
+                <strong>IMPORTANT:</strong> We do NOT sell, rent, or trade your data to third parties. Your data belongs to you.
+              </p>
+
+              <h3 className="text-base font-semibold mt-4">3. DATA STORAGE</h3>
+              <p className="text-sm text-muted-foreground">
+                In the current version, all data is stored locally in your browser's localStorage. The Company does not have access 
+                to your data on our servers. You are responsible for backing up your data regularly.
+              </p>
+
+              <h3 className="text-base font-semibold mt-4">4. DATA SECURITY</h3>
+              <p className="text-sm text-muted-foreground">
+                While we implement reasonable security measures, no method of electronic transmission or storage is 100% secure. 
+                You acknowledge and accept that absolute security cannot be guaranteed.
+              </p>
+
+              <h3 className="text-base font-semibold mt-4">5. YOUR RIGHTS UNDER KENYAN LAW</h3>
+              <p className="text-sm text-muted-foreground">
+                Under the Kenya Data Protection Act, 2019, you have the right to:
+              </p>
+              <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                <li>Access your personal data</li>
+                <li>Rectify inaccurate personal data</li>
+                <li>Request erasure of your personal data</li>
+                <li>Object to processing of your personal data</li>
+                <li>Data portability</li>
+              </ul>
+
+              <h3 className="text-base font-semibold mt-4">6. DATA RETENTION</h3>
+              <p className="text-sm text-muted-foreground">
+                Your data remains stored locally in your browser until you choose to delete it. The Company does not retain copies 
+                of your data on our servers.
+              </p>
+
+              <h3 className="text-base font-semibold mt-4">7. INTERNATIONAL DATA TRANSFERS</h3>
+              <p className="text-sm text-muted-foreground">
+                Since data is stored locally, no international data transfers occur without your action (e.g., manually exporting data).
+              </p>
+
+              <h3 className="text-base font-semibold mt-4">8. CHILDREN'S PRIVACY</h3>
+              <p className="text-sm text-muted-foreground">
+                The Software is not intended for children under 18. We do not knowingly collect information from children under 18.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Disclaimer & Liability */}
+        <TabsContent value="disclaimer">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Gavel size={20} className="text-primary" />
+                Disclaimer & Limitation of Liability
+              </CardTitle>
+              <CardDescription>Read carefully - This affects your legal rights</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 prose prose-sm max-w-none">
+              <div className="bg-destructive/10 rounded-lg p-4 mb-4 border-l-4 border-destructive">
+                <p className="text-sm font-semibold mb-2 text-destructive">⚠️ IMPORTANT LIABILITY DISCLAIMER</p>
+                <p className="text-xs text-muted-foreground">
+                  THE SOFTWARE IS PROVIDED FOR INFORMATIONAL AND ASSISTANCE PURPOSES ONLY. FINITE ELEMENT DESIGNS LTD 
+                  ACCEPTS NO LIABILITY FOR ANY DECISIONS MADE BASED ON INFORMATION PROVIDED BY THE SOFTWARE.
+                </p>
+              </div>
+
+              <h3 className="text-base font-semibold mt-4">1. FINANCIAL DISCLAIMER</h3>
+              <p className="text-sm text-muted-foreground">
+                The BOCHABERI Construction Suite is a tool to assist with financial management. It is NOT a substitute for:
+              </p>
+              <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                <li>Professional accounting advice</li>
+                <li>Certified financial audits</li>
+                <li>Legal or tax advice from qualified professionals</li>
+                <li>Independent verification of critical financial information</li>
+              </ul>
+              <p className="text-sm text-muted-foreground mt-2">
+                You assume full responsibility for verifying all financial calculations, tax calculations, and payroll amounts 
+                before making any financial decisions or payments.
+              </p>
+
+              <h3 className="text-base font-semibold mt-4">2. TAX COMPLIANCE DISCLAIMER</h3>
+              <p className="text-sm text-muted-foreground">
+                While the Software includes VAT calculation features (16% as per Kenyan tax law), these calculations are provided 
+                for convenience only. You are solely responsible for:
+              </p>
+              <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                <li>Ensuring compliance with all applicable tax laws and regulations</li>
+                <li>Accurate tax filings with the Kenya Revenue Authority (KRA)</li>
+                <li>Consulting with qualified tax professionals for tax-related decisions</li>
+                <li>Verifying that tax rates and regulations have not changed</li>
+              </ul>
+
+              <h3 className="text-base font-semibold mt-4">3. PAYROLL ACCURACY DISCLAIMER</h3>
+              <p className="text-sm text-muted-foreground">
+                Payroll calculations are based solely on data entered by you. Finite Element Designs Ltd:
+              </p>
+              <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                <li>Does not guarantee the accuracy of payroll calculations</li>
+                <li>Is not responsible for payroll discrepancies resulting from incorrect data entry</li>
+                <li>Recommends independent verification of all payroll amounts before payment</li>
+                <li>Accepts no liability for underpayment, overpayment, or incorrect payment of workers</li>
+              </ul>
+
+              <h3 className="text-base font-semibold mt-4">4. CONTRACTOR & SUBCONTRACTOR DISCLAIMER</h3>
+              <p className="text-sm text-muted-foreground">
+                The Software does not verify the credentials, licenses, or qualifications of any subcontractors or workers 
+                listed in the system. You are solely responsible for:
+              </p>
+              <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                <li>Verifying worker qualifications and credentials</li>
+                <li>Ensuring compliance with labor laws and regulations</li>
+                <li>Maintaining proper employment documentation</li>
+                <li>Compliance with statutory deductions (NSSF, NHIF, PAYE)</li>
+              </ul>
+
+              <h3 className="text-base font-semibold mt-4">5. PROJECT MANAGEMENT DISCLAIMER</h3>
+              <p className="text-sm text-muted-foreground">
+                Project progress calculations (based on income received vs contract sum) are estimates only. Actual project 
+                progress may vary based on factors not captured by the Software, including:
+              </p>
+              <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                <li>Work completed but not yet certified for payment</li>
+                <li>Retention amounts not yet released</li>
+                <li>Variations and change orders</li>
+                <li>Unforeseen site conditions</li>
+              </ul>
+
+              <h3 className="text-base font-semibold mt-4">6. DATA LOSS DISCLAIMER</h3>
+              <p className="text-sm text-muted-foreground">
+                Finite Element Designs Ltd is not responsible for any data loss, including but not limited to:
+              </p>
+              <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                <li>Browser cache clearing or localStorage deletion</li>
+                <li>Browser updates or incompatibilities</li>
+                <li>User error or accidental deletion</li>
+                <li>Hardware failure or data corruption</li>
+                <li>Malware, viruses, or unauthorized access</li>
+              </ul>
+              <p className="text-sm text-muted-foreground mt-2">
+                You are strongly advised to export and backup your data regularly using the Settings module.
+              </p>
+
+              <h3 className="text-base font-semibold mt-4">7. NO PROFESSIONAL ADVICE</h3>
+              <p className="text-sm text-muted-foreground">
+                The information provided by the Software is for general informational purposes only and does not constitute 
+                professional advice. You should consult qualified professionals regarding your specific circumstances.
+              </p>
+
+              <h3 className="text-base font-semibold mt-4">8. ACKNOWLEDGMENT</h3>
+              <p className="text-sm text-muted-foreground">
+                BY USING THE SOFTWARE, YOU ACKNOWLEDGE THAT YOU HAVE READ, UNDERSTOOD, AND AGREE TO BE BOUND BY THIS DISCLAIMER 
+                AND LIMITATION OF LIABILITY.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Copyright & IP Protection */}
+        <TabsContent value="copyright">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Copyright size={20} className="text-primary" />
+                Copyright & Intellectual Property Protection
+              </CardTitle>
+              <CardDescription>Protected under Kenyan and International Copyright Law</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 prose prose-sm max-w-none">
+              <div className="bg-primary/5 rounded-lg p-4 mb-4 border-l-4 border-primary">
+                <p className="text-sm font-semibold mb-2">© COPYRIGHT NOTICE</p>
+                <p className="text-xs text-muted-foreground">
+                  Copyright © {currentYear} Finite Element Designs Ltd. All rights reserved. This software is protected by 
+                  copyright laws of the Republic of Kenya and international copyright treaties.
+                </p>
+              </div>
+
+              <h3 className="text-base font-semibold mt-4">1. COPYRIGHT OWNERSHIP</h3>
+              <p className="text-sm text-muted-foreground">
+                The BOCHABERI Construction Suite, including but not limited to all source code, object code, architecture, 
+                design, user interface, graphics, icons, documentation, and all intellectual property embodied therein, is the 
+                exclusive property of <strong>Finite Element Designs Ltd</strong>, a company registered in the Republic of Kenya.
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                This Software is protected under:
+              </p>
+              <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                <li>The Copyright Act, 2001 (Kenya)</li>
+                <li>The Berne Convention for the Protection of Literary and Artistic Works</li>
+                <li>The Agreement on Trade-Related Aspects of Intellectual Property Rights (TRIPS)</li>
+                <li>Applicable international copyright treaties and conventions</li>
+              </ul>
+
+              <h3 className="text-base font-semibold mt-4">2. PROHIBITED ACTIVITIES</h3>
+              <p className="text-sm text-muted-foreground">
+                The following activities are strictly prohibited and constitute copyright infringement:
+              </p>
+              <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                <li><strong>Unauthorized Copying:</strong> Reproducing, duplicating, or copying any part of the Software</li>
+                <li><strong>Reverse Engineering:</strong> Decompiling, disassembling, or reverse engineering the Software</li>
+                <li><strong>Modification:</strong> Altering, modifying, or creating derivative works based on the Software</li>
+                <li><strong>Unauthorized Distribution:</strong> Distributing, sublicensing, or transferring the Software to any third party</li>
+                <li><strong>Commercial Exploitation:</strong> Using the Software for commercial resale or service bureau purposes</li>
+                <li><strong>Removal of Notices:</strong> Removing or altering any copyright, trademark, or proprietary notices</li>
+                <li><strong>Circumvention:</strong> Attempting to circumvent any technical protection measures</li>
+              </ul>
+
+              <h3 className="text-base font-semibold mt-4">3. ENFORCEMENT & PENALTIES</h3>
+              <p className="text-sm text-muted-foreground">
+                Copyright infringement of the BOCHABERI Construction Suite will be pursued to the fullest extent of the law. 
+                Penalties may include:
+              </p>
+              <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                <li><strong>Civil Liability:</strong> Actual damages, statutory damages of up to KES 1,000,000 per work infringed (Copyright Act, 2001)</li>
+                <li><strong>Criminal Penalties:</strong> Fines up to KES 1,000,000 or imprisonment for up to 10 years, or both</li>
+                <li><strong>Injunctions:</strong> Court orders preventing further infringement</li>
+                <li><strong>Seizure:</strong> Impoundment of infringing copies and equipment used to create them</li>
+                <li><strong>Legal Costs:</strong> Payment of attorney's fees and court costs</li>
+                <li><strong>International Enforcement:</strong> Pursuit of remedies under applicable international treaties</li>
+              </ul>
+
+              <h3 className="text-base font-semibold mt-4">4. TRADEMARK PROTECTION</h3>
+              <p className="text-sm text-muted-foreground">
+                "BOCHABERI", the BOCHABERI logo, and all related names, logos, product and service names are trademarks of 
+                Finite Element Designs Ltd. You may not use these marks without prior written permission.
+              </p>
+
+              <h3 className="text-base font-semibold mt-4">5. LEGAL JURISDICTION</h3>
+              <p className="text-sm text-muted-foreground">
+                Any disputes regarding intellectual property rights shall be resolved in the courts of the Republic of Kenya. 
+                The Company reserves the right to pursue legal action in any jurisdiction where infringement occurs.
+              </p>
+
+              <h3 className="text-base font-semibold mt-4">6. REPORTING INFRINGEMENT</h3>
+              <p className="text-sm text-muted-foreground">
+                If you become aware of any unauthorized use, copying, or distribution of the Software, please report it immediately to:<br/>
+                <strong>Legal Department</strong><br/>
+                Finite Element Designs Ltd<br/>
+                Deep Blue Building, Thika Road<br/>
+                Nairobi, Kenya<br/>
+                Email: finiteelementdesignsltd@gmail.com<br/>
+                Phone: +254 772 041 005
+              </p>
+
+              <div className="bg-destructive/5 rounded-lg p-4 mt-4 border border-destructive/30">
+                <p className="text-xs font-semibold text-destructive mb-2">⚠️ WARNING</p>
+                <p className="text-xs text-muted-foreground">
+                  Copyright infringement is a serious legal offense. Finite Element Designs Ltd actively monitors for unauthorized 
+                  use of its intellectual property and will take immediate legal action against any infringers, including seeking 
+                  criminal prosecution where applicable.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Legal Compliance */}
+        <TabsContent value="compliance">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe size={20} className="text-primary" />
+                Legal Compliance & Regulatory Information
+              </CardTitle>
+              <CardDescription>Compliance with Kenyan and International Regulations</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-muted/30 rounded-lg p-4">
+                  <p className="text-sm font-semibold mb-2 flex items-center gap-2">
+                    <BookOpen size={14} className="text-primary" />
+                    Applicable Kenyan Laws
+                  </p>
+                  <ul className="space-y-1 text-xs text-muted-foreground">
+                    <li>✓ Copyright Act, 2001 (No. 12 of 2001)</li>
+                    <li>✓ Kenya Information and Communications Act, 1998</li>
+                    <li>✓ Data Protection Act, 2019 (No. 24 of 2019)</li>
+                    <li>✓ Computer Misuse and Cybercrimes Act, 2018</li>
+                    <li>✓ Kenya Revenue Authority Tax Laws</li>
+                    <li>✓ Employment Act, 2007 (for payroll compliance)</li>
+                  </ul>
+                </div>
+                
+                <div className="bg-muted/30 rounded-lg p-4">
+                  <p className="text-sm font-semibold mb-2 flex items-center gap-2">
+                    <Globe size={14} className="text-primary" />
+                    International Compliance
+                  </p>
+                  <ul className="space-y-1 text-xs text-muted-foreground">
+                    <li>✓ Berne Convention for Copyright Protection</li>
+                    <li>✓ WIPO Copyright Treaty (WCT)</li>
+                    <li>✓ TRIPS Agreement (WTO)</li>
+                    <li>✓ GDPR (EU) - for EU-based users</li>
+                    <li>✓ Applicable international trade laws</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
+                <p className="text-sm font-semibold mb-2 flex items-center gap-2">
+                  <MapPin size={14} className="text-primary" />
+                  Company Registration Information
+                </p>
+                <ul className="space-y-1 text-xs">
+                  <li><strong>Company Name:</strong> Finite Element Designs Ltd</li>
+                  <li><strong>Registration Number:</strong> [Insert Registration Number]</li>
+                  <li><strong>KRA PIN:</strong> {companySettings.kraPin || 'P051012345Z'}</li>
+                  <li><strong>Physical Address:</strong> Deep Blue Building, Thika Road, Nairobi, Kenya</li>
+                  <li><strong>Postal Address:</strong> P.O. Box [Insert], Nairobi, Kenya</li>
+                  <li><strong>Business License:</strong> Valid and in good standing</li>
+                </ul>
+              </div>
+
+              <div className="bg-muted/30 rounded-lg p-4">
+                <p className="text-sm font-semibold mb-2">📋 Compliance Statement</p>
+                <p className="text-xs text-muted-foreground">
+                  Finite Element Designs Ltd operates in full compliance with the laws of the Republic of Kenya. This Software 
+                  is provided as a tool to assist construction companies in their operations. Users are responsible for ensuring 
+                  their use of the Software complies with all applicable laws and regulations in their jurisdiction.
+                </p>
+              </div>
+
+              <div className="bg-muted/30 rounded-lg p-4">
+                <p className="text-sm font-semibold mb-2">📞 Legal Contact</p>
+                <p className="text-xs text-muted-foreground">
+                  For legal inquiries, formal notices, or intellectual property matters:<br/>
+                  <strong>Legal Department</strong><br/>
+                  Finite Element Designs Ltd<br/>
+                  Deep Blue Building, Thika Road<br/>
+                  Nairobi, Kenya<br/>
+                  Email: finiteelementdesignsltd@gmail.com<br/>
+                  Phone: +254 772 041 005
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Footer with Legal Notice */}
+      <div className="mt-6 pt-4 border-t border-border">
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50">
+            <Copyright size={12} className="text-muted-foreground" />
+            <span className="text-[10px] text-muted-foreground">
+              {currentYear} Finite Element Designs Ltd. All rights reserved.
+            </span>
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-2">
+            BOCHABERI Construction Suite v1.0.0 | Protected under Kenyan and International Copyright Law<br/>
+            Unauthorized reproduction, distribution, or modification of this software is strictly prohibited and may result in legal action.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
