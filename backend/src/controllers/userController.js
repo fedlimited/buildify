@@ -34,7 +34,7 @@ class UserController {
       
       const result = await db.run(
         `INSERT INTO users (company_id, name, email, password, role, permissions, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id`,
         [req.user.companyId, name, email, hashedPassword, role, JSON.stringify(permissions || []), new Date().toISOString()]
       );
       

@@ -28,7 +28,7 @@ class WorkerCategoryController {
       // Use dayRate from request, not hardcoded value
       const result = await db.run(
         `INSERT INTO worker_categories (company_id, name, day_rate, color, is_active)
-         VALUES (?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?) RETURNING id`,
         [company_id, name, dayRate || 800, color || '#3b82f6', isActive !== false ? 1 : 0]
       );
 

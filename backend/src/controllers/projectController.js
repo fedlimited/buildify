@@ -42,10 +42,6 @@ getProjects: async (req, res) => {
   },
 
 
-
-
-
-
 createProject: async (req, res) => {
   try {
     const db = await getDb();
@@ -63,7 +59,7 @@ createProject: async (req, res) => {
         company_id, name, client, contract_sum, location,
         start_date, end_date, status, project_manager, description, progress,
         latitude, longitude, google_maps_url, location_address, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()) RETURNING id`,
       [
         company_id, name, client, contract_sum, location,
         start_date, end_date, status, project_manager, description, progress || 0,
@@ -81,8 +77,6 @@ createProject: async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 },
-
-
 
 
 updateProject: async (req, res) => {
@@ -129,17 +123,6 @@ updateProject: async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 },
-
-
-
-
-
-
-
-
-
-
-
 
   deleteProject: async (req, res) => {
     try {
