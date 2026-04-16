@@ -61,7 +61,7 @@ const SupplierController = {
         `INSERT INTO suppliers (
           company_id, name, kra_pin, phone, email,
           address, contact_person, payment_terms, is_active
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1) RETURNING id`,
         [company_id, name, kra_pin, phone, email, address, contact_person, payment_terms]
       );
       
