@@ -63,7 +63,7 @@ const ApprovedItemController = {
       const result = await db.run(
         `INSERT INTO approved_items (
           company_id, name, category, unit, default_price, description, is_active, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, 1, datetime('now'))`,
+        ) VALUES (?, ?, ?, ?, ?, ?, 1, NOW()) RETURNING id`,
         [company_id, name, category, unit, default_price || 0, description]
       );
       
