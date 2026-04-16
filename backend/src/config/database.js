@@ -1,21 +1,79 @@
-const sqlite3 = require('sqlite3');
-const { open } = require('sqlite');
-const path = require('path');
-const bcrypt = require('bcryptjs');
+const { Pool } = require('pg');
 
-let db = null;
+let pool = null;
+
+// Helper function to convert ? placeholders to $1, $2, etc.
+function convertPlaceholders(sql, params) {
+  let pgSql = sql;
+  let paramIndex = 1;
+  pgSql = pgSql.replace(/\?/g, () => `$${paramIndex++}`);
+  return pgSql;
+}
+
+// Core query function that handles PostgreSQL syntax
+async function query(sql, params = []) {
+  if (!pool) {
+    throw new Error('Database not initialized. Call initializeDatabase() first.');
+  }
+  
+  const client = await pool.connect();
+  try {
+    // Convert ? placeholders to $1, $2, etc. for PostgreSQL
+    const pgSql = convertPlaceholders(sql, params);
+    const result = await client.query(pgSql, params);
+    
+    // Return an object compatible with SQLite's API
+    return {
+      rows: result.rows,
+      rowCount: result.rowCount,
+      lastID: result.rows[0]?.id || null,
+      changes: result.rowCount
+    };
+  } finally {
+    client.release();
+  }
+}
+
+// Wrapper for db.get() - returns single row
+async function get(sql, params = []) {
+  const result = await query(sql, params);
+  return result.rows[0];
+}
+
+// Wrapper for db.all() - returns all rows
+async function all(sql, params = []) {
+  const result = await query(sql, params);
+  return result.rows;
+}
+
+// Wrapper for db.run() - for INSERT, UPDATE, DELETE
+async function run(sql, params = []) {
+  const result = await query(sql, params);
+  return { lastID: result.lastID, changes: result.changes };
+}
 
 async function initializeDatabase() {
-  db = await open({
-    filename: path.join(__dirname, '../../database.sqlite'),
-    driver: sqlite3.Database
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
   });
 
-  // Create tables with multi-tenancy
-  await db.exec(`
-    -- Companies table (tenants)
+  // Test the connection
+  try {
+    const result = await pool.query('SELECT NOW()');
+    console.log('PostgreSQL database connected successfully at:', result.rows[0].now);
+  } catch (error) {
+    console.error('Database connection error:', error);
+    throw error;
+  }
+
+  // Create all tables
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS companies (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       name TEXT NOT NULL,
       subdomain TEXT UNIQUE NOT NULL,
       email TEXT,
@@ -26,28 +84,25 @@ async function initializeDatabase() {
       currency_symbol TEXT DEFAULT 'KES',
       logo_url TEXT,
       is_active INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Users table (now linked to company)
     CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      company_id INTEGER NOT NULL,
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
       email TEXT NOT NULL,
       password TEXT NOT NULL,
       role TEXT DEFAULT 'user',
       permissions TEXT,
       is_active INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(company_id, email),
-      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(company_id, email)
     );
 
-    -- Projects table (linked to company)
     CREATE TABLE IF NOT EXISTS projects (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      company_id INTEGER NOT NULL,
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
       client TEXT NOT NULL,
       contract_sum REAL NOT NULL,
@@ -57,15 +112,18 @@ async function initializeDatabase() {
       status TEXT DEFAULT 'Active',
       project_manager TEXT,
       description TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+      progress INTEGER DEFAULT 0,
+      latitude REAL,
+      longitude REAL,
+      google_maps_url TEXT,
+      location_address TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Income/Certificates table
     CREATE TABLE IF NOT EXISTS income (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      company_id INTEGER NOT NULL,
-      project_id INTEGER NOT NULL,
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
       certificate_no TEXT NOT NULL,
       date TEXT NOT NULL,
       gross_amount REAL NOT NULL,
@@ -75,16 +133,13 @@ async function initializeDatabase() {
       payment_method TEXT,
       status TEXT DEFAULT 'Pending',
       notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
-      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Expenses table
     CREATE TABLE IF NOT EXISTS expenses (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      company_id INTEGER NOT NULL,
-      project_id INTEGER NOT NULL,
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
       project_name TEXT NOT NULL,
       date TEXT NOT NULL,
       category TEXT NOT NULL,
@@ -95,76 +150,62 @@ async function initializeDatabase() {
       status TEXT DEFAULT 'Paid',
       reference TEXT,
       subcontractor_id INTEGER,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
-      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Worker Categories table
     CREATE TABLE IF NOT EXISTS worker_categories (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      company_id INTEGER NOT NULL,
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
       day_rate REAL NOT NULL,
       color TEXT,
-      is_active INTEGER DEFAULT 1,
-      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+      is_active INTEGER DEFAULT 1
     );
 
-    -- Workers table
     CREATE TABLE IF NOT EXISTS workers (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      company_id INTEGER NOT NULL,
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
       phone TEXT NOT NULL,
-      category_id INTEGER NOT NULL,
-      project_id INTEGER NOT NULL,
+      category_id INTEGER NOT NULL REFERENCES worker_categories(id),
+      project_id INTEGER NOT NULL REFERENCES projects(id),
       day_rate REAL NOT NULL,
       is_active INTEGER DEFAULT 1,
-      date_added TEXT,
-      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
-      FOREIGN KEY (category_id) REFERENCES worker_categories(id),
-      FOREIGN KEY (project_id) REFERENCES projects(id)
+      date_added TEXT
     );
 
-    -- Payroll Records table
     CREATE TABLE IF NOT EXISTS payroll_records (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      company_id INTEGER NOT NULL,
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       week_number INTEGER NOT NULL,
       year INTEGER NOT NULL,
       week_start TEXT NOT NULL,
       week_end TEXT NOT NULL,
-      project_id INTEGER NOT NULL,
+      project_id INTEGER NOT NULL REFERENCES projects(id),
       project_name TEXT NOT NULL,
       status TEXT DEFAULT 'Draft',
       entries TEXT NOT NULL,
       total_gross_pay REAL NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       approved_at TEXT,
       paid_at TEXT,
-      expense_id INTEGER,
-      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
-      FOREIGN KEY (project_id) REFERENCES projects(id)
+      expense_id INTEGER
     );
 
-    -- Approved Items (Materials) table
     CREATE TABLE IF NOT EXISTS approved_items (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      company_id INTEGER NOT NULL,
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
       category TEXT NOT NULL,
       unit TEXT NOT NULL,
       default_price REAL NOT NULL,
       description TEXT,
-      is_active INTEGER DEFAULT 1,
-      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+      is_active INTEGER DEFAULT 1
     );
 
-    -- Suppliers table
     CREATE TABLE IF NOT EXISTS suppliers (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      company_id INTEGER NOT NULL,
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
       kra_pin TEXT,
       phone TEXT NOT NULL,
@@ -172,18 +213,16 @@ async function initializeDatabase() {
       address TEXT,
       contact_person TEXT,
       payment_terms TEXT,
-      is_active INTEGER DEFAULT 1,
-      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+      is_active INTEGER DEFAULT 1
     );
 
-    -- Purchase Orders table
     CREATE TABLE IF NOT EXISTS purchase_orders (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      company_id INTEGER NOT NULL,
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       order_number TEXT NOT NULL,
-      supplier_id INTEGER NOT NULL,
+      supplier_id INTEGER NOT NULL REFERENCES suppliers(id),
       supplier_name TEXT NOT NULL,
-      project_id INTEGER NOT NULL,
+      project_id INTEGER NOT NULL REFERENCES projects(id),
       project_name TEXT NOT NULL,
       order_date TEXT NOT NULL,
       expected_date TEXT,
@@ -194,22 +233,18 @@ async function initializeDatabase() {
       status TEXT DEFAULT 'Ordered',
       payment_status TEXT DEFAULT 'Unpaid',
       notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
-      FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
-      FOREIGN KEY (project_id) REFERENCES projects(id)
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Supplies table
     CREATE TABLE IF NOT EXISTS supplies (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      company_id INTEGER NOT NULL,
-      supplier_id INTEGER NOT NULL,
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      supplier_id INTEGER NOT NULL REFERENCES suppliers(id),
       supplier_name TEXT NOT NULL,
-      project_id INTEGER NOT NULL,
+      project_id INTEGER NOT NULL REFERENCES projects(id),
       project_name TEXT NOT NULL,
       date TEXT NOT NULL,
-      item_id INTEGER NOT NULL,
+      item_id INTEGER REFERENCES approved_items(id),
       item_name TEXT NOT NULL,
       unit TEXT NOT NULL,
       quantity REAL NOT NULL,
@@ -221,20 +256,16 @@ async function initializeDatabase() {
       order_id INTEGER,
       delivery_note TEXT,
       notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
-      FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
-      FOREIGN KEY (item_id) REFERENCES approved_items(id)
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Store Transactions table
     CREATE TABLE IF NOT EXISTS store_transactions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      company_id INTEGER NOT NULL,
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       date TEXT NOT NULL,
-      project_id INTEGER NOT NULL,
+      project_id INTEGER NOT NULL REFERENCES projects(id),
       project_name TEXT NOT NULL,
-      item_id INTEGER NOT NULL,
+      item_id INTEGER NOT NULL REFERENCES approved_items(id),
       item_name TEXT NOT NULL,
       unit TEXT NOT NULL,
       category TEXT NOT NULL,
@@ -247,16 +278,12 @@ async function initializeDatabase() {
       issued_to TEXT,
       returned_by TEXT,
       notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
-      FOREIGN KEY (project_id) REFERENCES projects(id),
-      FOREIGN KEY (item_id) REFERENCES approved_items(id)
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Subcontractors table
     CREATE TABLE IF NOT EXISTS subcontractors (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      company_id INTEGER NOT NULL,
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
       phone TEXT NOT NULL,
       email TEXT,
@@ -265,16 +292,14 @@ async function initializeDatabase() {
       address TEXT,
       contact_person TEXT,
       is_active INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Invoices table
     CREATE TABLE IF NOT EXISTS invoices (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      company_id INTEGER NOT NULL,
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       invoice_number TEXT NOT NULL,
-      project_id INTEGER NOT NULL,
+      project_id INTEGER NOT NULL REFERENCES projects(id),
       project_name TEXT NOT NULL,
       client_name TEXT NOT NULL,
       date TEXT NOT NULL,
@@ -285,42 +310,102 @@ async function initializeDatabase() {
       total REAL NOT NULL,
       status TEXT DEFAULT 'Draft',
       notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
-      FOREIGN KEY (project_id) REFERENCES projects(id)
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS otp_codes (
+      id SERIAL PRIMARY KEY,
+      email TEXT NOT NULL,
+      code TEXT NOT NULL,
+      purpose TEXT NOT NULL,
+      expires_at TIMESTAMP NOT NULL,
+      used INTEGER DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_otp_codes_email_code ON otp_codes(email, code);
+    CREATE INDEX IF NOT EXISTS idx_otp_codes_expires_at ON otp_codes(expires_at);
+
+    CREATE TABLE IF NOT EXISTS currency_settings (
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      currency_code TEXT DEFAULT 'KES',
+      currency_symbol TEXT DEFAULT 'KSh',
+      decimal_places INTEGER DEFAULT 2,
+      thousand_separator TEXT DEFAULT ',',
+      decimal_separator TEXT DEFAULT '.',
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS quotations (
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      subcontractor_id INTEGER NOT NULL REFERENCES subcontractors(id),
+      subcontractor_name TEXT NOT NULL,
+      project_id INTEGER NOT NULL REFERENCES projects(id),
+      project_name TEXT NOT NULL,
+      description TEXT,
+      amount REAL NOT NULL,
+      date TEXT NOT NULL,
+      status TEXT DEFAULT 'Pending',
+      notes TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS site_diary_entries (
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      date TEXT NOT NULL,
+      project_id INTEGER NOT NULL REFERENCES projects(id),
+      project_name TEXT NOT NULL,
+      weather TEXT,
+      total_workers INTEGER DEFAULT 0,
+      activities TEXT,
+      inspections TEXT,
+      deliveries TEXT,
+      incidents TEXT,
+      challenges TEXT,
+      summary TEXT,
+      status TEXT DEFAULT 'Draft',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
 
-  // Create demo company if not exists
-  const demoCompany = await db.get('SELECT * FROM companies WHERE subdomain = ?', ['demo']);
-  if (!demoCompany) {
-    await db.run(
-      `INSERT INTO companies (name, subdomain, email, phone, address, kra_pin)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      ['Demo Construction Ltd', 'demo', 'demo@bochaberi.co.ke', '+254 700 000 000', 'Nairobi, Kenya', 'P051012345Z']
-    );
-
-    // Get the demo company ID
-    const company = await db.get('SELECT * FROM companies WHERE subdomain = ?', ['demo']);
-    
-    // Create admin user for demo company
-    const hashedPassword = await bcrypt.hash('admin123', 10);
-    await db.run(
-      `INSERT INTO users (company_id, name, email, password, role, permissions)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [company.id, 'Admin User', 'admin@demo.com', hashedPassword, 'admin', JSON.stringify([])]
-    );
-  }
-
-  console.log('Multi-tenant database initialized successfully');
-  return db;
+  console.log('PostgreSQL database initialized with all tables');
+  return pool;
 }
 
+// Main database interface - returns an object with SQLite-compatible methods
 function getDb() {
-  if (!db) {
+  if (!pool) {
     throw new Error('Database not initialized. Call initializeDatabase() first.');
   }
-  return db;
+  
+  // Return an object that mimics the SQLite interface
+  return {
+    // For SELECT queries that return a single row
+    get: async (sql, params = []) => {
+      return get(sql, params);
+    },
+    
+    // For SELECT queries that return multiple rows
+    all: async (sql, params = []) => {
+      return all(sql, params);
+    },
+    
+    // For INSERT, UPDATE, DELETE queries
+    run: async (sql, params = []) => {
+      return run(sql, params);
+    },
+    
+    // Direct query access if needed
+    query: async (sql, params = []) => {
+      return query(sql, params);
+    },
+    
+    // Get the underlying pool if needed
+    getPool: () => pool
+  };
 }
 
-module.exports = { initializeDatabase, getDb };
+module.exports = { initializeDatabase, getDb, query, get, all, run };
