@@ -66,7 +66,7 @@ const SubcontractorController = {
         `INSERT INTO subcontractors (
           company_id, name, phone, email, kra_pin,
           specialization, address, contact_person, is_active, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, datetime('now'))`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, NOW()) RETURNING id`,
         [company_id, name, phone, email, kra_pin, specialization, address, contact_person]
       );
       
