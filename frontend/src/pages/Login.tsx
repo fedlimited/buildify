@@ -111,7 +111,7 @@ const Login: React.FC = () => {
           fetchCurrencySettings()
         ]).catch(err => console.error('Fetch error:', err));
 
-        window.location.href = '/';
+        window.location.href = '/dashboard';
       } else {
         setError(response?.message || 'Invalid OTP code');
       }
@@ -488,3 +488,5 @@ const Login: React.FC = () => {
 };
 
 export default Login;
+
+
