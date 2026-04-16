@@ -6,16 +6,16 @@ const currencyController = {
     try {
       const db = await getDb();
       const company_id = req.user?.companyId || req.user?.company_id;
-      
+
       let settings = await db.get(
         'SELECT * FROM currency_settings WHERE company_id = ?',
         [company_id]
       );
-      
+
       if (!settings) {
         // Create default settings if none exist
         await db.run(
-          `INSERT INTO currency_settings (company_id, currency_code, currency_symbol) 
+          `INSERT INTO currency_settings (company_id, currency_code, currency_symbol)
            VALUES (?, 'KES', 'KSh')`,
           [company_id]
         );
@@ -24,40 +24,59 @@ const currencyController = {
           [company_id]
         );
       }
-      
+
       res.json(settings);
     } catch (error) {
       console.error('Error in getCurrencySettings:', error);
       res.status(500).json({ error: error.message });
     }
   },
-  
+
   // Update currency settings
   updateCurrencySettings: async (req, res) => {
     try {
       const db = await getDb();
       const company_id = req.user?.companyId || req.user?.company_id;
       const { currency_code, currency_symbol, decimal_places, thousand_separator, decimal_separator } = req.body;
-      
-      await db.run(
-        `INSERT OR REPLACE INTO currency_settings 
-         (company_id, currency_code, currency_symbol, decimal_places, thousand_separator, decimal_separator, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-        [company_id, currency_code, currency_symbol, decimal_places || 2, thousand_separator || ',', decimal_separator || '.']
+
+      // Check if settings exist
+      const existing = await db.get(
+        'SELECT * FROM currency_settings WHERE company_id = ?',
+        [company_id]
       );
-      
+
+      if (existing) {
+        // Update existing
+        await db.run(
+          `UPDATE currency_settings SET
+            currency_code = ?, currency_symbol = ?, decimal_places = ?,
+            thousand_separator = ?, decimal_separator = ?, updated_at = CURRENT_TIMESTAMP
+          WHERE company_id = ?`,
+          [currency_code, currency_symbol, decimal_places || 2, thousand_separator || ',', decimal_separator || '.', company_id]
+        );
+      } else {
+        // Insert new
+        await db.run(
+          `INSERT INTO currency_settings (
+            company_id, currency_code, currency_symbol, decimal_places,
+            thousand_separator, decimal_separator, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+          [company_id, currency_code, currency_symbol, decimal_places || 2, thousand_separator || ',', decimal_separator || '.']
+        );
+      }
+
       const updated = await db.get(
         'SELECT * FROM currency_settings WHERE company_id = ?',
         [company_id]
       );
-      
+
       res.json(updated);
     } catch (error) {
       console.error('Error in updateCurrencySettings:', error);
       res.status(500).json({ error: error.message });
     }
   },
-  
+
   // Get all available currencies
   getAvailableCurrencies: async (req, res) => {
     const currencies = [
