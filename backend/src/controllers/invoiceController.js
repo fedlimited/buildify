@@ -102,7 +102,7 @@ const InvoiceController = {
           company_id, invoice_number, project_id, project_name,
           client_name, date, due_date, items, subtotal,
           vat, total, status, notes, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()) RETURNING id`,
         [
           company_id,
           finalInvoiceNumber, 
