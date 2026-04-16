@@ -18,17 +18,14 @@ async function query(sql, params = []) {
   
   const client = await pool.connect();
   try {
-    // Convert ? placeholders to $1, $2, etc. for PostgreSQL
     const pgSql = convertPlaceholders(sql, params);
     const result = await client.query(pgSql, params);
     
-    // Extract lastID from INSERT RETURNING statements
     let lastID = null;
     if (pgSql.toUpperCase().includes('RETURNING') && result.rows.length > 0) {
       lastID = result.rows[0].id;
     }
     
-    // Return an object compatible with SQLite's API
     return {
       rows: result.rows,
       rowCount: result.rowCount,
@@ -40,19 +37,16 @@ async function query(sql, params = []) {
   }
 }
 
-// Wrapper for db.get() - returns single row
 async function get(sql, params = []) {
   const result = await query(sql, params);
   return result.rows[0];
 }
 
-// Wrapper for db.all() - returns all rows
 async function all(sql, params = []) {
   const result = await query(sql, params);
   return result.rows;
 }
 
-// Wrapper for db.run() - for INSERT, UPDATE, DELETE
 async function run(sql, params = []) {
   const result = await query(sql, params);
   return { lastID: result.lastID, changes: result.changes };
@@ -67,7 +61,6 @@ async function initializeDatabase() {
     connectionTimeoutMillis: 2000,
   });
 
-  // Test the connection
   try {
     const result = await pool.query('SELECT NOW()');
     console.log('PostgreSQL database connected successfully at:', result.rows[0].now);
@@ -76,7 +69,6 @@ async function initializeDatabase() {
     throw error;
   }
 
-  // Create all tables
   await pool.query(`
     CREATE TABLE IF NOT EXISTS companies (
       id SERIAL PRIMARY KEY,
@@ -198,23 +190,17 @@ async function initializeDatabase() {
       expense_id INTEGER
     );
 
-
-
-
-CREATE TABLE IF NOT EXISTS approved_items (
-  id SERIAL PRIMARY KEY,
-  company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  category TEXT NOT NULL,
-  unit TEXT NOT NULL,
-  default_price REAL NOT NULL,
-  description TEXT,
-  is_active INTEGER DEFAULT 1,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-
-
+    CREATE TABLE IF NOT EXISTS approved_items (
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      category TEXT NOT NULL,
+      unit TEXT NOT NULL,
+      default_price REAL NOT NULL,
+      description TEXT,
+      is_active INTEGER DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
 
     CREATE TABLE IF NOT EXISTS suppliers (
       id SERIAL PRIMARY KEY,
@@ -380,66 +366,50 @@ CREATE TABLE IF NOT EXISTS approved_items (
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-
-
-
-CREATE TABLE IF NOT EXISTS site_diary_entries (
-  id SERIAL PRIMARY KEY,
-  company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-  date TEXT NOT NULL,
-  project_id INTEGER NOT NULL REFERENCES projects(id),
-  project_name TEXT NOT NULL,
-  weather TEXT,
-  total_workers INTEGER DEFAULT 0,
-  activities TEXT,
-  inspections TEXT,
-  deliveries TEXT,
-  incidents TEXT,
-  challenges TEXT,
-  site_workers TEXT,
-  site_subcontractors TEXT,
-  summary TEXT,
-  status TEXT DEFAULT 'Draft',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-
-
+    CREATE TABLE IF NOT EXISTS site_diary_entries (
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      date TEXT NOT NULL,
+      project_id INTEGER NOT NULL REFERENCES projects(id),
+      project_name TEXT NOT NULL,
+      weather TEXT,
+      total_workers INTEGER DEFAULT 0,
+      activities TEXT,
+      inspections TEXT,
+      deliveries TEXT,
+      incidents TEXT,
+      challenges TEXT,
+      site_workers TEXT,
+      site_subcontractors TEXT,
+      summary TEXT,
+      status TEXT DEFAULT 'Draft',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
 
   console.log('PostgreSQL database initialized with all tables');
   return pool;
 }
 
-// Main database interface - returns an object with SQLite-compatible methods
 function getDb() {
   if (!pool) {
     throw new Error('Database not initialized. Call initializeDatabase() first.');
   }
   
-  // Return an object that mimics the SQLite interface
   return {
-    // For SELECT queries that return a single row
     get: async (sql, params = []) => {
       return get(sql, params);
     },
-    
-    // For SELECT queries that return multiple rows
     all: async (sql, params = []) => {
       return all(sql, params);
     },
-    
-    // For INSERT, UPDATE, DELETE queries
     run: async (sql, params = []) => {
       return run(sql, params);
     },
-    
-    // Direct query access if needed
     query: async (sql, params = []) => {
       return query(sql, params);
     },
-    
-    // Get the underlying pool if needed
     getPool: () => pool
   };
 }
