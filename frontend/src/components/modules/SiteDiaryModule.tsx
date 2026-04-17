@@ -483,40 +483,50 @@ export function SiteDiaryModule() {
     printWindow?.print();
   };
 
+
+
   const handleSave = async () => {
-    setLoading(true);
-    try {
-      const entryData = {
-        date,
-        projectId,
-        projectName: getProjectName(),
-        weather: { condition: weatherCondition, temp: temperature },
-        activities,
-        deliveries,
-        incidents,
-        siteWorkers,
-        siteSubcontractors,
-        totalWorkers,
-        summary: { workDone, plansTomorrow, challenges },
-        status: 'Submitted'
-      };
-      
-      if (editing) {
-        await updateSiteDiaryEntry(editing.id, entryData);
-      } else {
-        await addSiteDiaryEntry(entryData);
-      }
+const handleSave = async () => {
+  setLoading(true);
+  try {
+    const entryData = {
+      date,
+      projectId,
+      projectName: getProjectName(),
+      weather: { condition: weatherCondition, temp: temperature },
+      activities,
+      deliveries,
+      incidents,
+      siteWorkers,
+      siteSubcontractors,
+      totalWorkers,
+      summary: { workDone, plansTomorrow, challenges },
+      status: 'Submitted'
+    };
+    
+    console.log('Entry data being sent:', entryData);  // Add this to debug
+    
+    if (editing) {
+      await updateSiteDiaryEntry(editing.id, entryData);
       await fetchSiteDiaryEntries();
       setOpen(false);
       resetForm();
-      alert(editing ? 'Entry updated successfully!' : 'Entry saved successfully!');
-    } catch (error) {
-      console.error('Failed to save:', error);
-      alert('Failed to save. Please try again.');
-    } finally {
-      setLoading(false);
+      alert('Entry updated successfully!');
+    } else {
+      // The addSiteDiaryEntry function will handle the page reload
+      await addSiteDiaryEntry(entryData);
+      // No need to call fetchSiteDiaryEntries or alert here because page will reload
     }
-  };
+  } catch (error) {
+    console.error('Failed to save:', error);
+    alert('Failed to save. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
 
   const resetForm = () => {
     setDate(new Date().toISOString().split('T')[0]);
