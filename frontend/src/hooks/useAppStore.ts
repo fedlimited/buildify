@@ -1664,45 +1664,44 @@ addStoreTransaction: async (transaction) => {
 
 
 
-
-
-
   // ========== SITE DIARY ==========
 fetchSiteDiaryEntries: async () => {
   try {
     console.log('Fetching site diary entries from API...');
-    const entries = await api.getSiteDiaryEntries();
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/site-diary-entries`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const entries = await response.json();
     console.log('Raw entries from API:', entries);
     
-    // Map snake_case to camelCase for frontend
+    // The API returns camelCase fields directly - use them as-is!
     const mappedEntries = entries.map(entry => ({
       id: entry.id,
       date: entry.date,
-      projectId: entry.project_id,
-      projectName: entry.project_name,
+      projectId: entry.projectId,           // ✅ camelCase from API
+      projectName: entry.projectName,        // ✅ camelCase from API
       weather: entry.weather || {},
-      totalWorkers: entry.total_workers,
+      totalWorkers: entry.totalWorkers,      // ✅ camelCase from API (this is the key!)
       activities: entry.activities || [],
-      inspections: entry.inspections || [],
       deliveries: entry.deliveries || [],
       incidents: entry.incidents || [],
-      challenges: entry.challenges || [],
+      siteWorkers: entry.siteWorkers,        // ✅ camelCase from API
+      siteSubcontractors: entry.siteSubcontractors || [],
       summary: entry.summary || {},
       status: entry.status,
-      createdAt: entry.created_at,
-      companyId: entry.company_id
+      createdAt: entry.createdAt
     }));
     
-    console.log('Mapped entries:', mappedEntries);
+    console.log('Mapped entries count:', mappedEntries.length);
+    console.log('First entry totalWorkers:', mappedEntries[0]?.totalWorkers);
+    console.log('First entry siteWorkers:', mappedEntries[0]?.siteWorkers);
     set({ siteDiaryEntries: mappedEntries });
     storage.setSiteDiaryEntries(mappedEntries);
   } catch (error) {
     console.error('Failed to fetch site diary entries:', error);
   }
 },
-
-
-
 
 
 
@@ -1742,28 +1741,32 @@ addSiteDiaryEntry: async (entry) => {
       const error = await response.json();
       throw new Error(error.error || 'Failed to create site diary entry');
     }
+
+
+
     
-    const newEntry = await response.json();
-    console.log('Response from backend:', newEntry);
-    
-    // Map response back to camelCase for the store
-    const mappedEntry = {
-      id: newEntry.id,
-      date: newEntry.date,
-      projectId: newEntry.project_id,
-      projectName: newEntry.project_name,
-      weather: newEntry.weather || {},
-      totalWorkers: newEntry.total_workers || 0,
-      activities: newEntry.activities || [],
-      deliveries: newEntry.deliveries || [],
-      incidents: newEntry.incidents || [],
-      siteWorkers: newEntry.site_workers || [],
-      siteSubcontractors: newEntry.site_subcontractors || [],
-      summary: newEntry.summary || {},
-      status: newEntry.status || 'Submitted',
-      createdAt: newEntry.created_at
-    };
-    
+const newEntry = await response.json();
+console.log('Response from backend:', newEntry);
+
+// Map response back to camelCase for the store
+const mappedEntry = {
+  id: newEntry.id,
+  date: newEntry.date,
+  projectId: newEntry.projectId,           // ✅ camelCase from API
+  projectName: newEntry.projectName,        // ✅ camelCase from API
+  weather: newEntry.weather || {},
+  totalWorkers: newEntry.totalWorkers,      // ✅ camelCase from API
+  activities: newEntry.activities || [],
+  deliveries: newEntry.deliveries || [],
+  incidents: newEntry.incidents || [],
+  siteWorkers: newEntry.siteWorkers,        // ✅ camelCase from API
+  siteSubcontractors: newEntry.siteSubcontractors || [],
+  summary: newEntry.summary || {},
+  status: newEntry.status || 'Submitted',
+  createdAt: newEntry.createdAt
+};
+
+  
     set((state) => ({ 
       siteDiaryEntries: [mappedEntry, ...state.siteDiaryEntries] 
     }));
