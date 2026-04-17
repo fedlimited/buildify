@@ -144,9 +144,6 @@ app.put('/api/supplies/:id', authenticateToken, SupplyController.updateSupply);
 app.delete('/api/supplies/:id', authenticateToken, SupplyController.deleteSupply);
 app.patch('/api/supplies/:id/paid', authenticateToken, SupplyController.markAsPaid);
 
-
-
-
 // Store Transactions routes
 app.get('/api/store-transactions', StoreTransactionController.getTransactions);
 app.post('/api/store-transactions', StoreTransactionController.createTransaction);
@@ -158,6 +155,39 @@ app.get('/api/site-diary-entries', SiteDiaryController.getEntries);
 app.post('/api/site-diary-entries', SiteDiaryController.createEntry);
 app.put('/api/site-diary-entries/:id', SiteDiaryController.updateEntry);
 app.delete('/api/site-diary-entries/:id', SiteDiaryController.deleteEntry);
+
+// ========== MIGRATION ENDPOINT - Run once to add missing columns ==========
+app.post('/api/migrate/site-diary', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    const results = [];
+    
+    // Add site_workers column if not exists
+    try {
+      await db.run(`ALTER TABLE site_diary_entries ADD COLUMN IF NOT EXISTS site_workers TEXT`);
+      results.push('✅ Added site_workers column');
+    } catch (e) {
+      results.push(`site_workers: ${e.message}`);
+    }
+    
+    // Add site_subcontractors column if not exists
+    try {
+      await db.run(`ALTER TABLE site_diary_entries ADD COLUMN IF NOT EXISTS site_subcontractors TEXT`);
+      results.push('✅ Added site_subcontractors column');
+    } catch (e) {
+      results.push(`site_subcontractors: ${e.message}`);
+    }
+    
+    console.log('Migration results:', results);
+    res.json({ 
+      message: 'Migration completed',
+      results
+    });
+  } catch (error) {
+    console.error('Migration error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Subcontractors routes
 app.get('/api/subcontractors', SubcontractorController.getSubcontractors);
@@ -176,10 +206,6 @@ app.get('/api/invoices', InvoiceController.getInvoices);
 app.post('/api/invoices', InvoiceController.createInvoice);
 app.put('/api/invoices/:id', InvoiceController.updateInvoice);
 app.delete('/api/invoices/:id', InvoiceController.deleteInvoice);
-
-
-
-
 
 // ========== LOAD SAMPLE DATA ==========
 app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, res) => {
@@ -211,17 +237,11 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     
     const projectIds = [];
     for (const p of projects) {
-
-
-
       const result = await db.run(
         `INSERT INTO projects (company_id, name, client, contract_sum, location, start_date, end_date, status, project_manager, description, progress)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
         [company_id, p.name, p.client, p.contract_sum, p.location, p.start_date, p.end_date, p.status, p.project_manager, p.description, p.progress]
       );
-
-
-
       projectIds.push({ id: result.lastID, name: p.name });
     }
     console.log(`✅ Added ${projects.length} projects`);
@@ -237,17 +257,11 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     
     const categoryIds = [];
     for (const c of categories) {
-
-
-
-const result = await db.run(
-  `INSERT INTO worker_categories (company_id, name, day_rate, color, is_active)
-   VALUES (?, ?, ?, ?, ?) RETURNING id`,
-  [company_id, c.name, c.day_rate, c.color, c.is_active]
-);
-
-
-
+      const result = await db.run(
+        `INSERT INTO worker_categories (company_id, name, day_rate, color, is_active)
+         VALUES (?, ?, ?, ?, ?) RETURNING id`,
+        [company_id, c.name, c.day_rate, c.color, c.is_active]
+      );
       categoryIds.push({ id: result.lastID, name: c.name, day_rate: c.day_rate });
     }
     console.log(`✅ Added ${categories.length} worker categories`);
@@ -443,12 +457,6 @@ const result = await db.run(
     res.status(500).json({ error: error.message });
   }
 });
-
-
-
-
-
-
 
 // Start server
 async function startServer() {
