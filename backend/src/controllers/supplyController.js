@@ -154,6 +154,29 @@ const SupplyController = {
       console.error('Error in deleteSupply:', error);
       res.status(500).json({ error: error.message });
     }
+  },
+
+  // Mark supply as paid
+  markAsPaid: async (req, res) => {
+    try {
+      const db = await getDb();
+      const company_id = req.user?.companyId || req.user?.company_id;
+      const { id } = req.params;
+      
+      const result = await db.run(
+        'UPDATE supplies SET paid = 1 WHERE id = ? AND company_id = ?',
+        [id, company_id]
+      );
+      
+      if (result.changes === 0) {
+        return res.status(404).json({ error: 'Supply not found' });
+      }
+      
+      res.json({ message: 'Supply marked as paid' });
+    } catch (error) {
+      console.error('Error in markAsPaid:', error);
+      res.status(500).json({ error: error.message });
+    }
   }
 };
 

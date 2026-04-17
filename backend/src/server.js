@@ -138,10 +138,14 @@ app.delete('/api/purchase-orders/:id', PurchaseOrderController.deletePurchaseOrd
 app.patch('/api/purchase-orders/:id/status', authenticateToken, PurchaseOrderController.updatePurchaseOrderStatus);
 
 // Supplies routes
-app.get('/api/supplies', SupplyController.getSupplies);
-app.post('/api/supplies', SupplyController.createSupply);
-app.put('/api/supplies/:id', SupplyController.updateSupply);
-app.delete('/api/supplies/:id', SupplyController.deleteSupply);
+app.get('/api/supplies', authenticateToken, SupplyController.getSupplies);
+app.post('/api/supplies', authenticateToken, SupplyController.createSupply);
+app.put('/api/supplies/:id', authenticateToken, SupplyController.updateSupply);
+app.delete('/api/supplies/:id', authenticateToken, SupplyController.deleteSupply);
+app.patch('/api/supplies/:id/paid', authenticateToken, SupplyController.markAsPaid);
+
+
+
 
 // Store Transactions routes
 app.get('/api/store-transactions', StoreTransactionController.getTransactions);

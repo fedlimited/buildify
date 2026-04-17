@@ -876,6 +876,34 @@ function SuppliesTab() {
 
   const filtered = selectedProjectId ? supplies.filter(s => s.projectId === selectedProjectId) : supplies;
 
+
+const markSupplyAsPaid = async (supplyId: number) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/supplies/${supplyId}/paid`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (response.ok) {
+      const { fetchSupplies } = useAppStore();
+      await fetchSupplies();
+      alert('Supply marked as paid');
+    } else {
+      const error = await response.json();
+      alert(`Error: ${error.error}`);
+    }
+  } catch (error) {
+    console.error('Failed to mark as paid:', error);
+    alert('Failed to mark supply as paid');
+  }
+};
+
+
+
   const openNew = () => {
     setForm({
       supplierId: 0, supplierName: '',
@@ -954,7 +982,52 @@ function SuppliesTab() {
                 <td className="px-4 py-2.5 font-mono text-center">{s.quantity} {s.unit}</td>
                 <td className="px-4 py-2.5 font-mono text-right">{formatCurrency(s.unitPrice)}</td>
                 <td className="px-4 py-2.5 font-mono text-right font-medium">{formatCurrency(s.totalAmount)}</td>
-                <td className="px-4 py-2.5"><span className={`text-xs font-medium px-2 py-0.5 rounded-full ${s.paid ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>{s.paid ? 'Paid' : 'Unpaid'}</span></td>
+
+
+
+
+<td className="px-4 py-2.5">
+  {s.paid ? (
+    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-success/10 text-success">
+      Paid
+    </span>
+  ) : (
+    <Button 
+      variant="ghost" 
+      size="sm" 
+      onClick={async () => {
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch(`${API_BASE_URL}/supplies/${s.id}/paid`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          if (response.ok) {
+            const { fetchSupplies } = useAppStore();
+            await fetchSupplies();
+            alert('Supply marked as paid');
+          } else {
+            const error = await response.json();
+            alert(`Error: ${error.error}`);
+          }
+        } catch (error) {
+          console.error('Failed to mark as paid:', error);
+          alert('Failed to mark supply as paid');
+        }
+      }}
+      className="text-xs h-7 px-2 bg-blue-50 hover:bg-blue-100 text-blue-600"
+    >
+      Mark Paid
+    </Button>
+  )}
+</td>
+
+
+
+
               </tr>
             ))}
             {!filtered.length && <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">No supply records</td></tr>}
