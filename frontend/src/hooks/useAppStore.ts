@@ -1710,18 +1710,18 @@ addSiteDiaryEntry: async (entry) => {
   try {
     console.log('Adding site diary entry with data:', entry);
     
-    // Transform camelCase to snake_case for backend
+    // The entry already has snake_case from handleSave
     const payload = {
       date: entry.date,
-      project_id: entry.project_id,      // ← Use entry.project_id
-      project_name: entry.project_name,   // ← Use entry.project_name
+      project_id: entry.project_id,
+      project_name: entry.project_name,
       weather: entry.weather || {},
-      total_workers: entry.totalWorkers || 0,
+      total_workers: entry.total_workers || 0,      // ← Use entry.total_workers (snake_case)
       activities: entry.activities || [],
       deliveries: entry.deliveries || [],
       incidents: entry.incidents || [],
-      site_workers: entry.siteWorkers || [],
-      site_subcontractors: entry.siteSubcontractors || [],
+      site_workers: entry.site_workers || [],        // ← Use entry.site_workers (snake_case)
+      site_subcontractors: entry.site_subcontractors || [],
       summary: entry.summary || {},
       status: entry.status || 'Submitted'
     };
@@ -1746,7 +1746,7 @@ addSiteDiaryEntry: async (entry) => {
     const newEntry = await response.json();
     console.log('Response from backend:', newEntry);
     
-    // Map response back to camelCase
+    // Map response back to camelCase for the store
     const mappedEntry = {
       id: newEntry.id,
       date: newEntry.date,
@@ -1763,25 +1763,23 @@ addSiteDiaryEntry: async (entry) => {
       status: newEntry.status || 'Submitted',
       createdAt: newEntry.created_at
     };
-
     
-
-// After getting newEntry and creating mappedEntry
-set((state) => ({ 
-  siteDiaryEntries: [mappedEntry, ...state.siteDiaryEntries] 
-}));
-
-console.log('Site diary entry added to store. Total:', get().siteDiaryEntries.length);
-alert('Site diary entry saved successfully! Page will refresh.');
-window.location.reload();
-
-
-
+    set((state) => ({ 
+      siteDiaryEntries: [mappedEntry, ...state.siteDiaryEntries] 
+    }));
+    
+    console.log('Site diary entry added to store. Total:', get().siteDiaryEntries.length);
+    alert('Site diary entry saved successfully! Page will refresh.');
+    window.location.reload();
+    
   } catch (error) {
     console.error('Failed to add site diary entry:', error);
     alert('Failed to save site diary entry. Please try again.');
   }
 },
+
+
+
 
 
   updateSiteDiaryEntry: async (e) => {
