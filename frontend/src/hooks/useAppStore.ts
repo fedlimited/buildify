@@ -1763,21 +1763,25 @@ addSiteDiaryEntry: async (entry) => {
       status: newEntry.status || 'Submitted',
       createdAt: newEntry.created_at
     };
+
     
-    set((state) => ({ 
-      siteDiaryEntries: [mappedEntry, ...state.siteDiaryEntries] 
-    }));
-    
-    console.log('Site diary entry added to store. Total:', get().siteDiaryEntries.length);
-    alert('Site diary entry saved successfully!');
+
+// After getting newEntry and creating mappedEntry
+set((state) => ({ 
+  siteDiaryEntries: [mappedEntry, ...state.siteDiaryEntries] 
+}));
+
+console.log('Site diary entry added to store. Total:', get().siteDiaryEntries.length);
+alert('Site diary entry saved successfully! Page will refresh.');
+window.location.reload();
+
+
+
   } catch (error) {
     console.error('Failed to add site diary entry:', error);
     alert('Failed to save site diary entry. Please try again.');
   }
 },
-
-
-
 
 
   updateSiteDiaryEntry: async (e) => {
