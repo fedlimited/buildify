@@ -152,9 +152,13 @@ app.delete('/api/store-transactions/:id', StoreTransactionController.deleteTrans
 
 // Site Diary routes
 app.get('/api/site-diary-entries', SiteDiaryController.getEntries);
+app.get('/api/site-diary-entries/:id', SiteDiaryController.getEntryById);
 app.post('/api/site-diary-entries', SiteDiaryController.createEntry);
 app.put('/api/site-diary-entries/:id', SiteDiaryController.updateEntry);
 app.delete('/api/site-diary-entries/:id', SiteDiaryController.deleteEntry);
+app.get('/api/site-diary-entries/statistics', SiteDiaryController.getStatistics);
+app.get('/api/site-diary-entries/range', SiteDiaryController.getEntriesByDateRange);
+
 
 // ========== MIGRATION ENDPOINT - Run once to add missing columns ==========
 app.post('/api/migrate/site-diary', authenticateToken, requireAdmin, async (req, res) => {
