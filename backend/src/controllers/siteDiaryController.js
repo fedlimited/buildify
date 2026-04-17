@@ -65,7 +65,7 @@ const siteDiaryController = {
           weather, activities, deliveries, incidents,
           site_workers, site_subcontractors, total_workers,
           summary, status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()) RETURNING id`,
         [
           company_id, 
           date, 
@@ -139,7 +139,7 @@ const siteDiaryController = {
           date = ?, project_id = ?, project_name = ?,
           weather = ?, activities = ?, deliveries = ?, incidents = ?,
           site_workers = ?, site_subcontractors = ?, total_workers = ?,
-          summary = ?, status = ?, updated_at = datetime('now')
+          summary = ?, status = ?, updated_at = NOW()
         WHERE id = ? AND company_id = ?`,
         [
           date, projectId, projectName,
