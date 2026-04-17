@@ -7,25 +7,27 @@ const siteDiaryController = {
       const db = await getDb();
       const company_id = req.user?.companyId || req.user?.company_id || 1;
       
+      console.log('Fetching site diary entries for company:', company_id);
+      
       const entries = await db.all(
         'SELECT * FROM site_diary_entries WHERE company_id = ? ORDER BY date DESC',
         [company_id]
       );
       
-      // Parse JSON fields
+      // Parse JSON fields safely
       const parsedEntries = entries.map(entry => ({
         id: entry.id,
         date: entry.date,
         projectId: entry.project_id,
         projectName: entry.project_name,
-        weather: entry.weather ? JSON.parse(entry.weather) : { condition: 'sunny', temp: 28 },
-        activities: entry.activities ? JSON.parse(entry.activities) : [],
-        deliveries: entry.deliveries ? JSON.parse(entry.deliveries) : [],
-        incidents: entry.incidents ? JSON.parse(entry.incidents) : [],
-        siteWorkers: entry.site_workers ? JSON.parse(entry.site_workers) : [],
-        siteSubcontractors: entry.site_subcontractors ? JSON.parse(entry.site_subcontractors) : [],
+        weather: entry.weather ? (typeof entry.weather === 'string' ? JSON.parse(entry.weather) : entry.weather) : { condition: 'sunny', temp: 28 },
         totalWorkers: entry.total_workers || 0,
-        summary: entry.summary ? JSON.parse(entry.summary) : {},
+        activities: entry.activities ? (typeof entry.activities === 'string' ? JSON.parse(entry.activities) : entry.activities) : [],
+        deliveries: entry.deliveries ? (typeof entry.deliveries === 'string' ? JSON.parse(entry.deliveries) : entry.deliveries) : [],
+        incidents: entry.incidents ? (typeof entry.incidents === 'string' ? JSON.parse(entry.incidents) : entry.incidents) : [],
+        siteWorkers: [],
+        siteSubcontractors: [],
+        summary: entry.summary ? (typeof entry.summary === 'string' ? JSON.parse(entry.summary) : entry.summary) : {},
         status: entry.status || 'Draft',
         createdAt: entry.created_at
       }));
@@ -42,42 +44,38 @@ const siteDiaryController = {
     try {
       const db = await getDb();
       const company_id = req.user?.companyId || req.user?.company_id || 1;
+      
+      console.log('Request body:', req.body);
+      
       const {
         date,
-        projectId,
-        projectName,
+        project_id,
+        project_name,
         weather,
+        total_workers,
         activities,
         deliveries,
         incidents,
-        siteWorkers,
-        siteSubcontractors,
-        totalWorkers,
         summary,
         status
       } = req.body;
       
-      console.log('Creating entry:', { date, projectId, projectName });
-      
       const result = await db.run(
         `INSERT INTO site_diary_entries (
           company_id, date, project_id, project_name,
-          weather, activities, deliveries, incidents,
-          site_workers, site_subcontractors, total_workers,
-          summary, status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()) RETURNING id`,
+          weather, total_workers, activities, deliveries,
+          incidents, summary, status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()) RETURNING id`,
         [
           company_id, 
           date, 
-          projectId, 
-          projectName || '',
+          project_id, 
+          project_name || '',
           JSON.stringify(weather || { condition: 'sunny', temp: 28 }),
+          total_workers || 0,
           JSON.stringify(activities || []),
           JSON.stringify(deliveries || []),
           JSON.stringify(incidents || []),
-          JSON.stringify(siteWorkers || []),
-          JSON.stringify(siteSubcontractors || []),
-          totalWorkers || 0,
           JSON.stringify(summary || {}),
           status || 'Submitted'
         ]
@@ -88,25 +86,20 @@ const siteDiaryController = {
         [result.lastID]
       );
       
-      // Parse for response
-      const parsedEntry = {
+      res.status(201).json({
         id: newEntry.id,
         date: newEntry.date,
         projectId: newEntry.project_id,
         projectName: newEntry.project_name,
-        weather: newEntry.weather ? JSON.parse(newEntry.weather) : { condition: 'sunny', temp: 28 },
+        weather: newEntry.weather ? JSON.parse(newEntry.weather) : {},
+        totalWorkers: newEntry.total_workers || 0,
         activities: newEntry.activities ? JSON.parse(newEntry.activities) : [],
         deliveries: newEntry.deliveries ? JSON.parse(newEntry.deliveries) : [],
         incidents: newEntry.incidents ? JSON.parse(newEntry.incidents) : [],
-        siteWorkers: newEntry.site_workers ? JSON.parse(newEntry.site_workers) : [],
-        siteSubcontractors: newEntry.site_subcontractors ? JSON.parse(newEntry.site_subcontractors) : [],
-        totalWorkers: newEntry.total_workers || 0,
         summary: newEntry.summary ? JSON.parse(newEntry.summary) : {},
         status: newEntry.status,
         createdAt: newEntry.created_at
-      };
-      
-      res.status(201).json(parsedEntry);
+      });
     } catch (error) {
       console.error('Error in createEntry:', error);
       res.status(500).json({ error: error.message });
@@ -119,17 +112,16 @@ const siteDiaryController = {
       const db = await getDb();
       const company_id = req.user?.companyId || req.user?.company_id || 1;
       const { id } = req.params;
+      
       const {
         date,
-        projectId,
-        projectName,
+        project_id,
+        project_name,
         weather,
+        total_workers,
         activities,
         deliveries,
         incidents,
-        siteWorkers,
-        siteSubcontractors,
-        totalWorkers,
         summary,
         status
       } = req.body;
@@ -137,19 +129,17 @@ const siteDiaryController = {
       const result = await db.run(
         `UPDATE site_diary_entries SET
           date = ?, project_id = ?, project_name = ?,
-          weather = ?, activities = ?, deliveries = ?, incidents = ?,
-          site_workers = ?, site_subcontractors = ?, total_workers = ?,
-          summary = ?, status = ?, updated_at = NOW()
+          weather = ?, total_workers = ?, activities = ?,
+          deliveries = ?, incidents = ?, summary = ?,
+          status = ?, updated_at = NOW()
         WHERE id = ? AND company_id = ?`,
         [
-          date, projectId, projectName,
+          date, project_id, project_name,
           JSON.stringify(weather || {}),
+          total_workers || 0,
           JSON.stringify(activities || []),
           JSON.stringify(deliveries || []),
           JSON.stringify(incidents || []),
-          JSON.stringify(siteWorkers || []),
-          JSON.stringify(siteSubcontractors || []),
-          totalWorkers || 0,
           JSON.stringify(summary || {}),
           status || 'Submitted',
           id, company_id
@@ -165,24 +155,20 @@ const siteDiaryController = {
         [id, company_id]
       );
       
-      const parsedEntry = {
+      res.json({
         id: updatedEntry.id,
         date: updatedEntry.date,
         projectId: updatedEntry.project_id,
         projectName: updatedEntry.project_name,
         weather: updatedEntry.weather ? JSON.parse(updatedEntry.weather) : {},
+        totalWorkers: updatedEntry.total_workers || 0,
         activities: updatedEntry.activities ? JSON.parse(updatedEntry.activities) : [],
         deliveries: updatedEntry.deliveries ? JSON.parse(updatedEntry.deliveries) : [],
         incidents: updatedEntry.incidents ? JSON.parse(updatedEntry.incidents) : [],
-        siteWorkers: updatedEntry.site_workers ? JSON.parse(updatedEntry.site_workers) : [],
-        siteSubcontractors: updatedEntry.site_subcontractors ? JSON.parse(updatedEntry.site_subcontractors) : [],
-        totalWorkers: updatedEntry.total_workers || 0,
         summary: updatedEntry.summary ? JSON.parse(updatedEntry.summary) : {},
         status: updatedEntry.status,
         createdAt: updatedEntry.created_at
-      };
-      
-      res.json(parsedEntry);
+      });
     } catch (error) {
       console.error('Error in updateEntry:', error);
       res.status(500).json({ error: error.message });
