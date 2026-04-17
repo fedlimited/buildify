@@ -156,13 +156,29 @@ const SupplyController = {
     }
   },
 
-  // Mark supply as paid
+  // Mark supply as paid and create expense record
   markAsPaid: async (req, res) => {
     try {
       const db = await getDb();
       const company_id = req.user?.companyId || req.user?.company_id;
       const { id } = req.params;
       
+      // First, get the supply details
+      const supply = await db.get(
+        'SELECT * FROM supplies WHERE id = ? AND company_id = ?',
+        [id, company_id]
+      );
+      
+      if (!supply) {
+        return res.status(404).json({ error: 'Supply not found' });
+      }
+      
+      // Check if already paid
+      if (supply.paid === 1) {
+        return res.status(400).json({ error: 'Supply already marked as paid' });
+      }
+      
+      // Update the supply to paid
       const result = await db.run(
         'UPDATE supplies SET paid = 1 WHERE id = ? AND company_id = ?',
         [id, company_id]
@@ -172,7 +188,35 @@ const SupplyController = {
         return res.status(404).json({ error: 'Supply not found' });
       }
       
-      res.json({ message: 'Supply marked as paid' });
+      // Create an expense record for this supply
+      const totalAmount = supply.total_amount || (supply.quantity * supply.unit_price);
+      const vatAmount = supply.vat || (totalAmount * 0.16);
+      
+      await db.run(
+        `INSERT INTO expenses (
+          company_id, project_id, project_name, date, category,
+          description, amount, vat, payment_method, status, reference, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        [
+          company_id,
+          supply.project_id,
+          supply.project_name,
+          new Date().toISOString().split('T')[0],
+          'Supplier',
+          `Supply payment: ${supply.item_name} from ${supply.supplier_name}`,
+          totalAmount,
+          vatAmount,
+          'Bank Transfer',
+          'Paid',
+          `SUPPLY-${supply.id}`,
+        ]
+      );
+      
+      res.json({ 
+        message: 'Supply marked as paid and expense record created',
+        supplyId: supply.id,
+        expenseCreated: true
+      });
     } catch (error) {
       console.error('Error in markAsPaid:', error);
       res.status(500).json({ error: error.message });
