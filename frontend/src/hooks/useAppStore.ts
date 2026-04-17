@@ -1713,8 +1713,8 @@ addSiteDiaryEntry: async (entry) => {
     // Transform camelCase to snake_case for backend
     const payload = {
       date: entry.date,
-      project_id: entry.projectId,
-      project_name: entry.projectName,
+      project_id: entry.project_id,      // ← Use entry.project_id
+      project_name: entry.project_name,   // ← Use entry.project_name
       weather: entry.weather || {},
       total_workers: entry.totalWorkers || 0,
       activities: entry.activities || [],
