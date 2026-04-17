@@ -488,21 +488,21 @@ const handleSave = async () => {
   setLoading(true);
   try {
     const entryData = {
-      date,
-      projectId,
-      projectName: getProjectName(),
+      date: date,
+      project_id: projectId,
+      project_name: getProjectName(),
       weather: { condition: weatherCondition, temp: temperature },
-      activities,
-      deliveries,
-      incidents,
-      siteWorkers,
-      siteSubcontractors,
-      totalWorkers,
+      activities: activities,
+      deliveries: deliveries,
+      incidents: incidents,
+      site_workers: siteWorkers,
+      site_subcontractors: siteSubcontractors,
+      total_workers: totalWorkers,
       summary: { workDone, plansTomorrow, challenges },
       status: 'Submitted'
     };
     
-    console.log('Entry data being sent:', entryData);  // Add this to debug
+    console.log('Entry data being sent:', entryData);
     
     if (editing) {
       await updateSiteDiaryEntry(editing.id, entryData);
@@ -511,9 +511,7 @@ const handleSave = async () => {
       resetForm();
       alert('Entry updated successfully!');
     } else {
-      // The addSiteDiaryEntry function will handle the page reload
       await addSiteDiaryEntry(entryData);
-      // No need to call fetchSiteDiaryEntries or alert here because page will reload
     }
   } catch (error) {
     console.error('Failed to save:', error);
@@ -522,8 +520,6 @@ const handleSave = async () => {
     setLoading(false);
   }
 };
-
-
 
 
   const resetForm = () => {
