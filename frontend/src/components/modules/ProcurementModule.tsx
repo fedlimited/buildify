@@ -837,32 +837,8 @@ const printPurchaseOrder = (order) => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function SuppliesTab() {
-  const { supplies, projects, suppliers, approvedItems, selectedProjectId, addSupply } = useAppStore();
+  const { supplies, projects, suppliers, approvedItems, selectedProjectId, addSupply, fetchSupplies } = useAppStore();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     supplierId: 0, supplierName: '',
@@ -986,6 +962,8 @@ const markSupplyAsPaid = async (supplyId: number) => {
 
 
 
+
+
 <td className="px-4 py-2.5">
   {s.paid ? (
     <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-success/10 text-success">
@@ -995,29 +973,7 @@ const markSupplyAsPaid = async (supplyId: number) => {
     <Button 
       variant="ghost" 
       size="sm" 
-      onClick={async () => {
-        try {
-          const token = localStorage.getItem('token');
-          const response = await fetch(`${API_BASE_URL}/supplies/${s.id}/paid`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          if (response.ok) {
-            const { fetchSupplies } = useAppStore();
-            await fetchSupplies();
-            alert('Supply marked as paid');
-          } else {
-            const error = await response.json();
-            alert(`Error: ${error.error}`);
-          }
-        } catch (error) {
-          console.error('Failed to mark as paid:', error);
-          alert('Failed to mark supply as paid');
-        }
-      }}
+      onClick={() => markSupplyAsPaid(s.id)}
       className="text-xs h-7 px-2 bg-blue-50 hover:bg-blue-100 text-blue-600"
     >
       Mark Paid
