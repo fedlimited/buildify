@@ -484,6 +484,11 @@ export function SiteDiaryModule() {
   };
 
 
+
+
+
+
+
 const handleSave = async () => {
   setLoading(true);
   try {
@@ -502,7 +507,17 @@ const handleSave = async () => {
       status: 'Submitted'
     };
     
-    console.log('Entry data being sent:', entryData);
+    // ===== ADD THIS DEBUG CODE =====
+    console.log('=== DEBUG SAVE ===');
+    console.log('siteWorkers array:', siteWorkers);
+    console.log('siteWorkers count:', siteWorkers.length);
+    console.log('activities array:', activities);
+    console.log('activity workers total:', activities.reduce((sum, a) => sum + a.workersCount, 0));
+    console.log('siteSubcontractors array:', siteSubcontractors);
+    console.log('subcontractor workers total:', siteSubcontractors.reduce((sum, s) => sum + s.workersCount, 0));
+    console.log('FINAL totalWorkers:', totalWorkers);
+    console.log('entryData being sent:', entryData);
+    // ===== END DEBUG CODE =====
     
     if (editing) {
       await updateSiteDiaryEntry(editing.id, entryData);
@@ -520,26 +535,6 @@ const handleSave = async () => {
     setLoading(false);
   }
 };
-
-
-  const resetForm = () => {
-    setDate(new Date().toISOString().split('T')[0]);
-    setProjectId(selectedProjectId || 0);
-    setWeatherCondition('sunny');
-    setTemperature(28);
-    setActivities([]);
-    setDeliveries([]);
-    setIncidents([]);
-    setSiteWorkers([]);
-    setSiteSubcontractors([]);
-    setWorkDone('');
-    setPlansTomorrow('');
-    setChallenges('');
-    setEditing(null);
-    setActiveTab('basic');
-  };
-
-
 
 
 
