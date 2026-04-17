@@ -1770,7 +1770,7 @@ addSiteDiaryEntry: async (entry) => {
     
     console.log('Site diary entry added to store. Total:', get().siteDiaryEntries.length);
     alert('Site diary entry saved successfully! Page will refresh.');
-    window.location.reload();
+ 
     
   } catch (error) {
     console.error('Failed to add site diary entry:', error);
