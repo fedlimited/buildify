@@ -484,8 +484,6 @@ export function SiteDiaryModule() {
   };
 
 
-
-  const handleSave = async () => {
 const handleSave = async () => {
   setLoading(true);
   try {
