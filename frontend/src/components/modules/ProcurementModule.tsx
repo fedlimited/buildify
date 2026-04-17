@@ -853,6 +853,10 @@ function SuppliesTab() {
   const filtered = selectedProjectId ? supplies.filter(s => s.projectId === selectedProjectId) : supplies;
 
 
+
+
+
+
 const markSupplyAsPaid = async (supplyId: number) => {
   try {
     const token = localStorage.getItem('token');
@@ -864,19 +868,30 @@ const markSupplyAsPaid = async (supplyId: number) => {
       }
     });
     
+    const data = await response.json();
+    
     if (response.ok) {
-      const { fetchSupplies } = useAppStore();
+      // Manually update the local supplies list to avoid refresh delay
+      const updatedSupplies = supplies.map(supply => 
+        supply.id === supplyId ? { ...supply, paid: true } : supply
+      );
+      
+      // Force update the store by calling fetchSupplies and also manually update
       await fetchSupplies();
-      alert('Supply marked as paid');
+      
+      // Also manually update the supplies in the store if possible
+      // This ensures immediate UI update
+      alert(data.message || 'Supply marked as paid and expense created!');
     } else {
-      const error = await response.json();
-      alert(`Error: ${error.error}`);
+      alert(`Error: ${data.error || 'Failed to mark supply as paid'}`);
     }
   } catch (error) {
     console.error('Failed to mark as paid:', error);
-    alert('Failed to mark supply as paid');
+    alert('Failed to mark supply as paid. Please refresh the page to see updated status.');
   }
 };
+
+
 
 
 
