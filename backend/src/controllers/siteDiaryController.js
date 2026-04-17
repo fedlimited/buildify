@@ -46,8 +46,7 @@ const siteDiaryController = {
                     siteSubcontractors: siteSubcontractors,
                     summary: summary,
                     status: entry.status || 'Draft',
-                    createdAt: entry.created_at,
-                    updatedAt: entry.updated_at
+                    createdAt: entry.created_at
                 };
             });
             
@@ -98,8 +97,7 @@ const siteDiaryController = {
                 siteSubcontractors: siteSubcontractors,
                 summary: summary,
                 status: entry.status || 'Draft',
-                createdAt: entry.created_at,
-                updatedAt: entry.updated_at
+                createdAt: entry.created_at
             });
         } catch (error) {
             console.error('Error in getEntryById:', error);
@@ -144,8 +142,8 @@ const siteDiaryController = {
                     company_id, date, project_id, project_name,
                     weather, total_workers, activities, deliveries,
                     incidents, site_workers, site_subcontractors,
-                    summary, status, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()) RETURNING id`,
+                    summary, status, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()) RETURNING id`,
                 [
                     company_id,
                     date,
@@ -168,7 +166,7 @@ const siteDiaryController = {
                 [result.lastID]
             );
             
-            // Parse JSON fields for response - use different variable names to avoid conflict
+            // Parse JSON fields for response
             let weatherData = {}, activitiesData = [], deliveriesData = [], incidentsData = [], siteWorkersData = [], siteSubcontractorsData = [], summaryData = {};
             try { weatherData = newEntry.weather ? JSON.parse(newEntry.weather) : {}; } catch(e) {}
             try { activitiesData = newEntry.activities ? JSON.parse(newEntry.activities) : []; } catch(e) {}
@@ -192,8 +190,7 @@ const siteDiaryController = {
                 siteSubcontractors: siteSubcontractorsData,
                 summary: summaryData,
                 status: newEntry.status,
-                createdAt: newEntry.created_at,
-                updatedAt: newEntry.updated_at
+                createdAt: newEntry.created_at
             });
         } catch (error) {
             console.error('Error in createEntry:', error);
@@ -242,7 +239,6 @@ const siteDiaryController = {
             if (summary !== undefined) { updates.push('summary = ?'); values.push(JSON.stringify(summary)); }
             if (status !== undefined) { updates.push('status = ?'); values.push(status); }
             
-            updates.push('updated_at = NOW()');
             values.push(id, company_id);
             
             const query = `UPDATE site_diary_entries SET ${updates.join(', ')} WHERE id = ? AND company_id = ?`;
@@ -258,7 +254,7 @@ const siteDiaryController = {
                 [id, company_id]
             );
             
-            // Parse JSON fields for response - use different variable names
+            // Parse JSON fields for response
             let weatherData = {}, activitiesData = [], deliveriesData = [], incidentsData = [], siteWorkersData = [], siteSubcontractorsData = [], summaryData = {};
             try { weatherData = updatedEntry.weather ? JSON.parse(updatedEntry.weather) : {}; } catch(e) {}
             try { activitiesData = updatedEntry.activities ? JSON.parse(updatedEntry.activities) : []; } catch(e) {}
@@ -282,8 +278,7 @@ const siteDiaryController = {
                 siteSubcontractors: siteSubcontractorsData,
                 summary: summaryData,
                 status: updatedEntry.status,
-                createdAt: updatedEntry.created_at,
-                updatedAt: updatedEntry.updated_at
+                createdAt: updatedEntry.created_at
             });
         } catch (error) {
             console.error('Error in updateEntry:', error);
