@@ -1704,6 +1704,8 @@ fetchSiteDiaryEntries: async () => {
 
 
 
+
+
 addSiteDiaryEntry: async (entry) => {
   try {
     console.log('Adding site diary entry with data:', entry);
@@ -1716,17 +1718,32 @@ addSiteDiaryEntry: async (entry) => {
       weather: entry.weather || {},
       total_workers: entry.totalWorkers || 0,
       activities: entry.activities || [],
-      inspections: entry.inspections || [],
       deliveries: entry.deliveries || [],
       incidents: entry.incidents || [],
-      challenges: entry.challenges || [],
+      site_workers: entry.siteWorkers || [],
+      site_subcontractors: entry.siteSubcontractors || [],
       summary: entry.summary || {},
-      status: entry.status || 'Draft'
+      status: entry.status || 'Submitted'
     };
     
     console.log('Sending payload:', payload);
     
-    const newEntry = await api.createSiteDiaryEntry(payload);
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/site-diary-entries`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create site diary entry');
+    }
+    
+    const newEntry = await response.json();
     console.log('Response from backend:', newEntry);
     
     // Map response back to camelCase
@@ -1736,25 +1753,26 @@ addSiteDiaryEntry: async (entry) => {
       projectId: newEntry.project_id,
       projectName: newEntry.project_name,
       weather: newEntry.weather || {},
-      totalWorkers: newEntry.total_workers,
+      totalWorkers: newEntry.total_workers || 0,
       activities: newEntry.activities || [],
-      inspections: newEntry.inspections || [],
       deliveries: newEntry.deliveries || [],
       incidents: newEntry.incidents || [],
-      challenges: newEntry.challenges || [],
+      siteWorkers: newEntry.site_workers || [],
+      siteSubcontractors: newEntry.site_subcontractors || [],
       summary: newEntry.summary || {},
-      status: newEntry.status,
-      createdAt: newEntry.created_at,
-      companyId: newEntry.company_id
+      status: newEntry.status || 'Submitted',
+      createdAt: newEntry.created_at
     };
     
     set((state) => ({ 
-      siteDiaryEntries: [...state.siteDiaryEntries, mappedEntry] 
+      siteDiaryEntries: [mappedEntry, ...state.siteDiaryEntries] 
     }));
     
     console.log('Site diary entry added to store. Total:', get().siteDiaryEntries.length);
+    alert('Site diary entry saved successfully!');
   } catch (error) {
     console.error('Failed to add site diary entry:', error);
+    alert('Failed to save site diary entry. Please try again.');
   }
 },
 
