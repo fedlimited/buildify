@@ -168,29 +168,29 @@ const siteDiaryController = {
                 [result.lastID]
             );
             
-            // Parse JSON fields for response
-            let weather = {}, activities = [], deliveries = [], incidents = [], siteWorkers = [], siteSubcontractors = [], summary = {};
-            try { weather = newEntry.weather ? JSON.parse(newEntry.weather) : {}; } catch(e) {}
-            try { activities = newEntry.activities ? JSON.parse(newEntry.activities) : []; } catch(e) {}
-            try { deliveries = newEntry.deliveries ? JSON.parse(newEntry.deliveries) : []; } catch(e) {}
-            try { incidents = newEntry.incidents ? JSON.parse(newEntry.incidents) : []; } catch(e) {}
-            try { siteWorkers = newEntry.site_workers ? JSON.parse(newEntry.site_workers) : []; } catch(e) {}
-            try { siteSubcontractors = newEntry.site_subcontractors ? JSON.parse(newEntry.site_subcontractors) : []; } catch(e) {}
-            try { summary = newEntry.summary ? JSON.parse(newEntry.summary) : {}; } catch(e) {}
+            // Parse JSON fields for response - use different variable names to avoid conflict
+            let weatherData = {}, activitiesData = [], deliveriesData = [], incidentsData = [], siteWorkersData = [], siteSubcontractorsData = [], summaryData = {};
+            try { weatherData = newEntry.weather ? JSON.parse(newEntry.weather) : {}; } catch(e) {}
+            try { activitiesData = newEntry.activities ? JSON.parse(newEntry.activities) : []; } catch(e) {}
+            try { deliveriesData = newEntry.deliveries ? JSON.parse(newEntry.deliveries) : []; } catch(e) {}
+            try { incidentsData = newEntry.incidents ? JSON.parse(newEntry.incidents) : []; } catch(e) {}
+            try { siteWorkersData = newEntry.site_workers ? JSON.parse(newEntry.site_workers) : []; } catch(e) {}
+            try { siteSubcontractorsData = newEntry.site_subcontractors ? JSON.parse(newEntry.site_subcontractors) : []; } catch(e) {}
+            try { summaryData = newEntry.summary ? JSON.parse(newEntry.summary) : {}; } catch(e) {}
             
             res.status(201).json({
                 id: newEntry.id,
                 date: newEntry.date,
                 projectId: newEntry.project_id,
                 projectName: newEntry.project_name,
-                weather: weather,
+                weather: weatherData,
                 totalWorkers: newEntry.total_workers || 0,
-                activities: activities,
-                deliveries: deliveries,
-                incidents: incidents,
-                siteWorkers: siteWorkers,
-                siteSubcontractors: siteSubcontractors,
-                summary: summary,
+                activities: activitiesData,
+                deliveries: deliveriesData,
+                incidents: incidentsData,
+                siteWorkers: siteWorkersData,
+                siteSubcontractors: siteSubcontractorsData,
+                summary: summaryData,
                 status: newEntry.status,
                 createdAt: newEntry.created_at,
                 updatedAt: newEntry.updated_at
@@ -258,29 +258,29 @@ const siteDiaryController = {
                 [id, company_id]
             );
             
-            // Parse JSON fields for response
-            let weather = {}, activities = [], deliveries = [], incidents = [], siteWorkers = [], siteSubcontractors = [], summary = {};
-            try { weather = updatedEntry.weather ? JSON.parse(updatedEntry.weather) : {}; } catch(e) {}
-            try { activities = updatedEntry.activities ? JSON.parse(updatedEntry.activities) : []; } catch(e) {}
-            try { deliveries = updatedEntry.deliveries ? JSON.parse(updatedEntry.deliveries) : []; } catch(e) {}
-            try { incidents = updatedEntry.incidents ? JSON.parse(updatedEntry.incidents) : []; } catch(e) {}
-            try { siteWorkers = updatedEntry.site_workers ? JSON.parse(updatedEntry.site_workers) : []; } catch(e) {}
-            try { siteSubcontractors = updatedEntry.site_subcontractors ? JSON.parse(updatedEntry.site_subcontractors) : []; } catch(e) {}
-            try { summary = updatedEntry.summary ? JSON.parse(updatedEntry.summary) : {}; } catch(e) {}
+            // Parse JSON fields for response - use different variable names
+            let weatherData = {}, activitiesData = [], deliveriesData = [], incidentsData = [], siteWorkersData = [], siteSubcontractorsData = [], summaryData = {};
+            try { weatherData = updatedEntry.weather ? JSON.parse(updatedEntry.weather) : {}; } catch(e) {}
+            try { activitiesData = updatedEntry.activities ? JSON.parse(updatedEntry.activities) : []; } catch(e) {}
+            try { deliveriesData = updatedEntry.deliveries ? JSON.parse(updatedEntry.deliveries) : []; } catch(e) {}
+            try { incidentsData = updatedEntry.incidents ? JSON.parse(updatedEntry.incidents) : []; } catch(e) {}
+            try { siteWorkersData = updatedEntry.site_workers ? JSON.parse(updatedEntry.site_workers) : []; } catch(e) {}
+            try { siteSubcontractorsData = updatedEntry.site_subcontractors ? JSON.parse(updatedEntry.site_subcontractors) : []; } catch(e) {}
+            try { summaryData = updatedEntry.summary ? JSON.parse(updatedEntry.summary) : {}; } catch(e) {}
             
             res.json({
                 id: updatedEntry.id,
                 date: updatedEntry.date,
                 projectId: updatedEntry.project_id,
                 projectName: updatedEntry.project_name,
-                weather: weather,
+                weather: weatherData,
                 totalWorkers: updatedEntry.total_workers || 0,
-                activities: activities,
-                deliveries: deliveries,
-                incidents: incidents,
-                siteWorkers: siteWorkers,
-                siteSubcontractors: siteSubcontractors,
-                summary: summary,
+                activities: activitiesData,
+                deliveries: deliveriesData,
+                incidents: incidentsData,
+                siteWorkers: siteWorkersData,
+                siteSubcontractors: siteSubcontractorsData,
+                summary: summaryData,
                 status: updatedEntry.status,
                 createdAt: updatedEntry.created_at,
                 updatedAt: updatedEntry.updated_at
