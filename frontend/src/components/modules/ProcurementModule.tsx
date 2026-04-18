@@ -928,12 +928,23 @@ const markSupplyAsPaid = async (supplyId: number) => {
 
 
 const handleSave = () => {
-  if (!form.supplierId || !form.projectId || !form.itemId || form.quantity <= 0) return;
+  console.log('=== HANDLE SAVE STARTED ===');
+  
+  if (!form.supplierId || !form.projectId || !form.itemId || form.quantity <= 0) {
+    console.log('Validation failed:', { form });
+    return;
+  }
+  
+  console.log('Validation passed, proceeding...');
+  
   const supplier = suppliers.find(s => s.id === form.supplierId);
   const project = projects.find(p => p.id === form.projectId);
   const selectedItem = approvedItems.find(i => i.id === form.itemId);
   
+  console.log('Found items:', { supplier: supplier?.name, project: project?.name, selectedItem: selectedItem?.name });
+  
   // Add the supply record
+  console.log('Calling addSupply...');
   addSupply({
     ...form,
     supplierName: supplier?.name || '',
@@ -944,6 +955,19 @@ const handleSave = () => {
   } as any);
   
   // Create store transaction to update inventory
+  console.log('Calling addStoreTransaction...');
+  console.log('Store transaction data:', {
+    date: form.date,
+    projectId: form.projectId,
+    projectName: project?.name || '',
+    itemId: form.itemId,
+    itemName: form.itemName,
+    unit: form.unit,
+    category: selectedItem?.category || '',
+    quantitySupplied: form.quantity,
+    transactionType: 'SUPPLY',
+  });
+  
   addStoreTransaction({
     date: form.date,
     projectId: form.projectId,
@@ -963,8 +987,18 @@ const handleSave = () => {
     notes: form.notes || ''
   });
   
+  console.log('Closing dialog...');
   setOpen(false);
+  console.log('=== HANDLE SAVE COMPLETED ===');
 };
+
+
+
+
+
+
+
+
 
 
 
