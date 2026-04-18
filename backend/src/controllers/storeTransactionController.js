@@ -7,7 +7,7 @@ const storeTransactionController = {
       const company_id = req.user?.companyId || req.user?.company_id;
       
       const transactions = await db.all(
-        `SELECT * FROM store_transactions WHERE company_id = ? ORDER BY date DESC`,
+        `SELECT * FROM store_transactions WHERE company_id = $1 ORDER BY date DESC`,
         [company_id]
       );
       
@@ -17,7 +17,7 @@ const storeTransactionController = {
       res.status(500).json({ error: error.message });
     }
   },
-  
+
   createTransaction: async (req, res) => {
     try {
       const db = await getDb();
@@ -29,33 +29,45 @@ const storeTransactionController = {
         balance, reference, issued_to, returned_by, notes
       } = req.body;
       
+      console.log('Creating store transaction for company:', company_id);
+      
       const result = await db.run(
         `INSERT INTO store_transactions (
           company_id, date, project_id, project_name, transaction_type,
           item_id, item_name, unit, category,
           quantity_supplied, quantity_issued, quantity_returned,
           balance, reference, issued_to, returned_by, notes, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING id`,
         [
           company_id, date, project_id, project_name, transaction_type,
-          item_id, item_name, unit, category,
+          item_id || null, item_name, unit, category,
           quantity_supplied || 0, quantity_issued || 0, quantity_returned || 0,
-          balance, reference, issued_to, returned_by, notes
+          balance || 0, reference || null, issued_to || null, returned_by || null, notes || null, new Date()
         ]
       );
       
+      if (!result || !result.lastID) {
+        throw new Error('Failed to insert transaction');
+      }
+      
       const newTransaction = await db.get(
-        'SELECT * FROM store_transactions WHERE id = ?',
+        'SELECT * FROM store_transactions WHERE id = $1',
         [result.lastID]
       );
       
+      if (!newTransaction) {
+        throw new Error('Failed to retrieve created transaction');
+      }
+      
+      console.log('Transaction created successfully:', newTransaction.id);
       res.status(201).json(newTransaction);
+      
     } catch (error) {
       console.error('Error in createTransaction:', error);
       res.status(500).json({ error: error.message });
     }
   },
-  
+
   updateTransaction: async (req, res) => {
     try {
       const db = await getDb();
@@ -64,7 +76,7 @@ const storeTransactionController = {
       const { notes } = req.body;
       
       const result = await db.run(
-        'UPDATE store_transactions SET notes = ? WHERE id = ? AND company_id = ?',
+        'UPDATE store_transactions SET notes = $1 WHERE id = $2 AND company_id = $3',
         [notes, id, company_id]
       );
       
@@ -73,7 +85,7 @@ const storeTransactionController = {
       }
       
       const updated = await db.get(
-        'SELECT * FROM store_transactions WHERE id = ?',
+        'SELECT * FROM store_transactions WHERE id = $1',
         [id]
       );
       res.json(updated);
@@ -90,7 +102,7 @@ const storeTransactionController = {
       const { id } = req.params;
       
       const result = await db.run(
-        'DELETE FROM store_transactions WHERE id = ? AND company_id = ?',
+        'DELETE FROM store_transactions WHERE id = $1 AND company_id = $2',
         [id, company_id]
       );
       
