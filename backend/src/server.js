@@ -211,6 +211,9 @@ app.post('/api/invoices', InvoiceController.createInvoice);
 app.put('/api/invoices/:id', InvoiceController.updateInvoice);
 app.delete('/api/invoices/:id', InvoiceController.deleteInvoice);
 
+
+
+
 // ========== LOAD SAMPLE DATA ==========
 app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, res) => {
   try {
@@ -223,7 +226,7 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     const tables = ['projects', 'workers', 'income', 'invoices', 'expenses', 'subcontractors', 'suppliers', 'approved_items', 'worker_categories', 'purchase_orders', 'supplies', 'store_transactions', 'site_diary_entries', 'quotations', 'payroll_records'];
     for (const table of tables) {
       try {
-        await db.run(`DELETE FROM ${table} WHERE company_id = ?`, [company_id]);
+        await db.run(`DELETE FROM ${table} WHERE company_id = $1`, [company_id]);
         console.log(`Cleared ${table}`);
       } catch (e) {
         // Table might not exist
@@ -243,7 +246,7 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     for (const p of projects) {
       const result = await db.run(
         `INSERT INTO projects (company_id, name, client, contract_sum, location, start_date, end_date, status, project_manager, description, progress)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
         [company_id, p.name, p.client, p.contract_sum, p.location, p.start_date, p.end_date, p.status, p.project_manager, p.description, p.progress]
       );
       projectIds.push({ id: result.lastID, name: p.name });
@@ -263,7 +266,7 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     for (const c of categories) {
       const result = await db.run(
         `INSERT INTO worker_categories (company_id, name, day_rate, color, is_active)
-         VALUES (?, ?, ?, ?, ?) RETURNING id`,
+         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
         [company_id, c.name, c.day_rate, c.color, c.is_active]
       );
       categoryIds.push({ id: result.lastID, name: c.name, day_rate: c.day_rate });
@@ -285,7 +288,7 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
       if (cat && firstProject) {
         await db.run(
           `INSERT INTO workers (company_id, name, phone, category_id, project_id, day_rate, is_active, date_added)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
           [company_id, w.name, w.phone, cat.id, firstProject.id, cat.day_rate, 1, new Date().toISOString().split('T')[0]]
         );
       }
@@ -305,7 +308,7 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     for (const sub of subcontractors) {
       const result = await db.run(
         `INSERT INTO subcontractors (company_id, name, phone, email, kra_pin, specialization, address, contact_person, is_active)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
         [company_id, sub.name, sub.phone, sub.email, sub.kra_pin, sub.specialization, sub.address, sub.contact_person, sub.is_active]
       );
       subcontractorIds.push({ id: result.lastID, name: sub.name });
@@ -319,12 +322,14 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
       { name: 'Coastal Hardware', kra_pin: 'P059999999Z', phone: '+254 788 999888', email: 'info@coastalhardware.com', address: 'Mombasa, Kenya', contact_person: 'Hassan Ali', payment_terms: 'Net 60 days', is_active: 1 }
     ];
     
+    const supplierIds = [];
     for (const s of suppliers) {
-      await db.run(
+      const result = await db.run(
         `INSERT INTO suppliers (company_id, name, kra_pin, phone, email, address, contact_person, payment_terms, is_active)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
         [company_id, s.name, s.kra_pin, s.phone, s.email, s.address, s.contact_person, s.payment_terms, s.is_active]
       );
+      supplierIds.push({ id: result.lastID, name: s.name });
     }
     console.log(`✅ Added ${suppliers.length} suppliers`);
     
@@ -340,7 +345,7 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     for (const item of approvedItems) {
       await db.run(
         `INSERT INTO approved_items (company_id, name, category, unit, default_price, description, is_active)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [company_id, item.name, item.category, item.unit, item.default_price, item.description, item.is_active]
       );
     }
@@ -359,7 +364,7 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
       if (q.subcontractor_id) {
         await db.run(
           `INSERT INTO quotations (company_id, subcontractor_id, subcontractor_name, project_id, project_name, description, amount, date, status, notes)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
           [company_id, q.subcontractor_id, q.subcontractor_name, q.project_id, q.project_name, q.description, q.amount, q.date, q.status, q.notes]
         );
       }
@@ -368,35 +373,52 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     
     // ========== 8. PURCHASE ORDERS ==========
     const purchaseOrders = [
-      { order_number: 'PO-2026-001', supplier_id: 1, supplier_name: 'Kenya Cement Ltd', project_id: projectIds[0]?.id, project_name: 'Nairobi Heights Apartments', order_date: '2026-04-01', expected_date: '2026-04-15', items: JSON.stringify([{ description: 'Portland Cement', quantity: 500, unit_price: 850, total: 425000 }]), subtotal: 425000, vat: 68000, total: 493000, status: 'Supplied', payment_status: 'Paid', notes: '' },
-      { order_number: 'PO-2026-002', supplier_id: 2, supplier_name: 'Steel Masters Ltd', project_id: projectIds[1]?.id, project_name: 'Kisii Teaching Hospital', order_date: '2026-04-02', expected_date: '2026-04-20', items: JSON.stringify([{ description: 'Reinforcement Bars', quantity: 1000, unit_price: 120, total: 120000 }]), subtotal: 120000, vat: 19200, total: 139200, status: 'Ordered', payment_status: 'Unpaid', notes: '' }
+      { order_number: 'PO-2026-001', supplier_id: supplierIds[0]?.id, supplier_name: 'Kenya Cement Ltd', project_id: projectIds[0]?.id, project_name: 'Nairobi Heights Apartments', order_date: '2026-04-01', expected_date: '2026-04-15', items: JSON.stringify([{ description: 'Portland Cement', quantity: 500, unit_price: 850, total: 425000 }]), subtotal: 425000, vat: 68000, total: 493000, status: 'Supplied', payment_status: 'Paid', notes: '' },
+      { order_number: 'PO-2026-002', supplier_id: supplierIds[1]?.id, supplier_name: 'Steel Masters Ltd', project_id: projectIds[1]?.id, project_name: 'Kisii Teaching Hospital', order_date: '2026-04-02', expected_date: '2026-04-20', items: JSON.stringify([{ description: 'Reinforcement Bars', quantity: 1000, unit_price: 120, total: 120000 }]), subtotal: 120000, vat: 19200, total: 139200, status: 'Ordered', payment_status: 'Unpaid', notes: '' }
     ];
     
+    const purchaseOrderIds = [];
     for (const po of purchaseOrders) {
-      await db.run(
+      const result = await db.run(
         `INSERT INTO purchase_orders (company_id, order_number, supplier_id, supplier_name, project_id, project_name, order_date, expected_date, items, subtotal, vat, total, status, payment_status, notes)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id`,
         [company_id, po.order_number, po.supplier_id, po.supplier_name, po.project_id, po.project_name, po.order_date, po.expected_date, po.items, po.subtotal, po.vat, po.total, po.status, po.payment_status, po.notes]
       );
+      purchaseOrderIds.push({ id: result.lastID });
     }
     console.log(`✅ Added ${purchaseOrders.length} purchase orders`);
     
-    // ========== 9. STORE TRANSACTIONS ==========
+    // ========== 9. SUPPLIES ==========
+    const supplies = [
+      { supplier_id: supplierIds[0]?.id, supplier_name: 'Kenya Cement Ltd', project_id: projectIds[0]?.id, project_name: 'Nairobi Heights Apartments', date: '2026-04-01', item_name: 'Portland Cement', unit: 'bags', quantity: 500, unit_price: 850, total_amount: 425000, vat: 68000, status: 'Delivered', paid: 1, order_id: purchaseOrderIds[0]?.id, delivery_note: 'DN-001', notes: '' },
+      { supplier_id: supplierIds[1]?.id, supplier_name: 'Steel Masters Ltd', project_id: projectIds[1]?.id, project_name: 'Kisii Teaching Hospital', date: '2026-04-02', item_name: 'Reinforcement Bars', unit: 'pieces', quantity: 1000, unit_price: 120, total_amount: 120000, vat: 19200, status: 'Delivered', paid: 0, order_id: purchaseOrderIds[1]?.id, delivery_note: 'DN-002', notes: '' }
+    ];
+    
+    for (const supply of supplies) {
+      await db.run(
+        `INSERT INTO supplies (company_id, supplier_id, supplier_name, project_id, project_name, date, item_name, unit, quantity, unit_price, total_amount, vat, status, paid, order_id, delivery_note, notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+        [company_id, supply.supplier_id, supply.supplier_name, supply.project_id, supply.project_name, supply.date, supply.item_name, supply.unit, supply.quantity, supply.unit_price, supply.total_amount, supply.vat, supply.status, supply.paid, supply.order_id, supply.delivery_note, supply.notes]
+      );
+    }
+    console.log(`✅ Added ${supplies.length} supplies`);
+    
+    // ========== 10. STORE TRANSACTIONS ==========
     const storeTransactions = [
-      { date: '2026-04-01', project_id: projectIds[0]?.id, project_name: 'Nairobi Heights Apartments', item_id: 1, item_name: 'Cement Bags', unit: 'Bags', category: 'Materials', quantity_supplied: 500, quantity_issued: 350, quantity_returned: 10, transaction_type: 'Supply', reference: 'PO-2026-001' },
-      { date: '2026-04-03', project_id: projectIds[1]?.id, project_name: 'Kisii Teaching Hospital', item_id: 2, item_name: 'Steel Bars', unit: 'Pieces', category: 'Materials', quantity_supplied: 1000, quantity_issued: 600, quantity_returned: 20, transaction_type: 'Supply', reference: 'PO-2026-002' }
+      { date: '2026-04-01', project_id: projectIds[0]?.id, project_name: 'Nairobi Heights Apartments', item_name: 'Cement Bags', unit: 'Bags', category: 'Materials', quantity_supplied: 500, quantity_issued: 350, quantity_returned: 10, transaction_type: 'Supply', reference: 'PO-2026-001' },
+      { date: '2026-04-03', project_id: projectIds[1]?.id, project_name: 'Kisii Teaching Hospital', item_name: 'Steel Bars', unit: 'Pieces', category: 'Materials', quantity_supplied: 1000, quantity_issued: 600, quantity_returned: 20, transaction_type: 'Supply', reference: 'PO-2026-002' }
     ];
     
     for (const st of storeTransactions) {
       await db.run(
-        `INSERT INTO store_transactions (company_id, date, project_id, project_name, item_id, item_name, unit, category, quantity_supplied, quantity_issued, quantity_returned, transaction_type, reference)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [company_id, st.date, st.project_id, st.project_name, st.item_id, st.item_name, st.unit, st.category, st.quantity_supplied, st.quantity_issued, st.quantity_returned, st.transaction_type, st.reference]
+        `INSERT INTO store_transactions (company_id, date, project_id, project_name, item_name, unit, category, quantity_supplied, quantity_issued, quantity_returned, transaction_type, reference)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+        [company_id, st.date, st.project_id, st.project_name, st.item_name, st.unit, st.category, st.quantity_supplied, st.quantity_issued, st.quantity_returned, st.transaction_type, st.reference]
       );
     }
     console.log(`✅ Added ${storeTransactions.length} store transactions`);
     
-    // ========== 10. SITE DIARY ENTRIES ==========
+    // ========== 11. SITE DIARY ENTRIES ==========
     const siteDiaryEntries = [
       { date: '2026-04-06', project_id: projectIds[0]?.id, project_name: 'Nairobi Heights Apartments', weather: JSON.stringify({ condition: 'Sunny', temp: 28 }), total_workers: 25, activities: JSON.stringify([{ description: 'Foundation excavation' }]), challenges: JSON.stringify([]), status: 'Completed' },
       { date: '2026-04-06', project_id: projectIds[1]?.id, project_name: 'Kisii Teaching Hospital', weather: JSON.stringify({ condition: 'Rainy', temp: 22 }), total_workers: 30, activities: JSON.stringify([{ description: 'Roof installation' }]), challenges: JSON.stringify(['Rain delay']), status: 'Completed' }
@@ -405,39 +427,39 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     for (const entry of siteDiaryEntries) {
       await db.run(
         `INSERT INTO site_diary_entries (company_id, date, project_id, project_name, weather, total_workers, activities, challenges, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [company_id, entry.date, entry.project_id, entry.project_name, entry.weather, entry.total_workers, entry.activities, entry.challenges, entry.status]
       );
     }
     console.log(`✅ Added ${siteDiaryEntries.length} site diary entries`);
     
-    // ========== 11. INCOME ==========
+    // ========== 12. INCOME ==========
     for (const p of projectIds) {
       const amount = 5000000;
       await db.run(
         `INSERT INTO income (company_id, project_id, certificate_no, date, gross_amount, retention_percent, amount_received, payment_date, payment_method, status, notes)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
         [company_id, p.id, `CERT-${p.id}-001`, new Date().toISOString().split('T')[0], amount, 5, amount * 0.95, new Date().toISOString().split('T')[0], 'Bank Transfer', 'Paid', `Payment for ${p.name}`]
       );
     }
     console.log(`✅ Added ${projectIds.length} income records`);
     
-    // ========== 12. EXPENSES ==========
+    // ========== 13. EXPENSES ==========
     for (const p of projectIds) {
       await db.run(
         `INSERT INTO expenses (company_id, project_id, project_name, date, category, description, amount, vat, payment_method, status, reference)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
         [company_id, p.id, p.name, new Date().toISOString().split('T')[0], 'Materials', `Materials for ${p.name}`, 500000, 80000, 'Bank Transfer', 'Paid', `EXP-${p.id}-001`]
       );
     }
     console.log(`✅ Added ${projectIds.length} expense records`);
     
-    // ========== 13. INVOICES ==========
+    // ========== 14. INVOICES ==========
     for (const p of projectIds) {
       const amount = 3000000;
       await db.run(
         `INSERT INTO invoices (company_id, invoice_number, project_id, project_name, client_name, date, due_date, items, subtotal, vat, total, status, notes)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
         [company_id, `INV-${p.id}-001`, p.id, p.name, p.name.split(' ')[0] + ' Client', new Date().toISOString().split('T')[0], new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0], JSON.stringify([{ description: 'Construction services', quantity: 1, unit_price: amount, total: amount }]), amount, amount * 0.16, amount * 1.16, 'Sent', `Invoice for ${p.name}`]
       );
     }
@@ -461,6 +483,9 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     res.status(500).json({ error: error.message });
   }
 });
+
+
+
 
 // Start server
 async function startServer() {
