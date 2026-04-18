@@ -525,9 +525,32 @@ const handleSave = async () => {
       setOpen(false);
 
       alert('Entry updated successfully!');
-    } else {
-      await addSiteDiaryEntry(entryData);
-    }
+
+
+
+
+} else {
+  await addSiteDiaryEntry(entryData);
+  setOpen(false);  // ← ADD THIS - closes the dialog
+  // Reset form fields (optional but good)
+  setDate(new Date().toISOString().split('T')[0]);
+  setProjectId(selectedProjectId || 0);
+  setWeatherCondition('sunny');
+  setTemperature(28);
+  setActivities([]);
+  setDeliveries([]);
+  setIncidents([]);
+  setSiteWorkers([]);
+  setSiteSubcontractors([]);
+  setWorkDone('');
+  setPlansTomorrow('');
+  setChallenges('');
+  setEditing(null);
+  alert('Entry saved successfully!');
+}
+
+
+
   } catch (error) {
     console.error('Failed to save:', error);
     alert('Failed to save. Please try again.');
@@ -535,12 +558,6 @@ const handleSave = async () => {
     setLoading(false);
   }
 };
-
-
-
-
-
-
 
 
 
