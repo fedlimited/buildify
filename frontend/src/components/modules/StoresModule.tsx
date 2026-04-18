@@ -66,7 +66,7 @@ function useStockBalances(): StockBalance[] {
 
 
 function StockBalances() {
-  const { projects, approvedItems, selectedProjectId, addStoreTransaction, storeTransactions, authUser, clearStoresRecords } = useAppStore();
+  const { projects, approvedItems, selectedProjectId, addStoreTransaction, fetchStoreTransactions, storeTransactions, authUser, clearStoresRecords } = useAppStore();
   const balances = useStockBalances();
   const [search, setSearch] = useState('');
   const [issueOpen, setIssueOpen] = useState(false);
@@ -94,33 +94,49 @@ function StockBalances() {
   const openIssue = (b: StockBalance) => { setSelectedBalance(b); setQty(0); setRef(''); setIssuedTo(''); setNotes(''); setIssueOpen(true); };
   const openReturn = (b: StockBalance) => { setSelectedBalance(b); setQty(0); setRef(''); setNotes(''); setReturnOpen(true); };
 
-  const handleIssue = () => {
-    if (!selectedBalance || qty <= 0 || qty > selectedBalance.currentBalance) return;
-    addStoreTransaction({
-      date: new Date().toISOString().split('T')[0],
-      projectId: selectedBalance.projectId, projectName: selectedBalance.projectName,
-      itemId: selectedBalance.itemId, itemName: selectedBalance.itemName,
-      unit: selectedBalance.unit, category: selectedBalance.category,
-      quantitySupplied: 0, quantityIssued: qty, quantityReturned: 0,
-      balance: selectedBalance.currentBalance - qty,
-      transactionType: 'ISSUE', reference: ref, issuedTo, returnedBy: '', notes
-    });
-    setIssueOpen(false);
-  };
 
-  const handleReturn = () => {
-    if (!selectedBalance || qty <= 0) return;
-    addStoreTransaction({
-      date: new Date().toISOString().split('T')[0],
-      projectId: selectedBalance.projectId, projectName: selectedBalance.projectName,
-      itemId: selectedBalance.itemId, itemName: selectedBalance.itemName,
-      unit: selectedBalance.unit, category: selectedBalance.category,
-      quantitySupplied: 0, quantityIssued: 0, quantityReturned: qty,
-      balance: selectedBalance.currentBalance + qty,
-      transactionType: 'RETURN', reference: ref, issuedTo: '', returnedBy: issuedTo, notes
-    });
-    setReturnOpen(false);
-  };
+
+
+
+
+const handleIssue = async () => {
+  if (!selectedBalance || qty <= 0 || qty > selectedBalance.currentBalance) return;
+  await addStoreTransaction({
+    date: new Date().toISOString().split('T')[0],
+    projectId: selectedBalance.projectId, projectName: selectedBalance.projectName,
+    itemId: selectedBalance.itemId, itemName: selectedBalance.itemName,
+    unit: selectedBalance.unit, category: selectedBalance.category,
+    quantitySupplied: 0, quantityIssued: qty, quantityReturned: 0,
+    balance: selectedBalance.currentBalance - qty,
+    transactionType: 'ISSUE', reference: ref, issuedTo, returnedBy: '', notes
+  });
+  await fetchStoreTransactions(); // ← ADD THIS LINE
+  setIssueOpen(false);
+};
+
+
+
+
+
+
+const handleReturn = async () => {
+  if (!selectedBalance || qty <= 0) return;
+  await addStoreTransaction({
+    date: new Date().toISOString().split('T')[0],
+    projectId: selectedBalance.projectId, projectName: selectedBalance.projectName,
+    itemId: selectedBalance.itemId, itemName: selectedBalance.itemName,
+    unit: selectedBalance.unit, category: selectedBalance.category,
+    quantitySupplied: 0, quantityIssued: 0, quantityReturned: qty,
+    balance: selectedBalance.currentBalance + qty,
+    transactionType: 'RETURN', reference: ref, issuedTo: '', returnedBy: issuedTo, notes
+  });
+  await fetchStoreTransactions(); // ← ADD THIS LINE
+  setReturnOpen(false);
+};
+
+
+
+
 
   return (
     <div className="space-y-4">
