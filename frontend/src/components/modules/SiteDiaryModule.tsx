@@ -487,8 +487,6 @@ export function SiteDiaryModule() {
 
 
 
-
-
 const handleSave = async () => {
   setLoading(true);
   try {
@@ -507,7 +505,7 @@ const handleSave = async () => {
       status: 'Submitted'
     };
     
-    // ===== ADD THIS DEBUG CODE =====
+    // ===== DEBUG CODE =====
     console.log('=== DEBUG SAVE ===');
     console.log('siteWorkers array:', siteWorkers);
     console.log('siteWorkers count:', siteWorkers.length);
@@ -522,35 +520,48 @@ const handleSave = async () => {
     if (editing) {
       await updateSiteDiaryEntry(editing.id, entryData);
       await fetchSiteDiaryEntries();
-      setOpen(false);
-
       alert('Entry updated successfully!');
-
-
-
-
-} else {
-  await addSiteDiaryEntry(entryData);
-  setOpen(false);  // ← ADD THIS - closes the dialog
-  // Reset form fields (optional but good)
-  setDate(new Date().toISOString().split('T')[0]);
-  setProjectId(selectedProjectId || 0);
-  setWeatherCondition('sunny');
-  setTemperature(28);
-  setActivities([]);
-  setDeliveries([]);
-  setIncidents([]);
-  setSiteWorkers([]);
-  setSiteSubcontractors([]);
-  setWorkDone('');
-  setPlansTomorrow('');
-  setChallenges('');
-  setEditing(null);
-  alert('Entry saved successfully!');
-}
-
-
-
+    } else {
+      await addSiteDiaryEntry(entryData);
+      await fetchSiteDiaryEntries();
+      alert('Entry saved successfully!');
+    }
+    
+    // Close the dialog
+    setOpen(false);
+    
+    // Reset editing state
+    setEditing(null);
+    
+    // Reset all form fields
+    setDate(new Date().toISOString().split('T')[0]);
+    setProjectId(selectedProjectId || 0);
+    setWeatherCondition('sunny');
+    setTemperature(28);
+    setActivities([]);
+    setDeliveries([]);
+    setIncidents([]);
+    setSiteWorkers([]);
+    setSiteSubcontractors([]);
+    setWorkDone('');
+    setPlansTomorrow('');
+    setChallenges('');
+    
+    // Reset temporary states
+    setNewActivity({ description: '', location: '', startTime: '08:00', endTime: '17:00', workersCount: 1, supervisor: '' });
+    setNewDelivery({ itemName: '', quantity: 1, unit: 'pieces', supplier: '', receivedBy: '' });
+    setNewIncident({ type: 'near-miss', description: '', severity: 'medium', action: '' });
+    setSelectedWorker('');
+    setCustomWorkerName('');
+    setShowCustomWorker(false);
+    setSelectedSubcontractor('');
+    setCustomSubcontractorName('');
+    setSubcontractorWorkers(1);
+    setSubcontractorTask('');
+    setShowCustomSubcontractor(false);
+    setShowNewSupplier(false);
+    setNewSupplierName('');
+    
   } catch (error) {
     console.error('Failed to save:', error);
     alert('Failed to save. Please try again.');
@@ -558,6 +569,8 @@ const handleSave = async () => {
     setLoading(false);
   }
 };
+
+
 
 
 
