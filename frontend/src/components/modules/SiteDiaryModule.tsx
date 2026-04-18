@@ -871,17 +871,33 @@ const openEdit = (entry: any) => {
                     </div>
                   ))}
                 </div>
-                
-                <div className="border rounded p-3 space-y-2">
-                  <p className="text-xs font-medium">Add Payroll Worker</p>
-                  <div className="flex gap-2">
 
 
 
 
+<div className="border rounded p-3 space-y-2">
+  <p className="text-xs font-medium">Add Payroll Worker</p>
+  
+  {/* ===== DEBUG INFO - Remove after testing ===== */}
+  <div className="text-xs p-2 bg-yellow-50 border border-yellow-200 rounded mb-2">
+    <div><strong>Debug Info:</strong></div>
+    <div>Current Project ID: <span className="font-mono font-bold">{projectId}</span></div>
+    <div>Total Workers in DB: <span className="font-mono">{workers.length}</span></div>
+    <div>Workers for this project: <span className="font-mono">{workers.filter(w => w.projectId === projectId).length}</span></div>
+    {workers.length > 0 && (
+      <div className="mt-1 text-xs text-muted-foreground">
+        Sample worker: {workers[0]?.name} → projectId: {workers[0]?.projectId}
+      </div>
+    )}
+  </div>
+  {/* ===== END DEBUG INFO ===== */}
+  
+  <div className="flex gap-2">
+    <Select value={selectedWorker} onValueChange={setSelectedWorker}>
 
 
-<Select value={selectedWorker} onValueChange={setSelectedWorker}>
+
+
   <SelectTrigger className="h-8 text-sm flex-1">
     <SelectValue placeholder="Select worker" />
   </SelectTrigger>
