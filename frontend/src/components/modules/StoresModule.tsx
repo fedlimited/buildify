@@ -45,6 +45,11 @@ function useStockBalances(): StockBalance[] {
     storeTransactions.forEach(t => {
       const key = `${t.projectId}-${t.itemId}`;
       if (!map.has(key)) {
+
+
+
+
+
         map.set(key, { projectId: t.projectId, projectName: t.projectName, itemId: t.itemId, itemName: t.itemName, unit: t.unit, category: t.category, totalSupplied: 0, totalIssued: 0, totalReturned: 0, currentBalance: 0 });
       }
       const b = map.get(key)!;
@@ -56,11 +61,6 @@ function useStockBalances(): StockBalance[] {
     return Array.from(map.values());
   }, [storeTransactions]);
 }
-
-
-
-
-
 
 
 
