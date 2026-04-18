@@ -45,11 +45,6 @@ function useStockBalances(): StockBalance[] {
     storeTransactions.forEach(t => {
       const key = `${t.projectId}-${t.itemId}`;
       if (!map.has(key)) {
-
-
-
-
-
         map.set(key, { projectId: t.projectId, projectName: t.projectName, itemId: t.itemId, itemName: t.itemName, unit: t.unit, category: t.category, totalSupplied: 0, totalIssued: 0, totalReturned: 0, currentBalance: 0 });
       }
       const b = map.get(key)!;
@@ -61,9 +56,6 @@ function useStockBalances(): StockBalance[] {
     return Array.from(map.values());
   }, [storeTransactions]);
 }
-
-
-
 
 function StockBalances() {
   const { projects, approvedItems, selectedProjectId, addStoreTransaction, fetchStoreTransactions, storeTransactions, authUser, clearStoresRecords } = useAppStore();
@@ -94,49 +86,35 @@ function StockBalances() {
   const openIssue = (b: StockBalance) => { setSelectedBalance(b); setQty(0); setRef(''); setIssuedTo(''); setNotes(''); setIssueOpen(true); };
   const openReturn = (b: StockBalance) => { setSelectedBalance(b); setQty(0); setRef(''); setNotes(''); setReturnOpen(true); };
 
+  const handleIssue = async () => {
+    if (!selectedBalance || qty <= 0 || qty > selectedBalance.currentBalance) return;
+    await addStoreTransaction({
+      date: new Date().toISOString().split('T')[0],
+      projectId: selectedBalance.projectId, projectName: selectedBalance.projectName,
+      itemId: selectedBalance.itemId, itemName: selectedBalance.itemName,
+      unit: selectedBalance.unit, category: selectedBalance.category,
+      quantitySupplied: 0, quantityIssued: qty, quantityReturned: 0,
+      balance: selectedBalance.currentBalance - qty,
+      transactionType: 'ISSUE', reference: ref, issuedTo, returnedBy: '', notes
+    });
+    await fetchStoreTransactions();
+    setIssueOpen(false);
+  };
 
-
-
-
-
-const handleIssue = async () => {
-  if (!selectedBalance || qty <= 0 || qty > selectedBalance.currentBalance) return;
-  await addStoreTransaction({
-    date: new Date().toISOString().split('T')[0],
-    projectId: selectedBalance.projectId, projectName: selectedBalance.projectName,
-    itemId: selectedBalance.itemId, itemName: selectedBalance.itemName,
-    unit: selectedBalance.unit, category: selectedBalance.category,
-    quantitySupplied: 0, quantityIssued: qty, quantityReturned: 0,
-    balance: selectedBalance.currentBalance - qty,
-    transactionType: 'ISSUE', reference: ref, issuedTo, returnedBy: '', notes
-  });
-  await fetchStoreTransactions(); // ← ADD THIS LINE
-  setIssueOpen(false);
-};
-
-
-
-
-
-
-const handleReturn = async () => {
-  if (!selectedBalance || qty <= 0) return;
-  await addStoreTransaction({
-    date: new Date().toISOString().split('T')[0],
-    projectId: selectedBalance.projectId, projectName: selectedBalance.projectName,
-    itemId: selectedBalance.itemId, itemName: selectedBalance.itemName,
-    unit: selectedBalance.unit, category: selectedBalance.category,
-    quantitySupplied: 0, quantityIssued: 0, quantityReturned: qty,
-    balance: selectedBalance.currentBalance + qty,
-    transactionType: 'RETURN', reference: ref, issuedTo: '', returnedBy: issuedTo, notes
-  });
-  await fetchStoreTransactions(); // ← ADD THIS LINE
-  setReturnOpen(false);
-};
-
-
-
-
+  const handleReturn = async () => {
+    if (!selectedBalance || qty <= 0) return;
+    await addStoreTransaction({
+      date: new Date().toISOString().split('T')[0],
+      projectId: selectedBalance.projectId, projectName: selectedBalance.projectName,
+      itemId: selectedBalance.itemId, itemName: selectedBalance.itemName,
+      unit: selectedBalance.unit, category: selectedBalance.category,
+      quantitySupplied: 0, quantityIssued: 0, quantityReturned: qty,
+      balance: selectedBalance.currentBalance + qty,
+      transactionType: 'RETURN', reference: ref, issuedTo: '', returnedBy: issuedTo, notes
+    });
+    await fetchStoreTransactions();
+    setReturnOpen(false);
+  };
 
   return (
     <div className="space-y-4">
@@ -197,10 +175,15 @@ const handleReturn = async () => {
         </table>
       </div>
 
-      {/* Issue Dialog */}
+      {/* Issue Dialog - Fixed with aria-describedby */}
       <Dialog open={issueOpen} onOpenChange={setIssueOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Issue Material</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-sm" aria-describedby="issue-dialog-description">
+          <DialogHeader>
+            <DialogTitle>Issue Material</DialogTitle>
+          </DialogHeader>
+          <div id="issue-dialog-description" className="sr-only">
+            Fill in the details to issue materials from the store inventory
+          </div>
           {selectedBalance && (
             <div className="grid gap-3 py-2">
               <div className="bg-muted rounded-lg p-3 text-xs">
@@ -219,10 +202,15 @@ const handleReturn = async () => {
         </DialogContent>
       </Dialog>
 
-      {/* Return Dialog */}
+      {/* Return Dialog - Fixed with aria-describedby */}
       <Dialog open={returnOpen} onOpenChange={setReturnOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Return Material</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-sm" aria-describedby="return-dialog-description">
+          <DialogHeader>
+            <DialogTitle>Return Material</DialogTitle>
+          </DialogHeader>
+          <div id="return-dialog-description" className="sr-only">
+            Fill in the details to return materials to the store inventory
+          </div>
           {selectedBalance && (
             <div className="grid gap-3 py-2">
               <div className="bg-muted rounded-lg p-3 text-xs">
@@ -241,16 +229,6 @@ const handleReturn = async () => {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
 
 function TransactionLedger() {
   const { storeTransactions, selectedProjectId } = useAppStore();
