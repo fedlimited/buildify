@@ -523,7 +523,7 @@ const handleSave = async () => {
       await updateSiteDiaryEntry(editing.id, entryData);
       await fetchSiteDiaryEntries();
       setOpen(false);
-      resetForm();
+
       alert('Entry updated successfully!');
     } else {
       await addSiteDiaryEntry(entryData);
@@ -642,7 +642,28 @@ const openEdit = (entry: any) => {
               <RefreshCw size={14} className={`mr-1 ${isSyncing ? 'animate-spin' : ''}`} />
               {isSyncing ? 'Syncing...' : 'Sync'}
             </Button>
-            <Button onClick={() => { resetForm(); setOpen(true); }} size="sm">
+
+
+
+           <Button onClick={() => { 
+  setDate(new Date().toISOString().split('T')[0]);
+  setProjectId(selectedProjectId || 0);
+  setWeatherCondition('sunny');
+  setTemperature(28);
+  setActivities([]);
+  setDeliveries([]);
+  setIncidents([]);
+  setSiteWorkers([]);
+  setSiteSubcontractors([]);
+  setWorkDone('');
+  setPlansTomorrow('');
+  setChallenges('');
+  setEditing(null);
+  setOpen(true);
+}} size="sm">
+
+
+
               <Plus size={14} className="mr-1" /> New Entry
             </Button>
           </div>
