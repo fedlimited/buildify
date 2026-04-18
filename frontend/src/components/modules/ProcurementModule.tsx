@@ -838,7 +838,7 @@ const printPurchaseOrder = (order) => {
 
 
 function SuppliesTab() {
-  const { supplies, projects, suppliers, approvedItems, selectedProjectId, addSupply, fetchSupplies } = useAppStore();
+  const { supplies, projects, suppliers, approvedItems, selectedProjectId, addSupply, addStoreTransaction, fetchSupplies } = useAppStore();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     supplierId: 0, supplierName: '',
@@ -923,20 +923,51 @@ const markSupplyAsPaid = async (supplyId: number) => {
     });
   };
 
-  const handleSave = () => {
-    if (!form.supplierId || !form.projectId || !form.itemId || form.quantity <= 0) return;
-    const supplier = suppliers.find(s => s.id === form.supplierId);
-    const project = projects.find(p => p.id === form.projectId);
-    addSupply({
-      ...form,
-      supplierName: supplier?.name || '',
-      projectName: project?.name || '',
-      totalAmount: form.quantity * form.unitPrice,
-      vat: (form.quantity * form.unitPrice) * 0.16,
-      createdAt: new Date().toISOString()
-    } as any);
-    setOpen(false);
-  };
+
+
+
+
+const handleSave = () => {
+  if (!form.supplierId || !form.projectId || !form.itemId || form.quantity <= 0) return;
+  const supplier = suppliers.find(s => s.id === form.supplierId);
+  const project = projects.find(p => p.id === form.projectId);
+  const selectedItem = approvedItems.find(i => i.id === form.itemId);
+  
+  // Add the supply record
+  addSupply({
+    ...form,
+    supplierName: supplier?.name || '',
+    projectName: project?.name || '',
+    totalAmount: form.quantity * form.unitPrice,
+    vat: (form.quantity * form.unitPrice) * 0.16,
+    createdAt: new Date().toISOString()
+  } as any);
+  
+  // Create store transaction to update inventory
+  addStoreTransaction({
+    date: form.date,
+    projectId: form.projectId,
+    projectName: project?.name || '',
+    itemId: form.itemId,
+    itemName: form.itemName,
+    unit: form.unit,
+    category: selectedItem?.category || '',
+    quantitySupplied: form.quantity,
+    quantityIssued: 0,
+    quantityReturned: 0,
+    balance: form.quantity,
+    transactionType: 'SUPPLY',
+    reference: `SUPPLY-${Date.now()}`,
+    issuedTo: '',
+    returnedBy: '',
+    notes: form.notes || ''
+  });
+  
+  setOpen(false);
+};
+
+
+
 
   return (
     <div className="space-y-4">
