@@ -209,11 +209,20 @@ export function SiteDiaryModule() {
     fetchSiteDiaryEntries();
   }, [fetchSiteDiaryEntries, selectedProjectId]);
 
+
+
   // Debug log
   useEffect(() => {
     console.log('Site Diary - Entries updated:', siteDiaryEntries.length);
     console.log('Entries:', siteDiaryEntries);
   }, [siteDiaryEntries]);
+
+// ✅ ADD THIS - Reset selected worker when project changes
+useEffect(() => {
+  setSelectedWorker('');
+}, [projectId]);
+
+
 
   const getProjectName = () => {
     const project = projects.find(p => p.id === projectId);
@@ -866,16 +875,37 @@ const openEdit = (entry: any) => {
                 <div className="border rounded p-3 space-y-2">
                   <p className="text-xs font-medium">Add Payroll Worker</p>
                   <div className="flex gap-2">
-                    <Select value={selectedWorker} onValueChange={setSelectedWorker}>
-                      <SelectTrigger className="h-8 text-sm flex-1">
-                        <SelectValue placeholder="Select worker" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {workers.map(worker => (
-                          <SelectItem key={worker.id} value={worker.id.toString()}>{worker.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+
+
+
+
+
+
+<Select value={selectedWorker} onValueChange={setSelectedWorker}>
+  <SelectTrigger className="h-8 text-sm flex-1">
+    <SelectValue placeholder="Select worker" />
+  </SelectTrigger>
+  <SelectContent>
+    {workers
+      .filter(worker => worker.projectId === projectId) // ← Only show workers for selected project
+      .map(worker => (
+        <SelectItem key={worker.id} value={worker.id.toString()}>
+          {worker.name}
+        </SelectItem>
+      ))}
+    {workers.filter(worker => worker.projectId === projectId).length === 0 && (
+      <div className="px-2 py-1.5 text-sm text-muted-foreground">
+        No workers assigned to this project
+      </div>
+    )}
+  </SelectContent>
+</Select>
+
+
+
+
+
+
                     <Input type="time" value={workerCheckIn} onChange={e => setWorkerCheckIn(e.target.value)} className="w-20 h-8 text-sm" />
                     <Input type="time" value={workerCheckOut} onChange={e => setWorkerCheckOut(e.target.value)} className="w-20 h-8 text-sm" />
                     <Button onClick={addPayrollWorker} size="sm" className="h-8 px-3">Add</Button>
