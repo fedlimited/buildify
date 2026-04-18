@@ -1705,6 +1705,14 @@ fetchSiteDiaryEntries: async () => {
 
 
 
+
+
+
+
+
+
+
+
 addSiteDiaryEntry: async (entry) => {
   try {
     console.log('Adding site diary entry with data:', entry);
@@ -1772,7 +1780,7 @@ const mappedEntry = {
     }));
     
     console.log('Site diary entry added to store. Total:', get().siteDiaryEntries.length);
-    alert('Site diary entry saved successfully! Page will refresh.');
+    
  
     
   } catch (error) {
