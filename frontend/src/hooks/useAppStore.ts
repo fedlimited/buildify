@@ -2674,6 +2674,7 @@ loadSampleData: async () => {
 
 
 
+
 resetAllData: async () => {
   try {
     const token = localStorage.getItem('token');
@@ -2684,50 +2685,51 @@ resetAllData: async () => {
     
     console.log('Starting data reset...');
     
+    // List of endpoints - API_BASE_URL already includes /api
     const endpoints = [
-      { name: 'projects', url: '/api/projects' },
-      { name: 'income', url: '/api/income' },
-      { name: 'expenses', url: '/api/expenses' },
-      { name: 'worker-categories', url: '/api/worker-categories' },
-      { name: 'workers', url: '/api/workers' },
-      { name: 'payroll-records', url: '/api/payroll-records' },
-      { name: 'approved-items', url: '/api/approved-items' },
-      { name: 'suppliers', url: '/api/suppliers' },
-      { name: 'purchase-orders', url: '/api/purchase-orders' },
-      { name: 'supplies', url: '/api/supplies' },
-      { name: 'store-transactions', url: '/api/store-transactions' },
-      { name: 'site-diary-entries', url: '/api/site-diary-entries' },
-      { name: 'subcontractors', url: '/api/subcontractors' },
-      { name: 'quotations', url: '/api/quotations' },
-      { name: 'invoices', url: '/api/invoices' }
+      'projects',
+      'income',
+      'expenses',
+      'worker-categories',
+      'workers',
+      'payroll-records',
+      'approved-items',
+      'suppliers',
+      'purchase-orders',
+      'supplies',
+      'store-transactions',
+      'site-diary-entries',
+      'subcontractors',
+      'quotations',
+      'invoices'
     ];
     
     for (const endpoint of endpoints) {
       try {
-        // Get all items
-        const getResponse = await fetch(`${API_BASE_URL}${endpoint.url.replace('/api', '')}`, {
+        // Get all items - use correct URL
+        const getResponse = await fetch(`${API_BASE_URL}/${endpoint}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        const items = await getResponse.json();
         
-        console.log(`Deleting ${items.length} records from ${endpoint.name}...`);
-        
-        // Delete each item
-        for (const item of items) {
-          await fetch(`${API_BASE_URL}${endpoint.url.replace('/api', '')}/${item.id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
+        if (getResponse.ok) {
+          const items = await getResponse.json();
+          console.log(`Deleting ${items.length} records from ${endpoint}...`);
+          
+          // Delete each item
+          for (const item of items) {
+            await fetch(`${API_BASE_URL}/${endpoint}/${item.id}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+          }
+          console.log(`✅ Cleared ${endpoint}`);
+        } else {
+          console.log(`⚠️ Could not fetch ${endpoint}: ${getResponse.status}`);
         }
-        console.log(`✅ Cleared ${endpoint.name}`);
       } catch (error) {
-        console.error(`Error clearing ${endpoint.name}:`, error);
+        console.error(`Error clearing ${endpoint}:`, error.message);
       }
     }
-
-
-
-
     
     // Clear frontend storage
     storage.clearAll();
@@ -2760,4 +2762,3 @@ resetAllData: async () => {
     alert('Error resetting data. Check console for details.');
   }
 },
-}));
