@@ -5,14 +5,14 @@ const IncomeController = {
   getIncome: async (req, res) => {
     try {
       const db = await getDb();
-      const { company_id } = req.user;
+      const company_id = req.user?.companyId || req.user?.company_id;
       const { project_id } = req.query;
 
-      let query = 'SELECT * FROM income WHERE company_id = ?';
+      let query = 'SELECT * FROM income WHERE company_id = $1';
       const params = [company_id];
 
       if (project_id) {
-        query += ' AND project_id = ?';
+        query += ' AND project_id = $2';
         params.push(project_id);
       }
 
@@ -30,11 +30,11 @@ const IncomeController = {
   getIncomeById: async (req, res) => {
     try {
       const db = await getDb();
-      const { company_id } = req.user;
+      const company_id = req.user?.companyId || req.user?.company_id;
       const { id } = req.params;
 
       const row = await db.get(
-        'SELECT * FROM income WHERE id = ? AND company_id = ?',
+        'SELECT * FROM income WHERE id = $1 AND company_id = $2',
         [id, company_id]
       );
 
@@ -52,25 +52,41 @@ const IncomeController = {
   createIncome: async (req, res) => {
     try {
       const db = await getDb();
-      const { company_id } = req.user;
+      const company_id = req.user?.companyId || req.user?.company_id;
       const {
         project_id, certificate_no, date, gross_amount,
         retention_percent, amount_received, payment_date,
         payment_method, status, notes
       } = req.body;
 
+      // Verify project exists
+      const project = await db.get(
+        'SELECT id FROM projects WHERE id = $1 AND company_id = $2',
+        [project_id, company_id]
+      );
+
+      if (!project) {
+        return res.status(400).json({ error: 'Invalid project ID' });
+      }
+
       const result = await db.run(
         `INSERT INTO income (
           company_id, project_id, certificate_no, date, gross_amount,
           retention_percent, amount_received, payment_date,
           payment_method, status, notes, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()) RETURNING id`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW()) RETURNING id`,
         [company_id, project_id, certificate_no, date, gross_amount,
-         retention_percent || 0, amount_received, payment_date,
+         retention_percent || 0, amount_received || 0, payment_date,
          payment_method, status || 'Pending', notes]
       );
 
-      res.status(201).json({ id: result.lastID, message: 'Income record created' });
+      // Return the full created record
+      const newIncome = await db.get(
+        'SELECT * FROM income WHERE id = $1',
+        [result.lastID]
+      );
+
+      res.status(201).json(newIncome);
     } catch (error) {
       console.error('Error in createIncome:', error);
       res.status(500).json({ error: error.message });
@@ -81,7 +97,7 @@ const IncomeController = {
   updateIncome: async (req, res) => {
     try {
       const db = await getDb();
-      const { company_id } = req.user;
+      const company_id = req.user?.companyId || req.user?.company_id;
       const { id } = req.params;
       const {
         project_id, certificate_no, date, gross_amount,
@@ -91,10 +107,10 @@ const IncomeController = {
 
       const result = await db.run(
         `UPDATE income SET
-          project_id = ?, certificate_no = ?, date = ?, gross_amount = ?,
-          retention_percent = ?, amount_received = ?, payment_date = ?,
-          payment_method = ?, status = ?, notes = ?
-        WHERE id = ? AND company_id = ?`,
+          project_id = $1, certificate_no = $2, date = $3, gross_amount = $4,
+          retention_percent = $5, amount_received = $6, payment_date = $7,
+          payment_method = $8, status = $9, notes = $10
+        WHERE id = $11 AND company_id = $12`,
         [project_id, certificate_no, date, gross_amount, retention_percent,
          amount_received, payment_date, payment_method, status, notes, id, company_id]
       );
@@ -102,7 +118,12 @@ const IncomeController = {
       if (result.changes === 0) {
         return res.status(404).json({ error: 'Income record not found' });
       }
-      res.json({ message: 'Income record updated' });
+      
+      const updated = await db.get(
+        'SELECT * FROM income WHERE id = $1',
+        [id]
+      );
+      res.json(updated);
     } catch (error) {
       console.error('Error in updateIncome:', error);
       res.status(500).json({ error: error.message });
@@ -113,11 +134,11 @@ const IncomeController = {
   deleteIncome: async (req, res) => {
     try {
       const db = await getDb();
-      const { company_id } = req.user;
+      const company_id = req.user?.companyId || req.user?.company_id;
       const { id } = req.params;
 
       const result = await db.run(
-        'DELETE FROM income WHERE id = ? AND company_id = ?',
+        'DELETE FROM income WHERE id = $1 AND company_id = $2',
         [id, company_id]
       );
 
