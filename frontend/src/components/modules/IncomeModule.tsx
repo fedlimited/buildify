@@ -89,10 +89,10 @@ export function IncomeModule() {
               <th className="px-4 py-3 text-xs font-medium text-muted-foreground text-right">Balance</th>
               <th className="px-4 py-3 text-xs font-medium text-muted-foreground">Status</th>
               <th className="px-4 py-3 text-xs font-medium text-muted-foreground"></th>
-            </tr>
+            </td>
           </thead>
           <tbody className="divide-y divide-border">
-            {filtered.map(i => {
+            {filtered.map((i) => {
               const proj = projects.find(p => p.id === i.projectId);
               const vat = calculateVAT(i.grossAmount);
               const ret = calculateRetention(i.grossAmount, i.retentionPercent);
@@ -116,21 +116,30 @@ export function IncomeModule() {
                       <Button variant="ghost" size="sm" className="text-destructive" onClick={() => { if (confirm('Delete?')) deleteIncome(i.id); }}><Trash2 size={14} /></Button>
                     </div>
                   </td>
-                </table>
+                </tr>
               );
             })}
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">No income records found</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{editing ? 'Edit Certificate' : 'New Certificate'}</DialogTitle></DialogHeader>
-          <div className="grid gap-3">
+          <DialogHeader>
+            <DialogTitle>{editing ? 'Edit Certificate' : 'New Certificate'}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3 py-2">
             <div>
-              <Label>Project</Label>
+              <Label className="text-xs">Project *</Label>
               <Select value={form.projectId?.toString() || ''} onValueChange={v => setForm({ ...form, projectId: Number(v) })}>
-                <SelectTrigger><SelectValue placeholder="Select project" /></SelectTrigger>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Select project" />
+                </SelectTrigger>
                 <SelectContent>
                   {projects.filter(p => p.status === 'Active').map(p => (
                     <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
@@ -139,28 +148,67 @@ export function IncomeModule() {
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Certificate No</Label><Input value={form.certificateNo} onChange={e => setForm({ ...form, certificateNo: e.target.value })} /></div>
-              <div><Label>Date</Label><Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></div>
+              <div>
+                <Label className="text-xs">Certificate No *</Label>
+                <Input value={form.certificateNo} onChange={e => setForm({ ...form, certificateNo: e.target.value })} className="h-9" />
+              </div>
+              <div>
+                <Label className="text-xs">Date *</Label>
+                <Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className="h-9" />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Gross Amount</Label><Input type="number" value={form.grossAmount || ''} onChange={e => setForm({ ...form, grossAmount: Number(e.target.value) })} /></div>
-              <div><Label>Retention %</Label><Input type="number" value={form.retentionPercent} onChange={e => setForm({ ...form, retentionPercent: Number(e.target.value) })} /></div>
+              <div>
+                <Label className="text-xs">Gross Amount *</Label>
+                <Input type="number" value={form.grossAmount || ''} onChange={e => setForm({ ...form, grossAmount: Number(e.target.value) })} className="h-9" />
+              </div>
+              <div>
+                <Label className="text-xs">Retention %</Label>
+                <Input type="number" value={form.retentionPercent} onChange={e => setForm({ ...form, retentionPercent: Number(e.target.value) })} className="h-9" />
+              </div>
             </div>
             {form.grossAmount > 0 && (
               <div className="bg-muted rounded-lg p-3 text-xs space-y-1">
-                <div className="flex justify-between"><span>Gross Amount</span><span>{formatCurrency(form.grossAmount)}</span></div>
-                <div className="flex justify-between"><span>+ VAT (16%)</span><span>{formatCurrency(calculateVAT(form.grossAmount))}</span></div>
-                <div className="flex justify-between"><span>= Gross + VAT</span><span>{formatCurrency(form.grossAmount + calculateVAT(form.grossAmount))}</span></div>
-                <div className="flex justify-between"><span>- Retention ({form.retentionPercent}%)</span><span>{formatCurrency(calculateRetention(form.grossAmount, form.retentionPercent))}</span></div>
-                <div className="flex justify-between font-bold pt-1 border-t"><span>Net Payable</span><span>{formatCurrency(calculateNetPayable(form.grossAmount, form.retentionPercent))}</span></div>
+                <div className="flex justify-between">
+                  <span>Gross Amount</span>
+                  <span className="font-mono">{formatCurrency(form.grossAmount)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>+ VAT (16%)</span>
+                  <span className="font-mono">{formatCurrency(calculateVAT(form.grossAmount))}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>= Gross + VAT</span>
+                  <span className="font-mono font-medium">{formatCurrency(form.grossAmount + calculateVAT(form.grossAmount))}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>- Retention ({form.retentionPercent}% of Gross)</span>
+                  <span className="font-mono">{formatCurrency(calculateRetention(form.grossAmount, form.retentionPercent))}</span>
+                </div>
+                <div className="flex justify-between font-semibold border-t border-border pt-1">
+                  <span>Net Payable</span>
+                  <span className="font-mono">{formatCurrency(calculateNetPayable(form.grossAmount, form.retentionPercent))}</span>
+                </div>
               </div>
             )}
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Amount Received</Label><Input type="number" value={form.amountReceived || ''} onChange={e => setForm({ ...form, amountReceived: Number(e.target.value) })} /></div>
-              <div><Label>Payment Date</Label><Input type="date" value={form.paymentDate} onChange={e => setForm({ ...form, paymentDate: e.target.value })} /></div>
+              <div>
+                <Label className="text-xs">Amount Received</Label>
+                <Input type="number" value={form.amountReceived || ''} onChange={e => setForm({ ...form, amountReceived: Number(e.target.value) })} className="h-9" />
+              </div>
+              <div>
+                <Label className="text-xs">Payment Date</Label>
+                <Input type="date" value={form.paymentDate} onChange={e => setForm({ ...form, paymentDate: e.target.value })} className="h-9" />
+              </div>
             </div>
-            <div><Label>Payment Method</Label><Input value={form.paymentMethod} onChange={e => setForm({ ...form, paymentMethod: e.target.value })} placeholder="Bank Transfer, Cheque, etc." /></div>
-            <div><Label>Notes</Label><Input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
+            <div>
+              <Label className="text-xs">Payment Method</Label>
+              <Input value={form.paymentMethod} onChange={e => setForm({ ...form, paymentMethod: e.target.value })} placeholder="Bank Transfer, Cheque, etc." className="h-9" />
+            </div>
+            <div>
+              <Label className="text-xs">Notes</Label>
+              <Input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="h-9" />
+            </div>
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
