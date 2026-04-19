@@ -22,11 +22,17 @@ const { income, projects, selectedProjectId, addIncome, updateIncome, deleteInco
 
   const filtered = selectedProjectId ? income.filter(i => i.projectId === selectedProjectId) : income;
 
-  const openNew = () => { 
-    setEditing(null); 
-    setForm({ ...emptyIncome, projectId: selectedProjectId || 0 }); 
-    setOpen(true); 
-  };
+
+
+
+
+const openNew = () => { 
+  setEditing(null); 
+  // Default to project 51 (Westlands Office Tower)
+  setForm({ ...emptyIncome, projectId: 51 }); 
+  setOpen(true); 
+};
+
   
   const openEdit = (i: IncomeType) => { 
     setEditing(i); 
@@ -142,7 +148,23 @@ const handleSave = async () => {
               <Label className="text-xs">Project *</Label>
               <Select value={form.projectId?.toString() || ''} onValueChange={v => setForm({ ...form, projectId: Number(v) })}>
                 <SelectTrigger><SelectValue placeholder="Select project" /></SelectTrigger>
-                <SelectContent>{projects.map(p => <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>)}</SelectContent>
+
+
+
+  <SelectContent>
+  {projects
+    .filter(p => p.id >= 51 && p.id <= 55)
+    .map(p => (
+      <SelectItem key={p.id} value={p.id.toString()}>
+        {p.name}
+      </SelectItem>
+    ))}
+</SelectContent>
+
+
+
+
+
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
