@@ -2685,28 +2685,15 @@ resetAllData: async () => {
     
     console.log('Starting data reset...');
     
-    // List of endpoints - API_BASE_URL already includes /api
     const endpoints = [
-      'projects',
-      'income',
-      'expenses',
-      'worker-categories',
-      'workers',
-      'payroll-records',
-      'approved-items',
-      'suppliers',
-      'purchase-orders',
-      'supplies',
-      'store-transactions',
-      'site-diary-entries',
-      'subcontractors',
-      'quotations',
-      'invoices'
+      'projects', 'income', 'expenses', 'worker-categories', 'workers',
+      'payroll-records', 'approved-items', 'suppliers', 'purchase-orders',
+      'supplies', 'store-transactions', 'site-diary-entries', 'subcontractors',
+      'quotations', 'invoices'
     ];
     
     for (const endpoint of endpoints) {
       try {
-        // Get all items - use correct URL
         const getResponse = await fetch(`${API_BASE_URL}/${endpoint}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -2715,7 +2702,6 @@ resetAllData: async () => {
           const items = await getResponse.json();
           console.log(`Deleting ${items.length} records from ${endpoint}...`);
           
-          // Delete each item
           for (const item of items) {
             await fetch(`${API_BASE_URL}/${endpoint}/${item.id}`, {
               method: 'DELETE',
@@ -2723,34 +2709,19 @@ resetAllData: async () => {
             });
           }
           console.log(`✅ Cleared ${endpoint}`);
-        } else {
-          console.log(`⚠️ Could not fetch ${endpoint}: ${getResponse.status}`);
         }
       } catch (error) {
         console.error(`Error clearing ${endpoint}:`, error.message);
       }
     }
     
-    // Clear frontend storage
     storage.clearAll();
     
-    // Reset all state
     set({ 
-      projects: [], 
-      income: [], 
-      expenses: [], 
-      workerCategories: [], 
-      workers: [], 
-      payrollRecords: [], 
-      approvedItems: [], 
-      suppliers: [], 
-      purchaseOrders: [], 
-      supplies: [], 
-      storeTransactions: [], 
-      siteDiaryEntries: [], 
-      subcontractors: [], 
-      quotations: [], 
-      invoices: [] 
+      projects: [], income: [], expenses: [], workerCategories: [], workers: [],
+      payrollRecords: [], approvedItems: [], suppliers: [], purchaseOrders: [],
+      supplies: [], storeTransactions: [], siteDiaryEntries: [], subcontractors: [],
+      quotations: [], invoices: []
     });
     
     console.log('All data reset successfully from database');
@@ -2761,4 +2732,5 @@ resetAllData: async () => {
     console.error('Failed to reset data:', error);
     alert('Error resetting data. Check console for details.');
   }
-},
+}
+}));
