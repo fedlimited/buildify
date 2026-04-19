@@ -14,6 +14,9 @@ const initTheme = storage.getTheme() as 'light' | 'dark';
 if (initTheme === 'dark') document.documentElement.classList.add('dark');
 
 // Load or seed - but projects will be fetched from API
+
+/*
+
 let initProjects = storage.getProjects();
 if (!initProjects.length) {
   initProjects = sampleProjects; storage.setProjects(initProjects);
@@ -24,6 +27,7 @@ if (!initProjects.length) {
   storage.setSupplies(sampleSupplies); storage.setStoreTransactions(sampleStoreTransactions);
   storage.setSiteDiaryEntries(sampleSiteDiaryEntries);
 }
+*/
 
 // Seed default users if none
 let initAppUsers = storage.getAppUsers();

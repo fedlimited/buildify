@@ -99,6 +99,7 @@ function PnLReport() {
   const [filterProject, setFilterProject] = useState('all');
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [projects, setProjects] = useState([]);
+  const [allProjects, setAllProjects] = useState([]);  // ← ADD THIS
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -109,6 +110,7 @@ function PnLReport() {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const projectsData = await projectsRes.json();
+        setAllProjects(projectsData);  // ← Store ALL projects
         setProjects(projectsData.filter(p => p.status === 'Active'));
       } catch (err) {
         console.error('Error loading projects:', err);
@@ -155,24 +157,28 @@ function PnLReport() {
           expenses = expenses.filter(e => e.date <= dateRange.end);
         }
         
-        const totalIncome = income.reduce((s, i) => s + (i.amount_received || 0), 0);
+        const totalIncome = income.reduce((s, i) => s + (i.amount_received || i.gross_amount || 0), 0);
         const totalExpenses = expenses.reduce((s, e) => s + (e.amount || 0), 0);
         const profit = totalIncome - totalExpenses;
         const profitMargin = totalIncome > 0 ? ((profit / totalIncome) * 100).toFixed(1) : 0;
         
-        // Group by project for detailed view
+        // Group by project - USE ALLPROJECTS TO GET CORRECT NAMES
         const projectBreakdown = {};
         
         income.forEach(i => {
-          const projectName = i.project_name || `Project ${i.project_id}`;
+          // ✅ Get project name from the projects list, not from income record
+          const project = allProjects.find(p => p.id === i.project_id);
+          const projectName = project?.name || `Project ${i.project_id}`;
           if (!projectBreakdown[projectName]) {
             projectBreakdown[projectName] = { income: 0, expenses: 0 };
           }
-          projectBreakdown[projectName].income += (i.amount_received || 0);
+          projectBreakdown[projectName].income += (i.amount_received || i.gross_amount || 0);
         });
         
         expenses.forEach(e => {
-          const projectName = e.project_name || `Project ${e.project_id}`;
+          // ✅ Get project name from the projects list, not from expense record
+          const project = allProjects.find(p => p.id === e.project_id);
+          const projectName = project?.name || `Project ${e.project_id}`;
           if (!projectBreakdown[projectName]) {
             projectBreakdown[projectName] = { income: 0, expenses: 0 };
           }
@@ -208,7 +214,7 @@ function PnLReport() {
       }
     }
     loadData();
-  }, [selectedProjectId, filterProject, dateRange.start, dateRange.end]);
+  }, [selectedProjectId, filterProject, dateRange.start, dateRange.end, allProjects]); // ← Add allProjects to dependencies
 
   // Apply search filter to project details
   useEffect(() => {
@@ -331,13 +337,6 @@ function PnLReport() {
     React.createElement(Button, { variant: "outline", size: "sm", onClick: () => exportToCSV(filteredData.projectDetails, 'profit_loss_report') }, "Export CSV")
   );
 }
-
-
-
-
-
-
-
 
 
 
