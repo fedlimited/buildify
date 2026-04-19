@@ -214,6 +214,8 @@ app.delete('/api/invoices/:id', InvoiceController.deleteInvoice);
 
 
 
+
+
 // ========== LOAD SAMPLE DATA ==========
 app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, res) => {
   try {
@@ -233,13 +235,16 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
       }
     }
     
-    // ========== 1. PROJECTS ==========
+    // ========== 1. PROJECTS (8 diverse projects across Kenya) ==========
     const projects = [
-      { name: 'Nairobi Heights Apartments', client: 'Nairobi Development Corp', contract_sum: 45000000, location: 'Westlands, Nairobi', start_date: '2024-01-15', end_date: '2025-06-30', status: 'Active', project_manager: 'John Maina', description: '15-story luxury apartment building', progress: 35 },
-      { name: 'Kisii Teaching Hospital', client: 'Ministry of Health', contract_sum: 125000000, location: 'Kisii Town', start_date: '2024-03-01', end_date: '2026-12-31', status: 'Active', project_manager: 'Dr. Sarah Wanjiku', description: '300-bed teaching hospital', progress: 15 },
-      { name: 'Mombasa Port Road Extension', client: 'Kenya National Highways Authority', contract_sum: 89000000, location: 'Mombasa', start_date: '2024-06-01', end_date: '2025-11-30', status: 'Active', project_manager: 'James Otieno', description: '15km road expansion', progress: 45 },
-      { name: 'Nakuru Industrial Park', client: 'Industrial Development Board', contract_sum: 250000000, location: 'Nakuru', start_date: '2024-08-15', end_date: '2026-08-15', status: 'Active', project_manager: 'Grace Muthoni', description: '100-acre industrial park', progress: 10 },
-      { name: 'Eldoret Mall', client: 'Retail Development Ltd', contract_sum: 68000000, location: 'Eldoret', start_date: '2024-02-01', end_date: '2025-05-31', status: 'Active', project_manager: 'Michael Kipchoge', description: 'Modern shopping mall', progress: 60 }
+      { name: 'Diamond Plaza Mall - Nairobi', client: 'Diamond Developers Ltd', contract_sum: 520000000, location: 'Parklands, Nairobi', start_date: '2024-01-10', end_date: '2025-12-31', status: 'Active', project_manager: 'John Kamau', description: '5-storey modern shopping mall with cinema and food court', progress: 40 },
+      { name: 'Mombasa Beach Resort', client: 'Coastline Hospitality', contract_sum: 380000000, location: 'Nyali, Mombasa', start_date: '2024-02-15', end_date: '2025-11-30', status: 'Active', project_manager: 'Hassan Ali', description: 'Luxury beach resort with 150 rooms and conference facilities', progress: 25 },
+      { name: 'Kisumu Industrial Park', client: 'Lake Basin Development Authority', contract_sum: 450000000, location: 'Kisumu', start_date: '2024-03-01', end_date: '2026-06-30', status: 'Active', project_manager: 'Odhiambo Omondi', description: '100-acre industrial park with warehouses and factories', progress: 15 },
+      { name: 'Nakuru Affordable Housing', client: 'National Housing Corporation', contract_sum: 680000000, location: 'Nakuru', start_date: '2024-04-01', end_date: '2026-12-31', status: 'Active', project_manager: 'Grace Muthoni', description: '500-unit affordable housing project', progress: 10 },
+      { name: 'Eldoret Sports Complex', client: 'Ministry of Sports', contract_sum: 290000000, location: 'Eldoret', start_date: '2024-05-01', end_date: '2025-10-31', status: 'Active', project_manager: 'Michael Kipchoge', description: 'International standard stadium and training facilities', progress: 30 },
+      { name: 'Thika Road Bypass', client: 'Kenya National Highways Authority', contract_sum: 850000000, location: 'Thika Road, Nairobi', start_date: '2024-01-20', end_date: '2026-08-31', status: 'Active', project_manager: 'Peter Odhiambo', description: '25km dual carriageway bypass', progress: 20 },
+      { name: 'Diani Beach Hotel', client: 'African Safari Resorts', contract_sum: 310000000, location: 'Diani, Kwale', start_date: '2024-03-15', end_date: '2025-09-30', status: 'Active', project_manager: 'Fatma Said', description: '5-star beachfront hotel with 200 rooms', progress: 35 },
+      { name: 'Meru University Expansion', client: 'Meru University', contract_sum: 220000000, location: 'Meru', start_date: '2024-02-01', end_date: '2025-12-31', status: 'Active', project_manager: 'Muguna Mwenda', description: 'New engineering faculty and student hostels', progress: 45 }
     ];
     
     const projectIds = [];
@@ -253,13 +258,20 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     }
     console.log(`✅ Added ${projects.length} projects`);
     
-    // ========== 2. WORKER CATEGORIES ==========
+    // ========== 2. WORKER CATEGORIES (Expanded to 12) ==========
     const categories = [
-      { name: 'General Labourer', day_rate: 800, color: '#3b82f6', is_active: 1 },
-      { name: 'Skilled Mason', day_rate: 1500, color: '#10b981', is_active: 1 },
-      { name: 'Electrician', day_rate: 1800, color: '#f59e0b', is_active: 1 },
-      { name: 'Plumber', day_rate: 1700, color: '#ef4444', is_active: 1 },
-      { name: 'Carpenter', day_rate: 1600, color: '#8b5cf6', is_active: 1 }
+      { name: 'Foreman', day_rate: 2500, color: '#3b82f6', is_active: 1 },
+      { name: 'Skilled Mason', day_rate: 1800, color: '#10b981', is_active: 1 },
+      { name: 'Carpenter', day_rate: 1600, color: '#f59e0b', is_active: 1 },
+      { name: 'Plumber', day_rate: 2000, color: '#8b5cf6', is_active: 1 },
+      { name: 'General Labourer', day_rate: 800, color: '#6b7280', is_active: 1 },
+      { name: 'Electrician', day_rate: 2200, color: '#ef4444', is_active: 1 },
+      { name: 'Welder', day_rate: 1400, color: '#d97706', is_active: 1 },
+      { name: 'Painter', day_rate: 1200, color: '#ec489a', is_active: 1 },
+      { name: 'Driver', day_rate: 1300, color: '#14b8a6', is_active: 1 },
+      { name: 'Security Guard', day_rate: 900, color: '#6b7280', is_active: 1 },
+      { name: 'Equipment Operator', day_rate: 2000, color: '#1e3a5f', is_active: 1 },
+      { name: 'Site Clerk', day_rate: 1500, color: '#a855f7', is_active: 1 }
     ];
     
     const categoryIds = [];
@@ -273,35 +285,46 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     }
     console.log(`✅ Added ${categories.length} worker categories`);
     
-    // ========== 3. WORKERS ==========
-    const workers = [
-      { name: 'John Kamau', phone: '+254 711 223344', categoryName: 'General Labourer' },
-      { name: 'Peter Ochieng', phone: '+254 722 334455', categoryName: 'Skilled Mason' },
-      { name: 'Mary Wanjiku', phone: '+254 733 445566', categoryName: 'Electrician' },
-      { name: 'James Mwangi', phone: '+254 744 556677', categoryName: 'Plumber' },
-      { name: 'Sarah Achieng', phone: '+254 755 667788', categoryName: 'Carpenter' }
-    ];
+    // ========== 3. WORKERS (10 per project - 80 total) ==========
+    const firstNames = ['John', 'Peter', 'James', 'David', 'Michael', 'Francis', 'Joseph', 'William', 'George', 'Charles', 
+                        'Mary', 'Jane', 'Grace', 'Esther', 'Ruth', 'Sarah', 'Hellen', 'Ann', 'Catherine', 'Lucy',
+                        'Paul', 'Stephen', 'Andrew', 'Philip', 'Thomas', 'Simon', 'Mathew', 'Luke', 'Mark', 'Timothy'];
+    const lastNames = ['Kamau', 'Njoroge', 'Mwangi', 'Ochieng', 'Otieno', 'Kiprop', 'Wanjiku', 'Muthoni', 'Achieng', 'Chebet',
+                      'Kimani', 'Omondi', 'Wambui', 'Njeri', 'Akinyi', 'Atieno', 'Nyambura', 'Wangari', 'Ndegwa', 'Kariuki'];
     
-    const firstProject = projectIds[0];
-    for (const w of workers) {
-      const cat = categoryIds.find(c => c.name === w.categoryName);
-      if (cat && firstProject) {
+    let totalWorkers = 0;
+    for (const project of projectIds) {
+      for (let i = 0; i < 10; i++) {
+        const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+        const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+        const name = `${firstName} ${lastName}`;
+        const phone = `08${Math.floor(Math.random() * 900000000 + 100000000)}`;
+        const category = categoryIds[Math.floor(Math.random() * categoryIds.length)];
+        const dateAdded = new Date().toISOString().split('T')[0];
+        
         await db.run(
           `INSERT INTO workers (company_id, name, phone, category_id, project_id, day_rate, is_active, date_added)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-          [company_id, w.name, w.phone, cat.id, firstProject.id, cat.day_rate, 1, new Date().toISOString().split('T')[0]]
+           VALUES ($1, $2, $3, $4, $5, $6, 1, $7)`,
+          [company_id, name, phone, category.id, project.id, category.day_rate, dateAdded]
         );
+        totalWorkers++;
       }
+      console.log(`  ✅ Added 10 workers to ${project.name}`);
     }
-    console.log(`✅ Added ${workers.length} workers`);
+    console.log(`✅ Added ${totalWorkers} workers total`);
     
-    // ========== 4. SUBCONTRACTORS ==========
+    // ========== 4. SUBCONTRACTORS (10) ==========
     const subcontractors = [
-      { name: 'ABC Foundations Ltd', phone: '+254 722 111222', email: 'info@abcfoundations.com', kra_pin: 'P051234567Z', specialization: 'Foundation Works', address: 'Industrial Area, Nairobi', contact_person: 'John Kamau', is_active: 1 },
-      { name: 'XYZ Electricals', phone: '+254 733 333444', email: 'info@xyzelectricals.com', kra_pin: 'P059876543Z', specialization: 'Electrical Works', address: 'Westlands, Nairobi', contact_person: 'Jane Wanjiku', is_active: 1 },
-      { name: 'Pinnacle Plumbing Ltd', phone: '+254 744 555666', email: 'info@pinnacleplumbing.com', kra_pin: 'P051238888Z', specialization: 'Plumbing', address: 'Kilimani, Nairobi', contact_person: 'Peter Ochieng', is_active: 1 },
-      { name: 'SteelWorks Ltd', phone: '+254 755 777888', email: 'info@steelworks.com', kra_pin: 'P059999888Z', specialization: 'Steel Fabrication', address: 'Industrial Area, Nairobi', contact_person: 'James Maina', is_active: 1 },
-      { name: 'Roofing Masters', phone: '+254 766 999000', email: 'info@roofingmasters.com', kra_pin: 'P051234999Z', specialization: 'Roofing', address: 'Thika Road, Nairobi', contact_person: 'Mary Njuguna', is_active: 1 }
+      { name: 'ABC Foundations Ltd', phone: '08123456789', email: 'info@abcfoundations.com', kra_pin: 'P051234567Z', specialization: 'Foundation Works', address: 'Industrial Area, Nairobi', contact_person: 'John Kamau', is_active: 1 },
+      { name: 'XYZ Electricals', phone: '08234567890', email: 'info@xyzelectricals.com', kra_pin: 'P059876543Z', specialization: 'Electrical Works', address: 'Westlands, Nairobi', contact_person: 'Jane Wanjiku', is_active: 1 },
+      { name: 'Pinnacle Plumbing Ltd', phone: '08345678901', email: 'info@pinnacleplumbing.com', kra_pin: 'P051238888Z', specialization: 'Plumbing', address: 'Kilimani, Nairobi', contact_person: 'Peter Ochieng', is_active: 1 },
+      { name: 'SteelWorks Ltd', phone: '08456789012', email: 'info@steelworks.com', kra_pin: 'P059999888Z', specialization: 'Steel Fabrication', address: 'Industrial Area, Nairobi', contact_person: 'James Maina', is_active: 1 },
+      { name: 'Roofing Masters', phone: '08567890123', email: 'info@roofingmasters.com', kra_pin: 'P051234999Z', specialization: 'Roofing', address: 'Thika Road, Nairobi', contact_person: 'Mary Njuguna', is_active: 1 },
+      { name: 'Coast Carpentry Ltd', phone: '08678901234', email: 'info@coastcarpentry.com', kra_pin: 'P059999777Z', specialization: 'Carpentry', address: 'Mombasa, Kenya', contact_person: 'Hassan Ali', is_active: 1 },
+      { name: 'Highland Painters', phone: '08789012345', email: 'info@highlandpainters.com', kra_pin: 'P051234666Z', specialization: 'Painting', address: 'Nakuru', contact_person: 'Grace Muthoni', is_active: 1 },
+      { name: 'Elite Landscaping', phone: '08890123456', email: 'info@elitelandscaping.com', kra_pin: 'P059999555Z', specialization: 'Landscaping', address: 'Kisumu', contact_person: 'Odhiambo Omondi', is_active: 1 },
+      { name: 'Precision Tiling Ltd', phone: '08901234567', email: 'info@precisiontiling.com', kra_pin: 'P051234444Z', specialization: 'Tiling', address: 'Eldoret', contact_person: 'Michael Kipchoge', is_active: 1 },
+      { name: 'Global Glass Works', phone: '08012345678', email: 'info@globalglass.com', kra_pin: 'P059999333Z', specialization: 'Glass and Aluminum', address: 'Thika Road, Nairobi', contact_person: 'Peter Odhiambo', is_active: 1 }
     ];
     
     const subcontractorIds = [];
@@ -315,11 +338,16 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     }
     console.log(`✅ Added ${subcontractors.length} subcontractors`);
     
-    // ========== 5. SUPPLIERS ==========
+    // ========== 5. SUPPLIERS (8) ==========
     const suppliers = [
-      { name: 'Kenya Cement Ltd', kra_pin: 'P051234567Z', phone: '+254 722 123456', email: 'sales@kenyacement.co.ke', address: 'Industrial Area, Nairobi', contact_person: 'Peter Maina', payment_terms: 'Net 30 days', is_active: 1 },
-      { name: 'Steel Masters Ltd', kra_pin: 'P059876543Z', phone: '+254 733 987654', email: 'info@steelmasters.co.ke', address: 'Mombasa Road, Nairobi', contact_person: 'James Otieno', payment_terms: 'Net 45 days', is_active: 1 },
-      { name: 'Coastal Hardware', kra_pin: 'P059999999Z', phone: '+254 788 999888', email: 'info@coastalhardware.com', address: 'Mombasa, Kenya', contact_person: 'Hassan Ali', payment_terms: 'Net 60 days', is_active: 1 }
+      { name: 'Bamburi Cement Ltd', kra_pin: 'P051234567A', phone: '08123456789', email: 'orders@bamburi.co.ke', address: 'Industrial Area, Nairobi', contact_person: 'Mary Wambui', payment_terms: 'Net 30 days', is_active: 1 },
+      { name: 'Devki Steel Mills', kra_pin: 'P051234568B', phone: '08234567890', email: 'sales@devki.co.ke', address: 'Athi River, Machakos', contact_person: 'Rajesh Patel', payment_terms: 'Net 45 days', is_active: 1 },
+      { name: 'Timber World Supplies', kra_pin: 'P051234569C', phone: '08345678901', email: 'info@timberworld.co.ke', address: 'Ngong Road, Nairobi', contact_person: 'Joseph Kimani', payment_terms: 'Net 30 days', is_active: 1 },
+      { name: 'Coastal Hardware', kra_pin: 'P059999999Z', phone: '08456789012', email: 'info@coastalhardware.com', address: 'Mombasa, Kenya', contact_person: 'Hassan Ali', payment_terms: 'Net 60 days', is_active: 1 },
+      { name: 'Kenya Electricals Ltd', kra_pin: 'P051234570D', phone: '08567890123', email: 'sales@kenyaelectricals.co.ke', address: 'Enterprise Road, Nairobi', contact_person: 'John Mwangi', payment_terms: 'Net 30 days', is_active: 1 },
+      { name: 'Superior Paints Ltd', kra_pin: 'P051234571E', phone: '08678901234', email: 'info@superiorpaints.co.ke', address: 'Industrial Area, Nairobi', contact_person: 'Jane Wanjiku', payment_terms: 'Net 30 days', is_active: 1 },
+      { name: 'Master Plastics Ltd', kra_pin: 'P051234572F', phone: '08789012345', email: 'sales@masterplastics.co.ke', address: 'Mombasa Road, Nairobi', contact_person: 'Peter Ochieng', payment_terms: 'Net 30 days', is_active: 1 },
+      { name: 'Elite Hardware Store', kra_pin: 'P051234573G', phone: '08890123456', email: 'info@elitehardware.co.ke', address: 'Kisumu', contact_person: 'Odhiambo Omondi', payment_terms: 'Net 30 days', is_active: 1 }
     ];
     
     const supplierIds = [];
@@ -333,13 +361,33 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     }
     console.log(`✅ Added ${suppliers.length} suppliers`);
     
-    // ========== 6. APPROVED ITEMS ==========
+    // ========== 6. APPROVED ITEMS (25 items) ==========
     const approvedItems = [
-      { name: 'Portland Cement', category: 'Materials', unit: 'bags', default_price: 850, description: 'Grade 42.5', is_active: 1 },
-      { name: 'Steel Reinforcement Bars', category: 'Materials', unit: 'pieces', default_price: 1200, description: '12mm diameter', is_active: 1 },
-      { name: 'River Sand', category: 'Materials', unit: 'tons', default_price: 3500, description: 'Building sand', is_active: 1 },
-      { name: 'Roofing Sheets', category: 'Materials', unit: 'sheets', default_price: 450, description: 'Iron sheets', is_active: 1 },
-      { name: 'Ceramic Tiles', category: 'Finishing', unit: 'sqm', default_price: 1200, description: 'Floor tiles', is_active: 1 }
+      { name: 'Portland Cement 42.5', category: 'Cement', unit: 'bag', default_price: 950, description: '50kg bag, high strength', is_active: 1 },
+      { name: 'Portland Cement 32.5', category: 'Cement', unit: 'bag', default_price: 850, description: '50kg bag, general purpose', is_active: 1 },
+      { name: 'Steel Bar Y12', category: 'Steel', unit: 'tonne', default_price: 120000, description: '12mm deformed bars', is_active: 1 },
+      { name: 'Steel Bar Y16', category: 'Steel', unit: 'tonne', default_price: 122000, description: '16mm deformed bars', is_active: 1 },
+      { name: 'Steel Bar Y10', category: 'Steel', unit: 'tonne', default_price: 118000, description: '10mm deformed bars', is_active: 1 },
+      { name: 'River Sand', category: 'Aggregates', unit: 'tonne', default_price: 3500, description: 'Clean river sand', is_active: 1 },
+      { name: 'Ballast 20mm', category: 'Aggregates', unit: 'tonne', default_price: 4000, description: '20mm crushed stone', is_active: 1 },
+      { name: 'Ballast 10mm', category: 'Aggregates', unit: 'tonne', default_price: 4200, description: '10mm crushed stone', is_active: 1 },
+      { name: '6-inch Hollow Block', category: 'Blocks', unit: 'piece', default_price: 180, description: '150x200x400mm', is_active: 1 },
+      { name: '4-inch Hollow Block', category: 'Blocks', unit: 'piece', default_price: 140, description: '100x200x400mm', is_active: 1 },
+      { name: 'Cypress 2x4', category: 'Timber', unit: 'piece', default_price: 480, description: '2x4 inch, 12ft length', is_active: 1 },
+      { name: 'Plywood 12mm', category: 'Timber', unit: 'sheet', default_price: 3200, description: '4x8 feet', is_active: 1 },
+      { name: 'Iron Sheet Gauge 30', category: 'Roofing', unit: 'piece', default_price: 1850, description: '3m length, corrugated', is_active: 1 },
+      { name: 'PVC Pipe 110mm', category: 'Plumbing', unit: 'piece', default_price: 1800, description: '6m length', is_active: 1 },
+      { name: 'Electrical Cable 2.5mm', category: 'Electrical', unit: 'roll', default_price: 8500, description: '100m roll', is_active: 1 },
+      { name: 'LED Bulb 9W', category: 'Electrical', unit: 'piece', default_price: 250, description: 'Daylight', is_active: 1 },
+      { name: 'Emulsion Paint White', category: 'Paint', unit: 'litre', default_price: 450, description: 'Interior', is_active: 1 },
+      { name: 'Ceramic Tiles 30x30', category: 'Finishing', unit: 'sqm', default_price: 1200, description: 'Floor tiles', is_active: 1 },
+      { name: 'Water Closet (WC)', category: 'Plumbing', unit: 'piece', default_price: 5500, description: 'Toilet pan', is_active: 1 },
+      { name: 'Wash Basin', category: 'Plumbing', unit: 'piece', default_price: 3500, description: 'Ceramic with tap', is_active: 1 },
+      { name: 'Roofing Nails', category: 'Hardware', unit: 'kg', default_price: 250, description: 'Box of 500', is_active: 1 },
+      { name: 'Paint Brush 4"', category: 'Tools', unit: 'piece', default_price: 350, description: 'Premium quality', is_active: 1 },
+      { name: 'Safety Boots', category: 'Safety', unit: 'pair', default_price: 2500, description: 'Steel toe', is_active: 1 },
+      { name: 'Hard Hat', category: 'Safety', unit: 'piece', default_price: 850, description: 'Industrial helmet', is_active: 1 },
+      { name: 'High Visibility Vest', category: 'Safety', unit: 'piece', default_price: 450, description: 'Reflective', is_active: 1 }
     ];
     
     for (const item of approvedItems) {
@@ -352,130 +400,81 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     console.log(`✅ Added ${approvedItems.length} approved items`);
     
     // ========== 7. QUOTATIONS ==========
-    const quotations = [
-      { subcontractor_id: subcontractorIds[0]?.id, subcontractor_name: 'ABC Foundations Ltd', project_id: projectIds[0]?.id, project_name: 'Nairobi Heights Apartments', description: 'Foundation works', amount: 100000, date: '2026-04-01', status: 'Accepted', notes: '' },
-      { subcontractor_id: subcontractorIds[1]?.id, subcontractor_name: 'XYZ Electricals', project_id: projectIds[0]?.id, project_name: 'Nairobi Heights Apartments', description: 'Electrical wiring', amount: 75000, date: '2026-04-05', status: 'Pending', notes: '' },
-      { subcontractor_id: subcontractorIds[2]?.id, subcontractor_name: 'Pinnacle Plumbing Ltd', project_id: projectIds[1]?.id, project_name: 'Kisii Teaching Hospital', description: 'Plumbing works', amount: 340000, date: '2026-04-02', status: 'Accepted', notes: '' },
-      { subcontractor_id: subcontractorIds[3]?.id, subcontractor_name: 'SteelWorks Ltd', project_id: projectIds[1]?.id, project_name: 'Kisii Teaching Hospital', description: 'Steel structure', amount: 1200000, date: '2026-04-04', status: 'Accepted', notes: '' },
-      { subcontractor_id: subcontractorIds[4]?.id, subcontractor_name: 'Roofing Masters', project_id: projectIds[2]?.id, project_name: 'Mombasa Port Road Extension', description: 'Roofing', amount: 34556, date: '2026-04-01', status: 'Accepted', notes: '' }
-    ];
+    const quotations = [];
+    for (let i = 0; i < 12; i++) {
+      const sub = subcontractorIds[i % subcontractorIds.length];
+      const proj = projectIds[i % projectIds.length];
+      if (sub && proj) {
+        quotations.push({
+          subcontractor_id: sub.id,
+          subcontractor_name: sub.name,
+          project_id: proj.id,
+          project_name: proj.name,
+          description: `${sub.name} services for ${proj.name}`,
+          amount: Math.floor(Math.random() * 500000) + 50000,
+          date: new Date().toISOString().split('T')[0],
+          status: ['Pending', 'Accepted', 'Rejected'][Math.floor(Math.random() * 3)],
+          notes: ''
+        });
+      }
+    }
     
     for (const q of quotations) {
-      if (q.subcontractor_id) {
-        await db.run(
-          `INSERT INTO quotations (company_id, subcontractor_id, subcontractor_name, project_id, project_name, description, amount, date, status, notes)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-          [company_id, q.subcontractor_id, q.subcontractor_name, q.project_id, q.project_name, q.description, q.amount, q.date, q.status, q.notes]
-        );
-      }
+      await db.run(
+        `INSERT INTO quotations (company_id, subcontractor_id, subcontractor_name, project_id, project_name, description, amount, date, status, notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [company_id, q.subcontractor_id, q.subcontractor_name, q.project_id, q.project_name, q.description, q.amount, q.date, q.status, q.notes]
+      );
     }
     console.log(`✅ Added ${quotations.length} quotations`);
     
-    // ========== 8. PURCHASE ORDERS ==========
-    const purchaseOrders = [
-      { order_number: 'PO-2026-001', supplier_id: supplierIds[0]?.id, supplier_name: 'Kenya Cement Ltd', project_id: projectIds[0]?.id, project_name: 'Nairobi Heights Apartments', order_date: '2026-04-01', expected_date: '2026-04-15', items: JSON.stringify([{ description: 'Portland Cement', quantity: 500, unit_price: 850, total: 425000 }]), subtotal: 425000, vat: 68000, total: 493000, status: 'Supplied', payment_status: 'Paid', notes: '' },
-      { order_number: 'PO-2026-002', supplier_id: supplierIds[1]?.id, supplier_name: 'Steel Masters Ltd', project_id: projectIds[1]?.id, project_name: 'Kisii Teaching Hospital', order_date: '2026-04-02', expected_date: '2026-04-20', items: JSON.stringify([{ description: 'Reinforcement Bars', quantity: 1000, unit_price: 120, total: 120000 }]), subtotal: 120000, vat: 19200, total: 139200, status: 'Ordered', payment_status: 'Unpaid', notes: '' }
-    ];
-    
-    const purchaseOrderIds = [];
-    for (const po of purchaseOrders) {
-      const result = await db.run(
-        `INSERT INTO purchase_orders (company_id, order_number, supplier_id, supplier_name, project_id, project_name, order_date, expected_date, items, subtotal, vat, total, status, payment_status, notes)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id`,
-        [company_id, po.order_number, po.supplier_id, po.supplier_name, po.project_id, po.project_name, po.order_date, po.expected_date, po.items, po.subtotal, po.vat, po.total, po.status, po.payment_status, po.notes]
-      );
-      purchaseOrderIds.push({ id: result.lastID });
-    }
-    console.log(`✅ Added ${purchaseOrders.length} purchase orders`);
-    
-    // ========== 9. SUPPLIES ==========
-    const supplies = [
-      { supplier_id: supplierIds[0]?.id, supplier_name: 'Kenya Cement Ltd', project_id: projectIds[0]?.id, project_name: 'Nairobi Heights Apartments', date: '2026-04-01', item_name: 'Portland Cement', unit: 'bags', quantity: 500, unit_price: 850, total_amount: 425000, vat: 68000, status: 'Delivered', paid: 1, order_id: purchaseOrderIds[0]?.id, delivery_note: 'DN-001', notes: '' },
-      { supplier_id: supplierIds[1]?.id, supplier_name: 'Steel Masters Ltd', project_id: projectIds[1]?.id, project_name: 'Kisii Teaching Hospital', date: '2026-04-02', item_name: 'Reinforcement Bars', unit: 'pieces', quantity: 1000, unit_price: 120, total_amount: 120000, vat: 19200, status: 'Delivered', paid: 0, order_id: purchaseOrderIds[1]?.id, delivery_note: 'DN-002', notes: '' }
-    ];
-    
-    for (const supply of supplies) {
-      await db.run(
-        `INSERT INTO supplies (company_id, supplier_id, supplier_name, project_id, project_name, date, item_name, unit, quantity, unit_price, total_amount, vat, status, paid, order_id, delivery_note, notes)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
-        [company_id, supply.supplier_id, supply.supplier_name, supply.project_id, supply.project_name, supply.date, supply.item_name, supply.unit, supply.quantity, supply.unit_price, supply.total_amount, supply.vat, supply.status, supply.paid, supply.order_id, supply.delivery_note, supply.notes]
-      );
-    }
-    console.log(`✅ Added ${supplies.length} supplies`);
-    
-    // ========== 10. STORE TRANSACTIONS ==========
-    const storeTransactions = [
-      { date: '2026-04-01', project_id: projectIds[0]?.id, project_name: 'Nairobi Heights Apartments', item_name: 'Cement Bags', unit: 'Bags', category: 'Materials', quantity_supplied: 500, quantity_issued: 350, quantity_returned: 10, transaction_type: 'Supply', reference: 'PO-2026-001' },
-      { date: '2026-04-03', project_id: projectIds[1]?.id, project_name: 'Kisii Teaching Hospital', item_name: 'Steel Bars', unit: 'Pieces', category: 'Materials', quantity_supplied: 1000, quantity_issued: 600, quantity_returned: 20, transaction_type: 'Supply', reference: 'PO-2026-002' }
-    ];
-    
-    for (const st of storeTransactions) {
-      await db.run(
-        `INSERT INTO store_transactions (company_id, date, project_id, project_name, item_name, unit, category, quantity_supplied, quantity_issued, quantity_returned, transaction_type, reference)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-        [company_id, st.date, st.project_id, st.project_name, st.item_name, st.unit, st.category, st.quantity_supplied, st.quantity_issued, st.quantity_returned, st.transaction_type, st.reference]
-      );
-    }
-    console.log(`✅ Added ${storeTransactions.length} store transactions`);
-    
-    // ========== 11. SITE DIARY ENTRIES ==========
-    const siteDiaryEntries = [
-      { date: '2026-04-06', project_id: projectIds[0]?.id, project_name: 'Nairobi Heights Apartments', weather: JSON.stringify({ condition: 'Sunny', temp: 28 }), total_workers: 25, activities: JSON.stringify([{ description: 'Foundation excavation' }]), challenges: JSON.stringify([]), status: 'Completed' },
-      { date: '2026-04-06', project_id: projectIds[1]?.id, project_name: 'Kisii Teaching Hospital', weather: JSON.stringify({ condition: 'Rainy', temp: 22 }), total_workers: 30, activities: JSON.stringify([{ description: 'Roof installation' }]), challenges: JSON.stringify(['Rain delay']), status: 'Completed' }
-    ];
-    
-    for (const entry of siteDiaryEntries) {
-      await db.run(
-        `INSERT INTO site_diary_entries (company_id, date, project_id, project_name, weather, total_workers, activities, challenges, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-        [company_id, entry.date, entry.project_id, entry.project_name, entry.weather, entry.total_workers, entry.activities, entry.challenges, entry.status]
-      );
-    }
-    console.log(`✅ Added ${siteDiaryEntries.length} site diary entries`);
-    
-    // ========== 12. INCOME ==========
+    // ========== 8. INCOME (for each project) ==========
     for (const p of projectIds) {
-      const amount = 5000000;
+      const amount = Math.floor(Math.random() * 10000000) + 2000000;
       await db.run(
         `INSERT INTO income (company_id, project_id, certificate_no, date, gross_amount, retention_percent, amount_received, payment_date, payment_method, status, notes)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-        [company_id, p.id, `CERT-${p.id}-001`, new Date().toISOString().split('T')[0], amount, 5, amount * 0.95, new Date().toISOString().split('T')[0], 'Bank Transfer', 'Paid', `Payment for ${p.name}`]
+        [company_id, p.id, `CERT-${p.id}-001`, new Date().toISOString().split('T')[0], amount, 5, amount * 0.95, new Date().toISOString().split('T')[0], 'Bank Transfer', 'Paid', `First interim payment for ${p.name}`]
       );
     }
     console.log(`✅ Added ${projectIds.length} income records`);
     
-    // ========== 13. EXPENSES ==========
+    // ========== 9. EXPENSES (for each project) ==========
+    const expenseCategories = ['Materials', 'Labour', 'Equipment', 'Transport', 'Subcontractor', 'Utilities', 'Safety', 'Administrative'];
     for (const p of projectIds) {
+      const amount = Math.floor(Math.random() * 5000000) + 500000;
+      const category = expenseCategories[Math.floor(Math.random() * expenseCategories.length)];
       await db.run(
         `INSERT INTO expenses (company_id, project_id, project_name, date, category, description, amount, vat, payment_method, status, reference)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-        [company_id, p.id, p.name, new Date().toISOString().split('T')[0], 'Materials', `Materials for ${p.name}`, 500000, 80000, 'Bank Transfer', 'Paid', `EXP-${p.id}-001`]
+        [company_id, p.id, p.name, new Date().toISOString().split('T')[0], category, `${category} expenses for ${p.name}`, amount, amount * 0.16, 'Bank Transfer', 'Paid', `EXP-${p.id}-001`]
       );
     }
     console.log(`✅ Added ${projectIds.length} expense records`);
     
-    // ========== 14. INVOICES ==========
-    for (const p of projectIds) {
-      const amount = 3000000;
+    // ========== 10. PURCHASE ORDERS ==========
+    const purchaseOrders = [
+      { order_number: 'PO-2024-001', supplier_id: supplierIds[0]?.id, supplier_name: 'Bamburi Cement Ltd', project_id: projectIds[0]?.id, project_name: 'Diamond Plaza Mall - Nairobi', order_date: '2024-03-10', expected_date: '2024-03-25', items: JSON.stringify([{ description: 'Portland Cement 42.5', quantity: 500, unit_price: 950, total: 475000 }]), subtotal: 475000, vat: 76000, total: 551000, status: 'Supplied', payment_status: 'Paid', notes: '' },
+      { order_number: 'PO-2024-002', supplier_id: supplierIds[1]?.id, supplier_name: 'Devki Steel Mills', project_id: projectIds[0]?.id, project_name: 'Diamond Plaza Mall - Nairobi', order_date: '2024-03-15', expected_date: '2024-04-05', items: JSON.stringify([{ description: 'Steel Bar Y12', quantity: 20, unit_price: 120000, total: 2400000 }]), subtotal: 2400000, vat: 384000, total: 2784000, status: 'Ordered', payment_status: 'Unpaid', notes: '' }
+    ];
+    
+    for (const po of purchaseOrders) {
       await db.run(
-        `INSERT INTO invoices (company_id, invoice_number, project_id, project_name, client_name, date, due_date, items, subtotal, vat, total, status, notes)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
-        [company_id, `INV-${p.id}-001`, p.id, p.name, p.name.split(' ')[0] + ' Client', new Date().toISOString().split('T')[0], new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0], JSON.stringify([{ description: 'Construction services', quantity: 1, unit_price: amount, total: amount }]), amount, amount * 0.16, amount * 1.16, 'Sent', `Invoice for ${p.name}`]
+        `INSERT INTO purchase_orders (company_id, order_number, supplier_id, supplier_name, project_id, project_name, order_date, expected_date, items, subtotal, vat, total, status, payment_status, notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+        [company_id, po.order_number, po.supplier_id, po.supplier_name, po.project_id, po.project_name, po.order_date, po.expected_date, po.items, po.subtotal, po.vat, po.total, po.status, po.payment_status, po.notes]
       );
     }
-    console.log(`✅ Added ${projectIds.length} invoice records`);
+    console.log(`✅ Added ${purchaseOrders.length} purchase orders`);
     
     console.log('✅ Comprehensive sample data loaded successfully!');
     res.json({ 
       message: 'Sample data loaded successfully',
       projects: projects.length,
+      workers: totalWorkers,
       subcontractors: subcontractors.length,
-      quotations: quotations.length,
-      purchaseOrders: purchaseOrders.length,
-      storeTransactions: storeTransactions.length,
-      siteDiaryEntries: siteDiaryEntries.length,
-      workers: workers.length,
-      suppliers: suppliers.length
+      suppliers: suppliers.length,
+      approvedItems: approvedItems.length
     });
     
   } catch (error) {
@@ -483,6 +482,8 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     res.status(500).json({ error: error.message });
   }
 });
+
+
 
 
 
