@@ -2677,8 +2677,6 @@ loadSampleData: async () => {
 
 
 
-
-
 resetAllData: async () => {
   try {
     const token = localStorage.getItem('token');
@@ -2759,12 +2757,15 @@ resetAllData: async () => {
     console.log('All data reset successfully from database');
     alert('All data has been cleared from the database!');
     
+    // 🔄 AUTO-REFRESH THE PAGE - THIS IS THE FIX
+    window.location.reload();
+    
   } catch (error) {
     console.error('Failed to reset data:', error);
     alert('Error resetting data. Check console for details.');
-
-
-
   }
 }
+
+
+
 }));
