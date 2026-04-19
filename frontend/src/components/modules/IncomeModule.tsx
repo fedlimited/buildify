@@ -32,9 +32,9 @@ export function IncomeModule() {
 
   const openNew = () => { 
     setEditing(null); 
-    // Default to first active project or 51
-    const defaultProject = projects.find(p => p.status === 'Active') || { id: 51 };
-    setForm({ ...emptyIncome, projectId: defaultProject.id }); 
+    // Default to first active project
+    const defaultProject = projects.find(p => p.status === 'Active');
+    setForm({ ...emptyIncome, projectId: defaultProject?.id || 0 }); 
     setOpen(true); 
   };
   
@@ -87,7 +87,7 @@ export function IncomeModule() {
               {['Project', 'Cert No', 'Date', 'Gross', 'VAT (16%)', 'Retention', 'Net Payable', 'Received', 'Balance', 'Status', ''].map(h => (
                 <th key={h} className="px-4 py-3 font-medium text-muted-foreground text-xs whitespace-nowrap">{h}</th>
               ))}
-            </tr>
+            <tr>
           </thead>
           <tbody className="divide-y divide-border">
             {filtered.map(i => {
