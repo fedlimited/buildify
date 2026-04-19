@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '@/hooks/useAppStore';
 import { Income as IncomeType } from '@/lib/types';
 import { formatCurrency, formatDate, calculateVAT, calculateRetention, calculateNetPayable } from '@/lib/formatters';
@@ -14,7 +14,7 @@ const emptyIncome: Omit<IncomeType, 'id' | 'createdAt'> = {
 };
 
 export function IncomeModule() {
-const { income, projects, selectedProjectId, addIncome, updateIncome, deleteIncome, fetchIncome } = useAppStore();
+  const { income, projects, selectedProjectId, addIncome, updateIncome, deleteIncome, fetchIncome } = useAppStore();
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<IncomeType | null>(null);
@@ -22,17 +22,21 @@ const { income, projects, selectedProjectId, addIncome, updateIncome, deleteInco
 
   const filtered = selectedProjectId ? income.filter(i => i.projectId === selectedProjectId) : income;
 
+  // Debug - log projects when component mounts
+  useEffect(() => {
+    console.log('=== IncomeModule Debug ===');
+    console.log('Projects count:', projects.length);
+    console.log('All projects:', projects);
+    console.log('Active projects:', projects.filter(p => p.status === 'Active'));
+  }, [projects]);
 
-
-
-
-const openNew = () => { 
-  setEditing(null); 
-  // Default to project 51 (Westlands Office Tower)
-  setForm({ ...emptyIncome, projectId: 51 }); 
-  setOpen(true); 
-};
-
+  const openNew = () => { 
+    setEditing(null); 
+    // Default to first active project or 51
+    const defaultProject = projects.find(p => p.status === 'Active') || { id: 51 };
+    setForm({ ...emptyIncome, projectId: defaultProject.id }); 
+    setOpen(true); 
+  };
   
   const openEdit = (i: IncomeType) => { 
     setEditing(i); 
@@ -51,34 +55,23 @@ const openNew = () => {
     setOpen(true); 
   };
 
-
-
-
-
-
-const handleSave = async () => {
-  if (!form.projectId || !form.certificateNo || !form.grossAmount) return;
-  const net = calculateNetPayable(form.grossAmount, form.retentionPercent);
-  const status: IncomeType['status'] = form.amountReceived >= net ? 'Paid' : form.amountReceived > 0 ? 'Partial' : 'Pending';
-  const data = { ...form, status };
-  
-  if (editing) {
-    await updateIncome({ ...editing, ...data });
-  } else {
-    await addIncome(data);
-
-  }
-  
-  // Force refresh the income list
-  await fetchIncome(); // Make sure fetchIncome is available
-  
-  setOpen(false);
-};
-
-
-
-
-
+  const handleSave = async () => {
+    if (!form.projectId || !form.certificateNo || !form.grossAmount) return;
+    const net = calculateNetPayable(form.grossAmount, form.retentionPercent);
+    const status: IncomeType['status'] = form.amountReceived >= net ? 'Paid' : form.amountReceived > 0 ? 'Partial' : 'Pending';
+    const data = { ...form, status };
+    
+    if (editing) {
+      await updateIncome({ ...editing, ...data });
+    } else {
+      await addIncome(data);
+    }
+    
+    // Force refresh the income list
+    await fetchIncome();
+    
+    setOpen(false);
+  };
 
   return (
     <div className="space-y-4 fade-in">
@@ -147,24 +140,23 @@ const handleSave = async () => {
             <div>
               <Label className="text-xs">Project *</Label>
               <Select value={form.projectId?.toString() || ''} onValueChange={v => setForm({ ...form, projectId: Number(v) })}>
-                <SelectTrigger><SelectValue placeholder="Select project" /></SelectTrigger>
-
-
-
-  <SelectContent>
-  {projects
-    .filter(p => p.id >= 51 && p.id <= 55)
-    .map(p => (
-      <SelectItem key={p.id} value={p.id.toString()}>
-        {p.name}
-      </SelectItem>
-    ))}
-</SelectContent>
-
-
-
-
-
+                <SelectTrigger>
+                  <SelectValue placeholder="Select project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects
+                    .filter(p => p.status === 'Active')
+                    .map(p => (
+                      <SelectItem key={p.id} value={p.id.toString()}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  {projects.filter(p => p.status === 'Active').length === 0 && (
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                      No active projects found. Please load sample data.
+                    </div>
+                  )}
+                </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
