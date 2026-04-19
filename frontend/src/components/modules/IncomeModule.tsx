@@ -89,7 +89,7 @@ export function IncomeModule() {
               <th className="px-4 py-3 text-xs font-medium text-muted-foreground text-right">Balance</th>
               <th className="px-4 py-3 text-xs font-medium text-muted-foreground">Status</th>
               <th className="px-4 py-3 text-xs font-medium text-muted-foreground"></th>
-            </td>
+            </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {filtered.map((i) => {
