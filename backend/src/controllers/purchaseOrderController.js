@@ -4,7 +4,7 @@ const PurchaseOrderController = {
   // Get all purchase orders
   getPurchaseOrders: async (req, res) => {
     try {
-      const db = getDb();  // Note: no await needed
+      const db = getDb();
       const company_id = req.user?.companyId || req.user?.company_id;
 
       console.log('Fetching purchase orders for company:', company_id);
@@ -74,6 +74,21 @@ const PurchaseOrderController = {
         notes
       } = req.body;
 
+      // Validate items before saving
+      console.log('Items received:', items);
+      console.log('Number of items:', items ? items.length : 0);
+      
+      if (items && items.length > 0) {
+        items.forEach((item, idx) => {
+          console.log(`Item ${idx + 1}:`, {
+            name: item.name || item.itemName || item.description,
+            quantity: item.quantity,
+            unit: item.unit,
+            category: item.category
+          });
+        });
+      }
+
       const result = await db.run(
         `INSERT INTO purchase_orders (
           company_id, order_number, supplier_id, supplier_name,
@@ -95,6 +110,7 @@ const PurchaseOrderController = {
       if (newOrder && newOrder.items) {
         try {
           newOrder.items = typeof newOrder.items === 'string' ? JSON.parse(newOrder.items) : newOrder.items;
+          console.log('Saved items count:', newOrder.items.length);
         } catch (e) {
           newOrder.items = [];
         }
@@ -190,17 +206,50 @@ const PurchaseOrderController = {
       }
 
       console.log('Current status:', order.status);
+      console.log('Raw order.items from DB:', order.items);
+      console.log('Type of order.items:', typeof order.items);
 
-      // Parse items
+      // Parse items - ROBUST PARSING for all possible formats
       let items = [];
       try {
-        items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []);
-        console.log('Items to process:', items.length);
+        // If items is already an array
+        if (Array.isArray(order.items)) {
+          items = order.items;
+        }
+        // If items is a string, parse it
+        else if (typeof order.items === 'string') {
+          items = JSON.parse(order.items);
+          // If parsed result is not an array but has numeric keys
+          if (!Array.isArray(items) && typeof items === 'object') {
+            items = Object.values(items);
+          }
+        }
+        // If items is an object with numeric keys
+        else if (typeof order.items === 'object' && order.items !== null) {
+          items = Object.values(order.items);
+        }
+        
+        // Ensure items is an array
+        if (!Array.isArray(items)) {
+          items = [];
+        }
+        
+        console.log('Parsed items count:', items.length);
+        console.log('Parsed items details:', JSON.stringify(items, null, 2));
+        
+        // Log each item individually
         items.forEach((item, idx) => {
-          console.log(`Item ${idx + 1}:`, item.name || item.itemName || item.description);
+          console.log(`Item ${idx + 1}:`, {
+            name: item.name || item.itemName || item.description,
+            quantity: item.quantity,
+            unit: item.unit,
+            category: item.category
+          });
         });
+        
       } catch (e) {
         console.error('Error parsing items:', e);
+        console.error('Raw items value:', order.items);
         items = [];
       }
 
@@ -213,26 +262,31 @@ const PurchaseOrderController = {
       // If status changed to 'Supplied', create store transactions
       if (status === 'Supplied') {
         console.log('Creating store transactions for PO:', order.order_number);
+        console.log('Number of items to process:', items.length);
+        
+        if (items.length === 0) {
+          console.log('⚠️ WARNING: No items found in purchase order!');
+        }
         
         let successCount = 0;
         const currentDate = new Date().toISOString().split('T')[0];
 
-        for (const item of items) {
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
           const itemName = item.name || item.itemName || item.description || 'Unknown Item';
           const quantity = Number(item.quantity) || 0;
           const unit = item.unit || 'piece';
           const category = item.category || 'Materials';
+
+          console.log(`[${i + 1}/${items.length}] Processing: ${itemName} x ${quantity} ${unit}`);
 
           if (quantity <= 0) {
             console.log(`⚠️ Skipping ${itemName} - quantity is 0`);
             continue;
           }
 
-          console.log(`📦 Adding to store: ${itemName} x ${quantity} ${unit}`);
-
           try {
-            // Insert store transaction using db.run with ? placeholders
-            await db.run(
+            const insertResult = await db.run(
               `INSERT INTO store_transactions (
                 company_id, project_id, project_name, transaction_type,
                 item_id, item_name, unit, category,
@@ -248,17 +302,17 @@ const PurchaseOrderController = {
                 itemName,
                 unit,
                 category,
-                quantity,      // quantity_supplied
-                0,             // quantity_issued
-                0,             // quantity_returned
-                quantity,      // balance
+                quantity,
+                0,
+                0,
+                quantity,
                 order.order_number,
                 currentDate,
                 `Received from purchase order ${order.order_number}`
               ]
             );
             
-            console.log(`  ✅ Store transaction created for ${itemName} x ${quantity}`);
+            console.log(`  ✅ Store transaction created (id: ${insertResult.lastID}) for ${itemName}`);
             successCount++;
           } catch (insertError) {
             console.error(`  ❌ Failed to insert ${itemName}:`, insertError.message);
