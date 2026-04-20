@@ -121,18 +121,22 @@ export function Dashboard() {
 
 
 
-      {/* Metric Cards - 4 in a row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+      {/* Metric Cards - Compact */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {cards.map(c => (
-          <div key={c.label} className="bg-card rounded-xl border border-border p-4 hover:border-amber-500/30 transition-all">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{c.label}</span>
+          <div key={c.label} className="bg-card rounded-lg border border-border p-2.5 hover:border-amber-500/30 transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">{c.label}</span>
               <span className={c.color}>{c.icon}</span>
             </div>
-            <p className="text-2xl font-bold text-card-foreground">{c.value}</p>
+            <p className="text-base font-bold text-card-foreground mt-0.5">{c.value}</p>
           </div>
         ))}
       </div>
+
+
+
 
       {/* Charts - Side by side */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
