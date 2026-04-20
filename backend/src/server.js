@@ -28,7 +28,7 @@ const InvoiceController = require('./controllers/invoiceController');
 const otpController = require('./controllers/otpController');
 const { verifyTransporter } = require('./services/emailService');
 const SubscriptionController = require('./controllers/subscriptionController');
-const mpesaController = require('./controllers/mpesaController');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -57,22 +57,6 @@ app.post('/api/auth/resend-otp', otpController.resendOTP);
 app.post('/api/auth/login', authController.login);
 app.post('/api/companies/register', companyController.registerCompany);
 
-
-
-// ========== M-PESA PAYMENT ROUTES ==========
-// Callback endpoint (must be public for Safaricom to call it)
-app.post('/api/mpesa/callback', async (req, res) => {
-  try {
-    const mpesaController = require('./controllers/mpesaController');
-    await mpesaController.handleCallback(req, res);
-  } catch (error) {
-    console.error('M-Pesa callback error:', error);
-    res.json({ ResultCode: 0, ResultDesc: 'Success' });
-  }
-});
-
-
-
 // ========== PROTECTED ROUTES ==========
 app.use('/api', authenticateToken, requireCompanyAccess);
 
@@ -82,35 +66,6 @@ app.get('/api/auth/me', authController.getCurrentUser);
 app.get('/api/currency/settings', currencyController.getCurrencySettings);
 app.put('/api/currency/settings', currencyController.updateCurrencySettings);
 app.get('/api/currency/available', currencyController.getAvailableCurrencies);
-
-// ========== M-PESA PAYMENT ROUTES (Protected) ==========
-app.get('/api/mpesa/instructions', async (req, res) => {
-  try {
-    const mpesaController = require('./controllers/mpesaController');
-    await mpesaController.getPaybillInstructions(req, res);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/mpesa/pay', async (req, res) => {
-  try {
-    const mpesaController = require('./controllers/mpesaController');
-    await mpesaController.initiatePayment(req, res);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/mpesa/status/:invoiceId', async (req, res) => {
-  try {
-    const mpesaController = require('./controllers/mpesaController');
-    await mpesaController.checkStatus(req, res);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
 
 // ========== SUBSCRIPTION ROUTES ==========
 app.get('/api/subscription/plans', authenticateToken, SubscriptionController.getPlans);
