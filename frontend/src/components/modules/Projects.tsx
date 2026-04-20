@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2, RefreshCw, MapPin, Navigation, Globe } from 'lucide-react';
+import { useSubscriptionLimit } from '@/hooks/useSubscriptionLimit';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 
 const emptyProject: Omit<Project, 'id' | 'createdAt'> = {
   name: '', client: '', contractSum: 0, location: '', startDate: '', endDate: '', status: 'Active', projectManager: '', description: '',
@@ -17,6 +19,7 @@ const emptyProject: Omit<Project, 'id' | 'createdAt'> = {
 
 export function Projects() {
   const { projects, income, addProject, updateProject, deleteProject, fetchProjects } = useAppStore();
+  const { limits, refreshLimits } = useSubscriptionLimit();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Project | null>(null);
   const [form, setForm] = useState(emptyProject);
@@ -25,9 +28,24 @@ export function Projects() {
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  const openNew = () => { setEditing(null); setForm(emptyProject); setOpen(true); };
-  const openEdit = (p: Project) => { setEditing(p); setForm(p); setOpen(true); };
+  const openNew = () => { 
+    // Check limit before allowing new project
+    if (!limits.projects.allowed) {
+      setShowUpgradeModal(true);
+      return;
+    }
+    setEditing(null); 
+    setForm(emptyProject); 
+    setOpen(true); 
+  };
+  
+  const openEdit = (p: Project) => { 
+    setEditing(p); 
+    setForm(p); 
+    setOpen(true); 
+  };
 
   const handleSave = async () => {
     if (!form.name || !form.client || !form.contractSum) return;
@@ -40,6 +58,7 @@ export function Projects() {
         await fetchProjects();
       }
       setOpen(false);
+      refreshLimits(); // Refresh limits after adding
     } catch (error) {
       console.error('Failed to save project:', error);
       alert('Failed to save project. Please try again.');
@@ -241,7 +260,7 @@ export function Projects() {
         </DialogContent>
       </Dialog>
 
-      {/* Location Dialog with Leaflet Map - REPLACED */}
+      {/* Location Dialog with Leaflet Map */}
       <Dialog open={!!locationDialog} onOpenChange={() => setLocationDialog(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -275,6 +294,15 @@ export function Projects() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Upgrade Prompt Modal */}
+      <UpgradePrompt
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        limitType="project"
+        current={limits.projects.current}
+        max={limits.projects.max}
+      />
     </div>
   );
 }
