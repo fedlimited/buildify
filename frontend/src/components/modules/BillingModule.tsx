@@ -250,36 +250,49 @@ export function BillingModule() {
                   </li>
                 )}
               </ul>
-              
-              {!isCurrent && !isFree && (
-                <Button
-                  onClick={() => handleUpgrade(plan.display_name)}
-                  className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
-                >
-                  <Rocket size={14} className="mr-1" />
-                  Upgrade to {plan.display_name}
-                </Button>
-              )}
-              
-              {isFree && !isCurrent && (
-                <Button
-                  variant="outline"
-                  onClick={() => handleUpgrade(plan.display_name)}
-                  className="w-full"
-                >
-                  Downgrade to Free
-                </Button>
-              )}
-              
-              {isCurrent && !isFree && (
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  disabled
-                >
-                  Your Current Plan
-                </Button>
-              )}
+
+
+
+
+
+
+
+
+{isCurrent && (
+  <Button
+    variant="outline"
+    className="w-full"
+    disabled
+  >
+    {plan.name === 'free' ? 'Free Plan - Current' : 'Current Plan'}
+  </Button>
+)}
+
+{!isCurrent && plan.name === 'free' && (
+  <Button
+    variant="outline"
+    className="w-full"
+    disabled
+  >
+    Free Plan
+  </Button>
+)}
+
+{!isCurrent && plan.name !== 'free' && (
+  <Button
+    onClick={() => handleUpgrade(plan.display_name)}
+    className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
+  >
+    <Rocket size={14} className="mr-1" />
+    Upgrade to {plan.display_name}
+  </Button>
+)}
+
+
+
+
+
+
             </motion.div>
           );
         })}
