@@ -286,6 +286,7 @@ const PurchaseOrderController = {
           }
 
           try {
+            // Insert store transaction using snake_case column names (database expects this)
             const insertResult = await db.run(
               `INSERT INTO store_transactions (
                 company_id, project_id, project_name, transaction_type,
@@ -302,10 +303,10 @@ const PurchaseOrderController = {
                 itemName,
                 unit,
                 category,
-                quantity,
-                0,
-                0,
-                quantity,
+                quantity,      // quantity_supplied
+                0,             // quantity_issued
+                0,             // quantity_returned
+                quantity,      // balance
                 order.order_number,
                 currentDate,
                 `Received from purchase order ${order.order_number}`
