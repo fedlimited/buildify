@@ -59,46 +59,101 @@ const LandingPage: React.FC = () => {
   ];
 
   const testimonials = [
-    { name: 'John Mwangi', role: 'Project Manager', company: 'Nairobi Heights Construction', text: 'BOCHABERI has transformed how we manage subcontractor payments. The quotation and payment tracking alone saves us 5+ hours every week!', rating: 5, image: '👨‍💼' },
+    { name: 'John Mwangi', role: 'Project Manager', company: 'Nairobi Heights Construction', text: 'BOCHI has transformed how we manage subcontractor payments. The quotation and payment tracking alone saves us 5+ hours every week!', rating: 5, image: '👨‍💼' },
     { name: 'Mary Wanjiku', role: 'Site Supervisor', company: 'Kisii Teaching Hospital Project', text: 'The site diary feature is brilliant. We can now track daily activities, workers, and deliveries all in one place. Game changer!', rating: 5, image: '👩‍💼' },
     { name: 'James Otieno', role: 'Quantity Surveyor', company: 'Mombasa Port Road Project', text: 'The reports module gives me exactly what I need. Project profitability at a glance with just a few clicks. Highly recommended!', rating: 5, image: '👨‍💻' }
   ];
 
+  // NEW 4-TIER PRICING PLANS
   const pricingPlans = [
     { 
-      name: 'Starter', 
-      monthlyPrice: '$69', 
-      annualPrice: '$799',
+      name: 'Free', 
+      monthlyPrice: '$0', 
+      annualPrice: '$0',
       period: '/month', 
-      features: ['Up to 3 active projects', '5 team members', 'Basic financial reports', 'Email support', '30-day data retention'], 
+      features: [
+        '1 active project',
+        '10 workers',
+        '1 team member',
+        '10 income records/month',
+        'Basic financial reports',
+        'Community support'
+      ], 
       highlighted: false, 
-      buttonText: 'Start Free Trial' 
+      buttonText: 'Get Started',
+      note: 'No credit card required'
     },
     { 
-      name: 'Professional', 
-      monthlyPrice: '$159', 
-      annualPrice: '$1,599',
+      name: 'Basic', 
+      monthlyPrice: '$49', 
+      annualPrice: '$470',
       period: '/month', 
-      features: ['Up to 15 active projects', '20 team members', 'All reports & analytics', 'Priority support', 'Unlimited data retention', 'API access', 'Advanced filters'], 
+      features: [
+        '3 active projects',
+        '30 workers',
+        '5 team members',
+        'Unlimited income records',
+        'Standard reports',
+        'Email support',
+        'Payroll module',
+        'Procurement module',
+        'Store module',
+        'Site diary'
+      ], 
+      highlighted: false, 
+      buttonText: 'Start 14-Day Trial',
+      note: 'Most popular for small builders'
+    },
+    { 
+      name: 'Pro', 
+      monthlyPrice: '$259', 
+      annualPrice: '$2,486',
+      period: '/month', 
+      features: [
+        '10 active projects',
+        '150 workers',
+        '15 team members',
+        'Advanced reports',
+        'Priority support',
+        'Gantt charts',
+        'Time tracking',
+        'Receipt scanning',
+        'Low stock alerts',
+        'API access',
+        'Export to Excel'
+      ], 
       highlighted: true, 
-      buttonText: 'Start Free Trial' 
+      buttonText: 'Start 14-Day Trial',
+      note: '🔥 Most Popular'
     },
     { 
-      name: 'Enterprise', 
-      monthlyPrice: '$399', 
-      annualPrice: '$3,999',
+      name: 'Premier', 
+      monthlyPrice: '$499', 
+      annualPrice: '$4,790',
       period: '/month', 
-      features: ['Unlimited projects', 'Unlimited users', 'Custom report builder', '24/7 dedicated support', 'On-premise option', 'SLA guarantee', 'Training included'], 
+      features: [
+        'Unlimited projects',
+        'Unlimited workers',
+        'Unlimited team members',
+        'Custom reports',
+        'Dedicated support',
+        'White label',
+        'SSO',
+        'Phone support',
+        'Custom integrations',
+        'Audit logs'
+      ], 
       highlighted: false, 
-      buttonText: 'Contact Sales' 
+      buttonText: 'Contact Sales',
+      note: 'For large enterprises'
     }
   ];
 
   const faqs = [
-    { question: 'How does the free trial work?', answer: 'Our 14-day free trial gives you full access to all Professional plan features. No credit card required. You can cancel anytime.' },
+    { question: 'How does the free trial work?', answer: 'Our 14-day free trial gives you full access to all Pro plan features. No credit card required. You can cancel anytime.' },
     { question: 'Can I change my plan later?', answer: 'Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately.' },
     { question: 'Is my data secure?', answer: 'Absolutely. We use enterprise-grade encryption and follow industry best practices to keep your data safe.' },
-    { question: 'Do you offer training?', answer: 'Yes, we provide onboarding training for all paid plans. Enterprise plans include dedicated training sessions.' },
+    { question: 'Do you offer training?', answer: 'Yes, we provide onboarding training for all paid plans. Premier plans include dedicated training sessions.' },
     { question: 'Can I export my data?', answer: 'Yes, you can export all your data to CSV or PDF at any time.' },
     { question: 'What payment methods do you accept?', answer: 'We accept M-Pesa, bank transfers, and credit cards.' }
   ];
@@ -113,12 +168,13 @@ const LandingPage: React.FC = () => {
   // Get current price based on billing cycle
   const getCurrentPrice = (plan: any) => {
     if (billingCycle === 'monthly') {
-      return { price: plan.monthlyPrice, period: '/month' };
+      return { price: plan.monthlyPrice, period: '/month', savings: null };
     } else {
-      const monthlyTotal = parseInt(plan.monthlyPrice.replace('$', '')) * 12;
-      const annualPriceValue = parseInt(plan.annualPrice.replace('$', '').replace(',', ''));
-      const savings = monthlyTotal - annualPriceValue;
-      return { price: plan.annualPrice, period: '/year', savings: `Save $${savings}` };
+      // For Free plan, annual is also $0
+      if (plan.name === 'Free') {
+        return { price: '$0', period: '/year', savings: null };
+      }
+      return { price: plan.annualPrice, period: '/year', savings: 'Save 20%' };
     }
   };
 
@@ -150,7 +206,7 @@ const LandingPage: React.FC = () => {
               <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center shadow-lg shadow-amber-500/25 mr-2 group-hover:scale-105 transition-transform">
                 <HardHat size={18} className="text-white" />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">BOCHABERI</span>
+              <span className="text-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">BOCHI</span>
               <span className="ml-1 text-xs text-slate-400">Construction Suite</span>
             </motion.div>
             <div className="hidden md:flex items-center gap-6">
@@ -186,92 +242,81 @@ const LandingPage: React.FC = () => {
         </div>
       </motion.nav>
 
-
-
-
-
-
-
-{/* Hero Section */}
-<section className="pt-24 pb-10 px-4 relative">
-  <div className="max-w-7xl mx-auto">
-    <div className="text-center">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <motion.div 
-          className="inline-flex items-center gap-3 bg-amber-500/10 backdrop-blur-sm rounded-full px-4 py-1.5 border border-amber-500/20 mb-5"
-          animate={{ scale: [1, 1.02, 1] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
-          <HardHat size={14} className="text-amber-400" />
-          <span className="text-amber-400 text-xs font-medium">Trusted by 500+ Construction Companies</span>
-        </motion.div>
-        <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight">
-          Manage Your Construction
-          <span className="bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent block"> Projects Smarter</span>
-        </h1>
-        
-        {/* Text size: 17px (5.5% reduction from 18px) */}
-        <p className="text-[17px] text-slate-300 max-w-2xl mx-auto mb-7">
-          From subcontractors and payroll to stores and site diary — everything you need to run successful construction projects in one platform.
-        </p>
-        
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-5">
-          <motion.button 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            animate={{ y: [0, -3, 0] }}
-            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-            onClick={() => navigate('/login')} 
-            className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-amber-600 rounded-md hover:from-amber-600 hover:to-amber-700 shadow-lg shadow-amber-500/25 transition-all duration-200"
-          >
-            Start Free Trial
-          </motion.button>
-          <motion.button 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} 
-            className="px-6 py-3 text-sm font-semibold text-slate-300 border border-slate-600 rounded-md hover:bg-slate-800 transition-all duration-200"
-          >
-            Learn More
-          </motion.button>
-        </div>
-        <p className="text-xs text-slate-400 mb-4">No credit card required • 14-day free trial • Cancel anytime</p>
-        
-        {/* Moving Text Below the guarantee line */}
-        <motion.div 
-          className="py-2 px-5 bg-slate-800/50 rounded-full inline-block"
-          whileHover={{ scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 400 }}
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-slate-400 text-xs">✨ What you get:</span>
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={currentHeroWordIndex}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.5 }}
-                className="text-amber-400 font-medium text-xs"
+      {/* Hero Section */}
+      <section className="pt-24 pb-10 px-4 relative">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <motion.div 
+                className="inline-flex items-center gap-3 bg-amber-500/10 backdrop-blur-sm rounded-full px-4 py-1.5 border border-amber-500/20 mb-5"
+                animate={{ scale: [1, 1.02, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
               >
-                {heroMovingWords[currentHeroWordIndex]}
-              </motion.span>
-            </AnimatePresence>
+                <HardHat size={14} className="text-amber-400" />
+                <span className="text-amber-400 text-xs font-medium">Trusted by 500+ Construction Companies</span>
+              </motion.div>
+              <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight">
+                Manage Your Construction
+                <span className="bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent block"> Projects Smarter</span>
+              </h1>
+              
+              <p className="text-[17px] text-slate-300 max-w-2xl mx-auto mb-7">
+                From subcontractors and payroll to stores and site diary — everything you need to run successful construction projects in one platform.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-5">
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  animate={{ y: [0, -3, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                  onClick={() => navigate('/login')} 
+                  className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-amber-600 rounded-md hover:from-amber-600 hover:to-amber-700 shadow-lg shadow-amber-500/25 transition-all duration-200"
+                >
+                  Start Free Trial
+                </motion.button>
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} 
+                  className="px-6 py-3 text-sm font-semibold text-slate-300 border border-slate-600 rounded-md hover:bg-slate-800 transition-all duration-200"
+                >
+                  Learn More
+                </motion.button>
+              </div>
+              <p className="text-xs text-slate-400 mb-4">No credit card required • 14-day free trial • Cancel anytime</p>
+              
+              <motion.div 
+                className="py-2 px-5 bg-slate-800/50 rounded-full inline-block"
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 400 }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-400 text-xs">✨ What you get:</span>
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={currentHeroWordIndex}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.5 }}
+                      className="text-amber-400 font-medium text-xs"
+                    >
+                      {heroMovingWords[currentHeroWordIndex]}
+                    </motion.span>
+                  </AnimatePresence>
+                </div>
+              </motion.div>
+            </motion.div>
           </div>
-        </motion.div>
-      </motion.div>
-    </div>
-  </div>
-</section>
+        </div>
+      </section>
 
-
-
-
-      {/* Stats Section with floating animation */}
+      {/* Stats Section */}
       <section className="py-8 bg-slate-800/30 border-y border-slate-700">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
@@ -401,7 +446,7 @@ const LandingPage: React.FC = () => {
             className="text-center mb-8"
           >
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">Choose Your Plan</h2>
-            <p className="text-slate-300 max-w-2xl mx-auto">All plans include a 14-day free trial. No credit card required.</p>
+            <p className="text-slate-300 max-w-2xl mx-auto">All plans include a 14-day free trial of Pro features. No credit card required.</p>
           </motion.div>
 
           {/* Billing Toggle */}
@@ -437,7 +482,7 @@ const LandingPage: React.FC = () => {
             </motion.div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {pricingPlans.map((plan, idx) => {
               const currentPrice = getCurrentPrice(plan);
               return (
@@ -448,11 +493,11 @@ const LandingPage: React.FC = () => {
                   transition={{ duration: 0.5, delay: idx * 0.1 }}
                   viewport={{ once: true }}
                   whileHover={{ y: -5 }}
-                  className={`bg-slate-800/50 backdrop-blur-sm rounded-xl border ${plan.highlighted ? 'border-amber-500 shadow-lg shadow-amber-500/10 relative' : 'border-slate-700'} p-6 transition-all`}
+                  className={`bg-slate-800/50 backdrop-blur-sm rounded-xl border ${plan.highlighted ? 'border-amber-500 shadow-lg shadow-amber-500/10 relative' : 'border-slate-700'} p-6 transition-all flex flex-col h-full`}
                 >
                   {plan.highlighted && (
                     <motion.div 
-                      className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-semibold px-3 py-1 rounded-full"
+                      className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap"
                       animate={{ scale: [1, 1.05, 1] }}
                       transition={{ duration: 2, repeat: Infinity }}
                     >
@@ -474,25 +519,37 @@ const LandingPage: React.FC = () => {
                       </motion.div>
                     )}
                   </div>
-                  <ul className="space-y-2 mb-6">
+                  <ul className="space-y-2 mb-4 flex-grow">
                     {plan.features.map((feature, fIdx) => (
                       <motion.li 
                         key={fIdx} 
-                        className="text-sm text-slate-300 flex items-center gap-2"
+                        className="text-sm text-slate-300 flex items-start gap-2"
                         initial={{ opacity: 0, x: -10 }}
                         whileInView={{ opacity: 1, x: 0 }}
-                        transition={{ delay: fIdx * 0.05 }}
+                        transition={{ delay: fIdx * 0.03 }}
                         viewport={{ once: true }}
                       >
-                        <span className="text-amber-500">✓</span> {feature}
+                        <span className="text-amber-500 flex-shrink-0">✓</span> 
+                        <span>{feature}</span>
                       </motion.li>
                     ))}
                   </ul>
+                  {plan.note && (
+                    <div className="mt-2 mb-3">
+                      <p className="text-xs text-center text-amber-500/70">{plan.note}</p>
+                    </div>
+                  )}
                   <motion.button 
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => navigate('/login')} 
-                    className={`w-full py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${plan.highlighted ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/25 hover:from-amber-600 hover:to-amber-700' : 'bg-slate-700 text-slate-200 hover:bg-slate-600'}`}
+                    onClick={() => plan.name === 'Premier' ? window.location.href = 'mailto:sales@bochi.com' : navigate('/login')} 
+                    className={`w-full py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 mt-2 ${
+                      plan.highlighted 
+                        ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/25 hover:from-amber-600 hover:to-amber-700' 
+                        : plan.name === 'Free'
+                          ? 'border border-slate-600 text-slate-300 hover:bg-slate-700'
+                          : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+                    }`}
                   >
                     {plan.buttonText}
                   </motion.button>
@@ -537,7 +594,7 @@ const LandingPage: React.FC = () => {
             className="text-center mb-12"
           >
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">Trusted by Industry Leaders</h2>
-            <p className="text-slate-300 max-w-2xl mx-auto">Join hundreds of construction professionals who love BOCHABERI</p>
+            <p className="text-slate-300 max-w-2xl mx-auto">Join hundreds of construction professionals who love BOCHI</p>
           </motion.div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -680,7 +737,7 @@ const LandingPage: React.FC = () => {
             viewport={{ once: true }}
             className="text-amber-100 mb-8 text-lg"
           >
-            Join thousands of construction professionals who trust BOCHABERI to manage their projects efficiently.
+            Join thousands of construction professionals who trust BOCHI to manage their projects efficiently.
           </motion.p>
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -731,7 +788,7 @@ const LandingPage: React.FC = () => {
               <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/25">
                 <HardHat size={20} className="text-white" />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">BOCHABERI</span>
+              <span className="text-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">BOCHI</span>
               <span className="text-xs text-slate-400">Construction Suite</span>
             </motion.div>
           </div>
@@ -785,7 +842,7 @@ const LandingPage: React.FC = () => {
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
           >
-            <p>&copy; 2026 BOCHABERI Construction Suite. All rights reserved.</p>
+            <p>&copy; 2026 BOCHI Construction Suite. All rights reserved.</p>
             <p className="mt-1 text-xs">Built with ❤️ by Finite Element Designs | Nairobi, Kenya</p>
           </motion.div>
         </div>
