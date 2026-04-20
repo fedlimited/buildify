@@ -4,10 +4,8 @@ import { useAppStore } from '@/hooks/useAppStore';
 import { API_BASE_URL } from '@/config/api';
 import { formatCurrency } from '@/lib/formatters';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, TrendingDown, FolderKanban, Banknote, Crown, AlertCircle, RefreshCw } from 'lucide-react';
+import { TrendingUp, TrendingDown, FolderKanban, Banknote, Crown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CompactUsageBar } from '@/components/CompactUsageBar';
-import { motion } from 'framer-motion';
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -68,14 +66,9 @@ export function Dashboard() {
     navigate('/settings/billing');
   };
 
-  const getTrialDays = () => {
-    if (subscription?.status === 'trial' && subscription?.trial_days_remaining > 0) {
-      return subscription.trial_days_remaining;
-    }
-    return null;
-  };
-
-  const trialDays = getTrialDays();
+  const trialDays = subscription?.status === 'trial' && subscription?.trial_days_remaining > 0 
+    ? subscription.trial_days_remaining 
+    : null;
 
   // Monthly cash flow
   const months = Array.from({ length: 6 }, (_, i) => {
@@ -99,69 +92,77 @@ export function Dashboard() {
   const pieColors = ['hsl(210,80%,52%)', 'hsl(152,60%,40%)', 'hsl(38,92%,50%)', 'hsl(0,72%,51%)', 'hsl(270,60%,55%)', 'hsl(180,50%,45%)'];
 
   const cards = [
-    { label: 'Active Projects', value: activeProjects.toString(), icon: <FolderKanban size={20} />, color: 'text-info' },
-    { label: 'Total Income', value: formatCurrency(totalIncome), icon: <TrendingUp size={20} />, color: 'text-success' },
-    { label: 'Total Expenses', value: formatCurrency(totalExpenses), icon: <TrendingDown size={20} />, color: 'text-destructive' },
-    { label: 'Cash Flow', value: formatCurrency(cashFlow), icon: <Banknote size={20} />, color: cashFlow >= 0 ? 'text-success' : 'text-destructive' },
+    { label: 'Active Projects', value: activeProjects.toString(), icon: <FolderKanban size={18} />, color: 'text-info' },
+    { label: 'Total Income', value: formatCurrency(totalIncome), icon: <TrendingUp size={18} />, color: 'text-success' },
+    { label: 'Total Expenses', value: formatCurrency(totalExpenses), icon: <TrendingDown size={18} />, color: 'text-destructive' },
+    { label: 'Cash Flow', value: formatCurrency(cashFlow), icon: <Banknote size={18} />, color: cashFlow >= 0 ? 'text-success' : 'text-destructive' },
   ];
 
   const customTooltipStyles = {
     backgroundColor: 'hsl(var(--card))',
     border: '1px solid hsl(var(--border))',
     borderRadius: 'var(--radius)',
-    fontSize: '12px',
+    fontSize: '11px',
     color: 'hsl(var(--card-foreground))',
-    padding: '8px 12px',
+    padding: '6px 10px',
+  };
+
+  // Progress bar component
+  const ProgressBar = ({ used, limit, label }: { used: number; limit: number; label: string }) => {
+    const percentage = Math.min((used / limit) * 100, 100);
+    const isAtLimit = used >= limit;
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-slate-500 w-12">{label}</span>
+        <div className="w-24 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+          <div 
+            className={`h-full rounded-full ${isAtLimit ? 'bg-red-500' : 'bg-amber-500'}`}
+            style={{ width: `${Math.min(percentage, 100)}%` }}
+          />
+        </div>
+        <span className={`text-xs font-mono ${isAtLimit ? 'text-red-400' : 'text-slate-400'}`}>
+          {used}/{limit}
+        </span>
+      </div>
+    );
   };
 
   return (
     <div className="space-y-5 fade-in">
-      {/* Compact Subscription Bar */}
-      <div className="bg-gradient-to-r from-slate-800 to-slate-800/50 rounded-xl border border-slate-700 p-3">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-3">
-            <Crown size={16} className="text-amber-400" />
-            <span className="font-medium text-white text-sm">
-              {subscription?.display_name || 'Free'} Plan
-            </span>
-            {subscription?.status === 'trial' && trialDays && (
-              <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">
-                {trialDays} days left
-              </span>
+      {/* Header with Dashboard title and Subscription info */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h1 className="text-xl font-bold text-white">Dashboard</h1>
+        
+        {/* Compact Subscription Info */}
+        <div className="flex items-center gap-4 bg-slate-800/50 rounded-lg px-3 py-1.5 border border-slate-700">
+          <div className="flex items-center gap-2">
+            <Crown size={14} className="text-amber-400" />
+            <span className="text-sm font-medium text-white">{subscription?.display_name || 'Free'}</span>
+            {trialDays && (
+              <span className="text-xs text-amber-400">{trialDays}d left</span>
             )}
           </div>
+          
+          <div className="h-4 w-px bg-slate-600" />
+          
+          <div className="flex items-center gap-3">
+            <ProgressBar used={limits.projects.current} limit={limits.projects.max} label="Projects" />
+            <ProgressBar used={limits.workers.current} limit={limits.workers.max} label="Workers" />
+            <ProgressBar used={limits.users.current} limit={limits.users.max} label="Team" />
+          </div>
+          
           {subscription?.plan_name !== 'premier' && subscription?.plan_name !== 'pro' && (
-            <Button 
-              size="sm"
-              onClick={handleUpgrade}
-              className="h-7 text-xs bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700"
-            >
-              <Crown size={12} className="mr-1" />
-              Upgrade
-            </Button>
+            <>
+              <div className="h-4 w-px bg-slate-600" />
+              <Button 
+                size="sm"
+                onClick={handleUpgrade}
+                className="h-6 text-xs bg-amber-500 hover:bg-amber-600 px-3"
+              >
+                Upgrade <ChevronRight size={12} className="ml-0.5" />
+              </Button>
+            </>
           )}
-        </div>
-        
-        {/* Compact Usage Bars - 3 in a row */}
-        <div className="grid grid-cols-3 gap-4 mt-3 pt-2 border-t border-slate-700/50">
-          <CompactUsageBar
-            used={limits.projects.current}
-            limit={limits.projects.max}
-            label="Projects"
-            onUpgrade={handleUpgrade}
-          />
-          <CompactUsageBar
-            used={limits.workers.current}
-            limit={limits.workers.max}
-            label="Workers"
-            onUpgrade={handleUpgrade}
-          />
-          <CompactUsageBar
-            used={limits.users.current}
-            limit={limits.users.max}
-            label="Team"
-            onUpgrade={handleUpgrade}
-          />
         </div>
       </div>
 
