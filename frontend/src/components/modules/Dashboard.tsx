@@ -4,7 +4,7 @@ import { useAppStore } from '@/hooks/useAppStore';
 import { API_BASE_URL } from '@/config/api';
 import { formatCurrency } from '@/lib/formatters';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, TrendingDown, FolderKanban, Banknote, Crown, ChevronRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, FolderKanban, Banknote, Crown, ChevronRight, Rocket, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function Dashboard() {
@@ -69,6 +69,17 @@ export function Dashboard() {
   const trialDays = subscription?.status === 'trial' && subscription?.trial_days_remaining > 0 
     ? subscription.trial_days_remaining 
     : null;
+
+  // Get next plan name for upgrade prompt
+  const getNextPlan = () => {
+    const currentPlan = subscription?.plan_name;
+    if (currentPlan === 'free') return 'Basic';
+    if (currentPlan === 'basic') return 'Pro';
+    if (currentPlan === 'pro') return 'Premier';
+    return null;
+  };
+
+  const nextPlan = getNextPlan();
 
   // Monthly cash flow
   const months = Array.from({ length: 6 }, (_, i) => {
@@ -151,15 +162,17 @@ export function Dashboard() {
             <ProgressBar used={limits.users.current} limit={limits.users.max} label="Team" />
           </div>
           
-          {subscription?.plan_name !== 'premier' && subscription?.plan_name !== 'pro' && (
+          {subscription?.plan_name !== 'premier' && (
             <>
               <div className="h-4 w-px bg-slate-600" />
               <Button 
                 size="sm"
                 onClick={handleUpgrade}
-                className="h-6 text-xs bg-amber-500 hover:bg-amber-600 px-3"
+                className="h-6 text-xs bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 px-3 gap-1"
               >
-                Upgrade <ChevronRight size={12} className="ml-0.5" />
+                <Rocket size={12} />
+                {nextPlan ? `Upgrade to ${nextPlan}` : 'Upgrade'}
+                <ChevronRight size={12} />
               </Button>
             </>
           )}
