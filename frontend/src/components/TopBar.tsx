@@ -76,9 +76,15 @@ export function TopBar() {
     }
   };
 
-  const handleUpgrade = () => {
-    navigate('/settings/billing');
-  };
+
+
+const handleUpgrade = () => {
+  // Set localStorage to open billing tab
+  localStorage.setItem('settingsTab', 'billing');
+  // Switch to settings module
+  setActiveModule('settings');
+};
+
 
   const trialDays = subscription?.status === 'trial' && subscription?.trial_days_remaining > 0 
     ? subscription.trial_days_remaining 
