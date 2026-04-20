@@ -27,6 +27,7 @@ const QuotationController = require('./controllers/quotationController');
 const InvoiceController = require('./controllers/invoiceController');
 const otpController = require('./controllers/otpController');
 const { verifyTransporter } = require('./services/emailService');
+const SubscriptionController = require('./controllers/subscriptionController');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -65,6 +66,12 @@ app.get('/api/auth/me', authController.getCurrentUser);
 app.get('/api/currency/settings', currencyController.getCurrencySettings);
 app.put('/api/currency/settings', currencyController.updateCurrencySettings);
 app.get('/api/currency/available', currencyController.getAvailableCurrencies);
+
+// ========== SUBSCRIPTION ROUTES ==========
+app.get('/api/subscription/plans', authenticateToken, SubscriptionController.getPlans);
+app.get('/api/subscription/current', authenticateToken, SubscriptionController.getCurrentSubscription);
+app.get('/api/subscription/check-limit', authenticateToken, SubscriptionController.checkLimit);
+
 
 // Company routes
 app.get('/api/company', companyController.getCompanyInfo);
