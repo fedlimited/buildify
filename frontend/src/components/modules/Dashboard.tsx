@@ -4,7 +4,8 @@ import { useAppStore } from '@/hooks/useAppStore';
 import { API_BASE_URL } from '@/config/api';
 import { formatCurrency } from '@/lib/formatters';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, TrendingDown, FolderKanban, Banknote } from 'lucide-react';
+import { TrendingUp, TrendingDown, FolderKanban, Banknote, Crown, Rocket, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -61,6 +62,24 @@ export function Dashboard() {
     }
   };
 
+  const handleUpgrade = () => {
+    navigate('/settings/billing');
+  };
+
+  const trialDays = subscription?.status === 'trial' && subscription?.trial_days_remaining > 0 
+    ? subscription.trial_days_remaining 
+    : null;
+
+  const getNextPlan = () => {
+    const currentPlan = subscription?.plan_name;
+    if (currentPlan === 'free') return 'Basic';
+    if (currentPlan === 'basic') return 'Pro';
+    if (currentPlan === 'pro') return 'Premier';
+    return null;
+  };
+
+  const nextPlan = getNextPlan();
+
   // Monthly cash flow
   const months = Array.from({ length: 6 }, (_, i) => {
     const d = new Date();
@@ -99,11 +118,8 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6 fade-in">
-      {/* Dashboard Title */}
-      <div>
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="text-sm text-slate-400 mt-1">Overview of your construction business</p>
-      </div>
+
+
 
       {/* Metric Cards - 4 in a row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
