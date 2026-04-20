@@ -14,11 +14,16 @@ interface UpgradePromptProps {
 export function UpgradePrompt({ open, onClose, limitType, current, max }: UpgradePromptProps) {
   const { setActiveModule } = useAppStore();
 
-  const handleUpgrade = () => {
-    // Switch to settings module in the app
-    setActiveModule('settings');
-    onClose();
-  };
+
+
+const handleUpgrade = () => {
+  // Switch to settings module
+  setActiveModule('settings');
+  // Store that we want to open billing tab
+  localStorage.setItem('settingsTab', 'billing');
+  onClose();
+};
+
 
   return (
     <Dialog open={open} onOpenChange={onClose}>

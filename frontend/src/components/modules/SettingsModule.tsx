@@ -1,5 +1,5 @@
 import { CurrencySelector } from '@/components/CurrencySelector';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '@/hooks/useAppStore';
 import { CompanySettings } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { storage } from '@/lib/storage';
-import { Building, Download, Upload, RotateCcw, Database, Save, ImageIcon, Trash2, Users, CreditCard, Shield, HelpCircle } from 'lucide-react';
+import { Building, Download, Upload, RotateCcw, Database, Save, ImageIcon, Trash2, Users, CreditCard, Shield } from 'lucide-react';
 import { BillingModule } from './BillingModule';
 import { UsersModule } from './UsersModule';
 
@@ -15,8 +15,18 @@ export function SettingsModule() {
   const { companySettings, updateCompanySettings, loadSampleData, resetAllData } = useAppStore();
   const [form, setForm] = useState<CompanySettings>(companySettings);
   const [saved, setSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState('general');
   const fileRef = useRef<HTMLInputElement>(null);
   const logoRef = useRef<HTMLInputElement>(null);
+
+  // Check for saved tab preference from upgrade button
+  useEffect(() => {
+    const savedTab = localStorage.getItem('settingsTab');
+    if (savedTab === 'billing') {
+      setActiveTab('billing');
+      localStorage.removeItem('settingsTab');
+    }
+  }, []);
 
   const handleSave = () => {
     updateCompanySettings(form);
@@ -92,7 +102,7 @@ export function SettingsModule() {
 
   return (
     <div className="space-y-6 fade-in">
-      <Tabs defaultValue="general" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid grid-cols-5 gap-1 h-auto p-1">
           <TabsTrigger value="general" className="text-xs py-1">
             <Building size={14} className="mr-1" />
