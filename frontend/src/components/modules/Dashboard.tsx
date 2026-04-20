@@ -2,24 +2,22 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@/hooks/useAppStore';
 import { API_BASE_URL } from '@/config/api';
-import { formatCurrency, calculateVAT, calculateRetention } from '@/lib/formatters';
+import { formatCurrency } from '@/lib/formatters';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { TrendingUp, TrendingDown, FolderKanban, Banknote, Crown, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { UsageIndicator } from '@/components/UsageIndicator';
+import { CompactUsageBar } from '@/components/CompactUsageBar';
 import { motion } from 'framer-motion';
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const { projects, income, expenses, selectedProjectId, theme, fetchProjects, fetchWorkers } = useAppStore();
+  const { projects, income, expenses, selectedProjectId } = useAppStore();
   const [subscription, setSubscription] = useState<any>(null);
   const [limits, setLimits] = useState({
-    projects: { current: 0, max: 0, remaining: 0, allowed: true },
-    workers: { current: 0, max: 0, remaining: 0, allowed: true },
-    users: { current: 0, max: 0, remaining: 0, allowed: true }
+    projects: { current: 0, max: 0 },
+    workers: { current: 0, max: 0 },
+    users: { current: 0, max: 0 }
   });
-  const [loading, setLoading] = useState(true);
 
   const filteredIncome = selectedProjectId ? income.filter(i => i.projectId === selectedProjectId) : income;
   const filteredExpenses = selectedProjectId ? expenses.filter(e => e.projectId === selectedProjectId) : expenses;
@@ -51,69 +49,35 @@ export function Dashboard() {
     const token = localStorage.getItem('token');
     try {
       const [projectRes, workerRes, userRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/subscription/check-limit?type=project`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch(`${API_BASE_URL}/subscription/check-limit?type=worker`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch(`${API_BASE_URL}/subscription/check-limit?type=user`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
+        fetch(`${API_BASE_URL}/subscription/check-limit?type=project`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${API_BASE_URL}/subscription/check-limit?type=worker`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${API_BASE_URL}/subscription/check-limit?type=user`, { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
       
-      const projectData = await projectRes.json();
-      const workerData = await workerRes.json();
-      const userData = await userRes.json();
-      
       setLimits({
-        projects: projectData,
-        workers: workerData,
-        users: userData
+        projects: await projectRes.json(),
+        workers: await workerRes.json(),
+        users: await userRes.json()
       });
     } catch (error) {
       console.error('Error fetching limits:', error);
     }
-    setLoading(false);
   };
 
   const handleUpgrade = () => {
     navigate('/settings/billing');
   };
 
-  const getPlanColor = () => {
-    switch (subscription?.plan_name) {
-      case 'free': return 'text-slate-400';
-      case 'basic': return 'text-blue-400';
-      case 'pro': return 'text-amber-400';
-      case 'premier': return 'text-purple-400';
-      default: return 'text-amber-400';
-    }
-  };
-
-  const getTrialDaysText = () => {
+  const getTrialDays = () => {
     if (subscription?.status === 'trial' && subscription?.trial_days_remaining > 0) {
-      return (
-        <div className="flex items-center gap-2 mt-2 p-2 bg-amber-500/10 rounded-lg border border-amber-500/20">
-          <AlertCircle size={14} className="text-amber-400" />
-          <span className="text-xs text-amber-400">
-            {subscription.trial_days_remaining} days left in your Pro trial
-          </span>
-          <Button 
-            size="sm" 
-            variant="ghost" 
-            onClick={handleUpgrade}
-            className="h-6 text-xs text-amber-400 hover:text-amber-300 ml-auto"
-          >
-            Upgrade now
-          </Button>
-        </div>
-      );
+      return subscription.trial_days_remaining;
     }
     return null;
   };
 
-  // Monthly cash flow (last 6 months)
+  const trialDays = getTrialDays();
+
+  // Monthly cash flow
   const months = Array.from({ length: 6 }, (_, i) => {
     const d = new Date();
     d.setMonth(d.getMonth() - (5 - i));
@@ -135,13 +99,12 @@ export function Dashboard() {
   const pieColors = ['hsl(210,80%,52%)', 'hsl(152,60%,40%)', 'hsl(38,92%,50%)', 'hsl(0,72%,51%)', 'hsl(270,60%,55%)', 'hsl(180,50%,45%)'];
 
   const cards = [
-    { label: 'Active Projects', value: activeProjects.toString(), icon: <FolderKanban size={22} />, color: 'text-info' },
-    { label: 'Total Income', value: formatCurrency(totalIncome), icon: <TrendingUp size={22} />, color: 'text-success' },
-    { label: 'Total Expenses', value: formatCurrency(totalExpenses), icon: <TrendingDown size={22} />, color: 'text-destructive' },
-    { label: 'Cash Flow', value: formatCurrency(cashFlow), icon: <Banknote size={22} />, color: cashFlow >= 0 ? 'text-success' : 'text-destructive' },
+    { label: 'Active Projects', value: activeProjects.toString(), icon: <FolderKanban size={20} />, color: 'text-info' },
+    { label: 'Total Income', value: formatCurrency(totalIncome), icon: <TrendingUp size={20} />, color: 'text-success' },
+    { label: 'Total Expenses', value: formatCurrency(totalExpenses), icon: <TrendingDown size={20} />, color: 'text-destructive' },
+    { label: 'Cash Flow', value: formatCurrency(cashFlow), icon: <Banknote size={20} />, color: cashFlow >= 0 ? 'text-success' : 'text-destructive' },
   ];
 
-  // Custom tooltip styles that respect the theme
   const customTooltipStyles = {
     backgroundColor: 'hsl(var(--card))',
     border: '1px solid hsl(var(--border))',
@@ -149,168 +112,115 @@ export function Dashboard() {
     fontSize: '12px',
     color: 'hsl(var(--card-foreground))',
     padding: '8px 12px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-  };
-
-  const customLabelStyles = {
-    color: 'hsl(var(--card-foreground))',
-    fontWeight: 500,
-  };
-
-  const customItemStyles = {
-    color: 'hsl(var(--card-foreground))',
   };
 
   return (
-    <div className="space-y-6 fade-in">
-      {/* Subscription Banner */}
-      <motion.div 
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-slate-800 to-slate-800/50 rounded-xl border border-slate-700 p-4"
-      >
-        <div className="flex justify-between items-center flex-wrap gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <Crown size={18} className={getPlanColor()} />
-              <span className="font-semibold text-white">
-                {subscription?.display_name || 'Free'} Plan
+    <div className="space-y-5 fade-in">
+      {/* Compact Subscription Bar */}
+      <div className="bg-gradient-to-r from-slate-800 to-slate-800/50 rounded-xl border border-slate-700 p-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-3">
+            <Crown size={16} className="text-amber-400" />
+            <span className="font-medium text-white text-sm">
+              {subscription?.display_name || 'Free'} Plan
+            </span>
+            {subscription?.status === 'trial' && trialDays && (
+              <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">
+                {trialDays} days left
               </span>
-              {subscription?.status === 'trial' && (
-                <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">
-                  Trial
-                </span>
-              )}
-            </div>
-            <p className="text-sm text-slate-400 mt-1">
-              {subscription?.plan_name === 'free' 
-                ? 'Upgrade to unlock more projects, workers, and premium features'
-                : `You're on the ${subscription?.display_name} plan`}
-            </p>
+            )}
           </div>
-          {subscription?.plan_name !== 'premier' && (
+          {subscription?.plan_name !== 'premier' && subscription?.plan_name !== 'pro' && (
             <Button 
+              size="sm"
               onClick={handleUpgrade}
-              className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700"
+              className="h-7 text-xs bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700"
             >
-              <Crown size={14} className="mr-1" />
-              {subscription?.plan_name === 'free' ? 'Upgrade Now' : 'Manage Plan'}
+              <Crown size={12} className="mr-1" />
+              Upgrade
             </Button>
           )}
         </div>
-        {getTrialDaysText()}
-      </motion.div>
-
-      {/* Usage Indicators */}
-      <div>
-        <h2 className="text-sm font-semibold text-white mb-3">Usage & Limits</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <UsageIndicator
-            title="Projects"
+        
+        {/* Compact Usage Bars - 3 in a row */}
+        <div className="grid grid-cols-3 gap-4 mt-3 pt-2 border-t border-slate-700/50">
+          <CompactUsageBar
             used={limits.projects.current}
             limit={limits.projects.max}
-            unit="projects"
+            label="Projects"
             onUpgrade={handleUpgrade}
           />
-          <UsageIndicator
-            title="Workers"
+          <CompactUsageBar
             used={limits.workers.current}
             limit={limits.workers.max}
-            unit="workers"
+            label="Workers"
             onUpgrade={handleUpgrade}
           />
-          <UsageIndicator
-            title="Team Members"
+          <CompactUsageBar
             used={limits.users.current}
             limit={limits.users.max}
-            unit="users"
+            label="Team"
             onUpgrade={handleUpgrade}
           />
         </div>
       </div>
 
-      {/* Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Metric Cards - 4 in a row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {cards.map(c => (
-          <div key={c.label} className="bg-card rounded-xl border border-border p-5 slide-up">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground font-medium">{c.label}</span>
+          <div key={c.label} className="bg-card rounded-xl border border-border p-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-muted-foreground">{c.label}</span>
               <span className={c.color}>{c.icon}</span>
             </div>
-            <p className="text-xl font-bold text-card-foreground">{c.value}</p>
+            <p className="text-lg font-bold text-card-foreground">{c.value}</p>
           </div>
         ))}
       </div>
 
-      {/* Charts */}
+      {/* Charts - Side by side */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5">
-          <h3 className="text-sm font-semibold text-card-foreground mb-4">Monthly Cash Flow (Millions)</h3>
-          <ResponsiveContainer width="100%" height={250}>
+        <div className="lg:col-span-2 bg-card rounded-xl border border-border p-4">
+          <h3 className="text-xs font-semibold text-card-foreground mb-3">Monthly Cash Flow (Millions)</h3>
+          <ResponsiveContainer width="100%" height={220}>
             <BarChart data={cashFlowData}>
-              <XAxis 
-                dataKey="name" 
-                tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} 
-                stroke="hsl(var(--muted-foreground))" 
-              />
-              <YAxis 
-                tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} 
-                stroke="hsl(var(--muted-foreground))" 
-              />
-              <Tooltip 
-                contentStyle={customTooltipStyles}
-                labelStyle={customLabelStyles}
-                itemStyle={customItemStyles}
-                cursor={{ fill: 'hsl(var(--muted) / 0.3)' }}
-              />
+              <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} stroke="hsl(var(--muted-foreground))" />
+              <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} stroke="hsl(var(--muted-foreground))" />
+              <Tooltip contentStyle={customTooltipStyles} />
               <Bar dataKey="income" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} name="Income" />
               <Bar dataKey="expenses" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} name="Expenses" />
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div className="bg-card rounded-xl border border-border p-5">
-          <h3 className="text-sm font-semibold text-card-foreground mb-4">Expenses by Category</h3>
+        <div className="bg-card rounded-xl border border-border p-4">
+          <h3 className="text-xs font-semibold text-card-foreground mb-3">Expenses by Category</h3>
           {pieData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={220}>
               <PieChart>
-                <Pie 
-                  data={pieData} 
-                  cx="50%" 
-                  cy="50%" 
-                  innerRadius={50} 
-                  outerRadius={90} 
-                  dataKey="value" 
-                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                  labelLine={{ stroke: 'hsl(var(--muted-foreground))' }}
-                >
+                <Pie data={pieData} cx="50%" cy="50%" innerRadius={40} outerRadius={75} dataKey="value" label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`} labelLine={{ stroke: 'hsl(var(--muted-foreground))' }}>
                   {pieData.map((_, i) => <Cell key={i} fill={pieColors[i % pieColors.length]} />)}
                 </Pie>
-                <Tooltip 
-                  formatter={(v: number) => formatCurrency(v)}
-                  contentStyle={customTooltipStyles}
-                  labelStyle={customLabelStyles}
-                  itemStyle={customItemStyles}
-                />
+                <Tooltip formatter={(v: number) => formatCurrency(v)} contentStyle={customTooltipStyles} />
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">No expense data</div>
+            <div className="h-[220px] flex items-center justify-center text-muted-foreground text-xs">No expense data</div>
           )}
         </div>
       </div>
 
-      {/* Recent Transactions */}
-      <div className="bg-card rounded-xl border border-border p-5">
-        <h3 className="text-sm font-semibold text-card-foreground mb-4">Recent Transactions</h3>
+      {/* Recent Transactions - Compact */}
+      <div className="bg-card rounded-xl border border-border p-4">
+        <h3 className="text-xs font-semibold text-card-foreground mb-3">Recent Transactions</h3>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-border text-left">
-                <th className="pb-2 font-medium text-muted-foreground">Date</th>
-                <th className="pb-2 font-medium text-muted-foreground">Type</th>
-                <th className="pb-2 font-medium text-muted-foreground">Description</th>
-                <th className="pb-2 font-medium text-muted-foreground text-right">Amount</th>
-               </tr>
+                <th className="pb-1.5 font-medium text-muted-foreground">Date</th>
+                <th className="pb-1.5 font-medium text-muted-foreground">Type</th>
+                <th className="pb-1.5 font-medium text-muted-foreground">Description</th>
+                <th className="pb-1.5 font-medium text-muted-foreground text-right">Amount</th>
+              </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {[
@@ -318,17 +228,17 @@ export function Dashboard() {
                 ...filteredExpenses.map(e => ({ date: e.date, type: 'Expense' as const, desc: e.description, amount: -e.amount })),
               ]
                 .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                .slice(0, 8)
+                .slice(0, 5)
                 .map((t, i) => (
-                  <tr key={i} className="hover:bg-muted/50 transition-colors">
-                    <td className="py-2.5">{new Date(t.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</td>
-                    <td><span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${t.type === 'Income' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>{t.type}</span></td>
-                    <td className="text-card-foreground">{t.desc}</td>
+                  <tr key={i} className="hover:bg-muted/50">
+                    <td className="py-2">{new Date(t.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</td>
+                    <td><span className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium ${t.type === 'Income' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>{t.type}</span></td>
+                    <td className="text-card-foreground max-w-[150px] truncate">{t.desc}</td>
                     <td className={`text-right font-mono ${t.amount >= 0 ? 'text-success' : 'text-destructive'}`}>{formatCurrency(Math.abs(t.amount))}</td>
-                   </tr>
+                  </tr>
                 ))}
             </tbody>
-           </table>
+          </table>
         </div>
       </div>
     </div>
