@@ -4,8 +4,7 @@ import { useAppStore } from '@/hooks/useAppStore';
 import { API_BASE_URL } from '@/config/api';
 import { formatCurrency } from '@/lib/formatters';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, TrendingDown, FolderKanban, Banknote, Crown, Rocket, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { TrendingUp, TrendingDown, FolderKanban, Banknote } from 'lucide-react';
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -62,24 +61,6 @@ export function Dashboard() {
     }
   };
 
-  const handleUpgrade = () => {
-    navigate('/settings/billing');
-  };
-
-  const trialDays = subscription?.status === 'trial' && subscription?.trial_days_remaining > 0 
-    ? subscription.trial_days_remaining 
-    : null;
-
-  const getNextPlan = () => {
-    const currentPlan = subscription?.plan_name;
-    if (currentPlan === 'free') return 'Basic';
-    if (currentPlan === 'basic') return 'Pro';
-    if (currentPlan === 'pro') return 'Premier';
-    return null;
-  };
-
-  const nextPlan = getNextPlan();
-
   // Monthly cash flow
   const months = Array.from({ length: 6 }, (_, i) => {
     const d = new Date();
@@ -118,72 +99,10 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6 fade-in">
-      {/* Single Top Bar with Dashboard and all subscription info */}
-      <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-3">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          {/* Dashboard Title */}
-          <div>
-            <h1 className="text-xl font-bold text-white">Dashboard</h1>
-          </div>
-          
-          {/* Subscription Info - All in one line */}
-          <div className="flex items-center gap-4 flex-wrap">
-            {/* Plan Badge */}
-            <div className="flex items-center gap-2">
-              <div className="p-1 bg-amber-500/10 rounded-lg">
-                <Crown size={14} className="text-amber-400" />
-              </div>
-              <span className="font-medium text-white text-sm">{subscription?.display_name || 'Free'}</span>
-              {trialDays && (
-                <span className="text-xs text-amber-400">{trialDays}d left</span>
-              )}
-            </div>
-            
-            {/* Divider */}
-            <div className="h-5 w-px bg-slate-600" />
-            
-            {/* Progress Bars - Compact horizontal */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500 w-12">Projects</span>
-                <div className="w-20 h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-500 rounded-full" style={{ width: `${Math.min((limits.projects.current / limits.projects.max) * 100, 100)}%` }} />
-                </div>
-                <span className="text-xs text-slate-400">{limits.projects.current}/{limits.projects.max}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500 w-12">Workers</span>
-                <div className="w-20 h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-500 rounded-full" style={{ width: `${Math.min((limits.workers.current / limits.workers.max) * 100, 100)}%` }} />
-                </div>
-                <span className="text-xs text-slate-400">{limits.workers.current}/{limits.workers.max}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500 w-12">Team</span>
-                <div className="w-20 h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-500 rounded-full" style={{ width: `${Math.min((limits.users.current / limits.users.max) * 100, 100)}%` }} />
-                </div>
-                <span className="text-xs text-slate-400">{limits.users.current}/{limits.users.max}</span>
-              </div>
-            </div>
-            
-            {/* Upgrade Button */}
-            {subscription?.plan_name !== 'premier' && nextPlan && (
-              <>
-                <div className="h-5 w-px bg-slate-600" />
-                <Button 
-                  size="sm"
-                  onClick={handleUpgrade}
-                  className="h-7 text-xs bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 px-3 gap-1"
-                >
-                  <Rocket size={12} />
-                  Upgrade to {nextPlan}
-                  <ChevronRight size={12} />
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
+      {/* Dashboard Title */}
+      <div>
+        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+        <p className="text-sm text-slate-400 mt-1">Overview of your construction business</p>
       </div>
 
       {/* Metric Cards - 4 in a row */}
