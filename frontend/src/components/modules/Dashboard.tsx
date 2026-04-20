@@ -4,8 +4,7 @@ import { useAppStore } from '@/hooks/useAppStore';
 import { API_BASE_URL } from '@/config/api';
 import { formatCurrency } from '@/lib/formatters';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, TrendingDown, FolderKanban, Banknote, Crown, Rocket, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { TrendingUp, TrendingDown, FolderKanban, Banknote } from 'lucide-react';
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -62,24 +61,6 @@ export function Dashboard() {
     }
   };
 
-  const handleUpgrade = () => {
-    navigate('/settings/billing');
-  };
-
-  const trialDays = subscription?.status === 'trial' && subscription?.trial_days_remaining > 0 
-    ? subscription.trial_days_remaining 
-    : null;
-
-  const getNextPlan = () => {
-    const currentPlan = subscription?.plan_name;
-    if (currentPlan === 'free') return 'Basic';
-    if (currentPlan === 'basic') return 'Pro';
-    if (currentPlan === 'pro') return 'Premier';
-    return null;
-  };
-
-  const nextPlan = getNextPlan();
-
   // Monthly cash flow
   const months = Array.from({ length: 6 }, (_, i) => {
     const d = new Date();
@@ -108,20 +89,19 @@ export function Dashboard() {
     { label: 'Cash Flow', value: formatCurrency(cashFlow), icon: <Banknote size={18} />, color: cashFlow >= 0 ? 'text-green-400' : 'text-red-400' },
   ];
 
+  // Dark mode tooltip styles
   const customTooltipStyles = {
-    backgroundColor: 'hsl(var(--card))',
-    border: '1px solid hsl(var(--border))',
+    backgroundColor: '#1e293b',
+    border: '1px solid #334155',
     borderRadius: '8px',
     fontSize: '11px',
-    padding: '6px 10px',
+    color: '#e2e8f0',
+    padding: '8px 12px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
   };
 
   return (
     <div className="space-y-6 fade-in">
-
-
-
-
       {/* Metric Cards - Compact */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {cards.map(c => (
@@ -135,9 +115,6 @@ export function Dashboard() {
         ))}
       </div>
 
-
-
-
       {/* Charts - Side by side */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-card rounded-xl border border-border p-4">
@@ -149,7 +126,12 @@ export function Dashboard() {
             <BarChart data={cashFlowData}>
               <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} stroke="#334155" />
               <YAxis tick={{ fontSize: 11, fill: '#64748b' }} stroke="#334155" />
-              <Tooltip contentStyle={customTooltipStyles} />
+              <Tooltip 
+                contentStyle={customTooltipStyles}
+                labelStyle={{ color: '#f59e0b', fontWeight: 'bold' }}
+                itemStyle={{ color: '#cbd5e1' }}
+                cursor={{ fill: 'rgba(100, 116, 139, 0.15)' }}
+              />
               <Bar dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} name="Income" />
               <Bar dataKey="expenses" fill="#ef4444" radius={[4, 4, 0, 0]} name="Expenses" />
             </BarChart>
@@ -160,10 +142,24 @@ export function Dashboard() {
           {pieData.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" innerRadius={40} outerRadius={75} dataKey="value" label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`} labelLine={{ stroke: '#64748b' }}>
+                <Pie 
+                  data={pieData} 
+                  cx="50%" 
+                  cy="50%" 
+                  innerRadius={40} 
+                  outerRadius={75} 
+                  dataKey="value" 
+                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`} 
+                  labelLine={{ stroke: '#64748b' }}
+                >
                   {pieData.map((_, i) => <Cell key={i} fill={pieColors[i % pieColors.length]} />)}
                 </Pie>
-                <Tooltip formatter={(v: number) => formatCurrency(v)} contentStyle={customTooltipStyles} />
+                <Tooltip 
+                  formatter={(v: number) => formatCurrency(v)} 
+                  contentStyle={customTooltipStyles}
+                  labelStyle={{ color: '#f59e0b', fontWeight: 'bold' }}
+                  itemStyle={{ color: '#cbd5e1' }}
+                />
               </PieChart>
             </ResponsiveContainer>
           ) : (
