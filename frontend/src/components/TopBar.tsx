@@ -14,7 +14,7 @@ import {
 
 export function TopBar() {
   const navigate = useNavigate();
-  const { activeModule, projects, selectedProjectId, setSelectedProjectId, theme, toggleTheme } = useAppStore();
+  const { activeModule, projects, selectedProjectId, setSelectedProjectId, theme, toggleTheme, setActiveModule } = useAppStore();
   const [subscription, setSubscription] = useState<any>(null);
   const [limits, setLimits] = useState({
     projects: { current: 0, max: 0 },
