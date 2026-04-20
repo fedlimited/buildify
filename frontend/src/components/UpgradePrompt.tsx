@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Crown, Rocket, ArrowRight } from 'lucide-react';
+import { useAppStore } from '@/hooks/useAppStore';
 
 interface UpgradePromptProps {
   open: boolean;
@@ -11,8 +12,12 @@ interface UpgradePromptProps {
 }
 
 export function UpgradePrompt({ open, onClose, limitType, current, max }: UpgradePromptProps) {
+  const { setActiveModule } = useAppStore();
+
   const handleUpgrade = () => {
-    window.location.href = '/settings/billing';
+    // Switch to settings module in the app
+    setActiveModule('settings');
+    onClose();
   };
 
   return (
