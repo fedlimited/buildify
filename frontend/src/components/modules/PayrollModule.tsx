@@ -1,3 +1,5 @@
+import { useSubscriptionLimit } from '@/hooks/useSubscriptionLimit';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAppStore } from '@/hooks/useAppStore';
 import { WorkerCategory, Worker, PayrollRecord, PayrollEntry, PayrollAttendance } from '@/lib/types';
@@ -11,10 +13,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Pencil, Trash2, Check, ChevronLeft, ChevronRight, DollarSign } from 'lucide-react';
 import { exportToCSV, flattenForExport } from '@/lib/export';
-
-
-
-
 
 const DAYS: (keyof PayrollAttendance)[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -97,20 +95,39 @@ function CategoryManagement() {
 
 function WorkerManagement() {
   const { workers, workerCategories, projects, addWorker, updateWorker, deleteWorker } = useAppStore();
+  const { limits, refreshLimits } = useSubscriptionLimit();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Worker | null>(null);
   const [form, setForm] = useState({ name: '', phone: '', categoryId: 0, projectId: 0, dayRate: 0, isActive: true });
 
-  const openNew = () => { setEditing(null); setForm({ name: '', phone: '', categoryId: 0, projectId: 0, dayRate: 0, isActive: true }); setOpen(true); };
-  const openEdit = (w: Worker) => { setEditing(w); setForm(w); setOpen(true); };
+  const openNew = () => {
+    // Check limit before allowing new worker
+    if (!limits.workers.allowed) {
+      setShowUpgradeModal(true);
+      return;
+    }
+    setEditing(null);
+    setForm({ name: '', phone: '', categoryId: 0, projectId: 0, dayRate: 0, isActive: true });
+    setOpen(true);
+  };
+
+  const openEdit = (w: Worker) => {
+    setEditing(w);
+    setForm(w);
+    setOpen(true);
+  };
+
   const handleCategoryChange = (catId: string) => {
     const cat = workerCategories.find(c => c.id === Number(catId));
     setForm({ ...form, categoryId: Number(catId), dayRate: cat?.dayRate || form.dayRate });
   };
+
   const handleSave = () => {
     if (!form.name || !form.phone || !form.categoryId || !form.projectId) return;
     if (editing) updateWorker({ ...editing, ...form });
     else addWorker(form);
+    refreshLimits();
     setOpen(false);
   };
 
@@ -171,13 +188,20 @@ function WorkerManagement() {
           <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={handleSave}>Save</Button></div>
         </DialogContent>
       </Dialog>
+
+      <UpgradePrompt
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        limitType="worker"
+        current={limits.workers.current}
+        max={limits.workers.max}
+      />
     </div>
   );
 }
 
 function PayrollProcessing() {
-const { workers, workerCategories, projects, payrollRecords, selectedProjectId, addPayrollRecord, updatePayrollRecord, addExpense, fetchPayrollRecords } = useAppStore();
-
+  const { workers, workerCategories, projects, payrollRecords, selectedProjectId, addPayrollRecord, updatePayrollRecord, addExpense, fetchPayrollRecords } = useAppStore();
 
   const [weekOffset, setWeekOffset] = useState(0);
 
@@ -220,91 +244,67 @@ const { workers, workerCategories, projects, payrollRecords, selectedProjectId, 
   const totalGross = entries.reduce((s, e) => s + e.grossPay, 0);
   const totalDays = entries.reduce((s, e) => s + e.daysWorked, 0);
 
- 
-
-
-
-const handleSave = async () => {
-  const proj = projects.find(p => p.id === projectId);
-  const data = { weekNumber: weekNum, year, weekStart: weekStart.toISOString().split('T')[0], weekEnd: weekEnd.toISOString().split('T')[0], projectId, projectName: proj?.name || '', status: 'Draft' as const, entries, totalGrossPay: totalGross };
-  
-  try {
-    if (existingRecord) {
-      await updatePayrollRecord({ ...existingRecord, entries, totalGrossPay: totalGross });
-    } else {
-      await addPayrollRecord(data);
+  const handleSave = async () => {
+    const proj = projects.find(p => p.id === projectId);
+    const data = { weekNumber: weekNum, year, weekStart: weekStart.toISOString().split('T')[0], weekEnd: weekEnd.toISOString().split('T')[0], projectId, projectName: proj?.name || '', status: 'Draft' as const, entries, totalGrossPay: totalGross };
+    
+    try {
+      if (existingRecord) {
+        await updatePayrollRecord({ ...existingRecord, entries, totalGrossPay: totalGross });
+      } else {
+        await addPayrollRecord(data);
+      }
+      await fetchPayrollRecords();
+      alert('Payroll saved successfully');
+    } catch (error) {
+      console.error('Failed to save payroll:', error);
+      alert('Error saving payroll. Please try again.');
     }
-    // Refresh payroll records after save
-    await fetchPayrollRecords();
-    alert('Payroll saved successfully');
-  } catch (error) {
-    console.error('Failed to save payroll:', error);
-    alert('Error saving payroll. Please try again.');
-  }
-};
+  };
 
+  const handleApprove = async () => {
+    if (!existingRecord) return;
+    try {
+      await updatePayrollRecord({ ...existingRecord, status: 'Approved', approvedAt: new Date().toISOString() });
+      await fetchPayrollRecords();
+      alert('Payroll approved successfully');
+    } catch (error) {
+      console.error('Failed to approve payroll:', error);
+      alert('Error approving payroll. Please try again.');
+    }
+  };
 
-
-
-
-const handleApprove = async () => {
-  if (!existingRecord) return;
-  try {
-    await updatePayrollRecord({ ...existingRecord, status: 'Approved', approvedAt: new Date().toISOString() });
-    // Refresh payroll records to show updated status
-    await fetchPayrollRecords();
-    alert('Payroll approved successfully');
-  } catch (error) {
-    console.error('Failed to approve payroll:', error);
-    alert('Error approving payroll. Please try again.');
-  }
-};
-
-const handlePay = async () => {
-  if (!existingRecord || existingRecord.status !== 'Approved') {
-    alert('Cannot pay: Payroll record must be approved first');
-    return;
-  }
-  
-  const proj = projects.find(p => p.id === projectId);
-  
-  try {
-    // Add expense for this payroll
-    await addExpense({ 
-      date: new Date().toISOString().split('T')[0], 
-      projectId, 
-      projectName: proj?.name || '', 
-      category: 'Payroll', 
-      description: `Week ${weekNum} payroll - ${proj?.name}`, 
-      amount: existingRecord.totalGrossPay, 
-      vat: 0, 
-      paymentMethod: 'Bank Transfer', 
-      status: 'Paid', 
-      reference: `PR-W${weekNum}-${year}` 
-    });
+  const handlePay = async () => {
+    if (!existingRecord || existingRecord.status !== 'Approved') {
+      alert('Cannot pay: Payroll record must be approved first');
+      return;
+    }
     
-    // Mark payroll as paid
-    await updatePayrollRecord({ ...existingRecord, status: 'Paid', paidAt: new Date().toISOString() });
+    const proj = projects.find(p => p.id === projectId);
     
-    // Refresh payroll records to show updated status
-    await fetchPayrollRecords();
-    
-    alert('Payroll marked as paid and expense created successfully');
-  } catch (error) {
-    console.error('Failed to process payroll payment:', error);
-    alert('Error processing payment. Please try again.');
-  }
-};
-
-
-
-
-
-
-
-
-
-
+    try {
+      await addExpense({ 
+        date: new Date().toISOString().split('T')[0], 
+        projectId, 
+        projectName: proj?.name || '', 
+        category: 'Payroll', 
+        description: `Week ${weekNum} payroll - ${proj?.name}`, 
+        amount: existingRecord.totalGrossPay, 
+        vat: 0, 
+        paymentMethod: 'Bank Transfer', 
+        status: 'Paid', 
+        reference: `PR-W${weekNum}-${year}` 
+      });
+      
+      await updatePayrollRecord({ ...existingRecord, status: 'Paid', paidAt: new Date().toISOString() });
+      await fetchPayrollRecords();
+      
+      alert('Payroll marked as paid and expense created successfully');
+    } catch (error) {
+      console.error('Failed to process payroll payment:', error);
+      alert('Error processing payment. Please try again.');
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -381,12 +381,6 @@ const handlePay = async () => {
   );
 }
 
-
-
-
-
-
-
 function PayrollLedger() {
   const { payrollRecords, selectedProjectId, authUser, clearWorkersLedger } = useAppStore();
   const filtered = selectedProjectId ? payrollRecords.filter(r => r.projectId === selectedProjectId) : payrollRecords;
@@ -398,28 +392,17 @@ function PayrollLedger() {
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => exportToCSV(flattenForExport(filtered as unknown as Record<string, unknown>[], ['entries']), 'payroll_ledger')}>Export CSV</Button>
           {authUser?.role === 'admin' && (
-
-
-
-<Button
-  variant="destructive"
-  size="sm"
-  onClick={() => {
-    if (confirm('WARNING: This will permanently delete ALL PAYROLL RECORDS (Ledger). Workers will NOT be deleted. This action cannot be undone. Continue?')) {
-      clearWorkersLedger();
-    }
-  }}
->
-  Clear Payroll Ledger
-</Button>
-
-
-
-
-
-
-
-
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                if (confirm('WARNING: This will permanently delete ALL PAYROLL RECORDS (Ledger). Workers will NOT be deleted. This action cannot be undone. Continue?')) {
+                  clearWorkersLedger();
+                }
+              }}
+            >
+              Clear Payroll Ledger
+            </Button>
           )}
         </div>
       </div>
@@ -427,10 +410,9 @@ function PayrollLedger() {
         <table className="w-full text-sm">
           <thead><tr className="border-b border-border text-left">
             {['Week', 'Period', 'Project', 'Workers', 'Total Days', 'Gross Pay', 'Status'].map(h => <th key={h} className="px-4 py-3 font-medium text-muted-foreground text-xs">{h}</th>)}
-           </tr></thead>
+          </tr></thead>
           <tbody className="divide-y divide-border">
             {filtered.sort((a, b) => b.year - a.year || b.weekNumber - a.weekNumber).map(r => {
-              // Safe calculation with fallbacks
               const totalDays = r.entries?.reduce((sum, e) => sum + (e.daysWorked || e.days_worked || 0), 0) || 0;
               const totalGrossPay = r.totalGrossPay || 0;
               
