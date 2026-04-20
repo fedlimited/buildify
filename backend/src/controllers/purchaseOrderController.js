@@ -4,7 +4,7 @@ const PurchaseOrderController = {
   // Get all purchase orders
   getPurchaseOrders: async (req, res) => {
     try {
-      const db = await getDb();
+      const db = getDb();  // Note: no await needed
       const company_id = req.user?.companyId || req.user?.company_id;
 
       console.log('Fetching purchase orders for company:', company_id);
@@ -16,7 +16,7 @@ const PurchaseOrderController = {
 
       const parsedOrders = orders.map(order => ({
         ...order,
-        items: order.items ? JSON.parse(order.items) : []
+        items: order.items ? (typeof order.items === 'string' ? JSON.parse(order.items) : order.items) : []
       }));
 
       res.json(parsedOrders);
@@ -29,7 +29,7 @@ const PurchaseOrderController = {
   // Get single purchase order
   getPurchaseOrderById: async (req, res) => {
     try {
-      const db = await getDb();
+      const db = getDb();
       const company_id = req.user?.companyId || req.user?.company_id;
       const { id } = req.params;
 
@@ -42,7 +42,7 @@ const PurchaseOrderController = {
         return res.status(404).json({ error: 'Purchase order not found' });
       }
 
-      order.items = order.items ? JSON.parse(order.items) : [];
+      order.items = order.items ? (typeof order.items === 'string' ? JSON.parse(order.items) : order.items) : [];
       res.json(order);
     } catch (error) {
       console.error('Error in getPurchaseOrderById:', error);
@@ -53,7 +53,7 @@ const PurchaseOrderController = {
   // Create purchase order
   createPurchaseOrder: async (req, res) => {
     try {
-      const db = await getDb();
+      const db = getDb();
       const company_id = req.user?.companyId || req.user?.company_id;
 
       console.log('Creating purchase order for company:', company_id);
@@ -79,7 +79,7 @@ const PurchaseOrderController = {
           company_id, order_number, supplier_id, supplier_name,
           project_id, project_name, order_date, expected_date,
           items, subtotal, vat, total, status, payment_status, notes, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Ordered', 'Unpaid', ?, NOW()) RETURNING id`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Ordered', 'Unpaid', ?, CURRENT_TIMESTAMP) RETURNING id`,
         [
           company_id, order_number, supplier_id, supplier_name,
           project_id, project_name, order_date, expected_date,
@@ -91,7 +91,14 @@ const PurchaseOrderController = {
         'SELECT * FROM purchase_orders WHERE id = ?',
         [result.lastID]
       );
-      newOrder.items = newOrder.items ? JSON.parse(newOrder.items) : [];
+      
+      if (newOrder && newOrder.items) {
+        try {
+          newOrder.items = typeof newOrder.items === 'string' ? JSON.parse(newOrder.items) : newOrder.items;
+        } catch (e) {
+          newOrder.items = [];
+        }
+      }
 
       res.status(201).json(newOrder);
     } catch (error) {
@@ -103,7 +110,7 @@ const PurchaseOrderController = {
   // Update purchase order
   updatePurchaseOrder: async (req, res) => {
     try {
-      const db = await getDb();
+      const db = getDb();
       const company_id = req.user?.companyId || req.user?.company_id;
       const { id } = req.params;
 
@@ -122,7 +129,14 @@ const PurchaseOrderController = {
         'SELECT * FROM purchase_orders WHERE id = ? AND company_id = ?',
         [id, company_id]
       );
-      updatedOrder.items = updatedOrder.items ? JSON.parse(updatedOrder.items) : [];
+      
+      if (updatedOrder && updatedOrder.items) {
+        try {
+          updatedOrder.items = typeof updatedOrder.items === 'string' ? JSON.parse(updatedOrder.items) : updatedOrder.items;
+        } catch (e) {
+          updatedOrder.items = [];
+        }
+      }
 
       res.json(updatedOrder);
     } catch (error) {
@@ -134,7 +148,7 @@ const PurchaseOrderController = {
   // Delete purchase order
   deletePurchaseOrder: async (req, res) => {
     try {
-      const db = await getDb();
+      const db = getDb();
       const company_id = req.user?.companyId || req.user?.company_id;
       const { id } = req.params;
 
@@ -156,7 +170,7 @@ const PurchaseOrderController = {
   // Update purchase order status and handle store transactions
   updatePurchaseOrderStatus: async (req, res) => {
     try {
-      const db = await getDb();
+      const db = getDb();
       const company_id = req.user?.companyId || req.user?.company_id;
       const { id } = req.params;
       const { status, payment_status } = req.body;
@@ -182,6 +196,9 @@ const PurchaseOrderController = {
       try {
         items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []);
         console.log('Items to process:', items.length);
+        items.forEach((item, idx) => {
+          console.log(`Item ${idx + 1}:`, item.name || item.itemName || item.description);
+        });
       } catch (e) {
         console.error('Error parsing items:', e);
         items = [];
@@ -196,43 +213,59 @@ const PurchaseOrderController = {
       // If status changed to 'Supplied', create store transactions
       if (status === 'Supplied') {
         console.log('Creating store transactions for PO:', order.order_number);
+        
+        let successCount = 0;
+        const currentDate = new Date().toISOString().split('T')[0];
 
         for (const item of items) {
           const itemName = item.name || item.itemName || item.description || 'Unknown Item';
           const quantity = Number(item.quantity) || 0;
           const unit = item.unit || 'piece';
+          const category = item.category || 'Materials';
 
-          console.log(`Adding transaction: ${itemName} x ${quantity} ${unit}`);
+          if (quantity <= 0) {
+            console.log(`⚠️ Skipping ${itemName} - quantity is 0`);
+            continue;
+          }
 
-          // Insert store transaction in the format your StoresModule expects
-          await db.run(
-            `INSERT INTO store_transactions (
-              company_id, project_id, project_name, transaction_type,
-              item_id, item_name, unit, category,
-              quantity_supplied, quantity_issued, quantity_returned,
-              balance, reference, date, notes, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-            [
-              company_id,
-              order.project_id,
-              order.project_name || 'General Store',
-              'SUPPLY',
-              null,
-              itemName,
-              unit,
-              'Materials',
-              quantity,      // quantity_supplied
-              0,             // quantity_issued
-              0,             // quantity_returned
-              quantity,      // balance
-              order.order_number,
-              new Date().toISOString().split('T')[0],
-              `Received from purchase order ${order.order_number}`
-            ]
-          );
-          console.log(`  ✅ Store transaction created for ${itemName} x ${quantity}`);
+          console.log(`📦 Adding to store: ${itemName} x ${quantity} ${unit}`);
+
+          try {
+            // Insert store transaction using db.run with ? placeholders
+            await db.run(
+              `INSERT INTO store_transactions (
+                company_id, project_id, project_name, transaction_type,
+                item_id, item_name, unit, category,
+                quantity_supplied, quantity_issued, quantity_returned,
+                balance, reference, date, notes, created_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+              [
+                company_id,
+                order.project_id,
+                order.project_name || 'General Store',
+                'SUPPLY',
+                null,
+                itemName,
+                unit,
+                category,
+                quantity,      // quantity_supplied
+                0,             // quantity_issued
+                0,             // quantity_returned
+                quantity,      // balance
+                order.order_number,
+                currentDate,
+                `Received from purchase order ${order.order_number}`
+              ]
+            );
+            
+            console.log(`  ✅ Store transaction created for ${itemName} x ${quantity}`);
+            successCount++;
+          } catch (insertError) {
+            console.error(`  ❌ Failed to insert ${itemName}:`, insertError.message);
+          }
         }
-        console.log(`✅ Completed for PO: ${order.order_number}`);
+        
+        console.log(`✅ Completed for PO: ${order.order_number} - ${successCount}/${items.length} items added to store`);
       }
 
       // If payment_status changed to 'Paid', create expense record
@@ -241,8 +274,8 @@ const PurchaseOrderController = {
         await db.run(
           `INSERT INTO expenses (
             company_id, project_id, project_name, date, category,
-            description, amount, vat, payment_method, status, reference
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            description, amount, vat, payment_method, status, reference, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
           [
             company_id, order.project_id, order.project_name,
             new Date().toISOString().split('T')[0], 'Supplier',
