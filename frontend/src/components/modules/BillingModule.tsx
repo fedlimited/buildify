@@ -56,8 +56,9 @@ export const BillingModule = () => {
     return paymentMethod === 'mpesa' ? 'KES' : 'USD';
   };
 
+  // FIXED: Proper comma formatting with 2 decimal places
   const formatPrice = (price: number) => {
-    return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return price.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
   const handleUpgrade = (plan: Plan) => {
@@ -156,15 +157,14 @@ export const BillingModule = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Header - Minimal, moved up */}
+      {/* Header - Minimal */}
       <div className="text-center mb-4">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">Subscription Plans</h2>
         <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">Choose the plan that fits your business</p>
       </div>
 
-      {/* Controls Row - Payment Method & Billing Cycle side by side, moved higher */}
+      {/* Controls Row */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-        {/* Payment Method Toggle */}
         <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-1 inline-flex">
           <button
             onClick={() => setPaymentMethod('mpesa')}
@@ -190,7 +190,6 @@ export const BillingModule = () => {
           </button>
         </div>
 
-        {/* Billing Cycle Toggle */}
         <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-1 inline-flex">
           <button
             onClick={() => setSelectedCycle('monthly')}
@@ -212,7 +211,7 @@ export const BillingModule = () => {
         </div>
       </div>
 
-      {/* Regional Notice - Compact */}
+      {/* Regional Notice */}
       <div className={`mb-5 p-2 rounded-lg flex items-center justify-center gap-2 text-xs ${
         paymentMethod === 'mpesa'
           ? 'bg-[#E8F5E9] dark:bg-[#1B5E20]/20 text-[#2E7D32] dark:text-[#4CAF50]'
@@ -231,7 +230,7 @@ export const BillingModule = () => {
         )}
       </div>
 
-      {/* Pricing Cards - Equal height */}
+      {/* Pricing Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
         {plans.map((plan) => (
           <div
@@ -244,17 +243,15 @@ export const BillingModule = () => {
                 : 'border-gray-200 dark:border-gray-700 hover:shadow-md bg-white dark:bg-gray-900'
             }`}
           >
-            {/* Plan Badge */}
             {getPlanBadge(plan)}
 
             <div className="p-5 flex flex-col flex-1">
-              {/* Plan Name */}
               <div className="text-center">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">{plan.display_name}</h3>
                 <p className="text-gray-500 dark:text-gray-400 text-xs mt-1 leading-relaxed">{plan.description}</p>
               </div>
               
-              {/* Price - Formatted with commas */}
+              {/* Price - FIXED: Now using formatPrice with commas */}
               <div className="mt-4 text-center">
                 <div className="flex items-baseline justify-center gap-1">
                   <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{getCurrencySymbol()}</span>
@@ -265,7 +262,6 @@ export const BillingModule = () => {
                 <span className="text-sm text-gray-500 dark:text-gray-400">/{selectedCycle}</span>
               </div>
 
-              {/* Limits */}
               <div className="mt-4 space-y-2">
                 <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                   <Building2 size={14} className="text-green-500 shrink-0" />
@@ -281,7 +277,6 @@ export const BillingModule = () => {
                 </div>
               </div>
 
-              {/* Key Features */}
               <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
                 <div className="space-y-1.5">
                   {plan.features?.slice(0, 3).map((feature, idx) => (
@@ -300,7 +295,6 @@ export const BillingModule = () => {
                 </div>
               </div>
 
-              {/* Action Button */}
               <div className="mt-auto pt-4">
                 <button
                   onClick={() => handleUpgrade(plan)}
@@ -315,7 +309,7 @@ export const BillingModule = () => {
         ))}
       </div>
 
-      {/* Trust Indicators - Bottom */}
+      {/* Trust Indicators */}
       <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
         <div className="flex flex-wrap justify-center gap-5">
           <div className="flex items-center gap-1.5">
@@ -337,7 +331,7 @@ export const BillingModule = () => {
         </div>
       </div>
 
-      {/* Payment Modal - Keep clean */}
+      {/* Payment Modal */}
       {showModal && selectedPlan && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-md w-full mx-4">
