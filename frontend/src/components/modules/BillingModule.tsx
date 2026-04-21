@@ -433,7 +433,7 @@ export const BillingModule = () => {
                     </div>
                   </div>
                   {error && (
-                    <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 rounded-lg text-sm">
+                    <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-sm border border-red-200 dark:border-red-800">
                       {error}
                     </div>
                   )}
@@ -449,7 +449,7 @@ export const BillingModule = () => {
               {status === 'idle' && paymentMethod === 'card' && (
                 <>
                   <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-center">
-                    <CreditCard size={40} className="mx-auto text-blue-500 mb-2" />
+                    <CreditCard size={40} className="mx-auto text-blue-500 dark:text-blue-400 mb-2" />
                     <p className="text-blue-700 dark:text-blue-400 font-medium">Coming Soon</p>
                     <p className="text-sm text-blue-600 dark:text-blue-500 mt-1">
                       Visa/Mastercard payments will be available soon
@@ -482,7 +482,7 @@ export const BillingModule = () => {
               {status === 'completed' && (
                 <div className="text-center py-8">
                   <div className="w-14 h-14 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Check size={28} className="text-green-600" />
+                    <Check size={28} className="text-green-600 dark:text-green-400" />
                   </div>
                   <p className="font-semibold text-green-600 dark:text-green-400">Payment Successful!</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Your plan has been upgraded</p>
@@ -491,14 +491,14 @@ export const BillingModule = () => {
 
               {status === 'error' && (
                 <div className="text-center py-6">
-                  <div className="w-14 h-14 bg-red-100 dark:bg-red-950/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-red-600 text-xl">!</span>
+                  <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-red-600 dark:text-red-400 text-xl">!</span>
                   </div>
-                  <p className="font-medium text-red-600">Payment Failed</p>
-                  <p className="text-sm text-gray-500 mt-1">{error}</p>
+                  <p className="font-medium text-red-600 dark:text-red-400">Payment Failed</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{error}</p>
                   <button
                     onClick={() => setStatus('idle')}
-                    className="mt-4 px-4 py-2 bg-gray-200 rounded-lg text-sm hover:bg-gray-300 transition-colors"
+                    className="mt-4 px-4 py-2 bg-gray-200 dark:bg-gray-800 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
                   >
                     Try Again
                   </button>
