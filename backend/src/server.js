@@ -28,13 +28,30 @@ const InvoiceController = require('./controllers/invoiceController');
 const otpController = require('./controllers/otpController');
 const { verifyTransporter } = require('./services/emailService');
 const SubscriptionController = require('./controllers/subscriptionController');
+const subscriptionPaymentController = require('./controllers/subscriptionPaymentController');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+
+
+
+// CORS configuration - allow Vercel frontend
+app.use(cors({
+  origin: [
+    'http://localhost:8080',
+    'http://localhost:5000',
+    'https://buildify-frontend-kohl.vercel.app'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+
+
 app.use(express.json());
 app.use(morgan('dev'));
 
@@ -57,6 +74,10 @@ app.post('/api/auth/resend-otp', otpController.resendOTP);
 app.post('/api/auth/login', authController.login);
 app.post('/api/companies/register', companyController.registerCompany);
 
+
+// ========== PUBLIC SUBSCRIPTION PAYMENT ROUTES (Callbacks) ==========
+app.post('/api/subscription/mpesa-callback', subscriptionPaymentController.handleCallback);
+
 // ========== PROTECTED ROUTES ==========
 app.use('/api', authenticateToken, requireCompanyAccess);
 
@@ -71,6 +92,8 @@ app.get('/api/currency/available', currencyController.getAvailableCurrencies);
 app.get('/api/subscription/plans', authenticateToken, SubscriptionController.getPlans);
 app.get('/api/subscription/current', authenticateToken, SubscriptionController.getCurrentSubscription);
 app.get('/api/subscription/check-limit', authenticateToken, SubscriptionController.checkLimit);
+app.post('/api/subscription/pay', authenticateToken, subscriptionPaymentController.initiatePayment);
+app.get('/api/subscription/payment-status/:paymentId', authenticateToken, subscriptionPaymentController.checkPaymentStatus);
 
 
 // Company routes
@@ -538,10 +561,4 @@ async function startServer() {
   }
 }
 
-startServer();const subscriptionPaymentController = require('./controllers/subscriptionPaymentController'); 
- 
-// ========== SUBSCRIPTION PAYMENT ROUTES ========== 
-// Public callback for M-Pesa 
-app.post('/api/subscription/mpesa-callback', subscriptionPaymentController.handleCallback); 
- 
-// Protected routes (place these after authenticateToken) 
+startServer(); 
