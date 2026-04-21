@@ -122,13 +122,11 @@ const Index = () => {
 
   return (
     <AuthGate>
-      <div className="h-screen bg-background flex overflow-hidden">
+      <div className="min-h-screen bg-background">
         <Sidebar />
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div className={`sidebar-transition ${sidebarCollapsed ? 'ml-[68px]' : 'ml-[260px]'}`}>
           <TopBar />
-          <main className="flex-1 overflow-y-auto p-6">
-            {renderModule()}
-          </main>
+          <main className="p-6">{renderModule()}</main>
         </div>
       </div>
     </AuthGate>
