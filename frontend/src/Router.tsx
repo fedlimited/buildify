@@ -3,6 +3,7 @@ import { useAppStore } from '@/hooks/useAppStore';
 import Index from './pages/Index';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { BillingModule } from '@/components/modules/BillingModule';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { authUser } = useAppStore();
@@ -25,6 +26,14 @@ export function Router() {
           element={
             <ProtectedRoute>
               <Index />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/billing" 
+          element={
+            <ProtectedRoute>
+              <BillingModule />
             </ProtectedRoute>
           } 
         />

@@ -1,25 +1,17 @@
 import { useAppStore } from '@/hooks/useAppStore';
 import { ModuleId } from '@/lib/types';
 
-
-
-
 import {
   LayoutDashboard, FolderKanban, TrendingUp, TrendingDown,
   Users, ShoppingCart, Warehouse, BookOpen, Receipt, BarChart3, Settings,
   ChevronLeft, ChevronRight, HardHat, LogOut, UserCog, Hammer, FileText,
-  HelpCircle, Scale
+  HelpCircle, Scale, CreditCard
 } from 'lucide-react';
-
-
-
 
 interface NavGroup {
   title: string;
   items: { id: ModuleId; label: string; icon: React.ReactNode }[];
 }
-
-
 
 const navGroups: NavGroup[] = [
   {
@@ -48,13 +40,10 @@ const navGroups: NavGroup[] = [
       { id: 'sitediary', label: 'Site Diary', icon: <BookOpen size={20} /> },
     ],
   },
-
-
-
-
   {
     title: 'Admin',
     items: [
+      { id: 'billing', label: 'Billing', icon: <CreditCard size={20} /> },
       { id: 'reports', label: 'Reports', icon: <BarChart3 size={20} /> },
       { id: 'users', label: 'User Mgmt', icon: <UserCog size={20} /> },
       { id: 'settings', label: 'Settings', icon: <Settings size={20} /> },
@@ -68,9 +57,6 @@ const navGroups: NavGroup[] = [
     ],
   },
 ];
-
-
-
 
 export function Sidebar() {
   const { activeModule, setActiveModule, sidebarCollapsed, toggleSidebar, authUser, logout } = useAppStore();
@@ -95,7 +81,7 @@ export function Sidebar() {
             <HardHat size={20} className="text-accent-foreground" />
           </div>
           {!sidebarCollapsed && (
-            <span className="text-lg font-bold tracking-tight">BOCHABERI</span>
+            <span className="text-lg font-bold tracking-tight">BOCHI</span>
           )}
         </div>
         <button
