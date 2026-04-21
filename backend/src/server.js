@@ -36,8 +36,6 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(helmet());
 
-
-
 // CORS configuration - allow Vercel frontend
 app.use(cors({
   origin: [
@@ -50,14 +48,29 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-
-
 app.use(express.json());
 app.use(morgan('dev'));
 
 // ========== PUBLIC ROUTES ==========
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// TEMPORARY FIX: Add missing 'active' column to subscription_plans (PUBLIC - no auth needed)
+app.post('/api/fix-active-column', async (req, res) => {
+  try {
+    const db = getDb();
+    console.log('Running fix: Adding active column to subscription_plans...');
+    
+    await db.query(`ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT true`);
+    await db.query(`UPDATE subscription_plans SET active = is_active`);
+    
+    console.log('✅ Active column added successfully');
+    res.json({ success: true, message: 'Active column added to subscription_plans' });
+  } catch (error) {
+    console.error('Fix error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Verify email service on startup
@@ -73,7 +86,6 @@ app.post('/api/auth/resend-otp', otpController.resendOTP);
 // Traditional login (keep for backward compatibility)
 app.post('/api/auth/login', authController.login);
 app.post('/api/companies/register', companyController.registerCompany);
-
 
 // ========== PUBLIC SUBSCRIPTION PAYMENT ROUTES (Callbacks) ==========
 app.post('/api/subscription/mpesa-callback', subscriptionPaymentController.handleCallback);
@@ -94,7 +106,6 @@ app.get('/api/subscription/current', authenticateToken, SubscriptionController.g
 app.get('/api/subscription/check-limit', authenticateToken, SubscriptionController.checkLimit);
 app.post('/api/subscription/pay', authenticateToken, subscriptionPaymentController.initiatePayment);
 app.get('/api/subscription/payment-status/:paymentId', authenticateToken, subscriptionPaymentController.checkPaymentStatus);
-
 
 // Company routes
 app.get('/api/company', companyController.getCompanyInfo);
@@ -189,14 +200,12 @@ app.delete('/api/site-diary-entries/:id', SiteDiaryController.deleteEntry);
 app.get('/api/site-diary-entries/statistics', SiteDiaryController.getStatistics);
 app.get('/api/site-diary-entries/range', SiteDiaryController.getEntriesByDateRange);
 
-
 // ========== MIGRATION ENDPOINT - Run once to add missing columns ==========
 app.post('/api/migrate/site-diary', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const db = await getDb();
     const results = [];
     
-    // Add site_workers column if not exists
     try {
       await db.run(`ALTER TABLE site_diary_entries ADD COLUMN IF NOT EXISTS site_workers TEXT`);
       results.push('✅ Added site_workers column');
@@ -204,7 +213,6 @@ app.post('/api/migrate/site-diary', authenticateToken, requireAdmin, async (req,
       results.push(`site_workers: ${e.message}`);
     }
     
-    // Add site_subcontractors column if not exists
     try {
       await db.run(`ALTER TABLE site_diary_entries ADD COLUMN IF NOT EXISTS site_subcontractors TEXT`);
       results.push('✅ Added site_subcontractors column');
@@ -213,10 +221,7 @@ app.post('/api/migrate/site-diary', authenticateToken, requireAdmin, async (req,
     }
     
     console.log('Migration results:', results);
-    res.json({ 
-      message: 'Migration completed',
-      results
-    });
+    res.json({ message: 'Migration completed', results });
   } catch (error) {
     console.error('Migration error:', error);
     res.status(500).json({ error: error.message });
@@ -241,11 +246,6 @@ app.post('/api/invoices', InvoiceController.createInvoice);
 app.put('/api/invoices/:id', InvoiceController.updateInvoice);
 app.delete('/api/invoices/:id', InvoiceController.deleteInvoice);
 
-
-
-
-
-
 // ========== LOAD SAMPLE DATA ==========
 app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, res) => {
   try {
@@ -254,18 +254,14 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     
     console.log('Loading comprehensive sample data for company:', company_id);
     
-    // First, clear all existing data
     const tables = ['projects', 'workers', 'income', 'invoices', 'expenses', 'subcontractors', 'suppliers', 'approved_items', 'worker_categories', 'purchase_orders', 'supplies', 'store_transactions', 'site_diary_entries', 'quotations', 'payroll_records'];
     for (const table of tables) {
       try {
         await db.run(`DELETE FROM ${table} WHERE company_id = $1`, [company_id]);
         console.log(`Cleared ${table}`);
-      } catch (e) {
-        // Table might not exist
-      }
+      } catch (e) {}
     }
     
-    // ========== 1. PROJECTS (8 diverse projects across Kenya) ==========
     const projects = [
       { name: 'Diamond Plaza Mall - Nairobi', client: 'Diamond Developers Ltd', contract_sum: 520000000, location: 'Parklands, Nairobi', start_date: '2024-01-10', end_date: '2025-12-31', status: 'Active', project_manager: 'John Kamau', description: '5-storey modern shopping mall with cinema and food court', progress: 40 },
       { name: 'Mombasa Beach Resort', client: 'Coastline Hospitality', contract_sum: 380000000, location: 'Nyali, Mombasa', start_date: '2024-02-15', end_date: '2025-11-30', status: 'Active', project_manager: 'Hassan Ali', description: 'Luxury beach resort with 150 rooms and conference facilities', progress: 25 },
@@ -288,7 +284,6 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     }
     console.log(`✅ Added ${projects.length} projects`);
     
-    // ========== 2. WORKER CATEGORIES (Expanded to 12) ==========
     const categories = [
       { name: 'Foreman', day_rate: 2500, color: '#3b82f6', is_active: 1 },
       { name: 'Skilled Mason', day_rate: 1800, color: '#10b981', is_active: 1 },
@@ -315,12 +310,8 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     }
     console.log(`✅ Added ${categories.length} worker categories`);
     
-    // ========== 3. WORKERS (10 per project - 80 total) ==========
-    const firstNames = ['John', 'Peter', 'James', 'David', 'Michael', 'Francis', 'Joseph', 'William', 'George', 'Charles', 
-                        'Mary', 'Jane', 'Grace', 'Esther', 'Ruth', 'Sarah', 'Hellen', 'Ann', 'Catherine', 'Lucy',
-                        'Paul', 'Stephen', 'Andrew', 'Philip', 'Thomas', 'Simon', 'Mathew', 'Luke', 'Mark', 'Timothy'];
-    const lastNames = ['Kamau', 'Njoroge', 'Mwangi', 'Ochieng', 'Otieno', 'Kiprop', 'Wanjiku', 'Muthoni', 'Achieng', 'Chebet',
-                      'Kimani', 'Omondi', 'Wambui', 'Njeri', 'Akinyi', 'Atieno', 'Nyambura', 'Wangari', 'Ndegwa', 'Kariuki'];
+    const firstNames = ['John', 'Peter', 'James', 'David', 'Michael', 'Francis', 'Joseph', 'William', 'George', 'Charles', 'Mary', 'Jane', 'Grace', 'Esther', 'Ruth', 'Sarah', 'Hellen', 'Ann', 'Catherine', 'Lucy', 'Paul', 'Stephen', 'Andrew', 'Philip', 'Thomas', 'Simon', 'Mathew', 'Luke', 'Mark', 'Timothy'];
+    const lastNames = ['Kamau', 'Njoroge', 'Mwangi', 'Ochieng', 'Otieno', 'Kiprop', 'Wanjiku', 'Muthoni', 'Achieng', 'Chebet', 'Kimani', 'Omondi', 'Wambui', 'Njeri', 'Akinyi', 'Atieno', 'Nyambura', 'Wangari', 'Ndegwa', 'Kariuki'];
     
     let totalWorkers = 0;
     for (const project of projectIds) {
@@ -343,7 +334,6 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     }
     console.log(`✅ Added ${totalWorkers} workers total`);
     
-    // ========== 4. SUBCONTRACTORS (10) ==========
     const subcontractors = [
       { name: 'ABC Foundations Ltd', phone: '08123456789', email: 'info@abcfoundations.com', kra_pin: 'P051234567Z', specialization: 'Foundation Works', address: 'Industrial Area, Nairobi', contact_person: 'John Kamau', is_active: 1 },
       { name: 'XYZ Electricals', phone: '08234567890', email: 'info@xyzelectricals.com', kra_pin: 'P059876543Z', specialization: 'Electrical Works', address: 'Westlands, Nairobi', contact_person: 'Jane Wanjiku', is_active: 1 },
@@ -368,7 +358,6 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     }
     console.log(`✅ Added ${subcontractors.length} subcontractors`);
     
-    // ========== 5. SUPPLIERS (8) ==========
     const suppliers = [
       { name: 'Bamburi Cement Ltd', kra_pin: 'P051234567A', phone: '08123456789', email: 'orders@bamburi.co.ke', address: 'Industrial Area, Nairobi', contact_person: 'Mary Wambui', payment_terms: 'Net 30 days', is_active: 1 },
       { name: 'Devki Steel Mills', kra_pin: 'P051234568B', phone: '08234567890', email: 'sales@devki.co.ke', address: 'Athi River, Machakos', contact_person: 'Rajesh Patel', payment_terms: 'Net 45 days', is_active: 1 },
@@ -391,7 +380,6 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     }
     console.log(`✅ Added ${suppliers.length} suppliers`);
     
-    // ========== 6. APPROVED ITEMS (25 items) ==========
     const approvedItems = [
       { name: 'Portland Cement 42.5', category: 'Cement', unit: 'bag', default_price: 950, description: '50kg bag, high strength', is_active: 1 },
       { name: 'Portland Cement 32.5', category: 'Cement', unit: 'bag', default_price: 850, description: '50kg bag, general purpose', is_active: 1 },
@@ -429,7 +417,6 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     }
     console.log(`✅ Added ${approvedItems.length} approved items`);
     
-    // ========== 7. QUOTATIONS ==========
     const quotations = [];
     for (let i = 0; i < 12; i++) {
       const sub = subcontractorIds[i % subcontractorIds.length];
@@ -458,7 +445,6 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     }
     console.log(`✅ Added ${quotations.length} quotations`);
     
-    // ========== 8. INCOME (for each project) ==========
     for (const p of projectIds) {
       const amount = Math.floor(Math.random() * 10000000) + 2000000;
       await db.run(
@@ -469,7 +455,6 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     }
     console.log(`✅ Added ${projectIds.length} income records`);
     
-    // ========== 9. EXPENSES (for each project) ==========
     const expenseCategories = ['Materials', 'Labour', 'Equipment', 'Transport', 'Subcontractor', 'Utilities', 'Safety', 'Administrative'];
     for (const p of projectIds) {
       const amount = Math.floor(Math.random() * 5000000) + 500000;
@@ -482,7 +467,6 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     }
     console.log(`✅ Added ${projectIds.length} expense records`);
     
-    // ========== 10. PURCHASE ORDERS ==========
     const purchaseOrders = [
       { order_number: 'PO-2024-001', supplier_id: supplierIds[0]?.id, supplier_name: 'Bamburi Cement Ltd', project_id: projectIds[0]?.id, project_name: 'Diamond Plaza Mall - Nairobi', order_date: '2024-03-10', expected_date: '2024-03-25', items: JSON.stringify([{ description: 'Portland Cement 42.5', quantity: 500, unit_price: 950, total: 475000 }]), subtotal: 475000, vat: 76000, total: 551000, status: 'Supplied', payment_status: 'Paid', notes: '' },
       { order_number: 'PO-2024-002', supplier_id: supplierIds[1]?.id, supplier_name: 'Devki Steel Mills', project_id: projectIds[0]?.id, project_name: 'Diamond Plaza Mall - Nairobi', order_date: '2024-03-15', expected_date: '2024-04-05', items: JSON.stringify([{ description: 'Steel Bar Y12', quantity: 20, unit_price: 120000, total: 2400000 }]), subtotal: 2400000, vat: 384000, total: 2784000, status: 'Ordered', payment_status: 'Unpaid', notes: '' }
@@ -512,11 +496,6 @@ app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, r
     res.status(500).json({ error: error.message });
   }
 });
-
-
-
-
-
 
 // Start server
 async function startServer() {
@@ -561,23 +540,4 @@ async function startServer() {
   }
 }
 
-
-// TEMPORARY FIX: Add missing 'active' column to subscription_plans
-app.post('/api/fix-active-column', async (req, res) => {
-  try {
-    const db = getDb();
-    console.log('Running fix: Adding active column to subscription_plans...');
-    
-    // Try to add the column if it doesn't exist
-    await db.query(`ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT true`);
-    await db.query(`UPDATE subscription_plans SET active = is_active`);
-    
-    console.log('✅ Active column added successfully');
-    res.json({ success: true, message: 'Active column added to subscription_plans' });
-  } catch (error) {
-    console.error('Fix error:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-startServer(); 
+startServer();
