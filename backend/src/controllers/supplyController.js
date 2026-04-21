@@ -4,7 +4,7 @@ const SupplyController = {
   // Get all supplies
   getSupplies: async (req, res) => {
     try {
-      const db = await getDb();
+      const db = getDb();
       const company_id = req.user?.companyId || req.user?.company_id;
       
       console.log('Fetching supplies for company:', company_id);
@@ -24,7 +24,7 @@ const SupplyController = {
   // Get single supply
   getSupplyById: async (req, res) => {
     try {
-      const db = await getDb();
+      const db = getDb();
       const company_id = req.user?.companyId || req.user?.company_id;
       const { id } = req.params;
       
@@ -43,10 +43,10 @@ const SupplyController = {
     }
   },
 
-  // Create supply
+  // Create supply - FIXED: Now creates store transaction automatically
   createSupply: async (req, res) => {
     try {
-      const db = await getDb();
+      const db = getDb();
       const company_id = req.user?.companyId || req.user?.company_id;
       
       console.log('Creating supply for company:', company_id);
@@ -72,19 +72,55 @@ const SupplyController = {
         notes
       } = req.body;
       
+      // Insert supply
       const result = await db.run(
         `INSERT INTO supplies (
           company_id, supplier_id, supplier_name, project_id, project_name,
           date, item_id, item_name, unit, quantity, unit_price,
           total_amount, vat, status, paid, order_id, delivery_note, notes, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()) RETURNING id`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP) RETURNING id`,
         [
           company_id, supplier_id, supplier_name, project_id, project_name,
           date, item_id, item_name, unit, quantity, unit_price,
-          total_amount, vat || 0, status || 'Delivered', paid || 0,
+          total_amount || (quantity * unit_price), vat || 0, status || 'Delivered', paid || 0,
           order_id, delivery_note, notes
         ]
       );
+      
+      // 🔥 CRITICAL FIX: Create store transaction for this supply
+      console.log('Creating store transaction for supply...');
+      
+      // Get current balance for this item in this project
+      const existingBalance = await db.get(
+        `SELECT balance FROM store_transactions 
+         WHERE company_id = ? AND project_id = ? AND item_name = ? 
+         ORDER BY date DESC, id DESC LIMIT 1`,
+        [company_id, project_id, item_name]
+      );
+      
+      const previousBalance = existingBalance?.balance || 0;
+      const newBalance = previousBalance + Number(quantity);
+      
+      await db.run(
+        `INSERT INTO store_transactions (
+          company_id, project_id, project_name, transaction_type,
+          item_id, item_name, unit, category,
+          quantity_supplied, quantity_issued, quantity_returned,
+          balance, reference, date, notes, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+        [
+          company_id, project_id, project_name,
+          'SUPPLY',
+          item_id, item_name, unit, 'Materials',
+          quantity, 0, 0,
+          newBalance,
+          `SUPPLY-${result.lastID}`,
+          date,
+          `Supply from ${supplier_name} - ${item_name}`
+        ]
+      );
+      
+      console.log('Store transaction created successfully');
       
       const newSupply = await db.get(
         'SELECT * FROM supplies WHERE id = ?',
@@ -101,7 +137,7 @@ const SupplyController = {
   // Update supply
   updateSupply: async (req, res) => {
     try {
-      const db = await getDb();
+      const db = getDb();
       const company_id = req.user?.companyId || req.user?.company_id;
       const { id } = req.params;
       
@@ -137,7 +173,7 @@ const SupplyController = {
   // Delete supply
   deleteSupply: async (req, res) => {
     try {
-      const db = await getDb();
+      const db = getDb();
       const company_id = req.user?.companyId || req.user?.company_id;
       const { id } = req.params;
       
@@ -159,7 +195,7 @@ const SupplyController = {
   // Mark supply as paid and create expense record
   markAsPaid: async (req, res) => {
     try {
-      const db = await getDb();
+      const db = getDb();
       const company_id = req.user?.companyId || req.user?.company_id;
       const { id } = req.params;
       
@@ -196,7 +232,7 @@ const SupplyController = {
         `INSERT INTO expenses (
           company_id, project_id, project_name, date, category,
           description, amount, vat, payment_method, status, reference, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
         [
           company_id,
           supply.project_id,
