@@ -43,30 +43,34 @@ interface StockBalance {
 
 
 
-
-
 function useStockBalances(): StockBalance[] {
   const { storeTransactions } = useAppStore();
   
-  console.log('useStockBalances - storeTransactions received:', storeTransactions);
-  console.log('useStockBalances - count:', storeTransactions?.length);
+  console.log('=== useStockBalances START ===');
+  console.log('storeTransactions received:', storeTransactions);
+  console.log('storeTransactions length:', storeTransactions?.length);
   
   return useMemo(() => {
     const map = new Map<string, StockBalance>();
     
     if (!storeTransactions || storeTransactions.length === 0) {
+      console.log('No store transactions found');
       return [];
     }
     
     storeTransactions.forEach(t => {
-      if (!t) return;
+      console.log('Processing transaction:', {
+        id: t.id,
+        itemName: t.itemName,
+        quantitySupplied: t.quantitySupplied,
+        projectName: t.projectName
+      });
       
-      // FIX: Use itemName as the unique key since each item has a different name
+      // Use itemName as the unique key
       const key = t.itemName;
       
-      console.log(`Processing: ${key}, Supplied: ${t.quantitySupplied}`);
-      
       if (!map.has(key)) {
+        console.log(`Creating new balance for: ${key}`);
         map.set(key, { 
           projectId: t.projectId || 0, 
           projectName: t.projectName || 'Unknown', 
@@ -86,17 +90,16 @@ function useStockBalances(): StockBalance[] {
       b.totalIssued += t.quantityIssued || 0;
       b.totalReturned += t.quantityReturned || 0;
       b.currentBalance = b.totalSupplied - b.totalIssued + b.totalReturned;
+      
+      console.log(`Updated ${key}: totalSupplied = ${b.totalSupplied}`);
     });
     
     const result = Array.from(map.values());
-    console.log('useStockBalances - result count:', result.length);
-    console.log('useStockBalances - result:', result);
+    console.log('Final balances:', result);
+    console.log('=== useStockBalances END ===');
     return result;
   }, [storeTransactions]);
 }
-
-
-
 
 
 
