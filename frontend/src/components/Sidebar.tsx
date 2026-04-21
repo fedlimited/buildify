@@ -132,7 +132,7 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`fixed left-0 top-0 h-screen bg-sidebar-bg text-sidebar-fg flex flex-col z-30 sidebar-transition ${sidebarCollapsed ? 'w-[48px]' : 'w-[180px]'}`}
+      className={`h-screen bg-sidebar-bg text-sidebar-fg flex flex-col shrink-0 sidebar-transition ${sidebarCollapsed ? 'w-[48px]' : 'w-[180px]'}`}
     >
       {/* Logo + Collapse */}
       <div className="flex items-center justify-between px-4 h-16 border-b border-sidebar-hover shrink-0">
