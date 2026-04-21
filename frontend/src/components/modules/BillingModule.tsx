@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Check, Smartphone, CreditCard, Globe, MapPin, Loader2 } from 'lucide-react';
+import { Check, Smartphone, CreditCard, Globe, MapPin, Loader2, Zap, Building2, Users, FileText, Shield, HelpCircle } from 'lucide-react';
 import api from '@/services/api';
 
 interface Plan {
@@ -18,6 +18,16 @@ interface Plan {
 }
 
 type PaymentMethod = 'mpesa' | 'card';
+
+// Feature icons mapping
+const featureIcons: Record<string, React.ReactNode> = {
+  projects: <Building2 size={14} />,
+  workers: <Users size={14} />,
+  users: <Users size={14} />,
+  reports: <FileText size={14} />,
+  support: <HelpCircle size={14} />,
+  security: <Shield size={14} />,
+};
 
 export const BillingModule = () => {
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -54,6 +64,10 @@ export const BillingModule = () => {
 
   const getCurrencySymbol = () => {
     return paymentMethod === 'mpesa' ? 'KSh' : '$';
+  };
+
+  const formatPrice = (price: number) => {
+    return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
   const handleUpgrade = (plan: Plan) => {
@@ -129,23 +143,34 @@ export const BillingModule = () => {
 
   const getButtonClass = (plan: Plan) => {
     if (isCurrentPlan(plan)) {
-      return 'w-full py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed';
+      return 'w-full py-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm font-medium cursor-not-allowed';
     }
     if (plan.name === 'free') {
-      return 'w-full py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors';
+      return 'w-full py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors';
     }
     if (paymentMethod === 'mpesa') {
-      return 'w-full py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors';
+      return 'w-full py-2.5 rounded-lg bg-gradient-to-r from-green-600 to-green-700 text-white text-sm font-medium hover:from-green-700 hover:to-green-800 transition-all shadow-sm';
     }
-    return 'w-full py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors';
+    return 'w-full py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm';
+  };
+
+  // Get plan badge color
+  const getPlanBadge = (plan: Plan) => {
+    if (isCurrentPlan(plan)) {
+      return <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-500 text-white text-xs font-medium px-3 py-0.5 rounded-full shadow-sm">Current Plan</span>;
+    }
+    if (plan.name === 'pro') {
+      return <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-medium px-3 py-0.5 rounded-full shadow-sm">Most Popular</span>;
+    }
+    return null;
   };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Subscription & Billing</h2>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Choose the plan that fits your construction business</p>
+      <div className="mb-8 text-center">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Simple, Transparent Pricing</h2>
+        <p className="text-gray-500 dark:text-gray-400 mt-2">Choose the plan that grows with your construction business</p>
       </div>
 
       {/* Payment Method Toggle */}
@@ -153,63 +178,63 @@ export const BillingModule = () => {
         <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-1 inline-flex">
           <button
             onClick={() => setPaymentMethod('mpesa')}
-            className={`px-6 py-2 rounded-md flex items-center gap-2 transition-all ${
+            className={`px-6 py-2 rounded-md flex items-center gap-2 transition-all text-sm ${
               paymentMethod === 'mpesa'
                 ? 'bg-white dark:bg-gray-900 shadow-md text-green-700 dark:text-green-400'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
-            <Smartphone size={18} />
+            <Smartphone size={16} />
             <span>M-Pesa (KES)</span>
           </button>
           <button
             onClick={() => setPaymentMethod('card')}
-            className={`px-6 py-2 rounded-md flex items-center gap-2 transition-all ${
+            className={`px-6 py-2 rounded-md flex items-center gap-2 transition-all text-sm ${
               paymentMethod === 'card'
                 ? 'bg-white dark:bg-gray-900 shadow-md text-blue-700 dark:text-blue-400'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
-            <CreditCard size={18} />
+            <CreditCard size={16} />
             <span>Visa / Mastercard (USD)</span>
           </button>
         </div>
       </div>
 
       {/* Regional Notice */}
-      <div className={`mb-6 p-3 rounded-lg flex items-center gap-2 text-sm ${
+      <div className={`mb-6 p-3 rounded-lg flex items-center justify-center gap-2 text-sm ${
         paymentMethod === 'mpesa'
           ? 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
           : 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800'
       }`}>
         {paymentMethod === 'mpesa' ? (
           <>
-            <MapPin size={16} />
+            <MapPin size={14} />
             <span>Local Payment: Kenyan Shillings (KES) via M-Pesa Paybill 222111</span>
           </>
         ) : (
           <>
-            <Globe size={16} />
+            <Globe size={14} />
             <span>International Payment: US Dollars (USD) via Visa/Mastercard (Coming Soon)</span>
           </>
         )}
       </div>
 
       {/* Billing Cycle Toggle */}
-      <div className="mb-6 flex justify-end">
+      <div className="mb-8 flex justify-end">
         <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
           <button
             onClick={() => setSelectedCycle('monthly')}
-            className={`px-4 py-2 rounded-md text-sm transition-all ${
-              selectedCycle === 'monthly' ? 'bg-white dark:bg-gray-900 shadow-sm' : ''
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+              selectedCycle === 'monthly' ? 'bg-white dark:bg-gray-900 shadow-sm text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400'
             }`}
           >
             Monthly
           </button>
           <button
             onClick={() => setSelectedCycle('yearly')}
-            className={`px-4 py-2 rounded-md text-sm transition-all ${
-              selectedCycle === 'yearly' ? 'bg-white dark:bg-gray-900 shadow-sm' : ''
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+              selectedCycle === 'yearly' ? 'bg-white dark:bg-gray-900 shadow-sm text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400'
             }`}
           >
             Yearly <span className="text-green-600 dark:text-green-400 text-xs ml-1">Save 15%</span>
@@ -217,54 +242,73 @@ export const BillingModule = () => {
         </div>
       </div>
 
-      {/* Pricing Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {/* Pricing Cards - Professional Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
         {plans.map((plan) => (
           <div
             key={plan.id}
-            className={`rounded-xl border transition-all ${
+            className={`relative rounded-xl border transition-all duration-200 ${
               isCurrentPlan(plan)
                 ? 'border-green-500 ring-2 ring-green-500 shadow-lg bg-white dark:bg-gray-900'
+                : plan.name === 'pro'
+                ? 'border-amber-500 shadow-md bg-white dark:bg-gray-900'
                 : 'border-gray-200 dark:border-gray-700 hover:shadow-md bg-white dark:bg-gray-900'
             }`}
           >
-            {/* Current Plan Badge */}
-            {isCurrentPlan(plan) && (
-              <div className="absolute -mt-3 ml-4">
-                <span className="bg-green-500 text-white text-xs px-3 py-0.5 rounded-full">Current</span>
-              </div>
-            )}
+            {/* Plan Badge */}
+            {getPlanBadge(plan)}
 
             <div className="p-5">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">{plan.display_name}</h3>
-              <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{plan.description}</p>
+              {/* Plan Name */}
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{plan.display_name}</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1 leading-relaxed">{plan.description}</p>
               
+              {/* Price */}
               <div className="mt-4">
                 <span className="text-3xl font-bold text-gray-900 dark:text-white">
-                  {getCurrencySymbol()} {getPrice(plan).toLocaleString()}
+                  {getCurrencySymbol()} {formatPrice(getPrice(plan))}
                 </span>
-                <span className="text-gray-500 dark:text-gray-400">/{selectedCycle}</span>
+                <span className="text-gray-500 dark:text-gray-400 text-sm ml-1">/{selectedCycle}</span>
               </div>
 
+              {/* Limits */}
               <div className="mt-4 space-y-2 text-sm">
                 <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <Check size={16} className="text-green-500" />
-                  <span>{plan.max_projects === 999999 ? 'Unlimited' : plan.max_projects} Projects</span>
+                  <Check size={14} className="text-green-500 shrink-0" />
+                  <span className="text-xs">{plan.max_projects === 999999 ? 'Unlimited Projects' : `${plan.max_projects} Project${plan.max_projects !== 1 ? 's' : ''}`}</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <Check size={16} className="text-green-500" />
-                  <span>{plan.max_workers === 999999 ? 'Unlimited' : plan.max_workers} Workers</span>
+                  <Check size={14} className="text-green-500 shrink-0" />
+                  <span className="text-xs">{plan.max_workers === 999999 ? 'Unlimited Workers' : `${plan.max_workers} Worker${plan.max_workers !== 1 ? 's' : ''}`}</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <Check size={16} className="text-green-500" />
-                  <span>{plan.max_users === 999999 ? 'Unlimited' : plan.max_users} Users</span>
+                  <Check size={14} className="text-green-500 shrink-0" />
+                  <span className="text-xs">{plan.max_users === 999999 ? 'Unlimited Users' : `${plan.max_users} User${plan.max_users !== 1 ? 's' : ''}`}</span>
                 </div>
               </div>
 
+              {/* Key Features Preview */}
+              <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+                <div className="space-y-1.5">
+                  {plan.features?.slice(0, 3).map((feature, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <Zap size={10} className="text-amber-500 shrink-0" />
+                      <span className="text-xs text-gray-600 dark:text-gray-400">{feature.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                    </div>
+                  ))}
+                  {plan.features?.length > 3 && (
+                    <div className="text-xs text-gray-400 dark:text-gray-500 pl-5">
+                      +{plan.features.length - 3} more features
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Button */}
               <button
                 onClick={() => handleUpgrade(plan)}
                 disabled={isCurrentPlan(plan)}
-                className={`mt-6 ${getButtonClass(plan)}`}
+                className={`mt-5 ${getButtonClass(plan)}`}
               >
                 {getButtonText(plan)}
               </button>
@@ -275,12 +319,12 @@ export const BillingModule = () => {
 
       {/* Payment Modal - Dark Mode Compatible */}
       {showModal && selectedPlan && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl max-w-md w-full mx-4">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                  {paymentMethod === 'mpesa' ? 'M-Pesa Payment' : 'Card Payment'}
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {paymentMethod === 'mpesa' ? 'Complete Your Upgrade' : 'Card Payment'}
                 </h3>
                 <button
                   onClick={() => setShowModal(false)}
@@ -291,12 +335,12 @@ export const BillingModule = () => {
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Upgrading to</p>
-                <p className="text-lg font-bold text-gray-900 dark:text-white">{selectedPlan.display_name}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Selected Plan</p>
+                <p className="text-base font-semibold text-gray-900 dark:text-white">{selectedPlan.display_name}</p>
                 <p className="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">
-                  {getCurrencySymbol()} {getPrice(selectedPlan).toLocaleString()}
+                  {getCurrencySymbol()} {formatPrice(getPrice(selectedPlan))}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{selectedCycle} subscription</p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{selectedCycle} billing cycle</p>
               </div>
 
               {status === 'idle' && paymentMethod === 'mpesa' && (
@@ -306,17 +350,17 @@ export const BillingModule = () => {
                       M-Pesa Phone Number
                     </label>
                     <div className="flex items-center border border-gray-300 dark:border-gray-700 rounded-lg focus-within:ring-2 focus-within:ring-green-500 bg-white dark:bg-gray-800">
-                      <span className="pl-3 text-gray-500 dark:text-gray-400">+254</span>
+                      <span className="pl-3 text-gray-500 dark:text-gray-400 text-sm">+254</span>
                       <input
                         type="tel"
                         placeholder="712345678"
-                        className="flex-1 p-3 outline-none rounded-lg bg-transparent text-gray-900 dark:text-white"
+                        className="flex-1 p-3 outline-none rounded-lg bg-transparent text-gray-900 dark:text-white text-sm"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                       />
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      You will receive an STK push on this number
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                      You will receive a payment prompt on this number
                     </p>
                   </div>
                   {error && (
@@ -326,9 +370,9 @@ export const BillingModule = () => {
                   )}
                   <button
                     onClick={handlePay}
-                    className="w-full py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+                    className="w-full py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-medium hover:from-green-700 hover:to-green-800 transition-all shadow-sm"
                   >
-                    Pay with M-Pesa
+                    Pay {getCurrencySymbol()} {formatPrice(getPrice(selectedPlan))}
                   </button>
                 </>
               )}
@@ -340,7 +384,6 @@ export const BillingModule = () => {
                     <p className="text-blue-700 dark:text-blue-400 font-medium">Visa/Mastercard Coming Soon</p>
                     <p className="text-sm text-blue-600 dark:text-blue-500 mt-1">
                       International payments will be available soon.
-                      Please use M-Pesa for now.
                     </p>
                   </div>
                   <button
@@ -354,8 +397,8 @@ export const BillingModule = () => {
 
               {status === 'processing' && (
                 <div className="text-center py-8">
-                  <Loader2 className="animate-spin h-12 w-12 text-green-600 dark:text-green-400 mx-auto mb-4" />
-                  <p className="text-gray-600 dark:text-gray-400">Processing payment...</p>
+                  <Loader2 className="animate-spin h-10 w-10 text-green-600 dark:text-green-400 mx-auto mb-4" />
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">Processing payment...</p>
                 </div>
               )}
 
@@ -369,24 +412,24 @@ export const BillingModule = () => {
 
               {status === 'completed' && (
                 <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-green-100 dark:bg-green-950/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Check size={32} className="text-green-600 dark:text-green-400" />
+                  <div className="w-14 h-14 bg-green-100 dark:bg-green-950/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Check size={28} className="text-green-600 dark:text-green-400" />
                   </div>
-                  <p className="font-bold text-green-600 dark:text-green-400 text-lg">Payment Successful!</p>
-                  <p className="text-gray-500 dark:text-gray-400 mt-1">Your plan has been upgraded</p>
+                  <p className="font-semibold text-green-600 dark:text-green-400">Payment Successful!</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Your plan has been upgraded</p>
                 </div>
               )}
 
               {status === 'error' && (
                 <div className="text-center py-4">
-                  <div className="w-16 h-16 bg-red-100 dark:bg-red-950/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-red-600 dark:text-red-400 text-2xl">!</span>
+                  <div className="w-14 h-14 bg-red-100 dark:bg-red-950/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-red-600 dark:text-red-400 text-xl">!</span>
                   </div>
                   <p className="font-medium text-red-600 dark:text-red-400">Payment Failed</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{error}</p>
                   <button
                     onClick={() => setStatus('idle')}
-                    className="mt-4 px-4 py-2 bg-gray-200 dark:bg-gray-800 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700"
+                    className="mt-4 px-4 py-2 bg-gray-200 dark:bg-gray-800 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
                   >
                     Try Again
                   </button>
