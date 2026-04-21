@@ -40,6 +40,8 @@ interface StockBalance {
 
 function useStockBalances(): StockBalance[] {
   const { storeTransactions } = useAppStore();
+  console.log('useStockBalances - storeTransactions received:', storeTransactions);
+  console.log('useStockBalances - count:', storeTransactions?.length);
   return useMemo(() => {
     const map = new Map<string, StockBalance>();
     
@@ -83,6 +85,12 @@ function useStockBalances(): StockBalance[] {
 function StockBalances() {
   const { projects, approvedItems, selectedProjectId, addStoreTransaction, fetchStoreTransactions, storeTransactions, authUser, clearStoresRecords } = useAppStore();
   const balances = useStockBalances();
+  // Add debug logs
+  console.log('=== StockBalances Debug ===');
+  console.log('storeTransactions from store:', storeTransactions);
+  console.log('storeTransactions count:', storeTransactions?.length);
+  console.log('balances from useStockBalances:', balances);
+  console.log('balances count:', balances?.length);
   const [search, setSearch] = useState('');
   const [issueOpen, setIssueOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
