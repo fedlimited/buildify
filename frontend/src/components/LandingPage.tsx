@@ -45,17 +45,34 @@ const LandingPage: React.FC = () => {
 
   const fetchPlans = async () => {
     try {
-      const response = await api.request('/subscription/plans');
-      setPlans(response);
+      const response = await fetch('https://buildify-backend-kye8.onrender.com/api/subscription/plans');
+      const data = await response.json();
+      console.log('Fetched plans:', data);
+      setPlans(data);
     } catch (error) {
       console.error('Error fetching plans:', error);
+      // Fallback plans
+      setPlans([
+        { id: 1, name: 'free', display_name: 'Free', description: 'For solo contractors', price_monthly_kes: 0, price_yearly_kes: 0, price_monthly_usd: 0, price_yearly_usd: 0, max_projects: 1, max_workers: 10, max_users: 1, features: [] },
+        { id: 2, name: 'basic', display_name: 'Basic', description: 'For small businesses', price_monthly_kes: 6370, price_yearly_kes: 61100, price_monthly_usd: 49, price_yearly_usd: 470, max_projects: 3, max_workers: 30, max_users: 5, features: [] },
+        { id: 3, name: 'pro', display_name: 'Pro', description: 'For growing companies', price_monthly_kes: 33670, price_yearly_kes: 323180, price_monthly_usd: 259, price_yearly_usd: 2486, max_projects: 10, max_workers: 150, max_users: 15, features: [] },
+        { id: 4, name: 'premier', display_name: 'Premier', description: 'For large enterprises', price_monthly_kes: 64870, price_yearly_kes: 622700, price_monthly_usd: 499, price_yearly_usd: 4790, max_projects: 999999, max_workers: 999999, max_users: 999999, features: [] }
+      ]);
     } finally {
       setLoading(false);
     }
   };
 
   const getPrice = (plan: Plan) => {
-    return billingCycle === 'monthly' ? plan.price_monthly_kes : plan.price_yearly_kes;
+    if (paymentMethod === 'mpesa') {
+      return billingCycle === 'monthly' ? plan.price_monthly_kes : plan.price_yearly_kes;
+    } else {
+      return billingCycle === 'monthly' ? plan.price_monthly_usd : plan.price_yearly_usd;
+    }
+  };
+
+  const getCurrencySymbol = () => {
+    return paymentMethod === 'mpesa' ? 'KES' : 'USD';
   };
 
   const formatPrice = (price: number) => {
@@ -75,22 +92,9 @@ const LandingPage: React.FC = () => {
     setPaymentError('');
     
     try {
-      // Initialize Paystack payment
-      const response = await api.request('/paystack/initiate', {
-        method: 'POST',
-        body: JSON.stringify({
-          planId: selectedPlan?.id,
-          billingCycle: billingCycle,
-          email: localStorage.getItem('userEmail') || 'customer@example.com'
-        })
-      });
-      
-      if (response.success && response.authorizationUrl) {
-        window.location.href = response.authorizationUrl;
-      } else {
-        setPaymentStatus('error');
-        setPaymentError(response.error || 'Payment initiation failed');
-      }
+      // For now, show coming soon message
+      setPaymentStatus('error');
+      setPaymentError('Visa/Mastercard payments coming soon. Please use M-Pesa for now.');
     } catch (error: any) {
       setPaymentStatus('error');
       setPaymentError(error.message || 'Payment failed. Please try again.');
@@ -201,7 +205,7 @@ const LandingPage: React.FC = () => {
     { question: 'Is my data secure?', answer: 'Absolutely. We use enterprise-grade encryption and follow industry best practices to keep your data safe.' },
     { question: 'Do you offer training?', answer: 'Yes, we provide onboarding training for all paid plans. Premier plans include dedicated training sessions.' },
     { question: 'Can I export my data?', answer: 'Yes, you can export all your data to CSV or PDF at any time.' },
-    { question: 'What payment methods do you accept?', answer: 'We accept M-Pesa, bank transfers, and credit cards via Paystack.' }
+    { question: 'What payment methods do you accept?', answer: 'We accept M-Pesa and Visa/Mastercard.' }
   ];
 
   const subscriptionBenefits = [
@@ -469,7 +473,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Pricing Section with Real Plans */}
+      {/* Pricing Section with Real Plans and Payment Method Toggle */}
       <section id="pricing" className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <motion.div 
@@ -483,7 +487,35 @@ const LandingPage: React.FC = () => {
             <p className="text-slate-300 max-w-2xl mx-auto">All plans include a 14-day free trial of Pro features. No credit card required.</p>
           </motion.div>
 
-          {/* Billing Toggle */}
+          {/* Payment Method Toggle */}
+          <div className="flex justify-center mb-8">
+            <div className="bg-slate-800 rounded-xl p-1 inline-flex border border-slate-700">
+              <button
+                onClick={() => setPaymentMethod('mpesa')}
+                className={`px-6 py-2 rounded-lg flex items-center gap-2 transition-all text-sm font-medium ${
+                  paymentMethod === 'mpesa'
+                    ? 'bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg shadow-green-500/25'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Smartphone size={16} />
+                <span>M-Pesa (KES)</span>
+              </button>
+              <button
+                onClick={() => setPaymentMethod('card')}
+                className={`px-6 py-2 rounded-lg flex items-center gap-2 transition-all text-sm font-medium ${
+                  paymentMethod === 'card'
+                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/25'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <CreditCard size={16} />
+                <span>Visa / Mastercard (USD)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Billing Cycle Toggle */}
           <div className="flex justify-center mb-10">
             <motion.div 
               className="inline-flex items-center gap-3 p-1 bg-slate-800 rounded-full border border-slate-700"
@@ -520,8 +552,7 @@ const LandingPage: React.FC = () => {
             {plans.map((plan, idx) => {
               const isPopular = plan.name === 'pro';
               const price = getPrice(plan);
-              const yearlyTotal = billingCycle === 'annual' ? plan.price_yearly_kes : null;
-              const monthlyEquivalent = yearlyTotal ? (yearlyTotal / 12).toFixed(0) : null;
+              const currencySymbol = getCurrencySymbol();
               
               return (
                 <motion.div
@@ -546,11 +577,21 @@ const LandingPage: React.FC = () => {
                   <p className="text-slate-400 text-xs mb-4">{plan.description}</p>
                   
                   <div className="mt-2 mb-4">
-                    <span className="text-3xl font-bold text-amber-500">KES {formatPrice(price)}</span>
-                    <span className="text-slate-400 text-sm">/{billingCycle === 'monthly' ? 'month' : 'year'}</span>
-                    {billingCycle === 'annual' && plan.price_yearly_kes > 0 && (
-                      <div className="text-xs text-green-400 mt-1">
+                    <div className="flex items-baseline justify-center gap-1">
+                      <span className="text-slate-400 text-sm font-medium">{currencySymbol}</span>
+                      <span className="text-2xl font-bold text-amber-500 tracking-tight">
+                        {formatPrice(price)}
+                      </span>
+                    </div>
+                    <span className="text-slate-500 text-xs">/{billingCycle === 'monthly' ? 'month' : 'year'}</span>
+                    {billingCycle === 'annual' && paymentMethod === 'mpesa' && plan.price_yearly_kes > 0 && (
+                      <div className="text-[10px] text-green-400 mt-1 font-medium">
                         Save {Math.round((plan.price_monthly_kes * 12 - plan.price_yearly_kes) / (plan.price_monthly_kes * 12) * 100)}%
+                      </div>
+                    )}
+                    {billingCycle === 'annual' && paymentMethod === 'card' && plan.price_yearly_usd > 0 && (
+                      <div className="text-[10px] text-green-400 mt-1 font-medium">
+                        Save {Math.round((plan.price_monthly_usd * 12 - plan.price_yearly_usd) / (plan.price_monthly_usd * 12) * 100)}%
                       </div>
                     )}
                   </div>
@@ -579,7 +620,9 @@ const LandingPage: React.FC = () => {
                         ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/25 hover:from-amber-600 hover:to-amber-700' 
                         : plan.name === 'free'
                           ? 'border border-slate-600 text-slate-300 hover:bg-slate-700'
-                          : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+                          : paymentMethod === 'mpesa'
+                            ? 'bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800'
+                            : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800'
                     }`}
                   >
                     {plan.name === 'free' ? 'Get Started' : plan.name === 'premier' ? 'Contact Sales' : 'Upgrade Now'}
@@ -589,7 +632,7 @@ const LandingPage: React.FC = () => {
             })}
           </div>
           <p className="text-center text-xs text-slate-400 mt-8">
-            * All prices are in Kenyan Shillings (KES). International customers pay in USD via Paystack.
+            * M-Pesa payments in Kenyan Shillings (KES) | Visa/Mastercard payments in US Dollars (USD)
           </p>
         </div>
       </section>
@@ -600,9 +643,8 @@ const LandingPage: React.FC = () => {
           <h3 className="text-lg font-semibold text-white mb-4">We Accept</h3>
           <div className="flex flex-wrap justify-center gap-4">
             {[
-              { icon: <CreditCard size={20} />, name: 'Visa / Mastercard', via: 'via Paystack' },
-              { icon: <Smartphone size={20} />, name: 'M-Pesa', via: 'Paybill 222111' },
-              { icon: <Globe size={20} />, name: 'Bank Transfer', via: 'Family Bank' }
+              { icon: <CreditCard size={20} />, name: 'Visa / Mastercard', via: 'Secure Checkout', color: 'blue' },
+              { icon: <Smartphone size={20} />, name: 'M-Pesa', via: 'Paybill 222111', color: 'green' }
             ].map((method, idx) => (
               <motion.div
                 key={idx}
@@ -611,9 +653,9 @@ const LandingPage: React.FC = () => {
                 transition={{ delay: idx * 0.1 }}
                 viewport={{ once: true }}
                 whileHover={{ scale: 1.05, y: -2 }}
-                className="px-5 py-3 bg-slate-800 rounded-xl border border-slate-700 hover:border-amber-500/30 transition-all flex items-center gap-2"
+                className={`px-5 py-3 bg-slate-800 rounded-xl border border-slate-700 hover:border-${method.color}-500/30 transition-all flex items-center gap-2`}
               >
-                <span className="text-amber-500">{method.icon}</span>
+                <span className={`text-${method.color}-500`}>{method.icon}</span>
                 <span className="text-white text-sm">{method.name}</span>
                 <span className="text-slate-500 text-xs">{method.via}</span>
               </motion.div>
@@ -844,10 +886,13 @@ const LandingPage: React.FC = () => {
                 <p className="text-sm text-slate-400">Selected Plan</p>
                 <p className="text-base font-semibold text-white mt-1">{selectedPlan.display_name}</p>
                 <div className="mt-2">
-                  <span className="text-2xl font-bold text-amber-500">
-                    KES {formatPrice(getPrice(selectedPlan))}
-                  </span>
-                  <span className="text-sm text-slate-400 ml-1">/{billingCycle === 'monthly' ? 'month' : 'year'}</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-slate-400 text-sm">{getCurrencySymbol()}</span>
+                    <span className="text-xl font-bold text-amber-500">
+                      {formatPrice(getPrice(selectedPlan))}
+                    </span>
+                  </div>
+                  <span className="text-slate-500 text-xs ml-1">/{billingCycle === 'monthly' ? 'month' : 'year'}</span>
                 </div>
               </div>
 
@@ -925,7 +970,7 @@ const LandingPage: React.FC = () => {
                     Pay with Card
                   </button>
                   <p className="text-xs text-slate-500 text-center mt-3">
-                    You will be redirected to Paystack secure checkout
+                    You will be redirected to secure checkout
                   </p>
                 </>
               )}
