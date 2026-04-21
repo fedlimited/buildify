@@ -3,32 +3,43 @@ const mpesaService = require('../services/mpesaSubscriptionService');
 
 class SubscriptionPaymentController {
   
-  // Get available subscription plans
-  async getPlans(req, res) {
-    try {
-      const db = getDb();
-      const plans = await db.all('SELECT * FROM subscription_plans WHERE is_active = true ORDER BY display_order');
-      res.json(plans);
-    } catch (error) {
-      console.error('Error getting plans:', error);
-      res.status(500).json({ error: error.message });
-    }
+
+
+
+// AFTER (correct):
+async getPlans(req, res) {
+  try {
+    const db = getDb();
+    const plans = await db.all(
+      'SELECT * FROM subscription_plans WHERE is_active = true ORDER BY display_order'
+    );
+    res.json(plans);
+  } catch (error) {
+    console.error('Error getting plans:', error);
+    res.status(500).json({ error: error.message });
   }
+}
+
+
 
   // Get current company's subscription
-  async getCurrentSubscription(req, res) {
-    try {
-      const db = getDb();
-      const company_id = req.user.companyId;
-      
-      const subscription = await db.get(`
-        SELECT cs.*, sp.name as plan_name, sp.display_name, sp.price_monthly_kes, sp.price_yearly_kes,
-        sp.max_projects, sp.max_workers, sp.max_users, sp.features
-        FROM company_subscriptions cs
-        JOIN subscription_plans sp ON cs.plan_id = sp.id
-        WHERE cs.company_id = ? AND cs.status IN ('active', 'trial')
-        ORDER BY cs.id DESC LIMIT 1
-      `, [company_id]);
+async getCurrentSubscription(req, res) {
+  try {
+    const db = getDb();
+    const company_id = req.user.companyId;
+    
+    const subscription = await db.get(`
+      SELECT cs.*, sp.name as plan_name, sp.display_name, sp.price_monthly_kes, sp.price_yearly_kes,
+             sp.max_projects, sp.max_workers, sp.max_users, sp.features
+      FROM company_subscriptions cs
+      JOIN subscription_plans sp ON cs.plan_id = sp.id
+      WHERE cs.company_id = ? AND cs.status IN ('active', 'trial')
+      ORDER BY cs.id DESC LIMIT 1
+    `, [company_id]);
+
+
+
+
       
       if (!subscription) {
         const freePlan = await db.get('SELECT * FROM subscription_plans WHERE name = ?', ['free']);
