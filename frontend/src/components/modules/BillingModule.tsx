@@ -56,9 +56,17 @@ export const BillingModule = () => {
     return paymentMethod === 'mpesa' ? 'KES' : 'USD';
   };
 
-  // FIXED: Proper comma formatting with 2 decimal places
-  const formatPrice = (price: number) => {
-    return price.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // CUSTOM FUNCTION TO ADD COMMAS - Guaranteed to work
+  const formatPriceWithCommas = (price: number) => {
+    // Convert to number with 2 decimal places
+    const rounded = Math.round(price * 100) / 100;
+    // Split into whole and decimal parts
+    const parts = rounded.toString().split('.');
+    // Add commas to whole number part
+    const wholeWithCommas = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    // Return with .00 if no decimal part
+    const decimal = parts[1] ? parts[1].padEnd(2, '0') : '00';
+    return `${wholeWithCommas}.${decimal}`;
   };
 
   const handleUpgrade = (plan: Plan) => {
@@ -157,7 +165,7 @@ export const BillingModule = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Header - Minimal */}
+      {/* Header */}
       <div className="text-center mb-4">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">Subscription Plans</h2>
         <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">Choose the plan that fits your business</p>
@@ -251,12 +259,12 @@ export const BillingModule = () => {
                 <p className="text-gray-500 dark:text-gray-400 text-xs mt-1 leading-relaxed">{plan.description}</p>
               </div>
               
-              {/* Price - FIXED: Now using formatPrice with commas */}
+              {/* Price - Using custom comma formatting */}
               <div className="mt-4 text-center">
                 <div className="flex items-baseline justify-center gap-1">
                   <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{getCurrencySymbol()}</span>
                   <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {formatPrice(getPrice(plan))}
+                    {formatPriceWithCommas(getPrice(plan))}
                   </span>
                 </div>
                 <span className="text-sm text-gray-500 dark:text-gray-400">/{selectedCycle}</span>
@@ -364,7 +372,7 @@ export const BillingModule = () => {
                 <p className="text-base font-semibold text-gray-900 dark:text-white mt-1">{selectedPlan.display_name}</p>
                 <div className="mt-2">
                   <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {getCurrencySymbol()} {formatPrice(getPrice(selectedPlan))}
+                    {getCurrencySymbol()} {formatPriceWithCommas(getPrice(selectedPlan))}
                   </span>
                   <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">/{selectedCycle}</span>
                 </div>
