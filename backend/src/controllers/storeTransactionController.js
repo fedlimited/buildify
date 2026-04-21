@@ -1,44 +1,51 @@
 const { getDb } = require('../config/database');
 
 const storeTransactionController = {
-  getTransactions: async (req, res) => {
-    try {
-      const db = getDb();
-      const company_id = req.user?.companyId || req.user?.company_id;
-      
-      const transactions = await db.all(
-        'SELECT * FROM store_transactions WHERE company_id = ? ORDER BY date DESC',
-        [company_id]
-      );
-      
-      // Convert snake_case to camelCase for frontend compatibility
-      const formattedTransactions = transactions.map(t => ({
-        id: t.id,
-        date: t.date,
-        projectId: t.project_id,
-        projectName: t.project_name,
-        transactionType: t.transaction_type,
-        itemId: t.item_id,
-        itemName: t.item_name,
-        unit: t.unit,
-        category: t.category,
-        quantitySupplied: t.quantity_supplied || 0,
-        quantityIssued: t.quantity_issued || 0,
-        quantityReturned: t.quantity_returned || 0,
-        balance: t.balance || 0,
-        reference: t.reference,
-        issuedTo: t.issued_to,
-        returnedBy: t.returned_by,
-        notes: t.notes,
-        createdAt: t.created_at
-      }));
-      
-      res.json(formattedTransactions);
-    } catch (error) {
-      console.error('Error in getTransactions:', error);
-      res.status(500).json({ error: error.message });
-    }
-  },
+getTransactions: async (req, res) => {
+  try {
+    const db = getDb();
+    const company_id = req.user?.companyId || req.user?.company_id;
+    
+    const transactions = await db.all(
+      'SELECT * FROM store_transactions WHERE company_id = ? ORDER BY date DESC',
+      [company_id]
+    );
+    
+    console.log('Raw transactions from DB:', transactions.length);
+    
+    // Convert snake_case to camelCase for frontend
+    const formattedTransactions = transactions.map(t => ({
+      id: t.id,
+      date: t.date,
+      projectId: t.project_id,
+      projectName: t.project_name,
+      transactionType: t.transaction_type,
+      itemId: t.item_id,
+      itemName: t.item_name,        // ← CRITICAL: item_name → itemName
+      unit: t.unit,
+      category: t.category,
+      quantitySupplied: t.quantity_supplied || 0,  // ← CRITICAL
+      quantityIssued: t.quantity_issued || 0,
+      quantityReturned: t.quantity_returned || 0,
+      balance: t.balance || 0,
+      reference: t.reference,
+      issuedTo: t.issued_to,
+      returnedBy: t.returned_by,
+      notes: t.notes,
+      createdAt: t.created_at
+    }));
+    
+    console.log('Formatted transactions sample:', formattedTransactions[0]);
+    res.json(formattedTransactions);
+  } catch (error) {
+    console.error('Error in getTransactions:', error);
+    res.status(500).json({ error: error.message });
+  }
+},
+
+
+
+
 
   createTransaction: async (req, res) => {
     try {
