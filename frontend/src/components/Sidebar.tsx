@@ -1,6 +1,8 @@
+
 import { useAppStore } from '@/hooks/useAppStore';
 import { ModuleId } from '@/lib/types';
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 import {
   LayoutDashboard, FolderKanban, TrendingUp, TrendingDown,
@@ -59,12 +61,61 @@ const navGroups: NavGroup[] = [
   },
 ];
 
+// Free plan allowed modules
+const FREE_PLAN_ALLOWED_MODULES: ModuleId[] = [
+  'dashboard', 'projects', 'workers', 'expenses', 'reports', 'settings', 'billing', 'help', 'legal'
+];
+
 export function Sidebar() {
   const navigate = useNavigate();
   const { activeModule, setActiveModule, sidebarCollapsed, toggleSidebar, authUser, logout } = useAppStore();
+  const [subscription, setSubscription] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   const userPermissions = authUser?.permissions;
   const isAdmin = authUser?.role === 'admin';
+
+  // Fetch subscription on mount
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setLoading(false);
+          return;
+        }
+        const response = await fetch('https://buildify-backend-kye8.onrender.com/api/subscription/current', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        setSubscription(data);
+      } catch (error) {
+        console.error('Error fetching subscription:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSubscription();
+  }, []);
+
+  // Check if module is accessible based on subscription plan
+  const canAccessModule = (id: ModuleId): boolean => {
+    // Admin always has access
+    if (isAdmin) return true;
+    
+    // Check user permissions
+    if (!userPermissions) return true;
+    if (!userPermissions.includes(id)) return false;
+    
+    // Free plan restrictions
+    const planName = subscription?.plan_name;
+    if (planName === 'free') {
+      return FREE_PLAN_ALLOWED_MODULES.includes(id);
+    }
+    
+    // Paid plans have full access
+    return true;
+  };
 
   const canAccess = (id: ModuleId) => {
     if (isAdmin) return true;
@@ -81,7 +132,7 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`fixed left-0 top-0 h-screen bg-sidebar-bg text-sidebar-fg flex flex-col z-30 sidebar-transition ${sidebarCollapsed ? 'w-[68px]' : 'w-[260px]'}`}
+      className={`fixed left-0 top-0 h-screen bg-sidebar-bg text-sidebar-fg flex flex-col z-30 sidebar-transition ${sidebarCollapsed ? 'w-[48px]' : 'w-[180px]'}`}
     >
       {/* Logo + Collapse */}
       <div className="flex items-center justify-between px-4 h-16 border-b border-sidebar-hover shrink-0">
@@ -105,7 +156,7 @@ export function Sidebar() {
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
         {navGroups.map(group => {
-          const visibleItems = group.items.filter(item => canAccess(item.id));
+          const visibleItems = group.items.filter(item => canAccess(item.id) && canAccessModule(item.id));
           if (visibleItems.length === 0) return null;
           return (
             <div key={group.title}>
@@ -146,6 +197,14 @@ export function Sidebar() {
           <div className="px-3 py-2 text-xs truncate">
             <p className="font-medium">{authUser.name}</p>
             <p className="opacity-60">{authUser.role}</p>
+            {subscription?.plan_name === 'free' && (
+              <p className="text-[10px] text-amber-500 mt-0.5">Free Plan</p>
+            )}
+            {subscription?.status === 'trial' && subscription?.trial_days_remaining > 0 && (
+              <p className="text-[10px] text-green-500 mt-0.5">
+                Trial: {subscription.trial_days_remaining} days left
+              </p>
+            )}
           </div>
         )}
         <button onClick={logout} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-sidebar-hover transition-colors text-destructive/80" title={sidebarCollapsed ? 'Logout' : undefined}>
