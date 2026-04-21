@@ -18,12 +18,13 @@ import { SettingsModule } from '@/components/modules/SettingsModule';
 import { UsersModule } from '@/components/modules/UsersModule';
 import { SubcontractorsModule } from '@/components/modules/SubcontractorsModule';
 import { InvoicesModule } from '@/components/modules/InvoicesModule';
+import { BillingModule } from '@/components/modules/BillingModule';
 import { useAppStore } from '@/hooks/useAppStore';
 
 const Index = () => {
-  const { 
-    activeModule, 
-    sidebarCollapsed, 
+  const {
+    activeModule,
+    sidebarCollapsed,
     authUser,
     fetchProjects,
     fetchIncome,
@@ -43,7 +44,7 @@ const Index = () => {
     fetchCompanySettings,
     fetchCurrencySettings
   } = useAppStore();
-  
+
   const [isLoading, setIsLoading] = useState(true);
 
   // Load all data when user is authenticated
@@ -100,6 +101,7 @@ const Index = () => {
       case 'users': return <UsersModule />;
       case 'subcontractors': return <SubcontractorsModule />;
       case 'invoices': return <InvoicesModule />;
+      case 'billing': return <BillingModule />;
       case 'help': return <HelpModule />;
       case 'legal': return <LegalModule />;
       default: return <Dashboard />;
