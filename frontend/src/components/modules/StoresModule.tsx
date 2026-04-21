@@ -38,34 +38,44 @@ interface StockBalance {
   currentBalance: number;
 }
 
-// FIXED: Use itemName as key when itemId is null to properly separate different items
 function useStockBalances(): StockBalance[] {
   const { storeTransactions } = useAppStore();
   return useMemo(() => {
     const map = new Map<string, StockBalance>();
+    
+    if (!storeTransactions || storeTransactions.length === 0) {
+      return [];
+    }
+    
     storeTransactions.forEach(t => {
-      // Use itemName as part of key when itemId is null
-      const key = `${t.projectId}-${t.itemId || t.itemName}`;
+      if (!t) return;
+      
+      const projectId = t.projectId ?? 0;
+      const itemKey = t.itemId ? String(t.itemId) : (t.itemName ?? 'unknown');
+      const key = `${projectId}-${itemKey}`;
+      
       if (!map.has(key)) {
         map.set(key, { 
-          projectId: t.projectId, 
-          projectName: t.projectName, 
-          itemId: t.itemId || 0, 
-          itemName: t.itemName, 
-          unit: t.unit, 
-          category: t.category, 
+          projectId: projectId, 
+          projectName: t.projectName ?? 'Unknown', 
+          itemId: t.itemId ?? 0, 
+          itemName: t.itemName ?? 'Unknown Item', 
+          unit: t.unit ?? 'piece', 
+          category: t.category ?? 'Materials', 
           totalSupplied: 0, 
           totalIssued: 0, 
           totalReturned: 0, 
           currentBalance: 0 
         });
       }
+      
       const b = map.get(key)!;
-      b.totalSupplied += t.quantitySupplied || 0;
-      b.totalIssued += t.quantityIssued || 0;
-      b.totalReturned += t.quantityReturned || 0;
+      b.totalSupplied += t.quantitySupplied ?? 0;
+      b.totalIssued += t.quantityIssued ?? 0;
+      b.totalReturned += t.quantityReturned ?? 0;
       b.currentBalance = b.totalSupplied - b.totalIssued + b.totalReturned;
     });
+    
     return Array.from(map.values());
   }, [storeTransactions]);
 }
@@ -156,9 +166,13 @@ function StockBalances() {
 
       <div className="bg-card rounded-xl border border-border overflow-x-auto">
         <table className="w-full text-sm">
-          <thead><tr className="border-b border-border text-left">
-            {['Project', 'Item', 'Category', 'Unit', 'Supplied', 'Issued', 'Returned', 'Balance', ''].map(h => <th key={h} className="px-4 py-3 font-medium text-muted-foreground text-xs">{h}</th>)}
-           </td></thead>
+          <thead>
+            <tr className="border-b border-border text-left">
+              {['Project', 'Item', 'Category', 'Unit', 'Supplied', 'Issued', 'Returned', 'Balance', ''].map(h => (
+                <th key={h} className="px-4 py-3 font-medium text-muted-foreground text-xs">{h}</th>
+              ))}
+            </tr>
+          </thead>
           <tbody className="divide-y divide-border">
             {filtered.map(b => (
               <tr key={`${b.projectId}-${b.itemName}`} className="hover:bg-muted/50">
@@ -183,7 +197,13 @@ function StockBalances() {
                 </td>
               </tr>
             ))}
-            {!filtered.length && <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">{search ? 'No matching items' : 'No stock data'}</td></tr>}
+            {!filtered.length && (
+              <tr>
+                <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
+                  {search ? 'No matching items' : 'No stock data'}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -256,9 +276,13 @@ function TransactionLedger() {
       </div>
       <div className="bg-card rounded-xl border border-border overflow-x-auto">
         <table className="w-full text-sm">
-          <thead><tr className="border-b border-border text-left">
-            {['Date', 'Ref', 'Project', 'Item', 'Type', 'Supplied', 'Issued', 'Returned', 'Notes'].map(h => <th key={h} className="px-4 py-3 font-medium text-muted-foreground text-xs">{h}</th>)}
-          </tr></thead>
+          <thead>
+            <tr className="border-b border-border text-left">
+              {['Date', 'Ref', 'Project', 'Item', 'Type', 'Supplied', 'Issued', 'Returned', 'Notes'].map(h => (
+                <th key={h} className="px-4 py-3 font-medium text-muted-foreground text-xs">{h}</th>
+              ))}
+            </tr>
+          </thead>
           <tbody className="divide-y divide-border">
             {filtered.map(t => (
               <tr key={t.id} className="hover:bg-muted/50">
@@ -273,7 +297,11 @@ function TransactionLedger() {
                 <td className="px-4 py-2.5 text-xs text-muted-foreground truncate max-w-[150px]">{t.notes || t.issuedTo || t.returnedBy || '-'}</td>
               </tr>
             ))}
-            {!filtered.length && <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">No transactions</td></tr>}
+            {!filtered.length && (
+              <tr>
+                <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">No transactions</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
