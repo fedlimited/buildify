@@ -38,10 +38,18 @@ interface StockBalance {
   currentBalance: number;
 }
 
+
+
+
+
+
+
 function useStockBalances(): StockBalance[] {
   const { storeTransactions } = useAppStore();
+  
   console.log('useStockBalances - storeTransactions received:', storeTransactions);
   console.log('useStockBalances - count:', storeTransactions?.length);
+  
   return useMemo(() => {
     const map = new Map<string, StockBalance>();
     
@@ -52,18 +60,19 @@ function useStockBalances(): StockBalance[] {
     storeTransactions.forEach(t => {
       if (!t) return;
       
-      const projectId = t.projectId ?? 0;
-      const itemKey = t.itemId ? String(t.itemId) : (t.itemName ?? 'unknown');
-      const key = `${projectId}-${itemKey}`;
+      // FIX: Use itemName as the unique key since each item has a different name
+      const key = t.itemName;
+      
+      console.log(`Processing: ${key}, Supplied: ${t.quantitySupplied}`);
       
       if (!map.has(key)) {
         map.set(key, { 
-          projectId: projectId, 
-          projectName: t.projectName ?? 'Unknown', 
-          itemId: t.itemId ?? 0, 
-          itemName: t.itemName ?? 'Unknown Item', 
-          unit: t.unit ?? 'piece', 
-          category: t.category ?? 'Materials', 
+          projectId: t.projectId || 0, 
+          projectName: t.projectName || 'Unknown', 
+          itemId: t.itemId || 0, 
+          itemName: t.itemName || 'Unknown Item', 
+          unit: t.unit || 'piece', 
+          category: t.category || 'Materials', 
           totalSupplied: 0, 
           totalIssued: 0, 
           totalReturned: 0, 
@@ -72,15 +81,24 @@ function useStockBalances(): StockBalance[] {
       }
       
       const b = map.get(key)!;
-      b.totalSupplied += t.quantitySupplied ?? 0;
-      b.totalIssued += t.quantityIssued ?? 0;
-      b.totalReturned += t.quantityReturned ?? 0;
+      b.totalSupplied += t.quantitySupplied || 0;
+      b.totalIssued += t.quantityIssued || 0;
+      b.totalReturned += t.quantityReturned || 0;
       b.currentBalance = b.totalSupplied - b.totalIssued + b.totalReturned;
     });
     
-    return Array.from(map.values());
+    const result = Array.from(map.values());
+    console.log('useStockBalances - result count:', result.length);
+    console.log('useStockBalances - result:', result);
+    return result;
   }, [storeTransactions]);
 }
+
+
+
+
+
+
 
 function StockBalances() {
   const { projects, approvedItems, selectedProjectId, addStoreTransaction, fetchStoreTransactions, storeTransactions, authUser, clearStoresRecords } = useAppStore();
