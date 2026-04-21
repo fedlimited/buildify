@@ -51,10 +51,6 @@ app.use(cors({
 app.use(express.json());
 app.use(morgan('dev'));
 
-// ========== PUBLIC ROUTES ==========
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
 
 // ========== PUBLIC ROUTES ==========
 app.get('/api/health', (req, res) => {
@@ -62,9 +58,8 @@ app.get('/api/health', (req, res) => {
 });
 
 
-
-
-
+// Public subscription plans (no login required)
+app.get('/api/subscription/plans', SubscriptionController.getPlans);
 
 
 app.post('/api/fix-database', async (req, res) => {
@@ -90,10 +85,6 @@ app.post('/api/fix-database', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-
-
-
 
 
 
@@ -143,7 +134,7 @@ app.put('/api/currency/settings', currencyController.updateCurrencySettings);
 app.get('/api/currency/available', currencyController.getAvailableCurrencies);
 
 // ========== SUBSCRIPTION ROUTES ==========
-app.get('/api/subscription/plans', authenticateToken, SubscriptionController.getPlans);
+
 app.get('/api/subscription/current', authenticateToken, SubscriptionController.getCurrentSubscription);
 app.get('/api/subscription/check-limit', authenticateToken, SubscriptionController.checkLimit);
 app.post('/api/subscription/pay', authenticateToken, subscriptionPaymentController.initiatePayment);
