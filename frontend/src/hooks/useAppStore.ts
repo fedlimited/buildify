@@ -1563,43 +1563,53 @@ addSupply: async (s) => {
     }
   },
 
-  // ========== STORE TRANSACTIONS ==========
+
+
+
+
+
 fetchStoreTransactions: async () => {
   try {
     console.log('Fetching store transactions from API...');
     const transactions = await api.getStoreTransactions();
     console.log('Raw transactions from API:', transactions);
     
-    // Map snake_case to camelCase for frontend
+    // The API already returns camelCase - use directly!
     const mappedTransactions = transactions.map(t => ({
       id: t.id,
       date: t.date,
-      projectId: t.project_id,
-      projectName: t.project_name,
-      itemId: t.item_id,
-      itemName: t.item_name,
+      projectId: t.projectId,
+      projectName: t.projectName,
+      itemId: t.itemId,
+      itemName: t.itemName,
       unit: t.unit,
       category: t.category,
-      quantitySupplied: t.quantity_supplied,
-      quantityIssued: t.quantity_issued,
-      quantityReturned: t.quantity_returned,
+      quantitySupplied: t.quantitySupplied,
+      quantityIssued: t.quantityIssued,
+      quantityReturned: t.quantityReturned,
       balance: t.balance,
-      transactionType: t.transaction_type,
+      transactionType: t.transactionType,
       reference: t.reference,
-      issuedTo: t.issued_to,
-      returnedBy: t.returned_by,
+      issuedTo: t.issuedTo,
+      returnedBy: t.returnedBy,
       notes: t.notes,
-      createdAt: t.created_at,
-      companyId: t.company_id
+      createdAt: t.createdAt,
+      companyId: t.companyId
     }));
     
-    console.log('Mapped transactions:', mappedTransactions);
+    console.log('Mapped transactions count:', mappedTransactions.length);
+    if (mappedTransactions.length > 0) {
+      console.log('First transaction:', mappedTransactions[0]);
+      console.log('First itemName:', mappedTransactions[0].itemName);
+      console.log('First quantitySupplied:', mappedTransactions[0].quantitySupplied);
+    }
     set({ storeTransactions: mappedTransactions });
     storage.setStoreTransactions(mappedTransactions);
   } catch (error) {
     console.error('Failed to fetch store transactions:', error);
   }
 },
+
 
 
 
