@@ -1,322 +1,205 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAppStore } from '@/hooks/useAppStore';
-import { API_BASE_URL } from '@/config/api';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Crown, Rocket, Check, AlertCircle, Calendar, CreditCard, Zap } from 'lucide-react';
-import { motion } from 'framer-motion';
-
-interface Plan {
-  id: number;
-  name: string;
-  display_name: string;
-  description: string;
-  price_monthly_usd: number;
-  price_yearly_usd: number;
-  price_monthly_kes: number;
-  price_yearly_kes: number;
-  max_projects: number;
-  max_workers: number;
-  max_users: number;
-  features: string[];
-  is_active: boolean;
-  display_order: number;
-}
-
-interface CurrentSubscription {
-  id: number;
-  plan_id: number;
-  plan_name: string;
-  display_name: string;
-  status: string;
-  start_date: string;
-  end_date: string;
-  trial_end_date: string;
-  trial_days_remaining: number;
-  max_projects: number;
-  max_workers: number;
-  max_users: number;
-  features: string[];
-}
-
-export function BillingModule() {
-  const navigate = useNavigate();
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [currentSubscription, setCurrentSubscription] = useState<CurrentSubscription | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
-
-  useEffect(() => {
-    fetchPlans();
-    fetchCurrentSubscription();
-  }, []);
-
-  const fetchPlans = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/subscription/plans`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      setPlans(data);
-    } catch (error) {
-      console.error('Error fetching plans:', error);
-    }
-  };
-
-  const fetchCurrentSubscription = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/subscription/current`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      setCurrentSubscription(data);
-    } catch (error) {
-      console.error('Error fetching subscription:', error);
-    }
-    setLoading(false);
-  };
-
-  const handleUpgrade = (planName: string) => {
-    // For now, show upgrade prompt
-    alert(`Upgrade to ${planName} - Payment integration coming soon!`);
-    // Future: Redirect to Stripe/M-Pesa checkout
-  };
-
-  const getPriceDisplay = (plan: Plan) => {
-    const price = billingCycle === 'monthly' ? plan.price_monthly_usd : plan.price_yearly_usd;
-    const period = billingCycle === 'monthly' ? 'month' : 'year';
-    if (price === 0) return 'Free';
-    return `$${price.toLocaleString()}/${period}`;
-  };
-
-  const isCurrentPlan = (planName: string) => {
-    return currentSubscription?.plan_name === planName;
-  };
-
-  const getStatusBadge = () => {
-    if (!currentSubscription) return null;
-    
-    if (currentSubscription.status === 'trial' && currentSubscription.trial_days_remaining > 0) {
-      return (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 rounded-lg border border-amber-500/20">
-          <AlertCircle size={14} className="text-amber-400" />
-          <span className="text-sm text-amber-400">
-            Trial: {currentSubscription.trial_days_remaining} days remaining
-          </span>
-        </div>
-      );
-    }
-    
-    if (currentSubscription.status === 'active') {
-      return (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 rounded-lg border border-green-500/20">
-          <Check size={14} className="text-green-400" />
-          <span className="text-sm text-green-400">Active</span>
-        </div>
-      );
-    }
-    
-    return null;
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-xl font-semibold text-foreground">Billing & Subscription</h2>
-        <p className="text-sm text-muted-foreground">Manage your plan and payment methods</p>
-      </div>
-
-      {/* Current Plan Card */}
-      {currentSubscription && (
-        <Card className="border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-transparent">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Crown size={20} className="text-amber-400" />
-              Current Plan: {currentSubscription.display_name}
-            </CardTitle>
-            <CardDescription>
-              {currentSubscription.status === 'trial' 
-                ? `Your trial ends on ${new Date(currentSubscription.trial_end_date).toLocaleDateString()}`
-                : `Next billing date: ${new Date(currentSubscription.end_date).toLocaleDateString()}`
-              }
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-4">
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar size={14} className="text-muted-foreground" />
-                <span>Started: {new Date(currentSubscription.start_date).toLocaleDateString()}</span>
-              </div>
-              {getStatusBadge()}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Billing Toggle */}
-      <div className="flex justify-center">
-        <div className="inline-flex items-center gap-2 p-1 bg-muted rounded-lg">
-          <button
-            onClick={() => setBillingCycle('monthly')}
-            className={`px-4 py-1.5 text-sm rounded-md transition-all ${
-              billingCycle === 'monthly' 
-                ? 'bg-amber-500 text-white shadow-sm' 
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Monthly
-          </button>
-          <button
-            onClick={() => setBillingCycle('yearly')}
-            className={`px-4 py-1.5 text-sm rounded-md transition-all ${
-              billingCycle === 'yearly' 
-                ? 'bg-amber-500 text-white shadow-sm' 
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Yearly <span className="text-xs text-green-500 ml-1">Save 20%</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Plans Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {plans.map((plan, idx) => {
-          const isCurrent = isCurrentPlan(plan.name);
-          const isFree = plan.price_monthly_usd === 0;
-          
-          return (
-            <motion.div
-              key={plan.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              className={`bg-card rounded-xl border p-4 transition-all ${
-                isCurrent 
-                  ? 'border-amber-500 shadow-lg shadow-amber-500/10' 
-                  : 'border-border hover:border-amber-500/30'
-              }`}
-            >
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <h3 className="font-semibold text-card-foreground">{plan.display_name}</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">{plan.description}</p>
-                </div>
-                {isCurrent && (
-                  <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">
-                    Current
-                  </span>
-                )}
-              </div>
-              
-              <div className="mb-3">
-                <span className="text-2xl font-bold text-card-foreground">{getPriceDisplay(plan)}</span>
-              </div>
-              
-              <ul className="space-y-1.5 mb-4">
-                <li className="text-xs text-muted-foreground flex items-center gap-1.5">
-                  <Check size={12} className="text-green-500" />
-                  {plan.max_projects === 999999 ? 'Unlimited projects' : `${plan.max_projects} projects`}
-                </li>
-                <li className="text-xs text-muted-foreground flex items-center gap-1.5">
-                  <Check size={12} className="text-green-500" />
-                  {plan.max_workers === 999999 ? 'Unlimited workers' : `${plan.max_workers} workers`}
-                </li>
-                <li className="text-xs text-muted-foreground flex items-center gap-1.5">
-                  <Check size={12} className="text-green-500" />
-                  {plan.max_users === 999999 ? 'Unlimited users' : `${plan.max_users} users`}
-                </li>
-                {plan.features.slice(0, 2).map((feature, i) => (
-                  <li key={i} className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Check size={12} className="text-green-500" />
-                    {feature.replace(/_/g, ' ').toUpperCase()}
-                  </li>
-                ))}
-                {plan.features.length > 2 && (
-                  <li className="text-xs text-muted-foreground">
-                    +{plan.features.length - 2} more features
-                  </li>
-                )}
-              </ul>
-
-
-
-
-
-
-
-
-{isCurrent && (
-  <Button
-    variant="outline"
-    className="w-full"
-    disabled
-  >
-    {plan.name === 'free' ? 'Free Plan - Current' : 'Current Plan'}
-  </Button>
-)}
-
-{!isCurrent && plan.name === 'free' && (
-  <Button
-    variant="outline"
-    className="w-full"
-    disabled
-  >
-    Free Plan
-  </Button>
-)}
-
-{!isCurrent && plan.name !== 'free' && (
-  <Button
-    onClick={() => handleUpgrade(plan.display_name)}
-    className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
-  >
-    <Rocket size={14} className="mr-1" />
-    Upgrade to {plan.display_name}
-  </Button>
-)}
-
-
-
-
-
-
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {/* Payment Methods */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Payment Methods</CardTitle>
-          <CardDescription>We accept the following payment methods</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
-              <CreditCard size={16} />
-              <span className="text-sm">Visa / Mastercard</span>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
-              <Zap size={16} />
-              <span className="text-sm">M-Pesa (Coming Soon)</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+import React, { useState, useEffect } from 'react'; 
+import { useAppStore } from '@/hooks/useAppStore'; 
+import { Check, Smartphone, Loader2 } from 'lucide-react'; 
+import api from '@/services/api'; 
+ 
+interface Plan { 
+  id: number; 
+  name: string; 
+  display_name: string; 
+  description: string; 
+  price_monthly_kes: number; 
+  price_yearly_kes: number; 
+  max_projects: number; 
+  max_workers: number; 
+  max_users: number; 
+  features: string[]; 
+} 
+ 
+export const BillingModule = () =
+  const { authUser } = useAppStore(); 
+  const [plans, setPlans] = useState([]); 
+  const [currentPlan, setCurrentPlan] = useState(null); 
+  const [selectedPlan, setSelectedPlan] = useState(null); 
+  const [selectedCycle, setSelectedCycle] = useState('monthly'); 
+  const [showPaymentModal, setShowPaymentModal] = useState(false); 
+  const [phoneNumber, setPhoneNumber] = useState(''); 
+  const [paymentStatus, setPaymentStatus] = useState('idle'); 
+  const [paymentError, setPaymentError] = useState(''); 
+ 
+  useEffect(() =
+    fetchPlans(); 
+    fetchCurrentSubscription(); 
+  }, []); 
+ 
+  const fetchPlans = async () =
+    const data = await api.request('/subscription/plans'); 
+    setPlans(data); 
+  }; 
+ 
+  const fetchCurrentSubscription = async () =
+    const data = await api.request('/subscription/current'); 
+    setCurrentPlan(data); 
+  }; 
+ 
+  const handleUpgrade = (plan) =
+    setSelectedPlan(plan); 
+    setShowPaymentModal(true); 
+  }; 
+ 
+  const initiatePayment = async () =
+      setPaymentError('Please enter a valid M-Pesa phone number'); 
+      return; 
+    } 
+    setPaymentStatus('processing'); 
+    setPaymentError(''); 
+    try { 
+      const response = await api.request('/subscription/pay', { 
+        method: 'POST', 
+        body: JSON.stringify({ 
+          planId: selectedPlan.id, 
+          phoneNumber: phoneNumber, 
+          billingCycle: selectedCycle 
+        }) 
+      }); 
+      if (response.success) { 
+        setPaymentStatus('sent'); 
+        pollPaymentStatus(response.paymentId); 
+      } 
+    } catch (error) { 
+      setPaymentStatus('error'); 
+      setPaymentError(error.message); 
+    } 
+  }; 
+ 
+  const pollPaymentStatus = async (paymentId) =
+    const interval = setInterval(async () =
+      const status = await api.request(`/subscription/payment-status/${paymentId}`); 
+      if (status.status === 'completed') { 
+        clearInterval(interval); 
+        setPaymentStatus('completed'); 
+        setTimeout(() =
+          setShowPaymentModal(false); 
+          fetchCurrentSubscription(); 
+        }, 2000); 
+      } else if (status.status === 'failed') { 
+        clearInterval(interval); 
+        setPaymentStatus('error'); 
+        setPaymentError('Payment failed. Please try again.'); 
+      } 
+    }, 3000); 
+  }; 
+ 
+  const getPrice = (plan) =
+    return selectedCycle === 'monthly' ? plan.price_monthly_kes : plan.price_yearly_kes; 
+  }; 
+ 
+  return ( 
+    <div className="p-6"> 
+      <p className="text-gray-600 mb-6">Choose the plan that fits your construction business</p> 
+ 
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6"> 
+          <p className="text-green-800"> 
+            Current Plan: <strong>{currentPlan.display_name}</strong>  
+            Valid until {new Date(currentPlan.end_date).toLocaleDateString()} 
+          </p> 
+        </div> 
+      )} 
+ 
+      <div className="mb-4 flex justify-end"> 
+        <div className="bg-gray-100 rounded-lg p-1"> 
+          <button 
+            onClick={() =
+            className={`px-4 py-2 rounded-md text-sm ${selectedCycle === 'monthly' ? 'bg-white shadow-sm' : ''}`}> 
+            Monthly 
+          </button> 
+          <button 
+            onClick={() =
+            className={`px-4 py-2 rounded-md text-sm ${selectedCycle === 'yearly' ? 'bg-white shadow-sm' : ''}`}> 
+            Yearly (Save 15%) 
+          </button> 
+        </div> 
+      </div> 
+ 
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4"> 
+        {plans.map((plan) =
+          <div key={plan.id} className={`border rounded-lg p-4 ${currentPlan?.plan_name === plan.name ? 'ring-2 ring-green-500' : ''}`}> 
+            <h3 className="text-xl font-bold">{plan.display_name}</h3> 
+            <div className="mt-2"> 
+              <span className="text-2xl font-bold">KSh {getPrice(plan).toLocaleString()}</span> 
+              <span className="text-gray-500">/{selectedCycle}</span> 
+            </div> 
+            <div className="mt-4 space-y-2 text-sm"> 
+              <p>?? {plan.max_projects === 999999 ? 'Unlimited' : plan.max_projects} projects</p> 
+              <p>?? {plan.max_workers === 999999 ? 'Unlimited' : plan.max_workers} workers</p> 
+              <p>?? {plan.max_users === 999999 ? 'Unlimited' : plan.max_users} users</p> 
+            </div> 
+            <button 
+              onClick={() =
+              disabled={currentPlan?.plan_name === plan.name} 
+              className={`mt-4 w-full py-2 rounded-lg ${ 
+                currentPlan?.plan_name === plan.name 
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                  : plan.name === 'free' 
+                  ? 'border border-gray-300 text-gray-700 hover:bg-gray-50' 
+                  : 'bg-green-600 text-white hover:bg-green-700' 
+              }`}> 
+              {currentPlan?.plan_name === plan.name ? 'Current Plan' : plan.name === 'free' ? 'Get Started' : 'Upgrade'} 
+            </button> 
+          </div> 
+        ))} 
+      </div> 
+ 
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"> 
+          <div className="bg-white rounded-lg p-6 max-w-md w-full"> 
+            <h3 className="text-lg font-bold mb-4">Upgrade to {selectedPlan?.display_name}</h3> 
+            <p className="text-2xl font-bold text-green-600 mb-4">KSh {getPrice(selectedPlan).toLocaleString()}</p> 
+              <
+                <div className="mb-4"> 
+                  <label className="block text-sm font-medium mb-1">M-Pesa Phone Number</label> 
+                  <div className="flex items-center border rounded-lg"> 
+                    <Smartphone size={20} className="ml-3 text-gray-400" /> 
+                    <input 
+                      type="tel" 
+                      placeholder="0712345678" 
+                      className="flex-1 p-3 outline-none" 
+                      value={phoneNumber} 
+                      onChange={(e) =
+                    /> 
+                  </div> 
+                </div> 
+                  <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">{paymentError}</div> 
+                )} 
+                <div className="flex gap-3"> 
+                  <button onClick={() = className="flex-1 py-2 border rounded">Cancel</button> 
+                  <button onClick={initiatePayment} className="flex-1 py-2 bg-green-600 text-white rounded">Pay Now</button> 
+                </div> 
+              </> 
+            )} 
+              <div className="text-center py-8"> 
+                <Loader2 className="animate-spin h-12 w-12 text-green-600 mx-auto mb-4" /> 
+                <p>Sending payment request to your phone...</p> 
+              </div> 
+            )} 
+              <div className="text-center py-8"> 
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"> 
+                  <Smartphone size={32} className="text-green-600" /> 
+                </div> 
+                <p className="font-medium">Check your phone</p> 
+                <p className="text-sm text-gray-500 mt-1">Enter your M-Pesa PIN to complete payment</p> 
+              </div> 
+            )} 
+              <div className="text-center py-8"> 
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"> 
+                  <Check size={32} className="text-green-600" /> 
+                </div> 
+                <p className="font-bold text-green-600">Payment Successful!</p> 
+                <p className="text-sm text-gray-500 mt-1">Your plan has been upgraded</p> 
+              </div> 
+            )} 
+          </div> 
+        </div> 
+      )} 
+    </div> 
+  ); 
+}; 

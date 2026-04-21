@@ -538,4 +538,10 @@ async function startServer() {
   }
 }
 
-startServer();
+startServer();const subscriptionPaymentController = require('./controllers/subscriptionPaymentController'); 
+ 
+// ========== SUBSCRIPTION PAYMENT ROUTES ========== 
+// Public callback for M-Pesa 
+app.post('/api/subscription/mpesa-callback', subscriptionPaymentController.handleCallback); 
+ 
+// Protected routes (place these after authenticateToken) 
