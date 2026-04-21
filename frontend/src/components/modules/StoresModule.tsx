@@ -1,3 +1,4 @@
+// Force redeploy)
 import { useState, useMemo } from 'react';
 import { useAppStore } from '@/hooks/useAppStore';
 import { formatCurrency, formatDate } from '@/lib/formatters';
