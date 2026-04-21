@@ -56,6 +56,48 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// ========== PUBLIC ROUTES ==========
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// ONE-TIME FIX: Add missing 'active' column and keep it in sync
+app.post('/api/fix-database', async (req, res) => {
+  try {
+    const db = getDb();
+    
+    // Add the missing 'active' column
+    await db.query(`ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT true`);
+    await db.query(`UPDATE subscription_plans SET active = is_active`);
+    
+    // Create a trigger to keep 'active' in sync with 'is_active'
+    await db.query(`
+      CREATE OR REPLACE FUNCTION sync_active_column()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        NEW.active = NEW.is_active;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql
+    `);
+    
+    await db.query(`
+      DROP TRIGGER IF EXISTS sync_active_trigger ON subscription_plans;
+      CREATE TRIGGER sync_active_trigger
+      BEFORE INSERT OR UPDATE ON subscription_plans
+      FOR EACH ROW
+      EXECUTE FUNCTION sync_active_column()
+    `);
+    
+    console.log('✅ Database fixed - active column added and synced');
+    res.json({ success: true, message: 'Database fixed successfully' });
+  } catch (error) {
+    console.error('Fix error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 // TEMPORARY FIX: Add missing 'active' column to subscription_plans (PUBLIC - no auth needed)
 app.post('/api/fix-active-column', async (req, res) => {
   try {
