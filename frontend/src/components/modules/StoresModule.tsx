@@ -38,19 +38,32 @@ interface StockBalance {
   currentBalance: number;
 }
 
+// FIXED: Use itemName as key when itemId is null to properly separate different items
 function useStockBalances(): StockBalance[] {
   const { storeTransactions } = useAppStore();
   return useMemo(() => {
     const map = new Map<string, StockBalance>();
     storeTransactions.forEach(t => {
-      const key = `${t.projectId}-${t.itemId}`;
+      // Use itemName as part of key when itemId is null
+      const key = `${t.projectId}-${t.itemId || t.itemName}`;
       if (!map.has(key)) {
-        map.set(key, { projectId: t.projectId, projectName: t.projectName, itemId: t.itemId, itemName: t.itemName, unit: t.unit, category: t.category, totalSupplied: 0, totalIssued: 0, totalReturned: 0, currentBalance: 0 });
+        map.set(key, { 
+          projectId: t.projectId, 
+          projectName: t.projectName, 
+          itemId: t.itemId || 0, 
+          itemName: t.itemName, 
+          unit: t.unit, 
+          category: t.category, 
+          totalSupplied: 0, 
+          totalIssued: 0, 
+          totalReturned: 0, 
+          currentBalance: 0 
+        });
       }
       const b = map.get(key)!;
-      b.totalSupplied += t.quantitySupplied;
-      b.totalIssued += t.quantityIssued;
-      b.totalReturned += t.quantityReturned;
+      b.totalSupplied += t.quantitySupplied || 0;
+      b.totalIssued += t.quantityIssued || 0;
+      b.totalReturned += t.quantityReturned || 0;
       b.currentBalance = b.totalSupplied - b.totalIssued + b.totalReturned;
     });
     return Array.from(map.values());
@@ -145,10 +158,10 @@ function StockBalances() {
         <table className="w-full text-sm">
           <thead><tr className="border-b border-border text-left">
             {['Project', 'Item', 'Category', 'Unit', 'Supplied', 'Issued', 'Returned', 'Balance', ''].map(h => <th key={h} className="px-4 py-3 font-medium text-muted-foreground text-xs">{h}</th>)}
-           </tr></thead>
+           </td></thead>
           <tbody className="divide-y divide-border">
             {filtered.map(b => (
-              <tr key={`${b.projectId}-${b.itemId}`} className="hover:bg-muted/50">
+              <tr key={`${b.projectId}-${b.itemName}`} className="hover:bg-muted/50">
                 <td className="px-4 py-2.5 text-xs">{highlight(b.projectName)}</td>
                 <td className="px-4 py-2.5 text-card-foreground font-medium">{highlight(b.itemName)}</td>
                 <td className="px-4 py-2.5"><span className="text-xs px-2 py-0.5 rounded bg-muted">{highlight(b.category)}</span></td>
@@ -175,7 +188,7 @@ function StockBalances() {
         </table>
       </div>
 
-      {/* Issue Dialog - Fixed with aria-describedby */}
+      {/* Issue Dialog */}
       <Dialog open={issueOpen} onOpenChange={setIssueOpen}>
         <DialogContent className="max-w-sm" aria-describedby="issue-dialog-description">
           <DialogHeader>
@@ -202,7 +215,7 @@ function StockBalances() {
         </DialogContent>
       </Dialog>
 
-      {/* Return Dialog - Fixed with aria-describedby */}
+      {/* Return Dialog */}
       <Dialog open={returnOpen} onOpenChange={setReturnOpen}>
         <DialogContent className="max-w-sm" aria-describedby="return-dialog-description">
           <DialogHeader>
