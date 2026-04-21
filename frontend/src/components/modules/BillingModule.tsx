@@ -21,19 +21,13 @@ type PaymentMethod = 'mpesa' | 'card';
 
 // Helper function to format M-Pesa number
 const formatMpesaNumber = (value: string): string => {
-  // Remove all non-digits
   let cleaned = value.replace(/\D/g, '');
-  
-  // If it starts with '254' and is 12 digits, convert to 0 format
   if (cleaned.startsWith('254') && cleaned.length === 12) {
     cleaned = '0' + cleaned.substring(3);
   }
-  
-  // Limit to 10 digits (0XXXXXXXXX)
   if (cleaned.length > 10) {
     cleaned = cleaned.substring(0, 10);
   }
-  
   return cleaned;
 };
 
@@ -92,28 +86,19 @@ export const BillingModule = () => {
 
   const handlePay = async () => {
     if (paymentMethod === 'mpesa') {
-      // Convert to format expected by API (254XXXXXXXXX without leading 0)
       let formattedPhone = phone;
-      
-      // If starts with 0 (e.g., 0712345678), remove the 0 and add 254
       if (formattedPhone.startsWith('0')) {
         formattedPhone = '254' + formattedPhone.substring(1);
-      }
-      // If doesn't start with 0 or 254, add 254
-      else if (!formattedPhone.startsWith('254') && formattedPhone.length >= 9) {
+      } else if (!formattedPhone.startsWith('254') && formattedPhone.length >= 9) {
         formattedPhone = '254' + formattedPhone;
       }
-      
       if (!phone || phone.length < 9) {
         setError('Enter valid M-Pesa number (e.g., 0712345678 or 712345678)');
         return;
       }
-      
       const apiPhone = formattedPhone;
-      
       setStatus('processing');
       setError('');
-      
       try {
         const res = await api.request('/subscription/pay', {
           method: 'POST',
@@ -123,7 +108,6 @@ export const BillingModule = () => {
             billingCycle: selectedCycle
           })
         });
-        
         if (res.success) {
           setStatus('sent');
           const interval = setInterval(async () => {
@@ -175,7 +159,8 @@ export const BillingModule = () => {
     if (paymentMethod === 'mpesa') {
       return 'w-full py-2.5 rounded-lg bg-gradient-to-r from-[#4CAF50] to-[#2E7D32] text-white text-sm font-medium hover:from-[#45a049] hover:to-[#1b5e20] transition-all shadow-sm';
     }
-    return 'w-full py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm';
+    // Card payment button - using yellow/amber theme
+    return 'w-full py-2.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 text-white text-sm font-medium hover:from-amber-600 hover:to-amber-700 transition-all shadow-sm';
   };
 
   const getPlanBadge = (plan: Plan) => {
@@ -214,7 +199,7 @@ export const BillingModule = () => {
             onClick={() => setPaymentMethod('card')}
             className={`px-5 py-1.5 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${
               paymentMethod === 'card'
-                ? 'bg-white dark:bg-gray-900 shadow-md text-blue-600 dark:text-blue-400'
+                ? 'bg-white dark:bg-gray-900 shadow-md text-amber-600 dark:text-amber-400'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
@@ -248,7 +233,7 @@ export const BillingModule = () => {
       <div className={`mb-5 p-2 rounded-lg flex items-center justify-center gap-2 text-xs ${
         paymentMethod === 'mpesa'
           ? 'bg-[#E8F5E9] dark:bg-[#1B5E20]/20 text-[#2E7D32] dark:text-[#4CAF50]'
-          : 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400'
+          : 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400'
       }`}>
         {paymentMethod === 'mpesa' ? (
           <>
@@ -373,7 +358,7 @@ export const BillingModule = () => {
                   {paymentMethod === 'mpesa' ? (
                     <Smartphone size={20} className="text-[#2E7D32]" />
                   ) : (
-                    <CreditCard size={20} className="text-blue-600" />
+                    <CreditCard size={20} className="text-amber-500" />
                   )}
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     Complete Your Upgrade
@@ -390,7 +375,7 @@ export const BillingModule = () => {
               <div className={`rounded-lg p-4 mb-5 ${
                 paymentMethod === 'mpesa' 
                   ? 'bg-[#E8F5E9] dark:bg-[#1B5E20]/20'
-                  : 'bg-gray-50 dark:bg-gray-800'
+                  : 'bg-amber-50 dark:bg-amber-950/20'
               }`}>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Selected Plan</p>
                 <p className="text-base font-semibold text-gray-900 dark:text-white mt-1">{selectedPlan.display_name}</p>
@@ -448,10 +433,10 @@ export const BillingModule = () => {
 
               {status === 'idle' && paymentMethod === 'card' && (
                 <>
-                  <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-center">
-                    <CreditCard size={40} className="mx-auto text-blue-500 dark:text-blue-400 mb-2" />
-                    <p className="text-blue-700 dark:text-blue-400 font-medium">Coming Soon</p>
-                    <p className="text-sm text-blue-600 dark:text-blue-500 mt-1">
+                  <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg text-center border border-amber-200 dark:border-amber-800">
+                    <CreditCard size={40} className="mx-auto text-amber-500 dark:text-amber-400 mb-2" />
+                    <p className="text-amber-700 dark:text-amber-400 font-medium">Coming Soon</p>
+                    <p className="text-sm text-amber-600 dark:text-amber-500 mt-1">
                       Visa/Mastercard payments will be available soon
                     </p>
                   </div>
@@ -466,7 +451,7 @@ export const BillingModule = () => {
 
               {status === 'processing' && (
                 <div className="text-center py-8">
-                  <Loader2 className="animate-spin h-10 w-10 text-[#4CAF50] mx-auto mb-4" />
+                  <Loader2 className="animate-spin h-10 w-10 text-amber-500 mx-auto mb-4" />
                   <p className="text-gray-600 dark:text-gray-400">Processing payment...</p>
                 </div>
               )}
