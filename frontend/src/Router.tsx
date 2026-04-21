@@ -4,6 +4,8 @@ import Index from './pages/Index';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { BillingModule } from '@/components/modules/BillingModule';
+import { Sidebar } from '@/components/Sidebar';
+import { TopBar } from '@/components/TopBar';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { authUser } = useAppStore();
@@ -13,6 +15,19 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
   
   return <>{children}</>;
+}
+
+function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { sidebarCollapsed } = useAppStore();
+  return (
+    <div className="min-h-screen bg-background">
+      <Sidebar />
+      <div className={`sidebar-transition ${sidebarCollapsed ? 'ml-[68px]' : 'ml-[260px]'}`}>
+        <TopBar />
+        <main className="p-6">{children}</main>
+      </div>
+    </div>
+  );
 }
 
 export function Router() {
@@ -30,14 +45,24 @@ export function Router() {
           } 
         />
         <Route 
-          path="/billing" 
+          path="/dashboard" 
           element={
             <ProtectedRoute>
-              <BillingModule />
+              <Index />
             </ProtectedRoute>
           } 
         />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route 
+          path="/dashboard/billing" 
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <BillingModule />
+              </DashboardLayout>
+            </ProtectedRoute>
+          } 
+        />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
   );

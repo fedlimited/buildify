@@ -37,6 +37,7 @@ export function TopBar() {
     users: 'User Management',
     subcontractors: 'Subcontractors',
     invoices: 'Invoices',
+    billing: 'Billing',
   };
 
   useEffect(() => {
@@ -76,15 +77,11 @@ export function TopBar() {
     }
   };
 
-
-
-const handleUpgrade = () => {
-  // Set localStorage to open billing tab
-  localStorage.setItem('settingsTab', 'billing');
-  // Switch to settings module
-  setActiveModule('settings');
-};
-
+  // UPDATED: Navigate directly to billing page
+  const handleUpgrade = () => {
+    setActiveModule('billing');
+    navigate('/dashboard/billing');
+  };
 
   const trialDays = subscription?.status === 'trial' && subscription?.trial_days_remaining > 0 
     ? subscription.trial_days_remaining 

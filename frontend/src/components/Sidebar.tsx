@@ -1,5 +1,6 @@
 import { useAppStore } from '@/hooks/useAppStore';
 import { ModuleId } from '@/lib/types';
+import { useNavigate } from 'react-router-dom';
 
 import {
   LayoutDashboard, FolderKanban, TrendingUp, TrendingDown,
@@ -10,55 +11,56 @@ import {
 
 interface NavGroup {
   title: string;
-  items: { id: ModuleId; label: string; icon: React.ReactNode }[];
+  items: { id: ModuleId; label: string; icon: React.ReactNode; path?: string }[];
 }
 
 const navGroups: NavGroup[] = [
   {
     title: 'Overview',
     items: [
-      { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-      { id: 'projects', label: 'Projects', icon: <FolderKanban size={20} /> },
+      { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
+      { id: 'projects', label: 'Projects', icon: <FolderKanban size={20} />, path: '/dashboard' },
     ],
   },
   {
     title: 'Finance',
     items: [
-      { id: 'income', label: 'Income', icon: <TrendingUp size={20} /> },
-      { id: 'expenses', label: 'Expenses', icon: <TrendingDown size={20} /> },
-      { id: 'invoices', label: 'Invoices', icon: <FileText size={20} /> },
-      { id: 'vat', label: 'VAT', icon: <Receipt size={20} /> },
+      { id: 'income', label: 'Income', icon: <TrendingUp size={20} />, path: '/dashboard' },
+      { id: 'expenses', label: 'Expenses', icon: <TrendingDown size={20} />, path: '/dashboard' },
+      { id: 'invoices', label: 'Invoices', icon: <FileText size={20} />, path: '/dashboard' },
+      { id: 'vat', label: 'VAT', icon: <Receipt size={20} />, path: '/dashboard' },
     ],
   },
   {
     title: 'Operations',
     items: [
-      { id: 'payroll', label: 'Payroll', icon: <Users size={20} /> },
-      { id: 'procurement', label: 'Procurement', icon: <ShoppingCart size={20} /> },
-      { id: 'stores', label: 'Stores', icon: <Warehouse size={20} /> },
-      { id: 'subcontractors', label: 'Subcontractors', icon: <Hammer size={20} /> },
-      { id: 'sitediary', label: 'Site Diary', icon: <BookOpen size={20} /> },
+      { id: 'payroll', label: 'Payroll', icon: <Users size={20} />, path: '/dashboard' },
+      { id: 'procurement', label: 'Procurement', icon: <ShoppingCart size={20} />, path: '/dashboard' },
+      { id: 'stores', label: 'Stores', icon: <Warehouse size={20} />, path: '/dashboard' },
+      { id: 'subcontractors', label: 'Subcontractors', icon: <Hammer size={20} />, path: '/dashboard' },
+      { id: 'sitediary', label: 'Site Diary', icon: <BookOpen size={20} />, path: '/dashboard' },
     ],
   },
   {
     title: 'Admin',
     items: [
-      { id: 'billing', label: 'Billing', icon: <CreditCard size={20} /> },
-      { id: 'reports', label: 'Reports', icon: <BarChart3 size={20} /> },
-      { id: 'users', label: 'User Mgmt', icon: <UserCog size={20} /> },
-      { id: 'settings', label: 'Settings', icon: <Settings size={20} /> },
+      { id: 'billing', label: 'Billing', icon: <CreditCard size={20} />, path: '/dashboard/billing' },
+      { id: 'reports', label: 'Reports', icon: <BarChart3 size={20} />, path: '/dashboard' },
+      { id: 'users', label: 'User Mgmt', icon: <UserCog size={20} />, path: '/dashboard' },
+      { id: 'settings', label: 'Settings', icon: <Settings size={20} />, path: '/dashboard' },
     ],
   },
   {
     title: 'Support',
     items: [
-      { id: 'help', label: 'Help', icon: <HelpCircle size={20} /> },
-      { id: 'legal', label: 'Legal', icon: <Scale size={20} /> },
+      { id: 'help', label: 'Help', icon: <HelpCircle size={20} />, path: '/dashboard' },
+      { id: 'legal', label: 'Legal', icon: <Scale size={20} />, path: '/dashboard' },
     ],
   },
 ];
 
 export function Sidebar() {
+  const navigate = useNavigate();
   const { activeModule, setActiveModule, sidebarCollapsed, toggleSidebar, authUser, logout } = useAppStore();
 
   const userPermissions = authUser?.permissions;
@@ -68,6 +70,13 @@ export function Sidebar() {
     if (isAdmin) return true;
     if (!userPermissions) return true;
     return userPermissions.includes(id);
+  };
+
+  const handleNavigation = (item: { id: ModuleId; path?: string }) => {
+    setActiveModule(item.id);
+    if (item.path) {
+      navigate(item.path);
+    }
   };
 
   return (
@@ -111,7 +120,7 @@ export function Sidebar() {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => setActiveModule(item.id)}
+                    onClick={() => handleNavigation(item)}
                     title={sidebarCollapsed ? item.label : undefined}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
                       ${active
