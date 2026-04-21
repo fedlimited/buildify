@@ -1,5 +1,4 @@
-// Force redeploy)
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppStore } from '@/hooks/useAppStore';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import { Button } from '@/components/ui/button';
@@ -39,44 +38,23 @@ interface StockBalance {
   currentBalance: number;
 }
 
-
-
-
-
 function useStockBalances(): StockBalance[] {
   const { storeTransactions } = useAppStore();
   
-  console.log('=== useStockBalances DEBUG ===');
-  console.log('1. storeTransactions from useAppStore():', storeTransactions);
-  console.log('2. Type of storeTransactions:', typeof storeTransactions);
-  console.log('3. Is array?', Array.isArray(storeTransactions));
-  console.log('4. Length:', storeTransactions?.length);
-  
-  if (storeTransactions && storeTransactions.length > 0) {
-    console.log('5. First transaction:', storeTransactions[0]);
-    console.log('6. First transaction itemName:', storeTransactions[0].itemName);
-    console.log('7. First transaction quantitySupplied:', storeTransactions[0].quantitySupplied);
-  }
-  
   return useMemo(() => {
-    console.log('8. Inside useMemo - processing transactions');
     const map = new Map<string, StockBalance>();
     
     if (!storeTransactions || storeTransactions.length === 0) {
-      console.log('9. No transactions, returning empty array');
       return [];
     }
     
-    storeTransactions.forEach((t, index) => {
-      console.log(`10. Processing transaction ${index}:`, t);
-      console.log(`   - itemName: "${t.itemName}"`);
-      console.log(`   - quantitySupplied: ${t.quantitySupplied}`);
+    storeTransactions.forEach(t => {
+      if (!t) return;
       
+      // Use itemName as the unique key for grouping
       const key = t.itemName;
-      console.log(`   - Using key: "${key}"`);
       
       if (!map.has(key)) {
-        console.log(`   - Creating new balance for "${key}"`);
         map.set(key, { 
           projectId: t.projectId || 0, 
           projectName: t.projectName || 'Unknown', 
@@ -92,32 +70,19 @@ function useStockBalances(): StockBalance[] {
       }
       
       const b = map.get(key)!;
-      const prevSupplied = b.totalSupplied;
       b.totalSupplied += t.quantitySupplied || 0;
-      console.log(`   - Updated totalSupplied: ${prevSupplied} + ${t.quantitySupplied} = ${b.totalSupplied}`);
-      
       b.totalIssued += t.quantityIssued || 0;
       b.totalReturned += t.quantityReturned || 0;
       b.currentBalance = b.totalSupplied - b.totalIssued + b.totalReturned;
     });
     
-    const result = Array.from(map.values());
-    console.log('11. Final result:', result);
-    console.log('12. Result count:', result.length);
-    return result;
+    return Array.from(map.values());
   }, [storeTransactions]);
 }
-
 
 function StockBalances() {
   const { projects, approvedItems, selectedProjectId, addStoreTransaction, fetchStoreTransactions, storeTransactions, authUser, clearStoresRecords } = useAppStore();
   const balances = useStockBalances();
-  // Add debug logs
-  console.log('=== StockBalances Debug ===');
-  console.log('storeTransactions from store:', storeTransactions);
-  console.log('storeTransactions count:', storeTransactions?.length);
-  console.log('balances from useStockBalances:', balances);
-  console.log('balances count:', balances?.length);
   const [search, setSearch] = useState('');
   const [issueOpen, setIssueOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
@@ -126,6 +91,12 @@ function StockBalances() {
   const [ref, setRef] = useState('');
   const [issuedTo, setIssuedTo] = useState('');
   const [notes, setNotes] = useState('');
+
+  // CRITICAL FIX: Fetch store transactions when component mounts
+  useEffect(() => {
+    console.log('StockBalances mounted - fetching store transactions...');
+    fetchStoreTransactions();
+  }, [fetchStoreTransactions]);
 
   const filtered = balances.filter(b => {
     if (selectedProjectId && b.projectId !== selectedProjectId) return false;
@@ -211,9 +182,9 @@ function StockBalances() {
           <tbody className="divide-y divide-border">
             {filtered.map(b => (
               <tr key={`${b.projectId}-${b.itemName}`} className="hover:bg-muted/50">
-                <td className="px-4 py-2.5 text-xs">{highlight(b.projectName)}</td>
-                <td className="px-4 py-2.5 text-card-foreground font-medium">{highlight(b.itemName)}</td>
-                <td className="px-4 py-2.5"><span className="text-xs px-2 py-0.5 rounded bg-muted">{highlight(b.category)}</span></td>
+                <td className="px-4 py-2.5 text-xs">{b.projectName}</td>
+                <td className="px-4 py-2.5 text-card-foreground font-medium">{b.itemName}</td>
+                <td className="px-4 py-2.5"><span className="text-xs px-2 py-0.5 rounded bg-muted">{b.category}</span></td>
                 <td className="px-4 py-2.5 text-xs">{b.unit}</td>
                 <td className="px-4 py-2.5 font-mono text-center text-success">{b.totalSupplied}</td>
                 <td className="px-4 py-2.5 font-mono text-center text-destructive">{b.totalIssued}</td>
@@ -226,8 +197,12 @@ function StockBalances() {
                 </td>
                 <td className="px-4 py-2.5">
                   <div className="flex gap-1">
-                    <Button variant="outline" size="sm" className="text-xs" onClick={() => openIssue(b)} disabled={b.currentBalance <= 0}><ArrowDownToLine size={14} className="mr-1" />Issue</Button>
-                    <Button variant="outline" size="sm" className="text-xs" onClick={() => openReturn(b)}><ArrowUpFromLine size={14} className="mr-1" />Return</Button>
+                    <Button variant="outline" size="sm" className="text-xs" onClick={() => openIssue(b)} disabled={b.currentBalance <= 0}>
+                      <ArrowDownToLine size={14} className="mr-1" />Issue
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-xs" onClick={() => openReturn(b)}>
+                      <ArrowUpFromLine size={14} className="mr-1" />Return
+                    </Button>
                   </div>
                 </td>
               </tr>
@@ -266,7 +241,10 @@ function StockBalances() {
               <div><Label className="text-xs">Notes</Label><Input value={notes} onChange={e => setNotes(e.target.value)} /></div>
             </div>
           )}
-          <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setIssueOpen(false)}>Cancel</Button><Button onClick={handleIssue} disabled={qty <= 0 || qty > (selectedBalance?.currentBalance || 0)}>Issue</Button></div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIssueOpen(false)}>Cancel</Button>
+            <Button onClick={handleIssue} disabled={qty <= 0 || qty > (selectedBalance?.currentBalance || 0)}>Issue</Button>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -291,7 +269,10 @@ function StockBalances() {
               <div><Label className="text-xs">Notes</Label><Input value={notes} onChange={e => setNotes(e.target.value)} /></div>
             </div>
           )}
-          <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setReturnOpen(false)}>Cancel</Button><Button onClick={handleReturn} disabled={qty <= 0}>Return</Button></div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setReturnOpen(false)}>Cancel</Button>
+            <Button onClick={handleReturn} disabled={qty <= 0}>Return</Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
@@ -325,7 +306,11 @@ function TransactionLedger() {
                 <td className="px-4 py-2.5 font-mono text-xs">{t.reference || '-'}</td>
                 <td className="px-4 py-2.5 text-xs">{t.projectName}</td>
                 <td className="px-4 py-2.5 text-card-foreground">{t.itemName}</td>
-                <td className="px-4 py-2.5"><span className={`text-xs font-medium px-2 py-0.5 rounded-full ${t.transactionType === 'SUPPLY' ? 'bg-success/10 text-success' : t.transactionType === 'ISSUE' ? 'bg-destructive/10 text-destructive' : 'bg-info/10 text-info'}`}>{t.transactionType}</span></td>
+                <td className="px-4 py-2.5">
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${t.transactionType === 'SUPPLY' ? 'bg-success/10 text-success' : t.transactionType === 'ISSUE' ? 'bg-destructive/10 text-destructive' : 'bg-info/10 text-info'}`}>
+                    {t.transactionType}
+                  </span>
+                </td>
                 <td className="px-4 py-2.5 font-mono text-center">{t.quantitySupplied || '-'}</td>
                 <td className="px-4 py-2.5 font-mono text-center">{t.quantityIssued || '-'}</td>
                 <td className="px-4 py-2.5 font-mono text-center">{t.quantityReturned || '-'}</td>
