@@ -24,8 +24,8 @@ const SubscriptionController = {
       res.status(500).json({ error: error.message });
     }
   },
-  
-  // Get company's current subscription
+
+  // Get company's current subscription with trial auto-downgrade
   getCurrentSubscription: async (req, res) => {
     try {
       const db = await getDb();
@@ -35,7 +35,8 @@ const SubscriptionController = {
       if (process.env.NODE_ENV === 'production') {
         result = await db.query(`
           SELECT cs.*, sp.name as plan_name, sp.display_name, sp.price_monthly_usd, 
-                 sp.max_projects, sp.max_workers, sp.max_users, sp.features
+                 sp.price_monthly_kes, sp.price_yearly_kes,
+                 sp.max_projects, sp.max_workers, sp.max_users, sp.max_income_records, sp.features
           FROM company_subscriptions cs
           JOIN subscription_plans sp ON cs.plan_id = sp.id
           WHERE cs.company_id = $1 AND cs.status IN ('active', 'trial')
@@ -44,7 +45,8 @@ const SubscriptionController = {
       } else {
         result = await db.get(`
           SELECT cs.*, sp.name as plan_name, sp.display_name, sp.price_monthly_usd,
-                 sp.max_projects, sp.max_workers, sp.max_users, sp.features
+                 sp.price_monthly_kes, sp.price_yearly_kes,
+                 sp.max_projects, sp.max_workers, sp.max_users, sp.max_income_records, sp.features
           FROM company_subscriptions cs
           JOIN subscription_plans sp ON cs.plan_id = sp.id
           WHERE cs.company_id = ? AND cs.status IN ('active', 'trial')
@@ -52,7 +54,7 @@ const SubscriptionController = {
         `, [company_id]);
       }
       
-      const subscription = process.env.NODE_ENV === 'production' ? result.rows[0] : result;
+      let subscription = process.env.NODE_ENV === 'production' ? result.rows[0] : result;
       
       if (!subscription) {
         // Return free plan as default
@@ -66,12 +68,63 @@ const SubscriptionController = {
         return res.json({ ...freePlan, is_default: true });
       }
       
-      // Calculate days remaining in trial
+      // Check if trial has expired and auto-downgrade
       if (subscription.status === 'trial' && subscription.trial_end_date) {
         const today = new Date();
         const trialEnd = new Date(subscription.trial_end_date);
         const daysRemaining = Math.ceil((trialEnd - today) / (1000 * 60 * 60 * 24));
-        subscription.trial_days_remaining = daysRemaining > 0 ? daysRemaining : 0;
+        
+        if (daysRemaining <= 0) {
+          console.log(`Trial expired for company ${company_id}, downgrading to Free plan...`);
+          
+          // Get free plan ID
+          let freePlan;
+          if (process.env.NODE_ENV === 'production') {
+            const freeResult = await db.query("SELECT id, * FROM subscription_plans WHERE name = 'free'");
+            freePlan = freeResult.rows[0];
+          } else {
+            freePlan = await db.get("SELECT id, * FROM subscription_plans WHERE name = 'free'");
+          }
+          
+          // Mark current subscription as expired
+          if (process.env.NODE_ENV === 'production') {
+            await db.query(`
+              UPDATE company_subscriptions 
+              SET status = 'expired', updated_at = CURRENT_TIMESTAMP 
+              WHERE id = $1
+            `, [subscription.id]);
+          } else {
+            await db.run(`
+              UPDATE company_subscriptions 
+              SET status = 'expired', updated_at = CURRENT_TIMESTAMP 
+              WHERE id = ?
+            `, [subscription.id]);
+          }
+          
+          // Create new free subscription
+          const startDate = new Date();
+          const endDate = new Date();
+          endDate.setFullYear(endDate.getFullYear() + 100); // Effectively never expires
+          
+          if (process.env.NODE_ENV === 'production') {
+            await db.query(`
+              INSERT INTO company_subscriptions 
+              (company_id, plan_id, status, start_date, end_date, created_at, updated_at)
+              VALUES ($1, $2, 'active', $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            `, [company_id, freePlan.id, startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]);
+          } else {
+            await db.run(`
+              INSERT INTO company_subscriptions 
+              (company_id, plan_id, status, start_date, end_date, created_at, updated_at)
+              VALUES (?, ?, 'active', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            `, [company_id, freePlan.id, startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]);
+          }
+          
+          // Return free plan
+          return res.json({ ...freePlan, is_default: true });
+        }
+        
+        subscription.trial_days_remaining = daysRemaining;
       }
       
       res.json(subscription);
@@ -169,9 +222,9 @@ const SubscriptionController = {
         type,
         allowed,
         current: currentCount,
-        max,
-        remaining: max - currentCount,
-        message: allowed ? `You can add ${max - currentCount} more ${type}(s)` : `${type.charAt(0).toUpperCase() + type.slice(1)} limit reached. Maximum ${max}.`
+        max: max === 999999 ? 'Unlimited' : max,
+        remaining: max === 999999 ? 'Unlimited' : max - currentCount,
+        message: allowed ? `You can add ${max === 999999 ? 'unlimited' : max - currentCount} more ${type}(s)` : `${type.charAt(0).toUpperCase() + type.slice(1)} limit reached. Maximum ${max === 999999 ? 'unlimited' : max}.`
       });
     } catch (error) {
       console.error('Error checking limit:', error);
