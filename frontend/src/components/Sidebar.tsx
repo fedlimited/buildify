@@ -1,4 +1,3 @@
-
 import { useAppStore } from '@/hooks/useAppStore';
 import { ModuleId } from '@/lib/types';
 import { useNavigate } from 'react-router-dom';
@@ -100,20 +99,14 @@ export function Sidebar() {
 
   // Check if module is accessible based on subscription plan
   const canAccessModule = (id: ModuleId): boolean => {
-    // Admin always has access
     if (isAdmin) return true;
-    
-    // Check user permissions
     if (!userPermissions) return true;
     if (!userPermissions.includes(id)) return false;
     
-    // Free plan restrictions
     const planName = subscription?.plan_name;
     if (planName === 'free') {
       return FREE_PLAN_ALLOWED_MODULES.includes(id);
     }
-    
-    // Paid plans have full access
     return true;
   };
 
@@ -132,25 +125,18 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`h-screen bg-sidebar-bg text-sidebar-fg flex flex-col shrink-0 sidebar-transition ${sidebarCollapsed ? 'w-[48px]' : 'w-[180px]'}`}
+      className={`h-screen bg-sidebar-bg text-sidebar-fg flex flex-col shrink-0 sidebar-transition relative ${sidebarCollapsed ? 'w-[54px]' : 'w-[208px]'}`}
     >
-      {/* Logo + Collapse */}
-      <div className="flex items-center justify-between px-4 h-16 border-b border-sidebar-hover shrink-0">
-        <div className="flex items-center gap-3">
+      {/* Logo */}
+      <div className="flex items-center justify-center px-2 h-16 border-b border-sidebar-hover shrink-0">
+        <div className="flex items-center justify-center w-full">
           <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center shrink-0">
             <HardHat size={20} className="text-accent-foreground" />
           </div>
           {!sidebarCollapsed && (
-            <span className="text-lg font-bold tracking-tight">BOCHI</span>
+            <span className="ml-3 text-lg font-bold tracking-tight">BOCHI</span>
           )}
         </div>
-        <button
-          onClick={toggleSidebar}
-          className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-sidebar-hover transition-colors shrink-0"
-          title={sidebarCollapsed ? 'Expand' : 'Collapse'}
-        >
-          {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
       </div>
 
       {/* Nav */}
@@ -212,6 +198,15 @@ export function Sidebar() {
           {!sidebarCollapsed && <span>Logout</span>}
         </button>
       </div>
+
+      {/* Collapse Toggle Button */}
+      <button
+        onClick={toggleSidebar}
+        className="absolute -right-3 top-20 w-6 h-6 flex items-center justify-center rounded-full bg-sidebar-bg border border-sidebar-hover text-sidebar-fg hover:bg-sidebar-hover transition-all duration-200 shadow-md z-50"
+        title={sidebarCollapsed ? 'Expand' : 'Collapse'}
+      >
+        {sidebarCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+      </button>
     </aside>
   );
 }
