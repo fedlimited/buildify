@@ -57,7 +57,7 @@ export const BillingModule = () => {
   };
 
   const formatPrice = (price: number) => {
-    return price.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
   const handleUpgrade = (plan: Plan) => {
@@ -156,45 +156,45 @@ export const BillingModule = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Header Section - Centered, not squeezed */}
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Simple, Transparent Pricing</h2>
-        <p className="text-gray-500 dark:text-gray-400 mt-2">Choose the plan that grows with your construction business</p>
+      {/* Header - Minimal, moved up */}
+      <div className="text-center mb-4">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Subscription Plans</h2>
+        <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">Choose the plan that fits your business</p>
       </div>
 
-      {/* Payment Method & Billing Cycle - Side by side, better use of horizontal space */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-        {/* Payment Method Toggle - Left */}
+      {/* Controls Row - Payment Method & Billing Cycle side by side, moved higher */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+        {/* Payment Method Toggle */}
         <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-1 inline-flex">
           <button
             onClick={() => setPaymentMethod('mpesa')}
-            className={`px-5 py-2 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${
+            className={`px-5 py-1.5 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${
               paymentMethod === 'mpesa'
                 ? 'bg-white dark:bg-gray-900 shadow-md text-[#2E7D32] dark:text-[#4CAF50]'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
-            <Smartphone size={16} />
+            <Smartphone size={14} />
             <span>M-Pesa (KES)</span>
           </button>
           <button
             onClick={() => setPaymentMethod('card')}
-            className={`px-5 py-2 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${
+            className={`px-5 py-1.5 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${
               paymentMethod === 'card'
                 ? 'bg-white dark:bg-gray-900 shadow-md text-blue-600 dark:text-blue-400'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
-            <CreditCard size={16} />
+            <CreditCard size={14} />
             <span>Visa / Mastercard (USD)</span>
           </button>
         </div>
 
-        {/* Billing Cycle Toggle - Right */}
+        {/* Billing Cycle Toggle */}
         <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-1 inline-flex">
           <button
             onClick={() => setSelectedCycle('monthly')}
-            className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${
+            className={`px-5 py-1.5 rounded-md text-sm font-medium transition-all ${
               selectedCycle === 'monthly' ? 'bg-white dark:bg-gray-900 shadow-sm text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400'
             }`}
           >
@@ -202,7 +202,7 @@ export const BillingModule = () => {
           </button>
           <button
             onClick={() => setSelectedCycle('yearly')}
-            className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${
+            className={`px-5 py-1.5 rounded-md text-sm font-medium transition-all ${
               selectedCycle === 'yearly' ? 'bg-white dark:bg-gray-900 shadow-sm text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400'
             }`}
           >
@@ -212,26 +212,26 @@ export const BillingModule = () => {
         </div>
       </div>
 
-      {/* Regional Notice - Compact but readable */}
-      <div className={`mb-6 p-3 rounded-lg flex items-center justify-center gap-2 text-sm ${
+      {/* Regional Notice - Compact */}
+      <div className={`mb-5 p-2 rounded-lg flex items-center justify-center gap-2 text-xs ${
         paymentMethod === 'mpesa'
           ? 'bg-[#E8F5E9] dark:bg-[#1B5E20]/20 text-[#2E7D32] dark:text-[#4CAF50]'
           : 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400'
       }`}>
         {paymentMethod === 'mpesa' ? (
           <>
-            <Smartphone size={14} />
+            <Smartphone size={12} />
             <span>Pay securely with M-Pesa Paybill <strong>222111</strong> | Instant confirmation</span>
           </>
         ) : (
           <>
-            <Globe size={14} />
+            <CreditCard size={12} />
             <span>International payments via Visa/Mastercard (Coming Soon)</span>
           </>
         )}
       </div>
 
-      {/* Pricing Cards - Equal height with flex, proper spacing */}
+      {/* Pricing Cards - Equal height */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
         {plans.map((plan) => (
           <div
@@ -254,11 +254,11 @@ export const BillingModule = () => {
                 <p className="text-gray-500 dark:text-gray-400 text-xs mt-1 leading-relaxed">{plan.description}</p>
               </div>
               
-              {/* Price - Properly sized */}
+              {/* Price - Formatted with commas */}
               <div className="mt-4 text-center">
                 <div className="flex items-baseline justify-center gap-1">
                   <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{getCurrencySymbol()}</span>
-                  <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
                     {formatPrice(getPrice(plan))}
                   </span>
                 </div>
@@ -266,7 +266,7 @@ export const BillingModule = () => {
               </div>
 
               {/* Limits */}
-              <div className="mt-5 space-y-2">
+              <div className="mt-4 space-y-2">
                 <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                   <Building2 size={14} className="text-green-500 shrink-0" />
                   <span className="text-sm">{plan.max_projects === 999999 ? 'Unlimited Projects' : `${plan.max_projects} Projects`}</span>
@@ -282,11 +282,11 @@ export const BillingModule = () => {
               </div>
 
               {/* Key Features */}
-              <div className="mt-5 pt-4 border-t border-gray-100 dark:border-gray-800">
-                <div className="space-y-2">
+              <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+                <div className="space-y-1.5">
                   {plan.features?.slice(0, 3).map((feature, idx) => (
                     <div key={idx} className="flex items-center gap-2">
-                      <Check size={12} className="text-green-500 shrink-0" />
+                      <Check size={11} className="text-green-500 shrink-0" />
                       <span className="text-xs text-gray-600 dark:text-gray-400 capitalize">
                         {feature.replace(/_/g, ' ')}
                       </span>
@@ -300,8 +300,8 @@ export const BillingModule = () => {
                 </div>
               </div>
 
-              {/* Action Button - Bottom aligned */}
-              <div className="mt-auto pt-5">
+              {/* Action Button */}
+              <div className="mt-auto pt-4">
                 <button
                   onClick={() => handleUpgrade(plan)}
                   disabled={isCurrentPlan(plan)}
@@ -315,24 +315,24 @@ export const BillingModule = () => {
         ))}
       </div>
 
-      {/* Trust Indicators - Bottom section */}
-      <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
-        <div className="flex flex-wrap justify-center gap-6">
-          <div className="flex items-center gap-2">
-            <Shield size={14} className="text-green-500" />
-            <span className="text-xs text-gray-500 dark:text-gray-400">Secure SSL Encryption</span>
+      {/* Trust Indicators - Bottom */}
+      <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
+        <div className="flex flex-wrap justify-center gap-5">
+          <div className="flex items-center gap-1.5">
+            <Shield size={12} className="text-green-500" />
+            <span className="text-[11px] text-gray-500 dark:text-gray-400">Secure SSL</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Clock size={14} className="text-green-500" />
-            <span className="text-xs text-gray-500 dark:text-gray-400">24/7 Customer Support</span>
+          <div className="flex items-center gap-1.5">
+            <Clock size={12} className="text-green-500" />
+            <span className="text-[11px] text-gray-500 dark:text-gray-400">24/7 Support</span>
           </div>
-          <div className="flex items-center gap-2">
-            <TrendingUp size={14} className="text-green-500" />
-            <span className="text-xs text-gray-500 dark:text-gray-400">Cancel Anytime</span>
+          <div className="flex items-center gap-1.5">
+            <TrendingUp size={12} className="text-green-500" />
+            <span className="text-[11px] text-gray-500 dark:text-gray-400">Cancel Anytime</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Smartphone size={14} className="text-green-500" />
-            <span className="text-xs text-gray-500 dark:text-gray-400">Instant M-Pesa Payment</span>
+          <div className="flex items-center gap-1.5">
+            <Smartphone size={12} className="text-green-500" />
+            <span className="text-[11px] text-gray-500 dark:text-gray-400">Instant M-Pesa</span>
           </div>
         </div>
       </div>
