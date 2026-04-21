@@ -19,6 +19,24 @@ interface Plan {
 
 type PaymentMethod = 'mpesa' | 'card';
 
+// Helper function to format M-Pesa number
+const formatMpesaNumber = (value: string): string => {
+  // Remove all non-digits
+  let cleaned = value.replace(/\D/g, '');
+  
+  // If it starts with '254' and is 12 digits, convert to 0 format
+  if (cleaned.startsWith('254') && cleaned.length === 12) {
+    cleaned = '0' + cleaned.substring(3);
+  }
+  
+  // Limit to 10 digits (0XXXXXXXXX)
+  if (cleaned.length > 10) {
+    cleaned = cleaned.substring(0, 10);
+  }
+  
+  return cleaned;
+};
+
 export const BillingModule = () => {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [currentPlan, setCurrentPlan] = useState<any>(null);
@@ -56,15 +74,10 @@ export const BillingModule = () => {
     return paymentMethod === 'mpesa' ? 'KES' : 'USD';
   };
 
-  // CUSTOM FUNCTION TO ADD COMMAS - Guaranteed to work
   const formatPriceWithCommas = (price: number) => {
-    // Convert to number with 2 decimal places
     const rounded = Math.round(price * 100) / 100;
-    // Split into whole and decimal parts
     const parts = rounded.toString().split('.');
-    // Add commas to whole number part
     const wholeWithCommas = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    // Return with .00 if no decimal part
     const decimal = parts[1] ? parts[1].padEnd(2, '0') : '00';
     return `${wholeWithCommas}.${decimal}`;
   };
@@ -79,22 +92,34 @@ export const BillingModule = () => {
 
   const handlePay = async () => {
     if (paymentMethod === 'mpesa') {
-      if (!phone || phone.length < 10) {
-        setError('Enter valid M-Pesa number (e.g., 0712345678)');
+      // Convert to format expected by API (254XXXXXXXXX without leading 0)
+      let formattedPhone = phone;
+      
+      // If starts with 0 (e.g., 0712345678), remove the 0 and add 254
+      if (formattedPhone.startsWith('0')) {
+        formattedPhone = '254' + formattedPhone.substring(1);
+      }
+      // If doesn't start with 0 or 254, add 254
+      else if (!formattedPhone.startsWith('254') && formattedPhone.length >= 9) {
+        formattedPhone = '254' + formattedPhone;
+      }
+      
+      if (!phone || phone.length < 9) {
+        setError('Enter valid M-Pesa number (e.g., 0712345678 or 712345678)');
         return;
       }
-    }
-
-    setStatus('processing');
-    setError('');
-
-    try {
-      if (paymentMethod === 'mpesa') {
+      
+      const apiPhone = formattedPhone;
+      
+      setStatus('processing');
+      setError('');
+      
+      try {
         const res = await api.request('/subscription/pay', {
           method: 'POST',
           body: JSON.stringify({
             planId: selectedPlan?.id,
-            phoneNumber: phone,
+            phoneNumber: apiPhone,
             billingCycle: selectedCycle
           })
         });
@@ -120,13 +145,13 @@ export const BillingModule = () => {
           setStatus('error');
           setError(res.error || 'Payment initiation failed');
         }
-      } else {
+      } catch (err: any) {
         setStatus('error');
-        setError('Visa/Mastercard payments coming soon. Please use M-Pesa for now.');
+        setError(err.message);
       }
-    } catch (err: any) {
+    } else {
       setStatus('error');
-      setError(err.message);
+      setError('Visa/Mastercard payments coming soon. Please use M-Pesa for now.');
     }
   };
 
@@ -259,7 +284,6 @@ export const BillingModule = () => {
                 <p className="text-gray-500 dark:text-gray-400 text-xs mt-1 leading-relaxed">{plan.description}</p>
               </div>
               
-              {/* Price - Using custom comma formatting */}
               <div className="mt-4 text-center">
                 <div className="flex items-baseline justify-center gap-1">
                   <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{getCurrencySymbol()}</span>
@@ -385,18 +409,28 @@ export const BillingModule = () => {
                       M-Pesa Phone Number
                     </label>
                     <div className="flex items-center border border-gray-300 dark:border-gray-700 rounded-lg focus-within:ring-2 focus-within:ring-[#4CAF50] bg-white dark:bg-gray-800">
-                      <span className="pl-3 text-gray-500 dark:text-gray-400 text-sm">+254</span>
+                      <div className="flex items-center gap-1 pl-3 pr-2 py-3 text-gray-500 dark:text-gray-400 text-sm border-r border-gray-300 dark:border-gray-700">
+                        <Smartphone size={14} className="text-[#4CAF50]" />
+                        <span>+254</span>
+                      </div>
                       <input
                         type="tel"
-                        placeholder="712345678"
+                        placeholder="712345678 or 0712345678"
                         className="flex-1 p-3 outline-none rounded-lg bg-transparent text-gray-900 dark:text-white text-sm"
                         value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
+                        onChange={(e) => {
+                          const rawValue = e.target.value;
+                          const formatted = formatMpesaNumber(rawValue);
+                          setPhone(formatted);
+                          if (error) setError('');
+                        }}
                       />
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                      You will receive a payment prompt on this number
-                    </p>
+                    <div className="flex flex-col gap-1 mt-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Enter your M-Pesa number (e.g., <strong>0712345678</strong>)
+                      </p>
+                    </div>
                   </div>
                   {error && (
                     <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 rounded-lg text-sm">
