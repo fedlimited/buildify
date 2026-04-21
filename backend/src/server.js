@@ -561,4 +561,23 @@ async function startServer() {
   }
 }
 
+
+// TEMPORARY FIX: Add missing 'active' column to subscription_plans
+app.post('/api/fix-active-column', async (req, res) => {
+  try {
+    const db = getDb();
+    console.log('Running fix: Adding active column to subscription_plans...');
+    
+    // Try to add the column if it doesn't exist
+    await db.query(`ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT true`);
+    await db.query(`UPDATE subscription_plans SET active = is_active`);
+    
+    console.log('✅ Active column added successfully');
+    res.json({ success: true, message: 'Active column added to subscription_plans' });
+  } catch (error) {
+    console.error('Fix error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 startServer(); 
