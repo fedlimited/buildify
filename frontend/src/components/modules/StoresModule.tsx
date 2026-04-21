@@ -46,31 +46,37 @@ interface StockBalance {
 function useStockBalances(): StockBalance[] {
   const { storeTransactions } = useAppStore();
   
-  console.log('=== useStockBalances START ===');
-  console.log('storeTransactions received:', storeTransactions);
-  console.log('storeTransactions length:', storeTransactions?.length);
+  console.log('=== useStockBalances DEBUG ===');
+  console.log('1. storeTransactions from useAppStore():', storeTransactions);
+  console.log('2. Type of storeTransactions:', typeof storeTransactions);
+  console.log('3. Is array?', Array.isArray(storeTransactions));
+  console.log('4. Length:', storeTransactions?.length);
+  
+  if (storeTransactions && storeTransactions.length > 0) {
+    console.log('5. First transaction:', storeTransactions[0]);
+    console.log('6. First transaction itemName:', storeTransactions[0].itemName);
+    console.log('7. First transaction quantitySupplied:', storeTransactions[0].quantitySupplied);
+  }
   
   return useMemo(() => {
+    console.log('8. Inside useMemo - processing transactions');
     const map = new Map<string, StockBalance>();
     
     if (!storeTransactions || storeTransactions.length === 0) {
-      console.log('No store transactions found');
+      console.log('9. No transactions, returning empty array');
       return [];
     }
     
-    storeTransactions.forEach(t => {
-      console.log('Processing transaction:', {
-        id: t.id,
-        itemName: t.itemName,
-        quantitySupplied: t.quantitySupplied,
-        projectName: t.projectName
-      });
+    storeTransactions.forEach((t, index) => {
+      console.log(`10. Processing transaction ${index}:`, t);
+      console.log(`   - itemName: "${t.itemName}"`);
+      console.log(`   - quantitySupplied: ${t.quantitySupplied}`);
       
-      // Use itemName as the unique key
       const key = t.itemName;
+      console.log(`   - Using key: "${key}"`);
       
       if (!map.has(key)) {
-        console.log(`Creating new balance for: ${key}`);
+        console.log(`   - Creating new balance for "${key}"`);
         map.set(key, { 
           projectId: t.projectId || 0, 
           projectName: t.projectName || 'Unknown', 
@@ -86,22 +92,21 @@ function useStockBalances(): StockBalance[] {
       }
       
       const b = map.get(key)!;
+      const prevSupplied = b.totalSupplied;
       b.totalSupplied += t.quantitySupplied || 0;
+      console.log(`   - Updated totalSupplied: ${prevSupplied} + ${t.quantitySupplied} = ${b.totalSupplied}`);
+      
       b.totalIssued += t.quantityIssued || 0;
       b.totalReturned += t.quantityReturned || 0;
       b.currentBalance = b.totalSupplied - b.totalIssued + b.totalReturned;
-      
-      console.log(`Updated ${key}: totalSupplied = ${b.totalSupplied}`);
     });
     
     const result = Array.from(map.values());
-    console.log('Final balances:', result);
-    console.log('=== useStockBalances END ===');
+    console.log('11. Final result:', result);
+    console.log('12. Result count:', result.length);
     return result;
   }, [storeTransactions]);
 }
-
-
 
 
 function StockBalances() {
