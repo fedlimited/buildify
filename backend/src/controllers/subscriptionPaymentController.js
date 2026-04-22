@@ -206,16 +206,13 @@ async initiatePayment(req, res) {
 
 
 
-
-
-
   // M-Pesa Callback (webhook)
   async handleCallback(req, res) {
     try {
       const db = await getDb();
       const { Body } = req.body;
 
-      console.log('Subscription payment callback received');
+      console.log('📞 Subscription payment callback received');
 
       if (!Body || !Body.stkCallback) {
         return res.json({ ResultCode: 0, ResultDesc: 'Success' });
@@ -233,83 +230,141 @@ async initiatePayment(req, res) {
       }
 
       if (!payment) {
-        console.log('No payment found for checkout ID:', checkoutRequestId);
+        console.log('❌ No payment found for checkout ID:', checkoutRequestId);
         return res.json({ ResultCode: 0, ResultDesc: 'Success' });
       }
 
+      console.log(`💰 Payment found: ID=${payment.id}, Company=${payment.company_id}, Amount=${payment.amount_kes}, Plan=${payment.plan_id}`);
+
       if (resultCode === 0) {
+        // Mark payment as completed
         if (process.env.NODE_ENV === 'production') {
           await db.query(`UPDATE subscription_payments SET status = 'completed', paid_at = CURRENT_TIMESTAMP WHERE id = $1`, [payment.id]);
         } else {
           await db.run(`UPDATE subscription_payments SET status = 'completed', paid_at = CURRENT_TIMESTAMP WHERE id = ?`, [payment.id]);
         }
 
-        // FIXED: Use single quotes
-        let existingSub;
-        if (process.env.NODE_ENV === 'production') {
-          const result = await db.query(
-            "SELECT * FROM company_subscriptions WHERE company_id = $1 AND status IN ('active', 'trial')",
-            [payment.company_id]
-          );
-          existingSub = result.rows[0];
-        } else {
-          existingSub = await db.get(
-            "SELECT * FROM company_subscriptions WHERE company_id = ? AND status IN ('active', 'trial')",
-            [payment.company_id]
-          );
-        }
+        console.log(`✅ Payment ${payment.id} marked as completed`);
 
-        const endDate = new Date();
-        endDate.setMonth(endDate.getMonth() + 1);
+        // ============================================
+        // 🔄 UPGRADE USER TO THE PLAN THEY PAID FOR
+        // ============================================
+        const newPlanId = payment.plan_id;
+        
+        if (newPlanId) {
+          // Get plan details
+          let planDetails;
+          if (process.env.NODE_ENV === 'production') {
+            const result = await db.query('SELECT * FROM subscription_plans WHERE id = $1', [newPlanId]);
+            planDetails = result.rows[0];
+          } else {
+            planDetails = await db.get('SELECT * FROM subscription_plans WHERE id = ?', [newPlanId]);
+          }
+          
+          console.log(`🎯 Upgrading company ${payment.company_id} to ${planDetails.name} plan`);
 
-        if (existingSub) {
-          if (process.env.NODE_ENV === 'production') {
-            await db.query(`UPDATE company_subscriptions SET end_date = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
-              [endDate.toISOString().split('T')[0], existingSub.id]);
-          } else {
-            await db.run(`UPDATE company_subscriptions SET end_date = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-              [endDate.toISOString().split('T')[0], existingSub.id]);
-          }
-        } else {
-          let basicPlan;
-          if (process.env.NODE_ENV === 'production') {
-            const result = await db.query("SELECT id FROM subscription_plans WHERE name = 'basic'");
-            basicPlan = result.rows[0];
-          } else {
-            basicPlan = await db.get("SELECT id FROM subscription_plans WHERE name = 'basic'");
-          }
+          // Calculate new end date
           const startDate = new Date();
-          if (process.env.NODE_ENV === 'production') {
-            await db.query(`
-              INSERT INTO company_subscriptions 
-              (company_id, plan_id, status, start_date, end_date, created_at, updated_at) 
-              VALUES ($1, $2, 'active', $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            `, [payment.company_id, basicPlan?.id, startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]);
+          const endDate = new Date();
+          
+          // Check if yearly or monthly based on amount
+          if (payment.amount_kes === planDetails.price_yearly_kes) {
+            endDate.setFullYear(endDate.getFullYear() + 1);
+            console.log(`📅 Yearly subscription until ${endDate.toISOString().split('T')[0]}`);
           } else {
-            await db.run(`
-              INSERT INTO company_subscriptions 
-              (company_id, plan_id, status, start_date, end_date, created_at, updated_at) 
-              VALUES (?, ?, 'active', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            `, [payment.company_id, basicPlan?.id, startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]);
+            endDate.setMonth(endDate.getMonth() + 1);
+            console.log(`📅 Monthly subscription until ${endDate.toISOString().split('T')[0]}`);
           }
-        }
 
-        console.log(`✅ Subscription payment successful for company ${payment.company_id}`);
+          // Check if company already has a subscription
+          let existingSub;
+          if (process.env.NODE_ENV === 'production') {
+            const result = await db.query(
+              'SELECT * FROM company_subscriptions WHERE company_id = $1',
+              [payment.company_id]
+            );
+            existingSub = result.rows[0];
+          } else {
+            existingSub = await db.get(
+              'SELECT * FROM company_subscriptions WHERE company_id = ?',
+              [payment.company_id]
+            );
+          }
+
+          if (existingSub) {
+            // UPDATE existing subscription to the NEW plan
+            console.log(`📝 Updating subscription from plan ${existingSub.plan_id} to ${newPlanId}`);
+            
+            if (process.env.NODE_ENV === 'production') {
+              await db.query(`
+                UPDATE company_subscriptions 
+                SET plan_id = $1, 
+                    status = 'active', 
+                    active = true,
+                    start_date = $2,
+                    end_date = $3,
+                    updated_at = CURRENT_TIMESTAMP 
+                WHERE id = $4
+              `, [newPlanId, startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0], existingSub.id]);
+            } else {
+              await db.run(`
+                UPDATE company_subscriptions 
+                SET plan_id = ?, 
+                    status = 'active', 
+                    active = 1,
+                    start_date = ?,
+                    end_date = ?,
+                    updated_at = CURRENT_TIMESTAMP 
+                WHERE id = ?
+              `, [newPlanId, startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0], existingSub.id]);
+            }
+          } else {
+            // CREATE new subscription
+            console.log(`📝 Creating new subscription for company ${payment.company_id}`);
+            
+            if (process.env.NODE_ENV === 'production') {
+              await db.query(`
+                INSERT INTO company_subscriptions 
+                (company_id, plan_id, status, active, start_date, end_date, created_at, updated_at) 
+                VALUES ($1, $2, 'active', true, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+              `, [payment.company_id, newPlanId, startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]);
+            } else {
+              await db.run(`
+                INSERT INTO company_subscriptions 
+                (company_id, plan_id, status, active, start_date, end_date, created_at, updated_at) 
+                VALUES (?, ?, 'active', 1, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+              `, [payment.company_id, newPlanId, startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]);
+            }
+          }
+
+          console.log(`🎉 Company ${payment.company_id} successfully upgraded to ${planDetails.name}!`);
+        } else {
+          console.log(`⚠️ Payment has no plan_id - cannot upgrade`);
+        }
       } else {
+        // Payment failed
+        console.log(`❌ Payment failed with code ${resultCode}`);
+        
         if (process.env.NODE_ENV === 'production') {
           await db.query(`UPDATE subscription_payments SET status = 'failed' WHERE id = $1`, [payment.id]);
         } else {
           await db.run(`UPDATE subscription_payments SET status = 'failed' WHERE id = ?`, [payment.id]);
         }
-        console.log(`❌ Subscription payment failed for company ${payment.company_id}`);
       }
 
       res.json({ ResultCode: 0, ResultDesc: 'Success' });
     } catch (error) {
-      console.error('Callback error:', error);
+      console.error('💥 Callback error:', error);
       res.json({ ResultCode: 0, ResultDesc: 'Success' });
     }
   }
+
+
+
+
+
+
+
 
   // Check payment status
   async checkPaymentStatus(req, res) {
