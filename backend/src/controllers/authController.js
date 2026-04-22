@@ -17,7 +17,7 @@ async function login(req, res) {
 
     // Find user in this company
     const user = await db.get(
-      'SELECT * FROM users WHERE email = ? AND company_id = ? AND is_active = 1',
+      'SELECT *, is_super_admin FROM users WHERE email = ? AND company_id = ? AND is_active = 1',
       [email, company.id]
     );
 
@@ -37,7 +37,8 @@ async function login(req, res) {
         role: user.role, 
         permissions: JSON.parse(user.permissions || '[]'),
         companyId: company.id,
-        subdomain: company.subdomain
+        subdomain: company.subdomain,
+        isSuperAdmin: user.is_super_admin || false  // ADD TO JWT
       },
       JWT_SECRET,
       { expiresIn: '7d' }
@@ -51,6 +52,7 @@ async function login(req, res) {
         email: user.email,
         role: user.role,
         permissions: JSON.parse(user.permissions || '[]'),
+        isSuperAdmin: user.is_super_admin || false,  // ← ADD THIS LINE
         company: {
           id: company.id,
           name: company.name,
@@ -67,8 +69,9 @@ async function login(req, res) {
 async function getCurrentUser(req, res) {
   try {
     const db = getDb();
+
     const user = await db.get(
-      'SELECT u.id, u.name, u.email, u.role, u.permissions, c.id as company_id, c.name as company_name, c.subdomain FROM users u JOIN companies c ON u.company_id = c.id WHERE u.id = ?',
+      'SELECT u.id, u.name, u.email, u.role, u.permissions, u.is_super_admin, c.id as company_id, c.name as company_name, c.subdomain FROM users u JOIN companies c ON u.company_id = c.id WHERE u.id = ?',
       [req.user.id]
     );
 
@@ -82,6 +85,7 @@ async function getCurrentUser(req, res) {
       email: user.email,
       role: user.role,
       permissions: JSON.parse(user.permissions || '[]'),
+      isSuperAdmin: user.is_super_admin || false,  // ← ADD THIS LINE
       company: {
         id: user.company_id,
         name: user.company_name,
