@@ -42,6 +42,17 @@ async function sendLoginOTP(req, res) {
   });
 }
 
+
+
+
+
+
+
+
+
+
+
+
 async function verifyLoginOTP(req, res) {
   try {
     const { email, code, subdomain } = req.body;
@@ -77,8 +88,10 @@ const otpRecord = await db.get(
     await db.run('UPDATE otp_codes SET used = 1 WHERE id = ?', [otpRecord.id]);
     console.log('✅ OTP verified and marked as used');
     
+    // ✅ ADDED is_super_admin TO SELECT QUERY
     const user = await db.get(
-      `SELECT u.id, u.name, u.email, u.role, u.company_id, c.name as company_name, c.subdomain 
+      `SELECT u.id, u.name, u.email, u.role, u.company_id, u.is_super_admin, 
+              c.name as company_name, c.subdomain 
        FROM users u 
        JOIN companies c ON u.company_id = c.id 
        WHERE u.email = ? AND c.subdomain = ?`,
@@ -89,6 +102,7 @@ const otpRecord = await db.get(
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // ✅ ADDED isSuperAdmin TO JWT PAYLOAD
     const token = jwt.sign(
       { 
         id: user.id,
@@ -96,12 +110,14 @@ const otpRecord = await db.get(
         email: user.email, 
         role: user.role,
         companyId: user.company_id,
-        subdomain: user.subdomain
+        subdomain: user.subdomain,
+        isSuperAdmin: user.is_super_admin || false  // ← ADDED THIS LINE
       },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
+    // ✅ ADDED isSuperAdmin TO USER RESPONSE
     res.json({ 
       success: true, 
       message: 'Login successful', 
@@ -113,7 +129,8 @@ const otpRecord = await db.get(
         role: user.role,
         companyId: user.company_id,
         companyName: user.company_name,
-        subdomain: user.subdomain
+        subdomain: user.subdomain,
+        isSuperAdmin: user.is_super_admin || false  // ← ADDED THIS LINE
       }
     });
     
