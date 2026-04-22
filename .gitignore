@@ -1,2 +1,2 @@
 *.txt 
-frontend/google*.html 
+#frontend/google*.html 
