@@ -13,6 +13,17 @@ import { AuthGate } from '@/components/AuthGate';
 // Force admin components to be included in build
 import './components/modules/admin-exports';
 
+
+
+// FORCE ADMIN COMPONENTS INTO BUILD - DO NOT REMOVE
+import { AdminDashboard, AdminCompanies, AdminUsers, AdminSubscriptions, AdminPayments } from '@/components/modules/admin-exports';
+import { AdminLayout } from '@/components/AdminLayout';
+
+// Dummy reference to prevent tree-shaking
+const ADMIN_COMPONENTS = { AdminDashboard, AdminCompanies, AdminUsers, AdminSubscriptions, AdminPayments, AdminLayout };
+console.log('Admin components registered:', Object.keys(ADMIN_COMPONENTS));
+
+
 const queryClient = new QueryClient();
 
 const App = () => (
