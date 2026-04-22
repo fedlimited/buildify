@@ -1,0 +1,151 @@
+C:\Users\Atai\buildify\
+│
+├── backend\
+│   ├── src\
+│   │   ├── config\
+│   │   │   └── database.js
+│   │   │
+│   │   ├── controllers\
+│   │   │   ├── authController.js
+│   │   │   ├── projectController.js
+│   │   │   ├── workerController.js
+│   │   │   ├── payrollController.js
+│   │   │   ├── expenseController.js
+│   │   │   ├── incomeController.js
+│   │   │   ├── procurementController.js
+│   │   │   ├── siteDiaryController.js
+│   │   │   ├── reportController.js
+│   │   │   └── ⭐ subscriptionController.js        <-- NEW
+│   │   │
+│   │   ├── middleware\
+│   │   │   ├── auth.js
+│   │   │   ├── tenant.js
+│   │   │   └── ⭐ subscriptionAuth.js              <-- NEW (checks active plan)
+│   │   │
+│   │   ├── models\
+│   │   │   ├── Company.js
+│   │   │   ├── User.js
+│   │   │   ├── Project.js
+│   │   │   └── ⭐ Subscription.js                  <-- NEW
+│   │   │
+│   │   ├── routes\
+│   │   │   ├── auth.js
+│   │   │   ├── projects.js
+│   │   │   ├── workers.js
+│   │   │   └── ⭐ subscription.js                  <-- NEW
+│   │   │
+│   │   ├── services\
+│   │   │   ├── emailService.js
+│   │   │   └── ⭐ stripeService.js                 <-- NEW (payment provider)
+│   │   │
+│   │   ├── webhooks\
+│   │   │   └── ⭐ stripeWebhook.js                 <-- NEW
+│   │   │
+│   │   └── server.js
+│   │
+│   ├── package.json
+│   ├── .env
+│   └── .env.example
+│
+├── frontend\
+│   ├── src\
+│   │   ├── app\
+│   │   │   ├── App.tsx
+│   │   │   └── routes.tsx
+│   │   │
+│   │   ├── components\
+│   │   │   ├── auth\
+│   │   │   │   ├── LoginForm.tsx
+│   │   │   │   ├── RegisterForm.tsx
+│   │   │   │   └── OTPVerification.tsx
+│   │   │   │
+│   │   │   ├── layout\
+│   │   │   │   ├── Sidebar.tsx
+│   │   │   │   ├── Header.tsx
+│   │   │   │   ├── DashboardLayout.tsx
+│   │   │   │   └── MobileNav.tsx
+│   │   │   │
+│   │   │   ├── modules\
+│   │   │   │   ├── DashboardModule.tsx
+│   │   │   │   ├── ProjectsModule.tsx
+│   │   │   │   ├── WorkersModule.tsx
+│   │   │   │   ├── PayrollModule.tsx
+│   │   │   │   ├── FinanceModule.tsx
+│   │   │   │   ├── ProcurementModule.tsx
+│   │   │   │   ├── SiteDiaryModule.tsx
+│   │   │   │   ├── ReportsModule.tsx
+│   │   │   │   ├── SettingsModule.tsx
+│   │   │   │   └── ⭐ SubscriptionModule.tsx       <-- NEW
+│   │   │   │
+│   │   │   ├── subscription\                       <-- NEW FOLDER
+│   │   │   │   ├── PricingCards.tsx
+│   │   │   │   ├── PlanFeatures.tsx
+│   │   │   │   ├── BillingHistory.tsx
+│   │   │   │   ├── CurrentPlan.tsx
+│   │   │   │   ├── UsageMeter.tsx
+│   │   │   │   ├── UpgradePrompt.tsx
+│   │   │   │   ├── CancelSubscriptionModal.tsx
+│   │   │   │   └── PaymentMethodForm.tsx
+│   │   │   │
+│   │   │   └── ui\
+│   │   │       ├── Button.tsx
+│   │   │       ├── Card.tsx
+│   │   │       ├── Dialog.tsx
+│   │   │       ├── Input.tsx
+│   │   │       ├── Select.tsx
+│   │   │       ├── Table.tsx
+│   │   │       └── Badge.tsx
+│   │   │
+│   │   ├── pages\
+│   │   │   ├── Login.tsx
+│   │   │   ├── Register.tsx
+│   │   │   ├── Dashboard.tsx
+│   │   │   └── ⭐ Billing.tsx                      <-- NEW
+│   │   │
+│   │   ├── hooks\
+│   │   │   ├── useAppStore.ts
+│   │   │   ├── useAuth.ts
+│   │   │   └── ⭐ useSubscription.ts               <-- NEW
+│   │   │
+│   │   ├── services\
+│   │   │   ├── api.ts
+│   │   │   ├── authService.ts
+│   │   │   └── ⭐ subscriptionService.ts           <-- NEW
+│   │   │
+│   │   ├── lib\
+│   │   │   ├── types.ts
+│   │   │   ├── constants.ts
+│   │   │   ├── utils.ts
+│   │   │   └── ⭐ planLimits.ts                    <-- NEW (feature restrictions)
+│   │   │
+│   │   ├── styles\
+│   │   │   └── globals.css
+│   │   │
+│   │   └── main.tsx
+│   │
+│   ├── public\
+│   │   └── favicon.ico
+│   │
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── vite.config.ts
+│   ├── vercel.json
+│   ├── .env
+│   ├── .env.development
+│   └── .env.production
+│
+├── database\
+│   ├── schema.sql
+│   ├── migrations\
+│   │   ├── 001_initial_schema.sql
+│   │   └── ⭐ 002_add_subscription_tables.sql      <-- NEW
+│   └── seeds\
+│       └── ⭐ subscription_plans.sql               <-- NEW
+│
+├── docs\
+│   ├── API_DOCUMENTATION.md
+│   └── MULTI_TENANT_MIGRATION_MANUAL.md
+│
+├── .gitignore
+├── README.md
+└── package.json (root workspace)

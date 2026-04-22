@@ -1,0 +1,46 @@
+=== SUBSCRIPTION FILES === 
+C:\Users\Atai\buildify\.git\logs\refs\heads\backup\before-subscriptions-payments
+C:\Users\Atai\buildify\.git\refs\heads\backup\before-subscriptions-payments
+C:\Users\Atai\buildify\backend\src\controllers\subscriptionController.js
+C:\Users\Atai\buildify\backend\src\controllers\subscriptionPaymentController.js
+C:\Users\Atai\buildify\backend\src\services\mpesaSubscriptionService.js
+C:\Users\Atai\buildify\frontend\node_modules\motion-utils\dist\es\subscription-manager.mjs
+C:\Users\Atai\buildify\frontend\node_modules\motion-utils\dist\es\subscription-manager.mjs.map
+C:\Users\Atai\buildify\frontend\src\hooks\useSubscriptionLimit.ts
+ 
+=== MPESA FILES === 
+C:\Users\Atai\buildify\backend\src\services\mpesaSubscriptionService.js
+ 
+=== STRIPE FILES === 
+File Not Found
+ 
+=== CONTROLLERS === 
+({
+approvedItemController.js
+authController.js
+companyController.js
+currencyController.js
+expenseController.js
+incomeController.js
+invoiceController.js
+otpController.js
+payrollController.js
+projectController.js
+purchaseOrderController.js
+quotationController.js
+settingsController.js
+siteDiaryController.js
+storeTransactionController.js
+subcontractorController.js
+subscriptionController.js
+subscriptionPaymentController.js
+supplierController.js
+supplyController.js
+userController.js
+workerCategoryController.js
+workerController.js
+{
+ 
+=== SERVICES === 
+emailService.js
+mpesaSubscriptionService.js
