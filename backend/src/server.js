@@ -29,7 +29,7 @@ const otpController = require('./controllers/otpController');
 const { verifyTransporter } = require('./services/emailService');
 const SubscriptionController = require('./controllers/subscriptionController');
 const subscriptionPaymentController = require('./controllers/subscriptionPaymentController');
-
+const superAdminRoutes = require('./routes/superAdminRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -283,6 +283,9 @@ app.get('/api/invoices', InvoiceController.getInvoices);
 app.post('/api/invoices', InvoiceController.createInvoice);
 app.put('/api/invoices/:id', InvoiceController.updateInvoice);
 app.delete('/api/invoices/:id', InvoiceController.deleteInvoice);
+
+// ========== SUPER ADMIN ROUTES ==========
+app.use('/api/super-admin', superAdminRoutes);
 
 // ========== LOAD SAMPLE DATA ==========
 app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, res) => {
