@@ -123,10 +123,17 @@ app.post('/api/companies/register', companyController.registerCompany);
 // ========== PUBLIC SUBSCRIPTION PAYMENT ROUTES (Callbacks) ==========
 app.post('/api/subscription/mpesa-callback', subscriptionPaymentController.handleCallback);
 
+
+
 // ========== PROTECTED ROUTES ==========
+
+// This route needs auth but NOT the company check
+app.get('/api/auth/me', authenticateToken, authController.getCurrentUser);
+
+// All other /api routes need company check
 app.use('/api', authenticateToken, requireCompanyAccess);
 
-app.get('/api/auth/me', authController.getCurrentUser);
+
 
 // Currency routes
 app.get('/api/currency/settings', currencyController.getCurrencySettings);
