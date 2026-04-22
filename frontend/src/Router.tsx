@@ -4,16 +4,36 @@ import Index from './pages/Index';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { BillingModule } from '@/components/modules/BillingModule';
+import { AdminDashboard } from '@/components/modules/AdminDashboard';
+import { AdminCompanies } from '@/components/modules/AdminCompanies';
+import { AdminUsers } from '@/components/modules/AdminUsers';
+import { AdminSubscriptions } from '@/components/modules/AdminSubscriptions';
+import { AdminPayments } from '@/components/modules/AdminPayments';
+import { AdminLayout } from '@/components/AdminLayout';
 import { Sidebar } from '@/components/Sidebar';
 import { TopBar } from '@/components/TopBar';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { authUser } = useAppStore();
-  
+
   if (!authUser) {
     return <Navigate to="/login" replace />;
   }
-  
+
+  return <>{children}</>;
+}
+
+function SuperAdminRoute({ children }: { children: React.ReactNode }) {
+  const { authUser } = useAppStore();
+
+  if (!authUser) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!authUser.isSuperAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return <>{children}</>;
 }
 
@@ -34,34 +54,91 @@ export function Router() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route 
-          path="/" 
+
+        {/* Regular Dashboard Routes */}
+        <Route
+          path="/"
           element={
             <ProtectedRoute>
               <Index />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/dashboard" 
+        <Route
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <Index />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/dashboard/billing" 
+        <Route
+          path="/dashboard/billing"
           element={
             <ProtectedRoute>
               <DashboardLayout>
                 <BillingModule />
               </DashboardLayout>
             </ProtectedRoute>
-          } 
+          }
         />
+
+        {/* Super Admin Routes */}
+        <Route
+          path="/admin"
+          element={
+            <SuperAdminRoute>
+              <AdminLayout>
+                <AdminDashboard />
+              </AdminLayout>
+            </SuperAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/companies"
+          element={
+            <SuperAdminRoute>
+              <AdminLayout>
+                <AdminCompanies />
+              </AdminLayout>
+            </SuperAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <SuperAdminRoute>
+              <AdminLayout>
+                <AdminUsers />
+              </AdminLayout>
+            </SuperAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/subscriptions"
+          element={
+            <SuperAdminRoute>
+              <AdminLayout>
+                <AdminSubscriptions />
+              </AdminLayout>
+            </SuperAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/payments"
+          element={
+            <SuperAdminRoute>
+              <AdminLayout>
+                <AdminPayments />
+              </AdminLayout>
+            </SuperAdminRoute>
+          }
+        />
+
+        {/* Fallback */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>

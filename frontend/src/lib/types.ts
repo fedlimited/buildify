@@ -283,13 +283,22 @@ export interface NavItem {
   enabled: boolean;
 }
 
+
+
 export interface AuthUser {
   id: number;
   name: string;
   email: string;
   role: 'admin' | 'user';
   permissions?: ModuleId[];
+  isSuperAdmin?: boolean;  // ADD THIS LINE
+  company?: {              // ADD THIS (from backend response)
+    id: number;
+    name: string;
+    subdomain: string;
+  };
 }
+
 
 export interface AppUser {
   id: number;

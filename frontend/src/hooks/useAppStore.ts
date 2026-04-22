@@ -234,15 +234,12 @@ setAuthUser: (user) => set({ authUser: user }),  // ← ADD THIS LINE
 
 authUser: (() => {
   const saved = localStorage.getItem('authUser');
-  return saved ? JSON.parse(saved) : null;
+  if (saved) {
+    const user = JSON.parse(saved);
+    return { ...user, isSuperAdmin: user.isSuperAdmin || false };
+  }
+  return null;
 })(),
-
-
-
-
-
-
-
 
 
 
@@ -250,8 +247,14 @@ authUser: (() => {
   // ========== LOGIN / LOGOUT ==========
 login: async (email, password, subdomain) => {
   try {
-    const user = await api.login(email, password, subdomain);
-    set({ authUser: user });
+    const response = await api.login(email, password, subdomain);
+    // response contains { token, user }
+    const authUser = {
+      ...response.user,
+      isSuperAdmin: response.user.isSuperAdmin || false
+    };
+    set({ authUser });
+    localStorage.setItem('authUser', JSON.stringify(authUser));
     
     await Promise.all([
       get().fetchProjects(),
@@ -265,7 +268,7 @@ login: async (email, password, subdomain) => {
       get().fetchPurchaseOrders(),
       get().fetchSupplies(),
       get().fetchStoreTransactions(),
-      get().fetchSiteDiaryEntries(),  // ← MAKE SURE THIS LINE EXISTS
+      get().fetchSiteDiaryEntries(),
       get().fetchAppUsers(),
       get().fetchSubcontractors(),
       get().fetchQuotations(),
@@ -280,7 +283,6 @@ login: async (email, password, subdomain) => {
     return false;
   }
 },
-
 
 
 

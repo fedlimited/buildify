@@ -6,7 +6,7 @@ import {
   LayoutDashboard, FolderKanban, TrendingUp, TrendingDown,
   Users, ShoppingCart, Warehouse, BookOpen, Receipt, BarChart3, Settings,
   ChevronLeft, ChevronRight, HardHat, LogOut, UserCog, Hammer, FileText,
-  HelpCircle, Scale, CreditCard
+  HelpCircle, Scale, CreditCard, Shield
 } from 'lucide-react';
 
 interface NavGroup {
@@ -65,6 +65,7 @@ export function Sidebar() {
 
   const userPermissions = authUser?.permissions;
   const isAdmin = authUser?.role === 'admin';
+  const isSuperAdmin = authUser?.isSuperAdmin || false;
 
   const canAccess = (id: ModuleId) => {
     if (isAdmin) return true;
@@ -101,6 +102,28 @@ export function Sidebar() {
           {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
       </div>
+
+      {/* Super Admin Quick Access */}
+      {isSuperAdmin && (
+        <div className="px-2 pt-2">
+          <button
+            onClick={() => navigate('/admin')}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+              bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border border-amber-500/20
+              ${sidebarCollapsed ? 'justify-center' : ''}
+            `}
+            title={sidebarCollapsed ? 'Super Admin' : undefined}
+          >
+            <Shield size={20} className="shrink-0" />
+            {!sidebarCollapsed && (
+              <div className="flex-1 text-left">
+                <span>Super Admin</span>
+                <span className="block text-[10px] opacity-70">System Management</span>
+              </div>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
@@ -145,7 +168,12 @@ export function Sidebar() {
         {authUser && !sidebarCollapsed && (
           <div className="px-3 py-2 text-xs truncate">
             <p className="font-medium">{authUser.name}</p>
-            <p className="opacity-60">{authUser.role}</p>
+            <p className="opacity-60">
+              {authUser.role}
+              {isSuperAdmin && (
+                <span className="ml-1 text-amber-500">• Super Admin</span>
+              )}
+            </p>
           </div>
         )}
         <button onClick={logout} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-sidebar-hover transition-colors text-destructive/80" title={sidebarCollapsed ? 'Logout' : undefined}>
