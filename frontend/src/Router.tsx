@@ -4,30 +4,15 @@ import Index from './pages/Index';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { BillingModule } from '@/components/modules/BillingModule';
-import { AdminDashboard, AdminCompanies, AdminUsers, AdminSubscriptions, AdminPayments } from '@/components/modules/admin-exports';
-import { AdminLayout } from '@/components/AdminLayout';
 import { Sidebar } from '@/components/Sidebar';
 import { TopBar } from '@/components/TopBar';
+import { adminRoutes } from './adminRoutes';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { authUser } = useAppStore();
 
   if (!authUser) {
     return <Navigate to="/login" replace />;
-  }
-
-  return <>{children}</>;
-}
-
-function SuperAdminRoute({ children }: { children: React.ReactNode }) {
-  const { authUser } = useAppStore();
-
-  if (!authUser) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (!authUser.isSuperAdmin) {
-    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
@@ -45,16 +30,6 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-
-// FORCE ADMIN ROUTES INTO BUILD - DO NOT REMOVE
-const ADMIN_ROUTES = [
-  { path: '/admin', component: 'AdminDashboard' },
-  { path: '/admin/companies', component: 'AdminCompanies' },
-  { path: '/admin/users', component: 'AdminUsers' },
-  { path: '/admin/subscriptions', component: 'AdminSubscriptions' },
-  { path: '/admin/payments', component: 'AdminPayments' },
-];
-console.log('Admin routes registered:', ADMIN_ROUTES.map(r => r.path));
 
 export function Router() {
   return (
@@ -93,56 +68,7 @@ export function Router() {
         />
 
         {/* Super Admin Routes */}
-        <Route
-          path="/admin"
-          element={
-            <SuperAdminRoute>
-              <AdminLayout>
-                <AdminDashboard />
-              </AdminLayout>
-            </SuperAdminRoute>
-          }
-        />
-        <Route
-          path="/admin/companies"
-          element={
-            <SuperAdminRoute>
-              <AdminLayout>
-                <AdminCompanies />
-              </AdminLayout>
-            </SuperAdminRoute>
-          }
-        />
-        <Route
-          path="/admin/users"
-          element={
-            <SuperAdminRoute>
-              <AdminLayout>
-                <AdminUsers />
-              </AdminLayout>
-            </SuperAdminRoute>
-          }
-        />
-        <Route
-          path="/admin/subscriptions"
-          element={
-            <SuperAdminRoute>
-              <AdminLayout>
-                <AdminSubscriptions />
-              </AdminLayout>
-            </SuperAdminRoute>
-          }
-        />
-        <Route
-          path="/admin/payments"
-          element={
-            <SuperAdminRoute>
-              <AdminLayout>
-                <AdminPayments />
-              </AdminLayout>
-            </SuperAdminRoute>
-          }
-        />
+        {adminRoutes}
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
