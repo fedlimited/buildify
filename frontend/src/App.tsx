@@ -10,6 +10,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { AuthGate } from '@/components/AuthGate';
+// Force admin components to be included in build
+import './components/modules/admin-exports';
 
 const queryClient = new QueryClient();
 
