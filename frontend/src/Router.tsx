@@ -46,6 +46,16 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
+// FORCE ADMIN ROUTES INTO BUILD - DO NOT REMOVE
+const ADMIN_ROUTES = [
+  { path: '/admin', component: 'AdminDashboard' },
+  { path: '/admin/companies', component: 'AdminCompanies' },
+  { path: '/admin/users', component: 'AdminUsers' },
+  { path: '/admin/subscriptions', component: 'AdminSubscriptions' },
+  { path: '/admin/payments', component: 'AdminPayments' },
+];
+console.log('Admin routes registered:', ADMIN_ROUTES.map(r => r.path));
+
 export function Router() {
   return (
     <BrowserRouter>
