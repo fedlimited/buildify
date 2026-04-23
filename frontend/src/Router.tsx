@@ -18,13 +18,28 @@ const AdminUsers = lazy(() => import('@/components/modules/AdminUsers').then(m =
 const AdminSubscriptions = lazy(() => import('@/components/modules/AdminSubscriptions').then(m => ({ default: m.AdminSubscriptions })));
 const AdminPayments = lazy(() => import('@/components/modules/AdminPayments').then(m => ({ default: m.AdminPayments })));
 
+
+
+
+
+
 function AdminEntry() {
-  return (
-    <AdminLayout>
-      <AdminDashboard />
-    </AdminLayout>
-  );
+  console.log('🔥 AdminEntry rendering...');
+  try {
+    return (
+      <AdminLayout>
+        <AdminDashboard />
+      </AdminLayout>
+    );
+  } catch (error) {
+    console.error('AdminEntry error:', error);
+    return <div style={{padding: 50, color: 'red'}}>Admin Error: {String(error)}</div>;
+  }
 }
+
+
+
+
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { authUser } = useAppStore();
