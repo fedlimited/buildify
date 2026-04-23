@@ -8,20 +8,27 @@ import { BillingModule } from '@/components/modules/BillingModule';
 import { Sidebar } from '@/components/Sidebar';
 import { TopBar } from '@/components/TopBar';
 
-// Dynamic imports for admin - PREVENTS TREE-SHAKING
-const AdminEntry = lazy(() => import('./AdminEntry'));
+// Direct import for main admin entry (not lazy - always included)
+import { AdminDashboard } from '@/components/modules/AdminDashboard';
+import { AdminLayout } from '@/components/AdminLayout';
+
+// Lazy imports for other admin pages
 const AdminCompanies = lazy(() => import('@/components/modules/AdminCompanies').then(m => ({ default: m.AdminCompanies })));
 const AdminUsers = lazy(() => import('@/components/modules/AdminUsers').then(m => ({ default: m.AdminUsers })));
 const AdminSubscriptions = lazy(() => import('@/components/modules/AdminSubscriptions').then(m => ({ default: m.AdminSubscriptions })));
 const AdminPayments = lazy(() => import('@/components/modules/AdminPayments').then(m => ({ default: m.AdminPayments })));
 
+function AdminEntry() {
+  return (
+    <AdminLayout>
+      <AdminDashboard />
+    </AdminLayout>
+  );
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { authUser } = useAppStore();
-
-  if (!authUser) {
-    return <Navigate to="/login" replace />;
-  }
-
+  if (!authUser) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
@@ -42,46 +49,20 @@ export function Router() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Regular Dashboard Routes */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Index />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Index />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/billing"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <BillingModule />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+        <Route path="/dashboard/billing" element={<ProtectedRoute><DashboardLayout><BillingModule /></DashboardLayout></ProtectedRoute>} />
 
-        {/* Super Admin Routes - Lazy Loaded */}
-        <Route path="/admin" element={<Suspense fallback={<div className="p-8 text-center">Loading...</div>}><AdminEntry /></Suspense>} />
+        {/* Super Admin Routes */}
+        <Route path="/admin" element={<AdminEntry />} />
         <Route path="/admin/companies" element={<Suspense fallback={<div className="p-8 text-center">Loading...</div>}><AdminCompanies /></Suspense>} />
         <Route path="/admin/users" element={<Suspense fallback={<div className="p-8 text-center">Loading...</div>}><AdminUsers /></Suspense>} />
         <Route path="/admin/subscriptions" element={<Suspense fallback={<div className="p-8 text-center">Loading...</div>}><AdminSubscriptions /></Suspense>} />
         <Route path="/admin/payments" element={<Suspense fallback={<div className="p-8 text-center">Loading...</div>}><AdminPayments /></Suspense>} />
 
-        {/* Fallback */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
