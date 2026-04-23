@@ -10,7 +10,6 @@ function convertPlaceholders(sql, params) {
   return pgSql;
 }
 
-// Core query function that handles PostgreSQL syntax
 async function query(sql, params = []) {
   if (!pool) {
     throw new Error('Database not initialized. Call initializeDatabase() first.');
@@ -18,17 +17,14 @@ async function query(sql, params = []) {
   
   const client = await pool.connect();
   try {
-    // Convert ? placeholders to $1, $2, etc. for PostgreSQL
     const pgSql = convertPlaceholders(sql, params);
     const result = await client.query(pgSql, params);
     
-    // Extract lastID from INSERT RETURNING statements
     let lastID = null;
     if (pgSql.toUpperCase().includes('RETURNING') && result.rows.length > 0) {
       lastID = result.rows[0].id;
     }
     
-    // Return an object compatible with SQLite's API
     return {
       rows: result.rows,
       rowCount: result.rowCount,
@@ -40,19 +36,16 @@ async function query(sql, params = []) {
   }
 }
 
-// Wrapper for db.get() - returns single row
 async function get(sql, params = []) {
   const result = await query(sql, params);
   return result.rows[0];
 }
 
-// Wrapper for db.all() - returns all rows
 async function all(sql, params = []) {
   const result = await query(sql, params);
   return result.rows;
 }
 
-// Wrapper for db.run() - for INSERT, UPDATE, DELETE
 async function run(sql, params = []) {
   const result = await query(sql, params);
   return { lastID: result.lastID, changes: result.changes };
@@ -67,364 +60,112 @@ async function initializeDatabase() {
     connectionTimeoutMillis: 2000,
   });
 
-  // Test the connection
   try {
     const result = await pool.query('SELECT NOW()');
-    console.log('PostgreSQL database connected successfully at:', result.rows[0].now);
+    console.log('✅ PostgreSQL database connected successfully at:', result.rows[0].now);
   } catch (error) {
     console.error('Database connection error:', error);
     throw error;
   }
 
-  // Create all tables
+  // Create subscription tables if they don't exist
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS companies (
+    CREATE TABLE IF NOT EXISTS subscription_plans (
       id SERIAL PRIMARY KEY,
-      name TEXT NOT NULL,
-      subdomain TEXT UNIQUE NOT NULL,
-      email TEXT,
-      phone TEXT,
-      address TEXT,
-      kra_pin TEXT,
-      currency TEXT DEFAULT 'KES',
-      currency_symbol TEXT DEFAULT 'KES',
-      logo_url TEXT,
-      is_active INTEGER DEFAULT 1,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS users (
-      id SERIAL PRIMARY KEY,
-      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      name TEXT NOT NULL,
-      email TEXT NOT NULL,
-      password TEXT NOT NULL,
-      role TEXT DEFAULT 'user',
-      permissions TEXT,
-      is_active INTEGER DEFAULT 1,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(company_id, email)
-    );
-
-    CREATE TABLE IF NOT EXISTS projects (
-      id SERIAL PRIMARY KEY,
-      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      name TEXT NOT NULL,
-      client TEXT NOT NULL,
-      contract_sum REAL NOT NULL,
-      location TEXT,
-      start_date TEXT,
-      end_date TEXT,
-      status TEXT DEFAULT 'Active',
-      project_manager TEXT,
+      name VARCHAR(50) NOT NULL,
+      display_name VARCHAR(100) NOT NULL,
       description TEXT,
-      progress INTEGER DEFAULT 0,
-      latitude REAL,
-      longitude REAL,
-      google_maps_url TEXT,
-      location_address TEXT,
+      price_monthly_usd DECIMAL(10,2) DEFAULT 0,
+      price_yearly_usd DECIMAL(10,2) DEFAULT 0,
+      price_monthly_kes DECIMAL(10,2) DEFAULT 0,
+      price_yearly_kes DECIMAL(10,2) DEFAULT 0,
+      max_projects INTEGER DEFAULT 1,
+      max_workers INTEGER DEFAULT 10,
+      max_users INTEGER DEFAULT 1,
+      max_income_records INTEGER DEFAULT 10,
+      storage_mb INTEGER DEFAULT 100,
+      features JSONB DEFAULT '[]',
+      is_active BOOLEAN DEFAULT true,
+      display_order INTEGER DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS income (
+    CREATE TABLE IF NOT EXISTS company_subscriptions (
       id SERIAL PRIMARY KEY,
-      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-      certificate_no TEXT NOT NULL,
-      date TEXT NOT NULL,
-      gross_amount REAL NOT NULL,
-      retention_percent REAL DEFAULT 0,
-      amount_received REAL NOT NULL,
-      payment_date TEXT,
-      payment_method TEXT,
-      status TEXT DEFAULT 'Pending',
-      notes TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS expenses (
-      id SERIAL PRIMARY KEY,
-      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-      project_name TEXT NOT NULL,
-      date TEXT NOT NULL,
-      category TEXT NOT NULL,
-      description TEXT NOT NULL,
-      amount REAL NOT NULL,
-      vat REAL DEFAULT 0,
-      payment_method TEXT,
-      status TEXT DEFAULT 'Paid',
-      reference TEXT,
-      subcontractor_id INTEGER,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS worker_categories (
-      id SERIAL PRIMARY KEY,
-      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      name TEXT NOT NULL,
-      day_rate REAL NOT NULL,
-      color TEXT,
-      is_active INTEGER DEFAULT 1
-    );
-
-    CREATE TABLE IF NOT EXISTS workers (
-      id SERIAL PRIMARY KEY,
-      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      name TEXT NOT NULL,
-      phone TEXT NOT NULL,
-      category_id INTEGER NOT NULL REFERENCES worker_categories(id),
-      project_id INTEGER NOT NULL REFERENCES projects(id),
-      day_rate REAL NOT NULL,
-      is_active INTEGER DEFAULT 1,
-      date_added TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS payroll_records (
-      id SERIAL PRIMARY KEY,
-      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      week_number INTEGER NOT NULL,
-      year INTEGER NOT NULL,
-      week_start TEXT NOT NULL,
-      week_end TEXT NOT NULL,
-      project_id INTEGER NOT NULL REFERENCES projects(id),
-      project_name TEXT NOT NULL,
-      status TEXT DEFAULT 'Draft',
-      entries TEXT NOT NULL,
-      total_gross_pay REAL NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      approved_at TEXT,
-      paid_at TEXT,
-      expense_id INTEGER
-    );
-
-    CREATE TABLE IF NOT EXISTS approved_items (
-      id SERIAL PRIMARY KEY,
-      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      name TEXT NOT NULL,
-      category TEXT NOT NULL,
-      unit TEXT NOT NULL,
-      default_price REAL NOT NULL,
-      description TEXT,
-      is_active INTEGER DEFAULT 1
-    );
-
-    CREATE TABLE IF NOT EXISTS suppliers (
-      id SERIAL PRIMARY KEY,
-      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      name TEXT NOT NULL,
-      kra_pin TEXT,
-      phone TEXT NOT NULL,
-      email TEXT,
-      address TEXT,
-      contact_person TEXT,
-      payment_terms TEXT,
-      is_active INTEGER DEFAULT 1
-    );
-
-    CREATE TABLE IF NOT EXISTS purchase_orders (
-      id SERIAL PRIMARY KEY,
-      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      order_number TEXT NOT NULL,
-      supplier_id INTEGER NOT NULL REFERENCES suppliers(id),
-      supplier_name TEXT NOT NULL,
-      project_id INTEGER NOT NULL REFERENCES projects(id),
-      project_name TEXT NOT NULL,
-      order_date TEXT NOT NULL,
-      expected_date TEXT,
-      items TEXT NOT NULL,
-      subtotal REAL NOT NULL,
-      vat REAL NOT NULL,
-      total REAL NOT NULL,
-      status TEXT DEFAULT 'Ordered',
-      payment_status TEXT DEFAULT 'Unpaid',
-      notes TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS supplies (
-      id SERIAL PRIMARY KEY,
-      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      supplier_id INTEGER NOT NULL REFERENCES suppliers(id),
-      supplier_name TEXT NOT NULL,
-      project_id INTEGER NOT NULL REFERENCES projects(id),
-      project_name TEXT NOT NULL,
-      date TEXT NOT NULL,
-      item_id INTEGER REFERENCES approved_items(id),
-      item_name TEXT NOT NULL,
-      unit TEXT NOT NULL,
-      quantity REAL NOT NULL,
-      unit_price REAL NOT NULL,
-      total_amount REAL NOT NULL,
-      vat REAL NOT NULL,
-      status TEXT DEFAULT 'Delivered',
-      paid INTEGER DEFAULT 0,
-      order_id INTEGER,
-      delivery_note TEXT,
-      notes TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS store_transactions (
-      id SERIAL PRIMARY KEY,
-      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      date TEXT NOT NULL,
-      project_id INTEGER NOT NULL REFERENCES projects(id),
-      project_name TEXT NOT NULL,
-      item_id INTEGER NOT NULL REFERENCES approved_items(id),
-      item_name TEXT NOT NULL,
-      unit TEXT NOT NULL,
-      category TEXT NOT NULL,
-      quantity_supplied REAL DEFAULT 0,
-      quantity_issued REAL DEFAULT 0,
-      quantity_returned REAL DEFAULT 0,
-      balance REAL NOT NULL,
-      transaction_type TEXT NOT NULL,
-      reference TEXT,
-      issued_to TEXT,
-      returned_by TEXT,
-      notes TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS subcontractors (
-      id SERIAL PRIMARY KEY,
-      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      name TEXT NOT NULL,
-      phone TEXT NOT NULL,
-      email TEXT,
-      kra_pin TEXT,
-      specialization TEXT,
-      address TEXT,
-      contact_person TEXT,
-      is_active INTEGER DEFAULT 1,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS invoices (
-      id SERIAL PRIMARY KEY,
-      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      invoice_number TEXT NOT NULL,
-      project_id INTEGER NOT NULL REFERENCES projects(id),
-      project_name TEXT NOT NULL,
-      client_name TEXT NOT NULL,
-      date TEXT NOT NULL,
-      due_date TEXT,
-      items TEXT NOT NULL,
-      subtotal REAL NOT NULL,
-      vat REAL NOT NULL,
-      total REAL NOT NULL,
-      status TEXT DEFAULT 'Draft',
-      notes TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS otp_codes (
-      id SERIAL PRIMARY KEY,
-      email TEXT NOT NULL,
-      code TEXT NOT NULL,
-      purpose TEXT NOT NULL,
-      expires_at TIMESTAMP NOT NULL,
-      used INTEGER DEFAULT 0,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_otp_codes_email_code ON otp_codes(email, code);
-    CREATE INDEX IF NOT EXISTS idx_otp_codes_expires_at ON otp_codes(expires_at);
-
-    CREATE TABLE IF NOT EXISTS company_settings (
-      id SERIAL PRIMARY KEY,
-      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      name TEXT DEFAULT 'My Company',
-      address TEXT,
-      phone TEXT,
-      email TEXT,
-      kra_pin TEXT,
-      currency TEXT DEFAULT 'KES',
-      currency_symbol TEXT DEFAULT 'KES',
-      logo_url TEXT,
+      company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+      plan_id INTEGER REFERENCES subscription_plans(id),
+      status VARCHAR(20) DEFAULT 'active',
+      start_date DATE,
+      end_date DATE,
+      trial_end_date DATE,
+      auto_renew BOOLEAN DEFAULT true,
+      stripe_customer_id VARCHAR(255),
+      stripe_subscription_id VARCHAR(255),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS currency_settings (
+    CREATE TABLE IF NOT EXISTS subscription_payments (
       id SERIAL PRIMARY KEY,
-      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      currency_code TEXT DEFAULT 'KES',
-      currency_symbol TEXT DEFAULT 'KSh',
-      decimal_places INTEGER DEFAULT 2,
-      thousand_separator TEXT DEFAULT ',',
-      decimal_separator TEXT DEFAULT '.',
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS quotations (
-      id SERIAL PRIMARY KEY,
-      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      subcontractor_id INTEGER NOT NULL REFERENCES subcontractors(id),
-      subcontractor_name TEXT NOT NULL,
-      project_id INTEGER NOT NULL REFERENCES projects(id),
-      project_name TEXT NOT NULL,
-      description TEXT,
-      amount REAL NOT NULL,
-      date TEXT NOT NULL,
-      status TEXT DEFAULT 'Pending',
-      notes TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS site_diary_entries (
-      id SERIAL PRIMARY KEY,
-      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      date TEXT NOT NULL,
-      project_id INTEGER NOT NULL REFERENCES projects(id),
-      project_name TEXT NOT NULL,
-      weather TEXT,
-      total_workers INTEGER DEFAULT 0,
-      activities TEXT,
-      inspections TEXT,
-      deliveries TEXT,
-      incidents TEXT,
-      challenges TEXT,
-      summary TEXT,
-      status TEXT DEFAULT 'Draft',
+      company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+      subscription_id INTEGER REFERENCES company_subscriptions(id),
+      amount_usd DECIMAL(10,2),
+      amount_kes DECIMAL(10,2),
+      payment_method VARCHAR(50),
+      stripe_payment_intent_id VARCHAR(255),
+      stripe_invoice_id VARCHAR(255),
+      mpesa_transaction_id VARCHAR(255),
+      mpesa_result_code VARCHAR(50),
+      status VARCHAR(20) DEFAULT 'pending',
+      invoice_url TEXT,
+      paid_at TIMESTAMP,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
 
-  console.log('PostgreSQL database initialized with all tables');
+  // Insert subscription plans if they don't exist
+  const planCount = await pool.query('SELECT COUNT(*) FROM subscription_plans');
+  if (parseInt(planCount.rows[0].count) === 0) {
+    await pool.query(`
+      INSERT INTO subscription_plans (name, display_name, description, price_monthly_usd, price_yearly_usd, price_monthly_kes, price_yearly_kes, max_projects, max_workers, max_users, max_income_records, storage_mb, features, display_order) VALUES
+      ('free', 'Free', 'For solo contractors and small projects', 0, 0, 0, 0, 1, 10, 1, 10, 100, '["basic_reports", "expenses"]', 1),
+      ('basic', 'Basic', 'For small construction businesses', 49, 470, 6370, 61100, 3, 30, 5, 999999, 500, '["basic_reports", "expenses", "income", "payroll", "procurement", "store", "site_diary", "email_support"]', 2),
+      ('pro', 'Pro', 'For growing construction companies', 259, 2486, 33670, 323180, 10, 150, 15, 999999, 2048, '["basic_reports", "expenses", "income", "payroll", "procurement", "store", "site_diary", "priority_support", "gantt_charts", "time_tracking", "receipt_scanning", "low_stock_alerts", "api_access", "export_excel"]', 3),
+      ('premier', 'Premier', 'For large enterprises', 499, 4790, 64870, 622700, 999999, 999999, 999999, 999999, 10240, '["all_features", "custom_reports", "dedicated_support", "white_label", "sso", "phone_support", "custom_integrations", "audit_logs"]', 4)
+    `);
+    console.log('✅ Inserted subscription plans');
+  }
+
+  // Give existing companies a 30-day Pro trial
+  await pool.query(`
+    INSERT INTO company_subscriptions (company_id, plan_id, status, start_date, end_date, trial_end_date)
+    SELECT 
+      c.id,
+      (SELECT id FROM subscription_plans WHERE name = 'pro'),
+      'trial',
+      CURRENT_DATE,
+      CURRENT_DATE + INTERVAL '30 days',
+      CURRENT_DATE + INTERVAL '30 days'
+    FROM companies c
+    WHERE NOT EXISTS (
+      SELECT 1 FROM company_subscriptions cs WHERE cs.company_id = c.id
+    )
+  `);
+
+  console.log('✅ PostgreSQL database initialized with all tables');
   return pool;
 }
 
-// Main database interface - returns an object with SQLite-compatible methods
 function getDb() {
   if (!pool) {
     throw new Error('Database not initialized. Call initializeDatabase() first.');
   }
   
-  // Return an object that mimics the SQLite interface
   return {
-    // For SELECT queries that return a single row
-    get: async (sql, params = []) => {
-      return get(sql, params);
-    },
-    
-    // For SELECT queries that return multiple rows
-    all: async (sql, params = []) => {
-      return all(sql, params);
-    },
-    
-    // For INSERT, UPDATE, DELETE queries
-    run: async (sql, params = []) => {
-      return run(sql, params);
-    },
-    
-    // Direct query access if needed
-    query: async (sql, params = []) => {
-      return query(sql, params);
-    },
-    
-    // Get the underlying pool if needed
+    get: async (sql, params = []) => get(sql, params),
+    all: async (sql, params = []) => all(sql, params),
+    run: async (sql, params = []) => run(sql, params),
+    query: async (sql, params = []) => query(sql, params),
     getPool: () => pool
   };
 }

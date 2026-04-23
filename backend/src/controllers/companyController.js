@@ -30,6 +30,29 @@ class CompanyController {
         [companyId, admin_name, admin_email, hashedPassword, 'admin', JSON.stringify([]), new Date().toISOString()]
       );
       
+      // ========== GIVE 14-DAY PRO TRIAL ==========
+      // Get the Pro plan ID
+      const proPlan = await db.get('SELECT id FROM subscription_plans WHERE name = ?', ['pro']);
+      
+      if (proPlan) {
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + 14); // 14 days trial
+        const startDateStr = startDate.toISOString().split('T')[0];
+        const endDateStr = endDate.toISOString().split('T')[0];
+        
+        await db.run(
+          `INSERT INTO company_subscriptions 
+           (company_id, plan_id, status, start_date, end_date, trial_end_date, created_at, updated_at)
+           VALUES (?, ?, 'trial', ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+          [companyId, proPlan.id, startDateStr, endDateStr, endDateStr]
+        );
+        
+        console.log(`✅ Created 14-day Pro trial for company ${companyId} (${name})`);
+      } else {
+        console.warn(`⚠️ Pro plan not found in subscription_plans table. Trial not created for company ${companyId}`);
+      }
+      
       res.status(201).json({
         message: 'Company registered successfully',
         company: { id: companyId, name, subdomain }

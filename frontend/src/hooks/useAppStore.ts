@@ -14,6 +14,9 @@ const initTheme = storage.getTheme() as 'light' | 'dark';
 if (initTheme === 'dark') document.documentElement.classList.add('dark');
 
 // Load or seed - but projects will be fetched from API
+
+/*
+
 let initProjects = storage.getProjects();
 if (!initProjects.length) {
   initProjects = sampleProjects; storage.setProjects(initProjects);
@@ -24,6 +27,7 @@ if (!initProjects.length) {
   storage.setSupplies(sampleSupplies); storage.setStoreTransactions(sampleStoreTransactions);
   storage.setSiteDiaryEntries(sampleSiteDiaryEntries);
 }
+*/
 
 // Seed default users if none
 let initAppUsers = storage.getAppUsers();
@@ -230,15 +234,12 @@ setAuthUser: (user) => set({ authUser: user }),  // ← ADD THIS LINE
 
 authUser: (() => {
   const saved = localStorage.getItem('authUser');
-  return saved ? JSON.parse(saved) : null;
+  if (saved) {
+    const user = JSON.parse(saved);
+    return { ...user, isSuperAdmin: user.isSuperAdmin || false };
+  }
+  return null;
 })(),
-
-
-
-
-
-
-
 
 
 
@@ -246,8 +247,14 @@ authUser: (() => {
   // ========== LOGIN / LOGOUT ==========
 login: async (email, password, subdomain) => {
   try {
-    const user = await api.login(email, password, subdomain);
-    set({ authUser: user });
+    const response = await api.login(email, password, subdomain);
+    // response contains { token, user }
+    const authUser = {
+      ...response.user,
+      isSuperAdmin: response.user.isSuperAdmin || false
+    };
+    set({ authUser });
+    localStorage.setItem('authUser', JSON.stringify(authUser));
     
     await Promise.all([
       get().fetchProjects(),
@@ -261,7 +268,7 @@ login: async (email, password, subdomain) => {
       get().fetchPurchaseOrders(),
       get().fetchSupplies(),
       get().fetchStoreTransactions(),
-      get().fetchSiteDiaryEntries(),  // ← MAKE SURE THIS LINE EXISTS
+      get().fetchSiteDiaryEntries(),
       get().fetchAppUsers(),
       get().fetchSubcontractors(),
       get().fetchQuotations(),
@@ -276,7 +283,6 @@ login: async (email, password, subdomain) => {
     return false;
   }
 },
-
 
 
 
@@ -1559,43 +1565,53 @@ addSupply: async (s) => {
     }
   },
 
-  // ========== STORE TRANSACTIONS ==========
+
+
+
+
+
 fetchStoreTransactions: async () => {
   try {
     console.log('Fetching store transactions from API...');
     const transactions = await api.getStoreTransactions();
     console.log('Raw transactions from API:', transactions);
     
-    // Map snake_case to camelCase for frontend
+    // The API already returns camelCase - use directly!
     const mappedTransactions = transactions.map(t => ({
       id: t.id,
       date: t.date,
-      projectId: t.project_id,
-      projectName: t.project_name,
-      itemId: t.item_id,
-      itemName: t.item_name,
+      projectId: t.projectId,
+      projectName: t.projectName,
+      itemId: t.itemId,
+      itemName: t.itemName,
       unit: t.unit,
       category: t.category,
-      quantitySupplied: t.quantity_supplied,
-      quantityIssued: t.quantity_issued,
-      quantityReturned: t.quantity_returned,
+      quantitySupplied: t.quantitySupplied,
+      quantityIssued: t.quantityIssued,
+      quantityReturned: t.quantityReturned,
       balance: t.balance,
-      transactionType: t.transaction_type,
+      transactionType: t.transactionType,
       reference: t.reference,
-      issuedTo: t.issued_to,
-      returnedBy: t.returned_by,
+      issuedTo: t.issuedTo,
+      returnedBy: t.returnedBy,
       notes: t.notes,
-      createdAt: t.created_at,
-      companyId: t.company_id
+      createdAt: t.createdAt,
+      companyId: t.companyId
     }));
     
-    console.log('Mapped transactions:', mappedTransactions);
+    console.log('Mapped transactions count:', mappedTransactions.length);
+    if (mappedTransactions.length > 0) {
+      console.log('First transaction:', mappedTransactions[0]);
+      console.log('First itemName:', mappedTransactions[0].itemName);
+      console.log('First quantitySupplied:', mappedTransactions[0].quantitySupplied);
+    }
     set({ storeTransactions: mappedTransactions });
     storage.setStoreTransactions(mappedTransactions);
   } catch (error) {
     console.error('Failed to fetch store transactions:', error);
   }
 },
+
 
 
 
@@ -1664,36 +1680,38 @@ addStoreTransaction: async (transaction) => {
 
 
 
-
-
-
   // ========== SITE DIARY ==========
 fetchSiteDiaryEntries: async () => {
   try {
     console.log('Fetching site diary entries from API...');
-    const entries = await api.getSiteDiaryEntries();
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/site-diary-entries`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const entries = await response.json();
     console.log('Raw entries from API:', entries);
     
-    // Map snake_case to camelCase for frontend
+    // The API returns camelCase fields directly - use them as-is!
     const mappedEntries = entries.map(entry => ({
       id: entry.id,
       date: entry.date,
-      projectId: entry.project_id,
-      projectName: entry.project_name,
+      projectId: entry.projectId,           // ✅ camelCase from API
+      projectName: entry.projectName,        // ✅ camelCase from API
       weather: entry.weather || {},
-      totalWorkers: entry.total_workers,
+      totalWorkers: entry.totalWorkers,      // ✅ camelCase from API (this is the key!)
       activities: entry.activities || [],
-      inspections: entry.inspections || [],
       deliveries: entry.deliveries || [],
       incidents: entry.incidents || [],
-      challenges: entry.challenges || [],
+      siteWorkers: entry.siteWorkers,        // ✅ camelCase from API
+      siteSubcontractors: entry.siteSubcontractors || [],
       summary: entry.summary || {},
       status: entry.status,
-      createdAt: entry.created_at,
-      companyId: entry.company_id
+      createdAt: entry.createdAt
     }));
     
-    console.log('Mapped entries:', mappedEntries);
+    console.log('Mapped entries count:', mappedEntries.length);
+    console.log('First entry totalWorkers:', mappedEntries[0]?.totalWorkers);
+    console.log('First entry siteWorkers:', mappedEntries[0]?.siteWorkers);
     set({ siteDiaryEntries: mappedEntries });
     storage.setSiteDiaryEntries(mappedEntries);
   } catch (error) {
@@ -1704,57 +1722,86 @@ fetchSiteDiaryEntries: async () => {
 
 
 
+
+
+
+
+
+
+
 addSiteDiaryEntry: async (entry) => {
   try {
     console.log('Adding site diary entry with data:', entry);
     
-    // Transform camelCase to snake_case for backend
+    // The entry already has snake_case from handleSave
     const payload = {
       date: entry.date,
-      project_id: entry.projectId,
-      project_name: entry.projectName,
+      project_id: entry.project_id,
+      project_name: entry.project_name,
       weather: entry.weather || {},
-      total_workers: entry.totalWorkers || 0,
+      total_workers: entry.total_workers || 0,      // ← Use entry.total_workers (snake_case)
       activities: entry.activities || [],
-      inspections: entry.inspections || [],
       deliveries: entry.deliveries || [],
       incidents: entry.incidents || [],
-      challenges: entry.challenges || [],
+      site_workers: entry.site_workers || [],        // ← Use entry.site_workers (snake_case)
+      site_subcontractors: entry.site_subcontractors || [],
       summary: entry.summary || {},
-      status: entry.status || 'Draft'
+      status: entry.status || 'Submitted'
     };
     
     console.log('Sending payload:', payload);
     
-    const newEntry = await api.createSiteDiaryEntry(payload);
-    console.log('Response from backend:', newEntry);
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/site-diary-entries`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
     
-    // Map response back to camelCase
-    const mappedEntry = {
-      id: newEntry.id,
-      date: newEntry.date,
-      projectId: newEntry.project_id,
-      projectName: newEntry.project_name,
-      weather: newEntry.weather || {},
-      totalWorkers: newEntry.total_workers,
-      activities: newEntry.activities || [],
-      inspections: newEntry.inspections || [],
-      deliveries: newEntry.deliveries || [],
-      incidents: newEntry.incidents || [],
-      challenges: newEntry.challenges || [],
-      summary: newEntry.summary || {},
-      status: newEntry.status,
-      createdAt: newEntry.created_at,
-      companyId: newEntry.company_id
-    };
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create site diary entry');
+    }
+
+
+
     
+const newEntry = await response.json();
+console.log('Response from backend:', newEntry);
+
+// Map response back to camelCase for the store
+const mappedEntry = {
+  id: newEntry.id,
+  date: newEntry.date,
+  projectId: newEntry.projectId,           // ✅ camelCase from API
+  projectName: newEntry.projectName,        // ✅ camelCase from API
+  weather: newEntry.weather || {},
+  totalWorkers: newEntry.totalWorkers,      // ✅ camelCase from API
+  activities: newEntry.activities || [],
+  deliveries: newEntry.deliveries || [],
+  incidents: newEntry.incidents || [],
+  siteWorkers: newEntry.siteWorkers,        // ✅ camelCase from API
+  siteSubcontractors: newEntry.siteSubcontractors || [],
+  summary: newEntry.summary || {},
+  status: newEntry.status || 'Submitted',
+  createdAt: newEntry.createdAt
+};
+
+  
     set((state) => ({ 
-      siteDiaryEntries: [...state.siteDiaryEntries, mappedEntry] 
+      siteDiaryEntries: [mappedEntry, ...state.siteDiaryEntries] 
     }));
     
     console.log('Site diary entry added to store. Total:', get().siteDiaryEntries.length);
+    
+ 
+    
   } catch (error) {
     console.error('Failed to add site diary entry:', error);
+    alert('Failed to save site diary entry. Please try again.');
   }
 },
 
@@ -2642,7 +2689,6 @@ loadSampleData: async () => {
 
 
 
-
 resetAllData: async () => {
   try {
     const token = localStorage.getItem('token');
@@ -2653,50 +2699,50 @@ resetAllData: async () => {
     
     console.log('Starting data reset...');
     
+    // Complete list of all endpoints
     const endpoints = [
-      { name: 'projects', url: '/api/projects' },
-      { name: 'income', url: '/api/income' },
-      { name: 'expenses', url: '/api/expenses' },
-      { name: 'worker-categories', url: '/api/worker-categories' },
-      { name: 'workers', url: '/api/workers' },
-      { name: 'payroll-records', url: '/api/payroll-records' },
-      { name: 'approved-items', url: '/api/approved-items' },
-      { name: 'suppliers', url: '/api/suppliers' },
-      { name: 'purchase-orders', url: '/api/purchase-orders' },
-      { name: 'supplies', url: '/api/supplies' },
-      { name: 'store-transactions', url: '/api/store-transactions' },
-      { name: 'site-diary-entries', url: '/api/site-diary-entries' },
-      { name: 'subcontractors', url: '/api/subcontractors' },
-      { name: 'quotations', url: '/api/quotations' },
-      { name: 'invoices', url: '/api/invoices' }
+      'projects',
+      'workers',
+      'worker-categories',
+      'payroll-records',
+      'approved-items',
+      'suppliers',
+      'purchase-orders',
+      'supplies',
+      'store-transactions',
+      'site-diary-entries',
+      'subcontractors',
+      'quotations',
+      'invoices',
+      'income',
+      'expenses'
     ];
     
     for (const endpoint of endpoints) {
       try {
-        // Get all items
-        const getResponse = await fetch(`${API_BASE_URL}${endpoint.url.replace('/api', '')}`, {
+        console.log(`Processing ${endpoint}...`);
+        const getResponse = await fetch(`${API_BASE_URL}/${endpoint}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        const items = await getResponse.json();
         
-        console.log(`Deleting ${items.length} records from ${endpoint.name}...`);
-        
-        // Delete each item
-        for (const item of items) {
-          await fetch(`${API_BASE_URL}${endpoint.url.replace('/api', '')}/${item.id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
+        if (getResponse.ok) {
+          const items = await getResponse.json();
+          console.log(`  Found ${items.length} records in ${endpoint}`);
+          
+          for (const item of items) {
+            await fetch(`${API_BASE_URL}/${endpoint}/${item.id}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+          }
+          console.log(`  ✅ Cleared ${endpoint}`);
+        } else {
+          console.log(`  ⚠️ Could not fetch ${endpoint}: ${getResponse.status}`);
         }
-        console.log(`✅ Cleared ${endpoint.name}`);
       } catch (error) {
-        console.error(`Error clearing ${endpoint.name}:`, error);
+        console.error(`  Error clearing ${endpoint}:`, error.message);
       }
     }
-
-
-
-
     
     // Clear frontend storage
     storage.clearAll();
@@ -2721,12 +2767,17 @@ resetAllData: async () => {
     });
     
     console.log('All data reset successfully from database');
-    alert('All data has been cleared from the database. The page will now refresh.');
+    alert('All data has been cleared from the database!');
+    
+    // 🔄 AUTO-REFRESH THE PAGE - THIS IS THE FIX
     window.location.reload();
     
   } catch (error) {
     console.error('Failed to reset data:', error);
     alert('Error resetting data. Check console for details.');
   }
-},
+}
+
+
+
 }));

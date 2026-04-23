@@ -837,32 +837,8 @@ const printPurchaseOrder = (order) => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function SuppliesTab() {
-  const { supplies, projects, suppliers, approvedItems, selectedProjectId, addSupply } = useAppStore();
+  const { supplies, projects, suppliers, approvedItems, selectedProjectId, addSupply, addStoreTransaction, fetchSupplies } = useAppStore();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     supplierId: 0, supplierName: '',
@@ -875,6 +851,40 @@ function SuppliesTab() {
   });
 
   const filtered = selectedProjectId ? supplies.filter(s => s.projectId === selectedProjectId) : supplies;
+
+
+
+
+
+
+const markSupplyAsPaid = async (supplyId: number) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/supplies/${supplyId}/paid`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (response.ok) {
+      alert('Supply marked as paid! Page will refresh to show updated status.');
+      window.location.reload();
+    } else {
+      const error = await response.json();
+      alert(`Error: ${error.error || 'Failed to mark supply as paid'}`);
+    }
+  } catch (error) {
+    console.error('Failed to mark as paid:', error);
+    alert('Failed to mark supply as paid. Please try again.');
+  }
+};
+
+
+
+
+
 
   const openNew = () => {
     setForm({
@@ -913,20 +923,85 @@ function SuppliesTab() {
     });
   };
 
-  const handleSave = () => {
-    if (!form.supplierId || !form.projectId || !form.itemId || form.quantity <= 0) return;
-    const supplier = suppliers.find(s => s.id === form.supplierId);
-    const project = projects.find(p => p.id === form.projectId);
-    addSupply({
-      ...form,
-      supplierName: supplier?.name || '',
-      projectName: project?.name || '',
-      totalAmount: form.quantity * form.unitPrice,
-      vat: (form.quantity * form.unitPrice) * 0.16,
-      createdAt: new Date().toISOString()
-    } as any);
-    setOpen(false);
-  };
+
+
+
+
+const handleSave = () => {
+  console.log('=== HANDLE SAVE STARTED ===');
+  
+  if (!form.supplierId || !form.projectId || !form.itemId || form.quantity <= 0) {
+    console.log('Validation failed:', { form });
+    return;
+  }
+  
+  console.log('Validation passed, proceeding...');
+  
+  const supplier = suppliers.find(s => s.id === form.supplierId);
+  const project = projects.find(p => p.id === form.projectId);
+  const selectedItem = approvedItems.find(i => i.id === form.itemId);
+  
+  console.log('Found items:', { supplier: supplier?.name, project: project?.name, selectedItem: selectedItem?.name });
+  
+  // Add the supply record
+  console.log('Calling addSupply...');
+  addSupply({
+    ...form,
+    supplierName: supplier?.name || '',
+    projectName: project?.name || '',
+    totalAmount: form.quantity * form.unitPrice,
+    vat: (form.quantity * form.unitPrice) * 0.16,
+    createdAt: new Date().toISOString()
+  } as any);
+  
+  // Create store transaction to update inventory
+  console.log('Calling addStoreTransaction...');
+  console.log('Store transaction data:', {
+    date: form.date,
+    projectId: form.projectId,
+    projectName: project?.name || '',
+    itemId: form.itemId,
+    itemName: form.itemName,
+    unit: form.unit,
+    category: selectedItem?.category || '',
+    quantitySupplied: form.quantity,
+    transactionType: 'SUPPLY',
+  });
+  
+  addStoreTransaction({
+    date: form.date,
+    projectId: form.projectId,
+    projectName: project?.name || '',
+    itemId: form.itemId,
+    itemName: form.itemName,
+    unit: form.unit,
+    category: selectedItem?.category || '',
+    quantitySupplied: form.quantity,
+    quantityIssued: 0,
+    quantityReturned: 0,
+    balance: form.quantity,
+    transactionType: 'SUPPLY',
+    reference: `SUPPLY-${Date.now()}`,
+    issuedTo: '',
+    returnedBy: '',
+    notes: form.notes || ''
+  });
+  
+  console.log('Closing dialog...');
+  setOpen(false);
+  console.log('=== HANDLE SAVE COMPLETED ===');
+};
+
+
+
+
+
+
+
+
+
+
+
 
   return (
     <div className="space-y-4">
@@ -954,7 +1029,32 @@ function SuppliesTab() {
                 <td className="px-4 py-2.5 font-mono text-center">{s.quantity} {s.unit}</td>
                 <td className="px-4 py-2.5 font-mono text-right">{formatCurrency(s.unitPrice)}</td>
                 <td className="px-4 py-2.5 font-mono text-right font-medium">{formatCurrency(s.totalAmount)}</td>
-                <td className="px-4 py-2.5"><span className={`text-xs font-medium px-2 py-0.5 rounded-full ${s.paid ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>{s.paid ? 'Paid' : 'Unpaid'}</span></td>
+
+
+
+
+
+
+<td className="px-4 py-2.5">
+  {s.paid ? (
+    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-success/10 text-success">
+      Paid
+    </span>
+  ) : (
+    <Button 
+      variant="ghost" 
+      size="sm" 
+      onClick={() => markSupplyAsPaid(s.id)}
+      className="text-xs h-7 px-2 bg-blue-50 hover:bg-blue-100 text-blue-600"
+    >
+      Mark Paid
+    </Button>
+  )}
+</td>
+
+
+
+
               </tr>
             ))}
             {!filtered.length && <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">No supply records</td></tr>}

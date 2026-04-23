@@ -1,4 +1,3 @@
-
 export interface Project {
   id: number;
   name: string;
@@ -12,14 +11,11 @@ export interface Project {
   description: string;
   progress?: number;
   createdAt: string;
-  latitude?: number;        // Add this
-  longitude?: number;       // Add this
-  googleMapsUrl?: string;   // Add this
-  locationAddress?: string; // Add this
+  latitude?: number;
+  longitude?: number;
+  googleMapsUrl?: string;
+  locationAddress?: string;
 }
-
-
-
 
 export interface Income {
   id: number;
@@ -277,7 +273,8 @@ export interface CompanySettings {
   logoUrl?: string;
 }
 
-export type ModuleId = 'dashboard' | 'projects' | 'income' | 'expenses' | 'payroll' | 'procurement' | 'stores' | 'sitediary' | 'vat' | 'reports' | 'settings' | 'users' | 'subcontractors' | 'invoices' | 'help' | 'legal';
+// Updated ModuleId to include 'billing'
+export type ModuleId = 'dashboard' | 'projects' | 'income' | 'expenses' | 'payroll' | 'procurement' | 'stores' | 'sitediary' | 'vat' | 'reports' | 'settings' | 'users' | 'subcontractors' | 'invoices' | 'billing' | 'help' | 'legal';
 
 export interface NavItem {
   id: ModuleId;
@@ -286,13 +283,22 @@ export interface NavItem {
   enabled: boolean;
 }
 
+
+
 export interface AuthUser {
   id: number;
   name: string;
   email: string;
   role: 'admin' | 'user';
   permissions?: ModuleId[];
+  isSuperAdmin?: boolean;  // ADD THIS LINE
+  company?: {              // ADD THIS (from backend response)
+    id: number;
+    name: string;
+    subdomain: string;
+  };
 }
+
 
 export interface AppUser {
   id: number;
@@ -355,4 +361,20 @@ export interface InvoiceItem {
   unit: string;
   unitPrice: number;
   amount: number;
+}
+
+// Add Plan interface for subscription billing
+export interface Plan {
+  id: number;
+  name: string;
+  display_name: string;
+  description: string;
+  price_monthly_kes: number;
+  price_yearly_kes: number;
+  price_monthly_usd: number;
+  price_yearly_usd: number;
+  max_projects: number;
+  max_workers: number;
+  max_users: number;
+  features: string[];
 }

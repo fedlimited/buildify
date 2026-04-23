@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppStore } from '@/hooks/useAppStore';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import { Button } from '@/components/ui/button';
@@ -40,33 +40,48 @@ interface StockBalance {
 
 function useStockBalances(): StockBalance[] {
   const { storeTransactions } = useAppStore();
+  
   return useMemo(() => {
     const map = new Map<string, StockBalance>();
+    
+    if (!storeTransactions || storeTransactions.length === 0) {
+      return [];
+    }
+    
     storeTransactions.forEach(t => {
-      const key = `${t.projectId}-${t.itemId}`;
+      if (!t) return;
+      
+      // Use itemName as the unique key for grouping
+      const key = t.itemName;
+      
       if (!map.has(key)) {
-        map.set(key, { projectId: t.projectId, projectName: t.projectName, itemId: t.itemId, itemName: t.itemName, unit: t.unit, category: t.category, totalSupplied: 0, totalIssued: 0, totalReturned: 0, currentBalance: 0 });
+        map.set(key, { 
+          projectId: t.projectId || 0, 
+          projectName: t.projectName || 'Unknown', 
+          itemId: t.itemId || 0, 
+          itemName: t.itemName || 'Unknown Item', 
+          unit: t.unit || 'piece', 
+          category: t.category || 'Materials', 
+          totalSupplied: 0, 
+          totalIssued: 0, 
+          totalReturned: 0, 
+          currentBalance: 0 
+        });
       }
+      
       const b = map.get(key)!;
-      b.totalSupplied += t.quantitySupplied;
-      b.totalIssued += t.quantityIssued;
-      b.totalReturned += t.quantityReturned;
+      b.totalSupplied += t.quantitySupplied || 0;
+      b.totalIssued += t.quantityIssued || 0;
+      b.totalReturned += t.quantityReturned || 0;
       b.currentBalance = b.totalSupplied - b.totalIssued + b.totalReturned;
     });
+    
     return Array.from(map.values());
   }, [storeTransactions]);
 }
 
-
-
-
-
-
-
-
-
 function StockBalances() {
-  const { projects, approvedItems, selectedProjectId, addStoreTransaction, storeTransactions, authUser, clearStoresRecords } = useAppStore();
+  const { projects, approvedItems, selectedProjectId, addStoreTransaction, fetchStoreTransactions, storeTransactions, authUser, clearStoresRecords } = useAppStore();
   const balances = useStockBalances();
   const [search, setSearch] = useState('');
   const [issueOpen, setIssueOpen] = useState(false);
@@ -76,6 +91,12 @@ function StockBalances() {
   const [ref, setRef] = useState('');
   const [issuedTo, setIssuedTo] = useState('');
   const [notes, setNotes] = useState('');
+
+  // CRITICAL FIX: Fetch store transactions when component mounts
+  useEffect(() => {
+    console.log('StockBalances mounted - fetching store transactions...');
+    fetchStoreTransactions();
+  }, [fetchStoreTransactions]);
 
   const filtered = balances.filter(b => {
     if (selectedProjectId && b.projectId !== selectedProjectId) return false;
@@ -94,9 +115,9 @@ function StockBalances() {
   const openIssue = (b: StockBalance) => { setSelectedBalance(b); setQty(0); setRef(''); setIssuedTo(''); setNotes(''); setIssueOpen(true); };
   const openReturn = (b: StockBalance) => { setSelectedBalance(b); setQty(0); setRef(''); setNotes(''); setReturnOpen(true); };
 
-  const handleIssue = () => {
+  const handleIssue = async () => {
     if (!selectedBalance || qty <= 0 || qty > selectedBalance.currentBalance) return;
-    addStoreTransaction({
+    await addStoreTransaction({
       date: new Date().toISOString().split('T')[0],
       projectId: selectedBalance.projectId, projectName: selectedBalance.projectName,
       itemId: selectedBalance.itemId, itemName: selectedBalance.itemName,
@@ -105,12 +126,13 @@ function StockBalances() {
       balance: selectedBalance.currentBalance - qty,
       transactionType: 'ISSUE', reference: ref, issuedTo, returnedBy: '', notes
     });
+    await fetchStoreTransactions();
     setIssueOpen(false);
   };
 
-  const handleReturn = () => {
+  const handleReturn = async () => {
     if (!selectedBalance || qty <= 0) return;
-    addStoreTransaction({
+    await addStoreTransaction({
       date: new Date().toISOString().split('T')[0],
       projectId: selectedBalance.projectId, projectName: selectedBalance.projectName,
       itemId: selectedBalance.itemId, itemName: selectedBalance.itemName,
@@ -119,6 +141,7 @@ function StockBalances() {
       balance: selectedBalance.currentBalance + qty,
       transactionType: 'RETURN', reference: ref, issuedTo: '', returnedBy: issuedTo, notes
     });
+    await fetchStoreTransactions();
     setReturnOpen(false);
   };
 
@@ -149,15 +172,19 @@ function StockBalances() {
 
       <div className="bg-card rounded-xl border border-border overflow-x-auto">
         <table className="w-full text-sm">
-          <thead><tr className="border-b border-border text-left">
-            {['Project', 'Item', 'Category', 'Unit', 'Supplied', 'Issued', 'Returned', 'Balance', ''].map(h => <th key={h} className="px-4 py-3 font-medium text-muted-foreground text-xs">{h}</th>)}
-           </tr></thead>
+          <thead>
+            <tr className="border-b border-border text-left">
+              {['Project', 'Item', 'Category', 'Unit', 'Supplied', 'Issued', 'Returned', 'Balance', ''].map(h => (
+                <th key={h} className="px-4 py-3 font-medium text-muted-foreground text-xs">{h}</th>
+              ))}
+            </tr>
+          </thead>
           <tbody className="divide-y divide-border">
             {filtered.map(b => (
-              <tr key={`${b.projectId}-${b.itemId}`} className="hover:bg-muted/50">
-                <td className="px-4 py-2.5 text-xs">{highlight(b.projectName)}</td>
-                <td className="px-4 py-2.5 text-card-foreground font-medium">{highlight(b.itemName)}</td>
-                <td className="px-4 py-2.5"><span className="text-xs px-2 py-0.5 rounded bg-muted">{highlight(b.category)}</span></td>
+              <tr key={`${b.projectId}-${b.itemName}`} className="hover:bg-muted/50">
+                <td className="px-4 py-2.5 text-xs">{b.projectName}</td>
+                <td className="px-4 py-2.5 text-card-foreground font-medium">{b.itemName}</td>
+                <td className="px-4 py-2.5"><span className="text-xs px-2 py-0.5 rounded bg-muted">{b.category}</span></td>
                 <td className="px-4 py-2.5 text-xs">{b.unit}</td>
                 <td className="px-4 py-2.5 font-mono text-center text-success">{b.totalSupplied}</td>
                 <td className="px-4 py-2.5 font-mono text-center text-destructive">{b.totalIssued}</td>
@@ -170,21 +197,36 @@ function StockBalances() {
                 </td>
                 <td className="px-4 py-2.5">
                   <div className="flex gap-1">
-                    <Button variant="outline" size="sm" className="text-xs" onClick={() => openIssue(b)} disabled={b.currentBalance <= 0}><ArrowDownToLine size={14} className="mr-1" />Issue</Button>
-                    <Button variant="outline" size="sm" className="text-xs" onClick={() => openReturn(b)}><ArrowUpFromLine size={14} className="mr-1" />Return</Button>
+                    <Button variant="outline" size="sm" className="text-xs" onClick={() => openIssue(b)} disabled={b.currentBalance <= 0}>
+                      <ArrowDownToLine size={14} className="mr-1" />Issue
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-xs" onClick={() => openReturn(b)}>
+                      <ArrowUpFromLine size={14} className="mr-1" />Return
+                    </Button>
                   </div>
                 </td>
               </tr>
             ))}
-            {!filtered.length && <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">{search ? 'No matching items' : 'No stock data'}</td></tr>}
+            {!filtered.length && (
+              <tr>
+                <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
+                  {search ? 'No matching items' : 'No stock data'}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
       {/* Issue Dialog */}
       <Dialog open={issueOpen} onOpenChange={setIssueOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Issue Material</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-sm" aria-describedby="issue-dialog-description">
+          <DialogHeader>
+            <DialogTitle>Issue Material</DialogTitle>
+          </DialogHeader>
+          <div id="issue-dialog-description" className="sr-only">
+            Fill in the details to issue materials from the store inventory
+          </div>
           {selectedBalance && (
             <div className="grid gap-3 py-2">
               <div className="bg-muted rounded-lg p-3 text-xs">
@@ -199,14 +241,22 @@ function StockBalances() {
               <div><Label className="text-xs">Notes</Label><Input value={notes} onChange={e => setNotes(e.target.value)} /></div>
             </div>
           )}
-          <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setIssueOpen(false)}>Cancel</Button><Button onClick={handleIssue} disabled={qty <= 0 || qty > (selectedBalance?.currentBalance || 0)}>Issue</Button></div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIssueOpen(false)}>Cancel</Button>
+            <Button onClick={handleIssue} disabled={qty <= 0 || qty > (selectedBalance?.currentBalance || 0)}>Issue</Button>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Return Dialog */}
       <Dialog open={returnOpen} onOpenChange={setReturnOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Return Material</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-sm" aria-describedby="return-dialog-description">
+          <DialogHeader>
+            <DialogTitle>Return Material</DialogTitle>
+          </DialogHeader>
+          <div id="return-dialog-description" className="sr-only">
+            Fill in the details to return materials to the store inventory
+          </div>
           {selectedBalance && (
             <div className="grid gap-3 py-2">
               <div className="bg-muted rounded-lg p-3 text-xs">
@@ -219,22 +269,15 @@ function StockBalances() {
               <div><Label className="text-xs">Notes</Label><Input value={notes} onChange={e => setNotes(e.target.value)} /></div>
             </div>
           )}
-          <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setReturnOpen(false)}>Cancel</Button><Button onClick={handleReturn} disabled={qty <= 0}>Return</Button></div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setReturnOpen(false)}>Cancel</Button>
+            <Button onClick={handleReturn} disabled={qty <= 0}>Return</Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
 
 function TransactionLedger() {
   const { storeTransactions, selectedProjectId } = useAppStore();
@@ -249,9 +292,13 @@ function TransactionLedger() {
       </div>
       <div className="bg-card rounded-xl border border-border overflow-x-auto">
         <table className="w-full text-sm">
-          <thead><tr className="border-b border-border text-left">
-            {['Date', 'Ref', 'Project', 'Item', 'Type', 'Supplied', 'Issued', 'Returned', 'Notes'].map(h => <th key={h} className="px-4 py-3 font-medium text-muted-foreground text-xs">{h}</th>)}
-          </tr></thead>
+          <thead>
+            <tr className="border-b border-border text-left">
+              {['Date', 'Ref', 'Project', 'Item', 'Type', 'Supplied', 'Issued', 'Returned', 'Notes'].map(h => (
+                <th key={h} className="px-4 py-3 font-medium text-muted-foreground text-xs">{h}</th>
+              ))}
+            </tr>
+          </thead>
           <tbody className="divide-y divide-border">
             {filtered.map(t => (
               <tr key={t.id} className="hover:bg-muted/50">
@@ -259,14 +306,22 @@ function TransactionLedger() {
                 <td className="px-4 py-2.5 font-mono text-xs">{t.reference || '-'}</td>
                 <td className="px-4 py-2.5 text-xs">{t.projectName}</td>
                 <td className="px-4 py-2.5 text-card-foreground">{t.itemName}</td>
-                <td className="px-4 py-2.5"><span className={`text-xs font-medium px-2 py-0.5 rounded-full ${t.transactionType === 'SUPPLY' ? 'bg-success/10 text-success' : t.transactionType === 'ISSUE' ? 'bg-destructive/10 text-destructive' : 'bg-info/10 text-info'}`}>{t.transactionType}</span></td>
+                <td className="px-4 py-2.5">
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${t.transactionType === 'SUPPLY' ? 'bg-success/10 text-success' : t.transactionType === 'ISSUE' ? 'bg-destructive/10 text-destructive' : 'bg-info/10 text-info'}`}>
+                    {t.transactionType}
+                  </span>
+                </td>
                 <td className="px-4 py-2.5 font-mono text-center">{t.quantitySupplied || '-'}</td>
                 <td className="px-4 py-2.5 font-mono text-center">{t.quantityIssued || '-'}</td>
                 <td className="px-4 py-2.5 font-mono text-center">{t.quantityReturned || '-'}</td>
                 <td className="px-4 py-2.5 text-xs text-muted-foreground truncate max-w-[150px]">{t.notes || t.issuedTo || t.returnedBy || '-'}</td>
               </tr>
             ))}
-            {!filtered.length && <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">No transactions</td></tr>}
+            {!filtered.length && (
+              <tr>
+                <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">No transactions</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

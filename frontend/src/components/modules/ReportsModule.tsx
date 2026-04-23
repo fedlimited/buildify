@@ -91,6 +91,11 @@ const renderReport = () => {
 
 
 
+
+
+
+
+
 function PnLReport() {
   const { selectedProjectId } = useAppStore();
   const [data, setData] = useState(null);
@@ -99,8 +104,10 @@ function PnLReport() {
   const [filterProject, setFilterProject] = useState('all');
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [projects, setProjects] = useState([]);
+  const [allProjects, setAllProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Load projects first
   useEffect(() => {
     async function loadProjects() {
       try {
@@ -109,6 +116,8 @@ function PnLReport() {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const projectsData = await projectsRes.json();
+        console.log('Loaded projects:', projectsData);
+        setAllProjects(projectsData);
         setProjects(projectsData.filter(p => p.status === 'Active'));
       } catch (err) {
         console.error('Error loading projects:', err);
@@ -117,8 +126,15 @@ function PnLReport() {
     loadProjects();
   }, []);
 
+  // Load income and expenses - with proper waiting for projects
   useEffect(() => {
     async function loadData() {
+      // Wait for projects to load
+      if (allProjects.length === 0) {
+        console.log('PnLReport: Waiting for projects to load...');
+        return;
+      }
+      
       setLoading(true);
       try {
         const token = localStorage.getItem('token');
@@ -130,6 +146,12 @@ function PnLReport() {
         let expenses = await fetch(`${API_BASE_URL}/expenses`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }).then(res => res.json());
+        
+        // Debug: Check what data we have
+        console.log('=== PnLReport Debug ===');
+        console.log('allProjects:', allProjects.map(p => ({ id: p.id, name: p.name })));
+        console.log('Income records:', income.length);
+        console.log('Expense records:', expenses.length);
         
         // Apply global project filter
         if (selectedProjectId && selectedProjectId !== 'all') {
@@ -155,24 +177,26 @@ function PnLReport() {
           expenses = expenses.filter(e => e.date <= dateRange.end);
         }
         
-        const totalIncome = income.reduce((s, i) => s + (i.amount_received || 0), 0);
+        const totalIncome = income.reduce((s, i) => s + (i.amount_received || i.gross_amount || 0), 0);
         const totalExpenses = expenses.reduce((s, e) => s + (e.amount || 0), 0);
         const profit = totalIncome - totalExpenses;
         const profitMargin = totalIncome > 0 ? ((profit / totalIncome) * 100).toFixed(1) : 0;
         
-        // Group by project for detailed view
+        // Group by project - USE ALLPROJECTS TO GET CORRECT NAMES
         const projectBreakdown = {};
         
         income.forEach(i => {
-          const projectName = i.project_name || `Project ${i.project_id}`;
+          const project = allProjects.find(p => p.id === i.project_id);
+          const projectName = project?.name || `Project ${i.project_id}`;
           if (!projectBreakdown[projectName]) {
             projectBreakdown[projectName] = { income: 0, expenses: 0 };
           }
-          projectBreakdown[projectName].income += (i.amount_received || 0);
+          projectBreakdown[projectName].income += (i.amount_received || i.gross_amount || 0);
         });
         
         expenses.forEach(e => {
-          const projectName = e.project_name || `Project ${e.project_id}`;
+          const project = allProjects.find(p => p.id === e.project_id);
+          const projectName = project?.name || `Project ${e.project_id}`;
           if (!projectBreakdown[projectName]) {
             projectBreakdown[projectName] = { income: 0, expenses: 0 };
           }
@@ -186,6 +210,8 @@ function PnLReport() {
           profit: values.income - values.expenses,
           margin: values.income > 0 ? (((values.income - values.expenses) / values.income) * 100).toFixed(1) : 0
         })).sort((a, b) => b.profit - a.profit);
+        
+        console.log('Project details with names:', projectDetails);
         
         setData({
           totalIncome,
@@ -208,7 +234,7 @@ function PnLReport() {
       }
     }
     loadData();
-  }, [selectedProjectId, filterProject, dateRange.start, dateRange.end]);
+  }, [selectedProjectId, filterProject, dateRange.start, dateRange.end, allProjects]);
 
   // Apply search filter to project details
   useEffect(() => {
@@ -244,7 +270,6 @@ function PnLReport() {
   );
 
   return React.createElement('div', { className: "space-y-4" },
-    // Filters
     React.createElement('div', { className: "flex flex-wrap gap-4 justify-between items-center" },
       React.createElement('div', { className: "flex gap-2 flex-wrap" },
         React.createElement('input', {
@@ -286,7 +311,6 @@ function PnLReport() {
       )
     ),
     
-    // Summary Cards
     React.createElement('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-4" },
       React.createElement('div', { className: "bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 text-center border border-blue-200 dark:border-blue-800" },
         React.createElement('p', { className: "text-xs text-blue-600 dark:text-blue-400" }, "Total Income"),
@@ -308,7 +332,6 @@ function PnLReport() {
       )
     ),
     
-    // Detailed Breakdown by Project
     React.createElement('div', { className: "mt-4" },
       React.createElement('h3', { className: "text-md font-semibold mb-3" }, "Breakdown by Project"),
       React.createElement('div', { className: "overflow-x-auto" },
@@ -327,7 +350,6 @@ function PnLReport() {
       )
     ),
     
-    // Export Button
     React.createElement(Button, { variant: "outline", size: "sm", onClick: () => exportToCSV(filteredData.projectDetails, 'profit_loss_report') }, "Export CSV")
   );
 }

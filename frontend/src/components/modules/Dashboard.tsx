@@ -1,10 +1,20 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@/hooks/useAppStore';
-import { formatCurrency, calculateVAT, calculateRetention } from '@/lib/formatters';
+import { API_BASE_URL } from '@/config/api';
+import { formatCurrency } from '@/lib/formatters';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { TrendingUp, TrendingDown, FolderKanban, Banknote } from 'lucide-react';
 
 export function Dashboard() {
-  const { projects, income, expenses, selectedProjectId, theme } = useAppStore();
+  const navigate = useNavigate();
+  const { projects, income, expenses, selectedProjectId } = useAppStore();
+  const [subscription, setSubscription] = useState<any>(null);
+  const [limits, setLimits] = useState({
+    projects: { current: 0, max: 0 },
+    workers: { current: 0, max: 0 },
+    users: { current: 0, max: 0 }
+  });
 
   const filteredIncome = selectedProjectId ? income.filter(i => i.projectId === selectedProjectId) : income;
   const filteredExpenses = selectedProjectId ? expenses.filter(e => e.projectId === selectedProjectId) : expenses;
@@ -14,7 +24,44 @@ export function Dashboard() {
   const cashFlow = totalIncome - totalExpenses;
   const activeProjects = projects.filter(p => p.status === 'Active').length;
 
-  // Monthly cash flow (last 6 months)
+  useEffect(() => {
+    fetchSubscription();
+    fetchLimits();
+  }, []);
+
+  const fetchSubscription = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/subscription/current`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      setSubscription(data);
+    } catch (error) {
+      console.error('Error fetching subscription:', error);
+    }
+  };
+
+  const fetchLimits = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const [projectRes, workerRes, userRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/subscription/check-limit?type=project`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${API_BASE_URL}/subscription/check-limit?type=worker`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${API_BASE_URL}/subscription/check-limit?type=user`, { headers: { 'Authorization': `Bearer ${token}` } })
+      ]);
+      
+      setLimits({
+        projects: await projectRes.json(),
+        workers: await workerRes.json(),
+        users: await userRes.json()
+      });
+    } catch (error) {
+      console.error('Error fetching limits:', error);
+    }
+  };
+
+  // Monthly cash flow
   const months = Array.from({ length: 6 }, (_, i) => {
     const d = new Date();
     d.setMonth(d.getMonth() - (5 - i));
@@ -33,77 +80,64 @@ export function Dashboard() {
     return acc;
   }, {} as Record<string, number>);
   const pieData = Object.entries(catMap).map(([name, value]) => ({ name, value }));
-  const pieColors = ['hsl(210,80%,52%)', 'hsl(152,60%,40%)', 'hsl(38,92%,50%)', 'hsl(0,72%,51%)', 'hsl(270,60%,55%)', 'hsl(180,50%,45%)'];
+  const pieColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
   const cards = [
-    { label: 'Active Projects', value: activeProjects.toString(), icon: <FolderKanban size={22} />, color: 'text-info' },
-    { label: 'Total Income', value: formatCurrency(totalIncome), icon: <TrendingUp size={22} />, color: 'text-success' },
-    { label: 'Total Expenses', value: formatCurrency(totalExpenses), icon: <TrendingDown size={22} />, color: 'text-destructive' },
-    { label: 'Cash Flow', value: formatCurrency(cashFlow), icon: <Banknote size={22} />, color: cashFlow >= 0 ? 'text-success' : 'text-destructive' },
+    { label: 'Active Projects', value: activeProjects.toString(), icon: <FolderKanban size={18} />, color: 'text-blue-400' },
+    { label: 'Total Income', value: formatCurrency(totalIncome), icon: <TrendingUp size={18} />, color: 'text-green-400' },
+    { label: 'Total Expenses', value: formatCurrency(totalExpenses), icon: <TrendingDown size={18} />, color: 'text-red-400' },
+    { label: 'Cash Flow', value: formatCurrency(cashFlow), icon: <Banknote size={18} />, color: cashFlow >= 0 ? 'text-green-400' : 'text-red-400' },
   ];
 
-  // Custom tooltip styles that respect the theme
+  // Dark mode tooltip styles
   const customTooltipStyles = {
-    backgroundColor: 'hsl(var(--card))',
-    border: '1px solid hsl(var(--border))',
-    borderRadius: 'var(--radius)',
-    fontSize: '12px',
-    color: 'hsl(var(--card-foreground))',
+    backgroundColor: '#1e293b',
+    border: '1px solid #334155',
+    borderRadius: '8px',
+    fontSize: '11px',
+    color: '#e2e8f0',
     padding: '8px 12px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-  };
-
-  const customLabelStyles = {
-    color: 'hsl(var(--card-foreground))',
-    fontWeight: 500,
-  };
-
-  const customItemStyles = {
-    color: 'hsl(var(--card-foreground))',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
   };
 
   return (
     <div className="space-y-6 fade-in">
-      {/* Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Metric Cards - Compact */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {cards.map(c => (
-          <div key={c.label} className="bg-card rounded-xl border border-border p-5 slide-up">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground font-medium">{c.label}</span>
+          <div key={c.label} className="bg-card rounded-lg border border-border p-2.5 hover:border-amber-500/30 transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">{c.label}</span>
               <span className={c.color}>{c.icon}</span>
             </div>
-            <p className="text-xl font-bold text-card-foreground">{c.value}</p>
+            <p className="text-base font-bold text-card-foreground mt-0.5">{c.value}</p>
           </div>
         ))}
       </div>
 
-      {/* Charts */}
+      {/* Charts - Side by side */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5">
-          <h3 className="text-sm font-semibold text-card-foreground mb-4">Monthly Cash Flow (Millions)</h3>
+        <div className="lg:col-span-2 bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-card-foreground">Monthly Cash Flow</h3>
+            <span className="text-xs text-muted-foreground">(in millions)</span>
+          </div>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={cashFlowData}>
-              <XAxis 
-                dataKey="name" 
-                tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} 
-                stroke="hsl(var(--muted-foreground))" 
-              />
-              <YAxis 
-                tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} 
-                stroke="hsl(var(--muted-foreground))" 
-              />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} stroke="#334155" />
+              <YAxis tick={{ fontSize: 11, fill: '#64748b' }} stroke="#334155" />
               <Tooltip 
                 contentStyle={customTooltipStyles}
-                labelStyle={customLabelStyles}
-                itemStyle={customItemStyles}
-                cursor={{ fill: 'hsl(var(--muted) / 0.3)' }}
+                labelStyle={{ color: '#f59e0b', fontWeight: 'bold' }}
+                itemStyle={{ color: '#cbd5e1' }}
+                cursor={{ fill: 'rgba(100, 116, 139, 0.15)' }}
               />
-              <Bar dataKey="income" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} name="Income" />
-              <Bar dataKey="expenses" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} name="Expenses" />
+              <Bar dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} name="Income" />
+              <Bar dataKey="expenses" fill="#ef4444" radius={[4, 4, 0, 0]} name="Expenses" />
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div className="bg-card rounded-xl border border-border p-5">
+        <div className="bg-card rounded-xl border border-border p-4">
           <h3 className="text-sm font-semibold text-card-foreground mb-4">Expenses by Category</h3>
           {pieData.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
@@ -112,19 +146,19 @@ export function Dashboard() {
                   data={pieData} 
                   cx="50%" 
                   cy="50%" 
-                  innerRadius={50} 
-                  outerRadius={90} 
+                  innerRadius={40} 
+                  outerRadius={75} 
                   dataKey="value" 
-                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                  labelLine={{ stroke: 'hsl(var(--muted-foreground))' }}
+                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`} 
+                  labelLine={{ stroke: '#64748b' }}
                 >
                   {pieData.map((_, i) => <Cell key={i} fill={pieColors[i % pieColors.length]} />)}
                 </Pie>
                 <Tooltip 
-                  formatter={(v: number) => formatCurrency(v)}
+                  formatter={(v: number) => formatCurrency(v)} 
                   contentStyle={customTooltipStyles}
-                  labelStyle={customLabelStyles}
-                  itemStyle={customItemStyles}
+                  labelStyle={{ color: '#f59e0b', fontWeight: 'bold' }}
+                  itemStyle={{ color: '#cbd5e1' }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -135,7 +169,7 @@ export function Dashboard() {
       </div>
 
       {/* Recent Transactions */}
-      <div className="bg-card rounded-xl border border-border p-5">
+      <div className="bg-card rounded-xl border border-border p-4">
         <h3 className="text-sm font-semibold text-card-foreground mb-4">Recent Transactions</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -153,15 +187,20 @@ export function Dashboard() {
                 ...filteredExpenses.map(e => ({ date: e.date, type: 'Expense' as const, desc: e.description, amount: -e.amount })),
               ]
                 .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                .slice(0, 8)
+                .slice(0, 6)
                 .map((t, i) => (
                   <tr key={i} className="hover:bg-muted/50 transition-colors">
                     <td className="py-2.5">{new Date(t.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</td>
-                    <td><span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${t.type === 'Income' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>{t.type}</span></td>
+                    <td><span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${t.type === 'Income' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>{t.type}</span></td>
                     <td className="text-card-foreground">{t.desc}</td>
-                    <td className={`text-right font-mono ${t.amount >= 0 ? 'text-success' : 'text-destructive'}`}>{formatCurrency(Math.abs(t.amount))}</td>
+                    <td className={`text-right font-mono ${t.amount >= 0 ? 'text-green-400' : 'text-red-400'}`}>{formatCurrency(Math.abs(t.amount))}</td>
                   </tr>
                 ))}
+              {filteredIncome.length === 0 && filteredExpenses.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center text-muted-foreground">No transactions yet</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

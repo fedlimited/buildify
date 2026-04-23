@@ -209,11 +209,20 @@ export function SiteDiaryModule() {
     fetchSiteDiaryEntries();
   }, [fetchSiteDiaryEntries, selectedProjectId]);
 
+
+
   // Debug log
   useEffect(() => {
     console.log('Site Diary - Entries updated:', siteDiaryEntries.length);
     console.log('Entries:', siteDiaryEntries);
   }, [siteDiaryEntries]);
+
+// ✅ ADD THIS - Reset selected worker when project changes
+useEffect(() => {
+  setSelectedWorker('');
+}, [projectId]);
+
+
 
   const getProjectName = () => {
     const project = projects.find(p => p.id === projectId);
@@ -483,42 +492,57 @@ export function SiteDiaryModule() {
     printWindow?.print();
   };
 
-  const handleSave = async () => {
-    setLoading(true);
-    try {
-      const entryData = {
-        date,
-        projectId,
-        projectName: getProjectName(),
-        weather: { condition: weatherCondition, temp: temperature },
-        activities,
-        deliveries,
-        incidents,
-        siteWorkers,
-        siteSubcontractors,
-        totalWorkers,
-        summary: { workDone, plansTomorrow, challenges },
-        status: 'Submitted'
-      };
-      
-      if (editing) {
-        await updateSiteDiaryEntry(editing.id, entryData);
-      } else {
-        await addSiteDiaryEntry(entryData);
-      }
-      await fetchSiteDiaryEntries();
-      setOpen(false);
-      resetForm();
-      alert(editing ? 'Entry updated successfully!' : 'Entry saved successfully!');
-    } catch (error) {
-      console.error('Failed to save:', error);
-      alert('Failed to save. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const resetForm = () => {
+
+
+
+const handleSave = async () => {
+  setLoading(true);
+  try {
+    const entryData = {
+      date: date,
+      project_id: projectId,
+      project_name: getProjectName(),
+      weather: { condition: weatherCondition, temp: temperature },
+      activities: activities,
+      deliveries: deliveries,
+      incidents: incidents,
+      site_workers: siteWorkers,
+      site_subcontractors: siteSubcontractors,
+      total_workers: totalWorkers,
+      summary: { workDone, plansTomorrow, challenges },
+      status: 'Submitted'
+    };
+    
+    // ===== DEBUG CODE =====
+    console.log('=== DEBUG SAVE ===');
+    console.log('siteWorkers array:', siteWorkers);
+    console.log('siteWorkers count:', siteWorkers.length);
+    console.log('activities array:', activities);
+    console.log('activity workers total:', activities.reduce((sum, a) => sum + a.workersCount, 0));
+    console.log('siteSubcontractors array:', siteSubcontractors);
+    console.log('subcontractor workers total:', siteSubcontractors.reduce((sum, s) => sum + s.workersCount, 0));
+    console.log('FINAL totalWorkers:', totalWorkers);
+    console.log('entryData being sent:', entryData);
+    // ===== END DEBUG CODE =====
+    
+    if (editing) {
+      await updateSiteDiaryEntry(editing.id, entryData);
+      await fetchSiteDiaryEntries();
+      alert('Entry updated successfully!');
+    } else {
+      await addSiteDiaryEntry(entryData);
+      await fetchSiteDiaryEntries();
+      alert('Entry saved successfully!');
+    }
+    
+    // Close the dialog
+    setOpen(false);
+    
+    // Reset editing state
+    setEditing(null);
+    
+    // Reset all form fields
     setDate(new Date().toISOString().split('T')[0]);
     setProjectId(selectedProjectId || 0);
     setWeatherCondition('sunny');
@@ -531,15 +555,29 @@ export function SiteDiaryModule() {
     setWorkDone('');
     setPlansTomorrow('');
     setChallenges('');
-    setEditing(null);
-    setActiveTab('basic');
-  };
-
-
-
-
-
-
+    
+    // Reset temporary states
+    setNewActivity({ description: '', location: '', startTime: '08:00', endTime: '17:00', workersCount: 1, supervisor: '' });
+    setNewDelivery({ itemName: '', quantity: 1, unit: 'pieces', supplier: '', receivedBy: '' });
+    setNewIncident({ type: 'near-miss', description: '', severity: 'medium', action: '' });
+    setSelectedWorker('');
+    setCustomWorkerName('');
+    setShowCustomWorker(false);
+    setSelectedSubcontractor('');
+    setCustomSubcontractorName('');
+    setSubcontractorWorkers(1);
+    setSubcontractorTask('');
+    setShowCustomSubcontractor(false);
+    setShowNewSupplier(false);
+    setNewSupplierName('');
+    
+  } catch (error) {
+    console.error('Failed to save:', error);
+    alert('Failed to save. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
 
 
@@ -643,7 +681,28 @@ const openEdit = (entry: any) => {
               <RefreshCw size={14} className={`mr-1 ${isSyncing ? 'animate-spin' : ''}`} />
               {isSyncing ? 'Syncing...' : 'Sync'}
             </Button>
-            <Button onClick={() => { resetForm(); setOpen(true); }} size="sm">
+
+
+
+           <Button onClick={() => { 
+  setDate(new Date().toISOString().split('T')[0]);
+  setProjectId(selectedProjectId || 0);
+  setWeatherCondition('sunny');
+  setTemperature(28);
+  setActivities([]);
+  setDeliveries([]);
+  setIncidents([]);
+  setSiteWorkers([]);
+  setSiteSubcontractors([]);
+  setWorkDone('');
+  setPlansTomorrow('');
+  setChallenges('');
+  setEditing(null);
+  setOpen(true);
+}} size="sm">
+
+
+
               <Plus size={14} className="mr-1" /> New Entry
             </Button>
           </div>
@@ -812,20 +871,57 @@ const openEdit = (entry: any) => {
                     </div>
                   ))}
                 </div>
-                
-                <div className="border rounded p-3 space-y-2">
-                  <p className="text-xs font-medium">Add Payroll Worker</p>
-                  <div className="flex gap-2">
-                    <Select value={selectedWorker} onValueChange={setSelectedWorker}>
-                      <SelectTrigger className="h-8 text-sm flex-1">
-                        <SelectValue placeholder="Select worker" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {workers.map(worker => (
-                          <SelectItem key={worker.id} value={worker.id.toString()}>{worker.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+
+
+
+
+<div className="border rounded p-3 space-y-2">
+  <p className="text-xs font-medium">Add Payroll Worker</p>
+  
+  {/* ===== DEBUG INFO - Remove after testing ===== */}
+  <div className="text-xs p-2 bg-yellow-50 border border-yellow-200 rounded mb-2">
+    <div><strong>Debug Info:</strong></div>
+    <div>Current Project ID: <span className="font-mono font-bold">{projectId}</span></div>
+    <div>Total Workers in DB: <span className="font-mono">{workers.length}</span></div>
+    <div>Workers for this project: <span className="font-mono">{workers.filter(w => w.projectId === projectId).length}</span></div>
+    {workers.length > 0 && (
+      <div className="mt-1 text-xs text-muted-foreground">
+        Sample worker: {workers[0]?.name} → projectId: {workers[0]?.projectId}
+      </div>
+    )}
+  </div>
+  {/* ===== END DEBUG INFO ===== */}
+  
+  <div className="flex gap-2">
+    <Select value={selectedWorker} onValueChange={setSelectedWorker}>
+
+
+
+
+  <SelectTrigger className="h-8 text-sm flex-1">
+    <SelectValue placeholder="Select worker" />
+  </SelectTrigger>
+  <SelectContent>
+    {workers
+      .filter(worker => worker.projectId === projectId) // ← Only show workers for selected project
+      .map(worker => (
+        <SelectItem key={worker.id} value={worker.id.toString()}>
+          {worker.name}
+        </SelectItem>
+      ))}
+    {workers.filter(worker => worker.projectId === projectId).length === 0 && (
+      <div className="px-2 py-1.5 text-sm text-muted-foreground">
+        No workers assigned to this project
+      </div>
+    )}
+  </SelectContent>
+</Select>
+
+
+
+
+
+
                     <Input type="time" value={workerCheckIn} onChange={e => setWorkerCheckIn(e.target.value)} className="w-20 h-8 text-sm" />
                     <Input type="time" value={workerCheckOut} onChange={e => setWorkerCheckOut(e.target.value)} className="w-20 h-8 text-sm" />
                     <Button onClick={addPayrollWorker} size="sm" className="h-8 px-3">Add</Button>

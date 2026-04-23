@@ -1,0 +1,1650 @@
+# Complete Multi-Tenant Migration Manual
+## From SQLite Local Storage to Production (Render + Vercel)
+
+**For Construction Management SaaS Applications**
+
+---
+
+## 📋 Table of Contents
+
+1. [Understanding Multi-Tenancy](#1-understanding-multi-tenancy)
+2. [Pre-Migration Assessment](#2-pre-migration-assessment)
+3. [Database Migration (SQLite → PostgreSQL)](#3-database-migration-sqlite--postgresql)
+4. [Backend Preparation](#4-backend-preparation)
+5. [Frontend Preparation](#5-frontend-preparation)
+6. [Deployment to Render](#6-deployment-to-render)
+7. [Deployment to Vercel](#7-deployment-to-vercel)
+8. [Post-Deployment Fixes](#8-post-deployment-fixes)
+9. [Testing Checklist](#9-testing-checklist)
+10. [Rollback Procedures](#10-rollback-procedures)
+11. [Common Errors & Solutions](#11-common-errors--solutions)
+
+---
+
+## 1. Understanding Multi-Tenancy
+
+### 1.1 What Changes in Multi-Tenant Architecture
+
+| Aspect | Single Tenant (Local) | Multi-Tenant (Production) |
+|--------|----------------------|---------------------------|
+| Database | Single SQLite file | PostgreSQL with company_id |
+| Authentication | None/Simple | JWT + Subdomain |
+| Data Isolation | N/A | All queries filtered by company_id |
+| URL Structure | localhost:3000 | company.yourapp.com |
+| Users | Single company | Multiple companies |
+
+### 1.2 Database Schema Changes
+
+**Every table gets a `company_id` column:**
+
+```sql
+-- BEFORE (single tenant)
+CREATE TABLE projects (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255)
+);
+
+-- AFTER (multi-tenant)
+CREATE TABLE projects (
+  id SERIAL PRIMARY KEY,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+  name VARCHAR(255)
+);
+```
+
+**New companies table:**
+```sql
+CREATE TABLE companies (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  subdomain VARCHAR(100) UNIQUE NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## 2. Pre-Migration Assessment
+
+### 2.1 Migration Checklist
+
+- [ ] Backup your SQLite database file
+- [ ] Document all data models/tables
+- [ ] Identify all camelCase → snake_case mappings
+- [ ] Create Render account
+- [ ] Create Vercel account
+- [ ] Set up GitHub repository
+- [ ] Prepare domain/subdomain strategy
+
+### 2.2 File Structure After Migration
+
+```
+your-project/
+├── backend/
+│   ├── src/
+│   │   ├── config/
+│   │   │   └── database.js
+│   │   ├── controllers/
+│   │   │   ├── authController.js
+│   │   │   ├── projectController.js
+│   │   │   ├── workerController.js
+│   │   │   └── ...
+│   │   ├── middleware/
+│   │   │   └── auth.js
+│   │   └── server.js
+│   ├── package.json
+│   └── .env
+└── frontend/
+    ├── src/
+    │   ├── components/
+    │   ├── hooks/
+    │   │   └── useAppStore.ts
+    │   ├── services/
+    │   │   └── api.ts
+    │   └── lib/
+    └── package.json
+```
+
+---
+
+## 3. Database Migration (SQLite → PostgreSQL)
+
+### 3.1 Export SQLite Data
+
+**Step 1: Locate your SQLite database**
+```bash
+cd C:\Users\YourName\your-project\backend
+dir *.sqlite
+```
+
+**Step 2: Create export script (export-sqlite.js)**
+```javascript
+const sqlite3 = require('sqlite3');
+const { open } = require('sqlite');
+const fs = require('fs');
+
+async function exportSQLite() {
+  const db = await open({
+    filename: './database.sqlite',
+    driver: sqlite3.Database
+  });
+  
+  const tables = await db.all(`
+    SELECT name FROM sqlite_master 
+    WHERE type='table' AND name NOT LIKE 'sqlite_%'
+  `);
+  
+  const output = {};
+  
+  for (const { name } of tables) {
+    const rows = await db.all(`SELECT * FROM ${name}`);
+    output[name] = rows;
+    console.log(`Exported ${rows.length} rows from ${name}`);
+  }
+  
+  fs.writeFileSync('export.json', JSON.stringify(output, null, 2));
+  console.log('✅ Export complete');
+  await db.close();
+}
+
+exportSQLite();
+```
+
+**Step 3: Run export**
+```bash
+node export-sqlite.js
+```
+
+### 3.2 Create PostgreSQL Schema with Multi-Tenancy
+
+**Create schema.sql:**
+```sql
+-- ============================================
+-- MULTI-TENANT DATABASE SCHEMA
+-- ============================================
+
+-- Companies table (root of multi-tenancy)
+CREATE TABLE IF NOT EXISTS companies (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  subdomain VARCHAR(100) UNIQUE NOT NULL,
+  logo_url TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Users table
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  role VARCHAR(50) DEFAULT 'user',
+  permissions JSONB DEFAULT '[]',
+  is_active INTEGER DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Projects table
+CREATE TABLE IF NOT EXISTS projects (
+  id SERIAL PRIMARY KEY,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  client VARCHAR(255),
+  contract_sum DECIMAL(15,2),
+  location VARCHAR(255),
+  start_date DATE,
+  end_date DATE,
+  status VARCHAR(50) DEFAULT 'Active',
+  project_manager VARCHAR(255),
+  description TEXT,
+  progress INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Worker Categories
+CREATE TABLE IF NOT EXISTS worker_categories (
+  id SERIAL PRIMARY KEY,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  day_rate DECIMAL(10,2),
+  color VARCHAR(7),
+  is_active INTEGER DEFAULT 1
+);
+
+-- Workers table
+CREATE TABLE IF NOT EXISTS workers (
+  id SERIAL PRIMARY KEY,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  phone VARCHAR(20),
+  category_id INTEGER REFERENCES worker_categories(id),
+  project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+  day_rate DECIMAL(10,2),
+  is_active INTEGER DEFAULT 1,
+  date_added DATE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Income table
+CREATE TABLE IF NOT EXISTS income (
+  id SERIAL PRIMARY KEY,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+  project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+  certificate_no VARCHAR(100),
+  date DATE,
+  gross_amount DECIMAL(15,2),
+  retention_percent DECIMAL(5,2) DEFAULT 0,
+  amount_received DECIMAL(15,2) DEFAULT 0,
+  payment_date DATE,
+  payment_method VARCHAR(50),
+  status VARCHAR(50) DEFAULT 'Pending',
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Expenses table
+CREATE TABLE IF NOT EXISTS expenses (
+  id SERIAL PRIMARY KEY,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+  project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+  project_name VARCHAR(255),
+  date DATE,
+  category VARCHAR(100),
+  description TEXT,
+  amount DECIMAL(15,2),
+  vat DECIMAL(15,2),
+  payment_method VARCHAR(50),
+  status VARCHAR(50),
+  reference VARCHAR(255),
+  subcontractor_id INTEGER,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Suppliers table
+CREATE TABLE IF NOT EXISTS suppliers (
+  id SERIAL PRIMARY KEY,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  kra_pin VARCHAR(50),
+  phone VARCHAR(20),
+  email VARCHAR(255),
+  address TEXT,
+  contact_person VARCHAR(255),
+  payment_terms VARCHAR(100),
+  is_active INTEGER DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Approved Items table
+CREATE TABLE IF NOT EXISTS approved_items (
+  id SERIAL PRIMARY KEY,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  category VARCHAR(100),
+  unit VARCHAR(50),
+  default_price DECIMAL(15,2),
+  description TEXT,
+  is_active INTEGER DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Purchase Orders table
+CREATE TABLE IF NOT EXISTS purchase_orders (
+  id SERIAL PRIMARY KEY,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+  order_number VARCHAR(50),
+  supplier_id INTEGER REFERENCES suppliers(id),
+  supplier_name VARCHAR(255),
+  project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+  project_name VARCHAR(255),
+  order_date DATE,
+  expected_date DATE,
+  items JSONB DEFAULT '[]',
+  subtotal DECIMAL(15,2),
+  vat DECIMAL(15,2),
+  total DECIMAL(15,2),
+  status VARCHAR(50) DEFAULT 'Ordered',
+  payment_status VARCHAR(50) DEFAULT 'Unpaid',
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Supplies table
+CREATE TABLE IF NOT EXISTS supplies (
+  id SERIAL PRIMARY KEY,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+  supplier_id INTEGER REFERENCES suppliers(id),
+  supplier_name VARCHAR(255),
+  project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+  project_name VARCHAR(255),
+  date DATE,
+  item_id INTEGER REFERENCES approved_items(id),
+  item_name VARCHAR(255),
+  unit VARCHAR(50),
+  quantity DECIMAL(15,2),
+  unit_price DECIMAL(15,2),
+  total_amount DECIMAL(15,2),
+  vat DECIMAL(15,2),
+  status VARCHAR(50),
+  paid INTEGER DEFAULT 0,
+  order_id INTEGER REFERENCES purchase_orders(id),
+  delivery_note TEXT,
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Store Transactions table
+CREATE TABLE IF NOT EXISTS store_transactions (
+  id SERIAL PRIMARY KEY,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+  date DATE,
+  project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+  project_name VARCHAR(255),
+  item_id INTEGER REFERENCES approved_items(id),
+  item_name VARCHAR(255),
+  unit VARCHAR(50),
+  category VARCHAR(100),
+  quantity_supplied DECIMAL(15,2) DEFAULT 0,
+  quantity_issued DECIMAL(15,2) DEFAULT 0,
+  quantity_returned DECIMAL(15,2) DEFAULT 0,
+  balance DECIMAL(15,2),
+  transaction_type VARCHAR(50),
+  reference VARCHAR(255),
+  issued_to VARCHAR(255),
+  returned_by VARCHAR(255),
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Payroll Records table
+CREATE TABLE IF NOT EXISTS payroll_records (
+  id SERIAL PRIMARY KEY,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+  week_number INTEGER,
+  year INTEGER,
+  week_start DATE,
+  week_end DATE,
+  project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+  project_name VARCHAR(255),
+  status VARCHAR(50) DEFAULT 'Draft',
+  entries JSONB DEFAULT '[]',
+  total_gross_pay DECIMAL(15,2),
+  approved_at TIMESTAMP,
+  paid_at TIMESTAMP,
+  expense_id INTEGER,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Site Diary Entries table
+CREATE TABLE IF NOT EXISTS site_diary_entries (
+  id SERIAL PRIMARY KEY,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+  date DATE,
+  project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+  project_name VARCHAR(255),
+  weather JSONB DEFAULT '{}',
+  total_workers INTEGER DEFAULT 0,
+  activities JSONB DEFAULT '[]',
+  deliveries JSONB DEFAULT '[]',
+  incidents JSONB DEFAULT '[]',
+  site_workers JSONB DEFAULT '[]',
+  site_subcontractors JSONB DEFAULT '[]',
+  summary JSONB DEFAULT '{}',
+  status VARCHAR(50) DEFAULT 'Submitted',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Subcontractors table
+CREATE TABLE IF NOT EXISTS subcontractors (
+  id SERIAL PRIMARY KEY,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  phone VARCHAR(20),
+  email VARCHAR(255),
+  kra_pin VARCHAR(50),
+  specialization VARCHAR(255),
+  address TEXT,
+  contact_person VARCHAR(255),
+  is_active INTEGER DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Quotations table
+CREATE TABLE IF NOT EXISTS quotations (
+  id SERIAL PRIMARY KEY,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+  subcontractor_id INTEGER REFERENCES subcontractors(id),
+  subcontractor_name VARCHAR(255),
+  project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+  project_name VARCHAR(255),
+  description TEXT,
+  amount DECIMAL(15,2),
+  date DATE,
+  status VARCHAR(50),
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Invoices table
+CREATE TABLE IF NOT EXISTS invoices (
+  id SERIAL PRIMARY KEY,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+  invoice_number VARCHAR(100) UNIQUE,
+  project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+  project_name VARCHAR(255),
+  client_name VARCHAR(255),
+  date DATE,
+  due_date DATE,
+  items JSONB DEFAULT '[]',
+  subtotal DECIMAL(15,2),
+  vat DECIMAL(15,2),
+  total DECIMAL(15,2),
+  status VARCHAR(50) DEFAULT 'Draft',
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for performance
+CREATE INDEX idx_projects_company_id ON projects(company_id);
+CREATE INDEX idx_workers_company_id ON workers(company_id);
+CREATE INDEX idx_workers_project_id ON workers(project_id);
+CREATE INDEX idx_income_company_id ON income(company_id);
+CREATE INDEX idx_income_project_id ON income(project_id);
+CREATE INDEX idx_expenses_company_id ON expenses(company_id);
+CREATE INDEX idx_expenses_project_id ON expenses(project_id);
+CREATE INDEX idx_purchase_orders_company_id ON purchase_orders(company_id);
+CREATE INDEX idx_supplies_company_id ON supplies(company_id);
+CREATE INDEX idx_site_diary_company_id ON site_diary_entries(company_id);
+
+-- Insert default company (for initial admin)
+INSERT INTO companies (name, subdomain) 
+VALUES ('Admin Company', 'admin') 
+ON CONFLICT (subdomain) DO NOTHING;
+```
+
+### 3.3 Migrate Data with Company ID
+
+**Create migrate-data.js:**
+```javascript
+const { Pool } = require('pg');
+const fs = require('fs');
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
+
+async function migrateData() {
+  // Read exported data
+  const exportData = JSON.parse(fs.readFileSync('export.json', 'utf8'));
+  
+  // Get or create company
+  let companyResult = await pool.query(
+    'SELECT id FROM companies WHERE subdomain = $1',
+    ['default']
+  );
+  
+  let company_id;
+  if (companyResult.rows.length === 0) {
+    const insertResult = await pool.query(
+      'INSERT INTO companies (name, subdomain) VALUES ($1, $2) RETURNING id',
+      ['Default Company', 'default']
+    );
+    company_id = insertResult.rows[0].id;
+  } else {
+    company_id = companyResult.rows[0].id;
+  }
+  
+  console.log(`Using company_id: ${company_id}`);
+  
+  // Migrate projects
+  if (exportData.projects) {
+    for (const project of exportData.projects) {
+      await pool.query(`
+        INSERT INTO projects (
+          company_id, name, client, contract_sum, location, 
+          start_date, end_date, status, project_manager, description, progress
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      `, [
+        company_id,
+        project.name,
+        project.client,
+        project.contract_sum || project.contractSum,
+        project.location,
+        project.start_date || project.startDate,
+        project.end_date || project.endDate,
+        project.status || 'Active',
+        project.project_manager || project.projectManager,
+        project.description,
+        project.progress || 0
+      ]);
+    }
+    console.log(`✅ Migrated ${exportData.projects.length} projects`);
+  }
+  
+  // Migrate workers
+  if (exportData.workers) {
+    // First get project ID mapping
+    const projects = await pool.query('SELECT id, name FROM projects WHERE company_id = $1', [company_id]);
+    const projectMap = {};
+    projects.rows.forEach(p => { projectMap[p.name] = p.id; });
+    
+    for (const worker of exportData.workers) {
+      await pool.query(`
+        INSERT INTO workers (
+          company_id, name, phone, category_id, project_id, day_rate, is_active, date_added
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `, [
+        company_id,
+        worker.name,
+        worker.phone,
+        worker.category_id || worker.categoryId,
+        projectMap[worker.project_name || worker.projectName] || null,
+        worker.day_rate || worker.dayRate,
+        worker.is_active !== false ? 1 : 0,
+        worker.date_added || worker.dateAdded || new Date().toISOString().split('T')[0]
+      ]);
+    }
+    console.log(`✅ Migrated ${exportData.workers.length} workers`);
+  }
+  
+  // Continue for all other tables...
+  
+  console.log('✅ Migration complete!');
+  await pool.end();
+}
+
+migrateData().catch(console.error);
+```
+
+---
+
+## 4. Backend Preparation
+
+### 4.1 Package.json Setup
+
+```json
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "jsonwebtoken": "^9.0.0",
+    "bcryptjs": "^2.4.3",
+    "pg": "^8.10.0",
+    "sqlite3": "^5.1.6",
+    "sqlite": "^5.1.1"
+  }
+}
+```
+
+### 4.2 Database Configuration (database.js)
+
+```javascript
+const sqlite3 = require('sqlite3');
+const { open } = require('sqlite');
+const { Pool } = require('pg');
+
+let db = null;
+
+async function getDb() {
+  if (db) return db;
+  
+  // Use PostgreSQL in production, SQLite in development
+  if (process.env.NODE_ENV === 'production') {
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    });
+    db = pool;
+  } else {
+    db = await open({
+      filename: './database.sqlite',
+      driver: sqlite3.Database
+    });
+  }
+  
+  return db;
+}
+
+module.exports = { getDb };
+```
+
+### 4.3 Authentication Middleware (auth.js)
+
+```javascript
+const jwt = require('jsonwebtoken');
+const { getDb } = require('../config/database');
+
+const authenticateToken = async (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const db = await getDb();
+    
+    // Get user with company info
+    let user;
+    if (process.env.NODE_ENV === 'production') {
+      const result = await db.query(`
+        SELECT u.*, c.id as company_id, c.subdomain 
+        FROM users u 
+        JOIN companies c ON u.company_id = c.id 
+        WHERE u.id = $1
+      `, [decoded.userId]);
+      user = result.rows[0];
+    } else {
+      user = await db.get(`
+        SELECT u.*, c.id as company_id, c.subdomain 
+        FROM users u 
+        JOIN companies c ON u.company_id = c.id 
+        WHERE u.id = ?
+      `, [decoded.userId]);
+    }
+    
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+    
+    req.user = {
+      id: user.id,
+      companyId: user.company_id,
+      companySubdomain: user.subdomain,
+      role: user.role
+    };
+    
+    next();
+  } catch (error) {
+    console.error('Auth error:', error);
+    return res.status(403).json({ error: 'Invalid token' });
+  }
+};
+
+module.exports = { authenticateToken };
+```
+
+### 4.4 Sample Controller (projectController.js)
+
+```javascript
+const { getDb } = require('../config/database');
+
+const ProjectController = {
+  // Get all projects for the authenticated company
+  getProjects: async (req, res) => {
+    try {
+      const db = await getDb();
+      const company_id = req.user.companyId;
+      
+      let projects;
+      if (process.env.NODE_ENV === 'production') {
+        const result = await db.query(
+          'SELECT * FROM projects WHERE company_id = $1 ORDER BY id DESC',
+          [company_id]
+        );
+        projects = result.rows;
+      } else {
+        projects = await db.all(
+          'SELECT * FROM projects WHERE company_id = ? ORDER BY id DESC',
+          [company_id]
+        );
+      }
+      
+      res.json(projects);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+  
+  // Create new project
+  createProject: async (req, res) => {
+    try {
+      const db = await getDb();
+      const company_id = req.user.companyId;
+      const { name, client, contract_sum, location, start_date, end_date, status, project_manager, description } = req.body;
+      
+      let result;
+      if (process.env.NODE_ENV === 'production') {
+        result = await db.query(`
+          INSERT INTO projects (company_id, name, client, contract_sum, location, start_date, end_date, status, project_manager, description)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          RETURNING *
+        `, [company_id, name, client, contract_sum, location, start_date, end_date, status, project_manager, description]);
+        res.status(201).json(result.rows[0]);
+      } else {
+        result = await db.run(`
+          INSERT INTO projects (company_id, name, client, contract_sum, location, start_date, end_date, status, project_manager, description)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [company_id, name, client, contract_sum, location, start_date, end_date, status, project_manager, description]);
+        
+        const newProject = await db.get('SELECT * FROM projects WHERE id = ?', [result.lastID]);
+        res.status(201).json(newProject);
+      }
+    } catch (error) {
+      console.error('Error creating project:', error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+  
+  // Delete project (with CASCADE)
+  deleteProject: async (req, res) => {
+    try {
+      const db = await getDb();
+      const company_id = req.user.companyId;
+      const { id } = req.params;
+      
+      if (process.env.NODE_ENV === 'production') {
+        const result = await db.query(
+          'DELETE FROM projects WHERE id = $1 AND company_id = $2',
+          [id, company_id]
+        );
+        
+        if (result.rowCount === 0) {
+          return res.status(404).json({ error: 'Project not found' });
+        }
+      } else {
+        const result = await db.run(
+          'DELETE FROM projects WHERE id = ? AND company_id = ?',
+          [id, company_id]
+        );
+        
+        if (result.changes === 0) {
+          return res.status(404).json({ error: 'Project not found' });
+        }
+      }
+      
+      res.json({ message: 'Project deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+};
+
+module.exports = ProjectController;
+```
+
+### 4.5 Server Configuration (server.js)
+
+```javascript
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const { getDb } = require('./config/database');
+const { authenticateToken } = require('./middleware/auth');
+const ProjectController = require('./controllers/projectController');
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Middleware
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:5173', process.env.FRONTEND_URL],
+  credentials: true
+}));
+app.use(express.json());
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// ========== AUTH ROUTES ==========
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const db = await getDb();
+    const { name, email, password, company_name, subdomain } = req.body;
+    
+    // Check if company exists
+    let company;
+    if (process.env.NODE_ENV === 'production') {
+      const result = await db.query('SELECT id FROM companies WHERE subdomain = $1', [subdomain]);
+      company = result.rows[0];
+    } else {
+      company = await db.get('SELECT id FROM companies WHERE subdomain = ?', [subdomain]);
+    }
+    
+    if (company) {
+      return res.status(400).json({ error: 'Subdomain already taken' });
+    }
+    
+    // Create company
+    let company_id;
+    if (process.env.NODE_ENV === 'production') {
+      const result = await db.query(
+        'INSERT INTO companies (name, subdomain) VALUES ($1, $2) RETURNING id',
+        [company_name, subdomain]
+      );
+      company_id = result.rows[0].id;
+    } else {
+      const result = await db.run(
+        'INSERT INTO companies (name, subdomain) VALUES (?, ?)',
+        [company_name, subdomain]
+      );
+      company_id = result.lastID;
+    }
+    
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Create user
+    let user;
+    if (process.env.NODE_ENV === 'production') {
+      const result = await db.query(
+        'INSERT INTO users (company_id, name, email, password, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role',
+        [company_id, name, email, hashedPassword, 'admin']
+      );
+      user = result.rows[0];
+    } else {
+      const result = await db.run(
+        'INSERT INTO users (company_id, name, email, password, role) VALUES (?, ?, ?, ?, ?)',
+        [company_id, name, email, hashedPassword, 'admin']
+      );
+      user = await db.get('SELECT id, name, email, role FROM users WHERE id = ?', [result.lastID]);
+    }
+    
+    // Generate token
+    const token = jwt.sign(
+      { userId: user.id, companyId: company_id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    
+    res.json({ token, user, companyId: company_id, subdomain });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const db = await getDb();
+    const { email, password, subdomain } = req.body;
+    
+    // Get company
+    let company;
+    if (process.env.NODE_ENV === 'production') {
+      const result = await db.query('SELECT id FROM companies WHERE subdomain = $1', [subdomain]);
+      company = result.rows[0];
+    } else {
+      company = await db.get('SELECT id FROM companies WHERE subdomain = ?', [subdomain]);
+    }
+    
+    if (!company) {
+      return res.status(401).json({ error: 'Invalid subdomain' });
+    }
+    
+    // Get user
+    let user;
+    if (process.env.NODE_ENV === 'production') {
+      const result = await db.query(
+        'SELECT id, name, email, password, role FROM users WHERE email = $1 AND company_id = $2',
+        [email, company.id]
+      );
+      user = result.rows[0];
+    } else {
+      user = await db.get(
+        'SELECT id, name, email, password, role FROM users WHERE email = ? AND company_id = ?',
+        [email, company.id]
+      );
+    }
+    
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    // Verify password
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    // Generate token
+    const token = jwt.sign(
+      { userId: user.id, companyId: company.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    
+    res.json({
+      token,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      companyId: company.id,
+      subdomain
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ========== PROJECT ROUTES ==========
+app.get('/api/projects', authenticateToken, ProjectController.getProjects);
+app.post('/api/projects', authenticateToken, ProjectController.createProject);
+app.put('/api/projects/:id', authenticateToken, ProjectController.updateProject);
+app.delete('/api/projects/:id', authenticateToken, ProjectController.deleteProject);
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+});
+```
+
+---
+
+## 5. Frontend Preparation
+
+### 5.1 API Service (api.ts)
+
+```typescript
+// src/services/api.ts
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+const api = {
+  // Auth
+  login: async (email: string, password: string, subdomain: string) => {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, subdomain })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Login failed');
+    }
+    
+    const data = await response.json();
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('authUser', JSON.stringify(data.user));
+    localStorage.setItem('companyId', data.companyId.toString());
+    localStorage.setItem('subdomain', data.subdomain);
+    
+    return data.user;
+  },
+  
+  logout: () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('authUser');
+    localStorage.removeItem('companyId');
+    localStorage.removeItem('subdomain');
+  },
+  
+  // Projects
+  getProjects: async () => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/projects`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!response.ok) throw new Error('Failed to fetch projects');
+    return response.json();
+  },
+  
+  createProject: async (project: any) => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/projects`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(project)
+    });
+    
+    if (!response.ok) throw new Error('Failed to create project');
+    return response.json();
+  },
+  
+  updateProject: async (id: number, project: any) => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(project)
+    });
+    
+    if (!response.ok) throw new Error('Failed to update project');
+    return response.json();
+  },
+  
+  deleteProject: async (id: number) => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!response.ok) throw new Error('Failed to delete project');
+    return response.json();
+  }
+};
+
+export default api;
+```
+
+### 5.2 Zustand Store with Multi-Tenancy (useAppStore.ts)
+
+```typescript
+// src/hooks/useAppStore.ts
+import { create } from 'zustand';
+import { API_BASE_URL } from '@/config/api';
+import api from '@/services/api';
+
+interface AppState {
+  // Auth
+  authUser: AuthUser | null;
+  login: (email: string, password: string, subdomain: string) => Promise<boolean>;
+  logout: () => void;
+  
+  // Data
+  projects: Project[];
+  workers: Worker[];
+  // ... other data arrays
+  
+  // Actions
+  fetchProjects: () => Promise<void>;
+  addProject: (project: Omit<Project, 'id' | 'createdAt'>) => Promise<void>;
+  updateProject: (project: Project) => Promise<void>;
+  deleteProject: (id: number) => Promise<void>;
+  
+  // Reset
+  resetAllData: () => Promise<void>;
+}
+
+export const useAppStore = create<AppState>((set, get) => ({
+  // Initial state
+  authUser: (() => {
+    const saved = localStorage.getItem('authUser');
+    return saved ? JSON.parse(saved) : null;
+  })(),
+  projects: [],
+  workers: [],
+  // ... other initial arrays
+  
+  // ========== AUTH ==========
+  login: async (email, password, subdomain) => {
+    try {
+      const user = await api.login(email, password, subdomain);
+      set({ authUser: user });
+      
+      // Fetch all data after login
+      await Promise.all([
+        get().fetchProjects(),
+        get().fetchWorkers(),
+        // ... fetch all other data
+      ]);
+      
+      return true;
+    } catch (error) {
+      console.error('Login failed:', error);
+      return false;
+    }
+  },
+  
+  logout: () => {
+    api.logout();
+    set({ authUser: null });
+    // Clear all data
+    set({ projects: [], workers: [] });
+  },
+  
+  // ========== PROJECTS ==========
+  fetchProjects: async () => {
+    try {
+      const projects = await api.getProjects();
+      // Map snake_case to camelCase for frontend
+      const mappedProjects = projects.map(p => ({
+        id: p.id,
+        name: p.name,
+        client: p.client,
+        contractSum: p.contract_sum,
+        location: p.location,
+        startDate: p.start_date,
+        endDate: p.end_date,
+        status: p.status,
+        projectManager: p.project_manager,
+        description: p.description,
+        progress: p.progress || 0,
+        createdAt: p.created_at
+      }));
+      set({ projects: mappedProjects });
+    } catch (error) {
+      console.error('Failed to fetch projects:', error);
+    }
+  },
+  
+  addProject: async (project) => {
+    try {
+      // Convert camelCase to snake_case for backend
+      const backendProject = {
+        name: project.name,
+        client: project.client,
+        contract_sum: project.contractSum,
+        location: project.location,
+        start_date: project.startDate,
+        end_date: project.endDate,
+        status: project.status,
+        project_manager: project.projectManager,
+        description: project.description,
+        progress: project.progress || 0
+      };
+      
+      const newProject = await api.createProject(backendProject);
+      
+      const mappedProject = {
+        id: newProject.id,
+        name: newProject.name,
+        client: newProject.client,
+        contractSum: newProject.contract_sum,
+        location: newProject.location,
+        startDate: newProject.start_date,
+        endDate: newProject.end_date,
+        status: newProject.status,
+        projectManager: newProject.project_manager,
+        description: newProject.description,
+        progress: newProject.progress || 0,
+        createdAt: newProject.created_at
+      };
+      
+      set((state) => ({ projects: [...state.projects, mappedProject] }));
+    } catch (error) {
+      console.error('Failed to add project:', error);
+    }
+  },
+  
+  updateProject: async (project) => {
+    try {
+      const backendProject = {
+        name: project.name,
+        client: project.client,
+        contract_sum: project.contractSum,
+        location: project.location,
+        start_date: project.startDate,
+        end_date: project.endDate,
+        status: project.status,
+        project_manager: project.projectManager,
+        description: project.description,
+        progress: project.progress || 0
+      };
+      
+      const updated = await api.updateProject(project.id, backendProject);
+      
+      const mappedProject = {
+        id: updated.id,
+        name: updated.name,
+        client: updated.client,
+        contractSum: updated.contract_sum,
+        location: updated.location,
+        startDate: updated.start_date,
+        endDate: updated.end_date,
+        status: updated.status,
+        projectManager: updated.project_manager,
+        description: updated.description,
+        progress: updated.progress || 0,
+        createdAt: updated.created_at
+      };
+      
+      set((state) => ({
+        projects: state.projects.map(p => p.id === project.id ? mappedProject : p)
+      }));
+    } catch (error) {
+      console.error('Failed to update project:', error);
+    }
+  },
+  
+  deleteProject: async (id) => {
+    try {
+      await api.deleteProject(id);
+      set((state) => ({
+        projects: state.projects.filter(p => p.id !== id)
+      }));
+      console.log('Project deleted successfully');
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+    }
+  },
+  
+  // ========== RESET ALL DATA ==========
+  resetAllData: async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      if (!confirm('⚠️ WARNING: This will permanently delete ALL data. This action CANNOT be undone. Continue?')) {
+        return;
+      }
+      
+      const endpoints = [
+        'projects', 'workers', 'worker-categories', 'payroll-records',
+        'approved-items', 'suppliers', 'purchase-orders', 'supplies',
+        'store-transactions', 'site-diary-entries', 'subcontractors',
+        'quotations', 'invoices', 'income', 'expenses'
+      ];
+      
+      for (const endpoint of endpoints) {
+        try {
+          const getResponse = await fetch(`${API_BASE_URL}/${endpoint}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (getResponse.ok) {
+            const items = await getResponse.json();
+            for (const item of items) {
+              await fetch(`${API_BASE_URL}/${endpoint}/${item.id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+            }
+            console.log(`✅ Cleared ${endpoint}`);
+          }
+        } catch (error) {
+          console.error(`Error clearing ${endpoint}:`, error.message);
+        }
+      }
+      
+      // Reset all state
+      set({ projects: [], workers: [], /* ... all other arrays */ });
+      
+      alert('All data has been cleared from the database!');
+    } catch (error) {
+      console.error('Failed to reset data:', error);
+      alert('Error resetting data.');
+    }
+  }
+}));
+```
+
+### 5.3 Environment Variables
+
+**.env.development:**
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
+**.env.production:**
+```env
+VITE_API_URL=https://your-backend.onrender.com/api
+```
+
+### 5.4 Vercel Configuration (vercel.json)
+
+```json
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "env": {
+    "VITE_API_URL": "https://your-backend.onrender.com/api"
+  }
+}
+```
+
+---
+
+## 6. Deployment to Render
+
+### 6.1 Create PostgreSQL Database on Render
+
+1. Go to https://dashboard.render.com
+2. Click "New +" → "PostgreSQL"
+3. Fill in:
+   - Name: `your-app-db`
+   - Database: `your_app_db`
+   - User: `your_app_user`
+   - Plan: Free
+4. Click "Create Database"
+5. Copy the **External Database URL** (starts with `postgresql://`)
+
+### 6.2 Deploy Backend to Render
+
+1. Push your code to GitHub
+2. On Render: "New +" → "Web Service"
+3. Connect your GitHub repository
+4. Configure:
+   - Name: `your-app-backend`
+   - Environment: `Node`
+   - Build Command: `npm install`
+   - Start Command: `npm start`
+5. Add environment variables:
+   ```
+   NODE_ENV=production
+   JWT_SECRET=<generate-random-string>
+   DATABASE_URL=<paste-from-postgresql>
+   FRONTEND_URL=https://your-app.vercel.app
+   ```
+6. Click "Create Web Service"
+7. Wait for deployment (2-3 minutes)
+
+### 6.3 Run Database Schema on Render
+
+After deployment, run the schema:
+
+```bash
+# Option 1: Using Render SQL Editor
+# Go to your database → SQL Editor → Paste schema.sql → Run
+
+# Option 2: Using psql from local
+psql "postgresql://user:pass@host:port/db" < schema.sql
+```
+
+---
+
+## 7. Deployment to Vercel
+
+### 7.1 Deploy Frontend to Vercel
+
+1. Go to https://vercel.com
+2. Click "Add New" → "Project"
+3. Import your GitHub repository
+4. Configure:
+   - Framework Preset: `Vite`
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+5. Add environment variable:
+   ```
+   VITE_API_URL=https://your-backend.onrender.com/api
+   ```
+6. Click "Deploy"
+7. Get your URL (e.g., `https://your-app.vercel.app`)
+
+### 7.2 Update Backend CORS
+
+After frontend deploys, update backend environment:
+1. Go to Render dashboard
+2. Click your web service
+3. Add `FRONTEND_URL=https://your-app.vercel.app`
+4. Click "Manual Deploy" → "Deploy latest commit"
+
+---
+
+## 8. Post-Deployment Fixes
+
+### 8.1 Fix Missing Export Errors
+
+If you see `"[Component] is not exported"` error:
+
+```typescript
+// WRONG
+function IncomeModule() { ... }
+
+// CORRECT
+export function IncomeModule() { ... }
+```
+
+### 8.2 Fix Reports Not Showing Project Names
+
+In `ReportsModule.tsx`, add this check:
+
+```typescript
+useEffect(() => {
+  async function loadData() {
+    // ✅ CRITICAL: Wait for projects to load
+    if (allProjects.length === 0) {
+      console.log('Waiting for projects to load...');
+      return;
+    }
+    
+    setLoading(true);
+    // ... rest of code
+  }
+  loadData();
+}, [allProjects]); // Include allProjects in dependencies
+```
+
+### 8.3 Fix Site Diary Dialog Not Closing
+
+Remove alert from store:
+
+```typescript
+// In useAppStore.ts - REMOVE this line
+alert('Site diary entry saved successfully! Page will refresh.');
+```
+
+Add alert in component:
+
+```typescript
+// In SiteDiaryModule.tsx
+await addSiteDiaryEntry(entryData);
+await fetchSiteDiaryEntries();
+alert('Entry saved successfully!'); // Alert here, not in store
+```
+
+### 8.4 Add "Mark as Paid" Button
+
+See Section 4 of the manual for complete code.
+
+---
+
+## 9. Testing Checklist
+
+### 9.1 Pre-Deployment Tests
+
+- [ ] `npm run build` succeeds locally
+- [ ] All components have `export` keyword
+- [ ] Environment variables are set
+- [ ] Database connection string is valid
+
+### 9.2 Post-Deployment Tests
+
+- [ ] Backend health check: `curl https://your-backend.onrender.com/api/health`
+- [ ] Frontend loads without errors (F12 console)
+- [ ] User registration works
+- [ ] Login with OTP works
+- [ ] Projects load correctly
+- [ ] Create/Edit/Delete project works
+- [ ] Reports show correct data with project names
+- [ ] "Mark as Paid" button appears and works
+- [ ] Site Diary saves and closes dialog
+- [ ] Data persists after server restart
+
+---
+
+## 10. Rollback Procedures
+
+### 10.1 Roll Back Backend
+
+```bash
+# Option 1: Revert to previous commit
+git revert <bad-commit-hash>
+git push origin main
+# Render auto-deploys
+
+# Option 2: Manual deploy on Render
+# Dashboard → Service → Manual Deploy → Deploy previous version
+```
+
+### 10.2 Roll Back Frontend
+
+```bash
+# Option 1: Revert commit
+git revert <bad-commit-hash>
+git push origin main
+# Vercel auto-deploys
+
+# Option 2: Vercel dashboard
+# Project → Deployments → Find working version → Promote to Production
+```
+
+### 10.3 Roll Back Database
+
+```bash
+# Restore from backup
+psql $DATABASE_URL < backup_$(date +%Y%m%d).sql
+```
+
+---
+
+## 11. Common Errors & Solutions
+
+### Error 1: Module Not Exported
+
+```
+"[Component]" is not exported by "src/components/modules/Component.tsx"
+```
+
+**Fix:** Add `export` before function name.
+
+### Error 2: CORS Error
+
+```
+Access-Control-Allow-Origin
+```
+
+**Fix:** Update backend CORS to include Vercel URL.
+
+### Error 3: SQLite in Production
+
+```
+SQLITE_ERROR: no such table
+```
+
+**Fix:** PostgreSQL required on Render. Migrate all data.
+
+### Error 4: Missing company_id in Queries
+
+```
+ERROR: null value in column "company_id" violates not-null constraint
+```
+
+**Fix:** Always include `company_id = ?` in all queries.
+
+### Error 5: Reports Show "Project 102" Instead of Name
+
+**Fix:** Add `if (allProjects.length === 0) return;` check before processing.
+
+### Error 6: Build Failed on Vercel
+
+```
+Error: Command "npm run build" exited with 1
+```
+
+**Fix:** 
+1. Run `npm run build` locally to see error
+2. Fix TypeScript errors
+3. Ensure all imports are correct
+4. Commit and push again
+
+### Error 7: Database Connection Failed
+
+```
+connect ECONNREFUSED
+```
+
+**Fix:**
+1. Check DATABASE_URL format
+2. Add `ssl: { rejectUnauthorized: false }` for Render
+3. Verify database is created
+
+---
+
+## 12. Quick Command Reference
+
+```bash
+# === LOCAL DEVELOPMENT ===
+cd backend && npm run dev
+cd frontend && npm run dev
+
+# === BUILD ===
+cd frontend && npm run build
+
+# === DEPLOY ===
+git add .
+git commit -m "Deploy changes"
+git push origin main
+
+# === DATABASE ===
+# Connect to Render PostgreSQL
+psql "postgresql://user:pass@host:port/db"
+
+# Run migration
+node migrate-data.js
+
+# === TEST ===
+# Health check
+curl https://your-backend.onrender.com/api/health
+
+# Check logs (Render)
+# Dashboard → Service → Logs tab
+```
+
+---
+
+## 13. File Structure Reference
+
+```
+your-project/
+├── backend/
+│   ├── src/
+│   │   ├── config/
+│   │   │   └── database.js
+│   │   ├── controllers/
+│   │   │   ├── authController.js
+│   │   │   ├── projectController.js
+│   │   │   ├── workerController.js
+│   │   │   └── ...
+│   │   ├── middleware/
+│   │   │   └── auth.js
+│   │   └── server.js
+│   ├── package.json
+│   └── .env
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   └── modules/
+│   │   │       ├── ProcurementModule.tsx
+│   │   │       ├── ReportsModule.tsx
+│   │   │       ├── SiteDiaryModule.tsx
+│   │   │       └── ...
+│   │   ├── hooks/
+│   │   │   └── useAppStore.ts
+│   │   ├── services/
+│   │   │   └── api.ts
+│   │   └── lib/
+│   │       ├── types.ts
+│   │       └── sample-data.ts
+│   ├── package.json
+│   ├── vercel.json
+│   └── .env.production
+└── schema.sql
+```
+
+---
+
+## 14. Success Criteria
+
+Your migration is successful when:
+
+- ✅ Frontend loads without 404 errors
+- ✅ Backend health endpoint returns 200
+- ✅ User can register a new company
+- ✅ Login with subdomain works
+- ✅ All data is isolated by company_id
+- ✅ Projects, workers, expenses, income display correctly
+- ✅ Reports show proper project names
+- ✅ Data persists after server restart
+- ✅ No CORS errors in browser console
+
+---
+
+**This manual contains everything that actually worked in production migration from SQLite to PostgreSQL multi-tenant.**

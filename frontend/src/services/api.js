@@ -70,12 +70,15 @@ async verifyLoginOTP(email, code, subdomain) {
     method: 'POST',
     body: JSON.stringify({ email, code, subdomain })
   });
-  console.log('api.verifyLoginOTP raw response:', data);  // ← ADD THIS LINE
+  console.log('api.verifyLoginOTP raw response:', data);
   if (data.token) {
     this.setToken(data.token);
   }
-  return data;
+  // Return the FULL response so isSuperAdmin is captured
+  return data;  // Contains { token, user: { ...isSuperAdmin } }
 }
+
+
 
 
 
@@ -107,15 +110,21 @@ async verifyLoginOTP(email, code, subdomain) {
     return data;
   }
 
+
+
   // ========== TRADITIONAL AUTH (keep for backward compatibility) ==========
-  async login(email, password, subdomain) {
-    const data = await this.request('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password, subdomain })
-    });
-    this.setToken(data.token);
-    return data.user;
-  }
+async login(email, password, subdomain) {
+  const data = await this.request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password, subdomain })
+  });
+  this.setToken(data.token);
+  // Return FULL response so store can capture isSuperAdmin
+  return data;  // NOT just data.user
+}
+
+
+
 
   async logout() {
     this.setToken(null);
@@ -645,6 +654,39 @@ async verifyLoginOTP(email, code, subdomain) {
       body: JSON.stringify(data)
     });
   }
+
+  // ========== SUPER ADMIN ==========
+  async getSuperAdminStats() {
+    return this.request('/super-admin/stats');
+  }
+
+  async getAllCompanies() {
+    return this.request('/super-admin/companies');
+  }
+
+  async getCompanyDetails(companyId) {
+    return this.request(`/super-admin/companies/${companyId}`);
+  }
+
+  async getAllSystemUsers() {
+    return this.request('/super-admin/users');
+  }
+
+  async toggleSuperAdmin(userId, isSuperAdmin) {
+    return this.request(`/super-admin/users/${userId}/toggle-super-admin`, {
+      method: 'PUT',
+      body: JSON.stringify({ isSuperAdmin })
+    });
+  }
+
+  async getAllSubscriptions() {
+    return this.request('/super-admin/subscriptions');
+  }
+
+  async getAllPayments() {
+    return this.request('/super-admin/payments');
+  }
+
 }
 
 export default new ApiService();
