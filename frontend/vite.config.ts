@@ -1,17 +1,15 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import { noTreeShake } from './vite-plugin-no-tree-shake';
 
-// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    hmr: {
-      overlay: false,
-    },
+    hmr: { overlay: false },
   },
-  plugins: [react()],
+  plugins: [react(), noTreeShake()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

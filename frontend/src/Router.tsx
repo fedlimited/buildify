@@ -1,5 +1,6 @@
-import { lazy, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import type { RouteObject } from 'react-router-dom';
 import { useAppStore } from '@/hooks/useAppStore';
 import Index from './pages/Index';
 import { Login } from './pages/Login';
@@ -7,39 +8,6 @@ import { Register } from './pages/Register';
 import { BillingModule } from '@/components/modules/BillingModule';
 import { Sidebar } from '@/components/Sidebar';
 import { TopBar } from '@/components/TopBar';
-
-// Direct import for main admin entry (not lazy - always included)
-import { AdminDashboard } from '@/components/modules/AdminDashboard';
-import { AdminLayout } from '@/components/AdminLayout';
-
-// Lazy imports for other admin pages
-const AdminCompanies = lazy(() => import('@/components/modules/AdminCompanies').then(m => ({ default: m.AdminCompanies })));
-const AdminUsers = lazy(() => import('@/components/modules/AdminUsers').then(m => ({ default: m.AdminUsers })));
-const AdminSubscriptions = lazy(() => import('@/components/modules/AdminSubscriptions').then(m => ({ default: m.AdminSubscriptions })));
-const AdminPayments = lazy(() => import('@/components/modules/AdminPayments').then(m => ({ default: m.AdminPayments })));
-
-
-
-
-
-
-function AdminEntry() {
-  console.log('🔥 AdminEntry rendering...');
-  try {
-    return (
-      <AdminLayout>
-        <AdminDashboard />
-      </AdminLayout>
-    );
-  } catch (error) {
-    console.error('AdminEntry error:', error);
-    return <div style={{padding: 50, color: 'red'}}>Admin Error: {String(error)}</div>;
-  }
-}
-
-
-
-
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { authUser } = useAppStore();
@@ -60,25 +28,33 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
+const baseRoutes: RouteObject[] = [
+  { path: '/login', element: <Login /> },
+  { path: '/register', element: <Register /> },
+  { path: '/', element: <ProtectedRoute><Index /></ProtectedRoute> },
+  { path: '/dashboard', element: <ProtectedRoute><Index /></ProtectedRoute> },
+  { path: '/dashboard/billing', element: <ProtectedRoute><DashboardLayout><BillingModule /></DashboardLayout></ProtectedRoute> },
+  { path: '*', element: <Navigate to="/dashboard" replace /> },
+];
+
 export function Router() {
+  const [routes, setRoutes] = useState<RouteObject[]>(baseRoutes);
+
+  useEffect(() => {
+    import('./adminRoutesConfig').then((m) => {
+      const fallback = baseRoutes.pop();
+      setRoutes([...baseRoutes, ...m.adminRouteObjects, fallback!]);
+    }).catch((err) => {
+      console.error('Failed to load admin routes:', err);
+    });
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-
-        <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-        <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-        <Route path="/dashboard/billing" element={<ProtectedRoute><DashboardLayout><BillingModule /></DashboardLayout></ProtectedRoute>} />
-
-        {/* Super Admin Routes */}
-        <Route path="/admin" element={<AdminEntry />} />
-        <Route path="/admin/companies" element={<Suspense fallback={<div className="p-8 text-center">Loading...</div>}><AdminCompanies /></Suspense>} />
-        <Route path="/admin/users" element={<Suspense fallback={<div className="p-8 text-center">Loading...</div>}><AdminUsers /></Suspense>} />
-        <Route path="/admin/subscriptions" element={<Suspense fallback={<div className="p-8 text-center">Loading...</div>}><AdminSubscriptions /></Suspense>} />
-        <Route path="/admin/payments" element={<Suspense fallback={<div className="p-8 text-center">Loading...</div>}><AdminPayments /></Suspense>} />
-
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        {routes.map((route, i) => (
+          <Route key={i} path={route.path} element={route.element} />
+        ))}
       </Routes>
     </BrowserRouter>
   );
