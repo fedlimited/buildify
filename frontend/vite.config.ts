@@ -18,4 +18,12 @@ export default defineConfig(({ mode }) => ({
     },
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        entryFileNames: 'assets/index-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+      }
+    }
+  }
 }));
