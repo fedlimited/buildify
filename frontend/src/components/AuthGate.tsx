@@ -196,7 +196,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
                 <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded flex items-center justify-center shadow-lg shadow-amber-500/25">
                   <HardHat size={20} className="text-white" />
                 </div>
-                <span className="text-white font-semibold text-xl tracking-tight">BOCHABERI</span>
+                <span className="text-white font-semibold text-xl tracking-tight">BOCHI</span>
               </div>
               <h1 className="text-3xl font-bold text-white mb-1">Welcome back</h1>
               <p className="text-gray-400 text-sm">Please enter your details to sign in</p>
@@ -217,7 +217,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
                         autoFocus
                       />
                       <span className="px-3 py-2.5 bg-gray-900 border border-l-0 border-gray-700 rounded-r text-sm text-gray-400">
-                        .bochaberi.com
+                        .bochi.com
                       </span>
                     </div>
                   </div>
@@ -306,7 +306,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
               {/* Bottom Start Free Trial Button */}
               <div className="mt-6 pt-4 border-t border-gray-800 text-center">
-                <p className="text-gray-400 text-xs mb-2">New to BOCHABERI?</p>
+                <p className="text-gray-400 text-xs mb-2">New to BOCHI?</p>
                 <button
                   onClick={() => {
                     setShowRegister(true);
@@ -464,7 +464,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
                   className={`transition-all duration-300 rounded-full ${
                     currentTestimonial === idx
                       ? 'w-6 h-1 bg-amber-400'
-                      : 'w-3 h-1 bg-white/20 hover:bg-white/30'
+                      : 'w-3B h-1 bg-white/20 hover:bg-white/30'
                   }`}
                 />
               ))}
@@ -489,7 +489,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
           <div className="mt-8 pt-6 border-t border-white/10 text-center">
             <p className="text-gray-400 text-sm">
-              Join 500+ construction companies already using BOCHABERI
+              Join 500+ construction companies already using BOCHI
             </p>
           </div>
         </div>
