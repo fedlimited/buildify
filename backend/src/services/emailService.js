@@ -32,9 +32,9 @@ async function sendOTP(email, code, purpose = 'login') {
     const transporter = getTransporter();
     
     await transporter.sendMail({
-      from: `"BOCHABERI Construction" <${process.env.EMAIL_USER}>`,
+      from: `"BOCHI Construction Suite" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: `Your ${purpose} verification code - BOCHABERI`,
+      subject: `Your ${purpose} verification code - BOCHI`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -47,18 +47,18 @@ async function sendOTP(email, code, purpose = 'login') {
         </head>
         <body>
           <div class="container">
-            <h2>BOCHABERI Construction Suite</h2>
-            <p>Your verification code to ${purposeText} BOCHABERI is:</p>
+            <h2>BOCHI Construction Suite</h2>
+            <p>Your verification code to ${purposeText} BOCHI is:</p>
             <div class="code">${code}</div>
             <p>This code will expire in 10 minutes.</p>
             <p>If you didn't request this, please ignore this email.</p>
             <hr>
-            <p style="font-size: 12px; color: #666;">BOCHABERI Construction Suite - Project Management System</p>
+            <p style="font-size: 12px; color: #666;">BOCHI Construction Suite - Project Management System</p>
           </div>
         </body>
         </html>
       `,
-      text: `BOCHABERI Construction Suite\n\nYour verification code to ${purposeText} BOCHABERI is: ${code}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this, please ignore this email.`
+      text: `BOCHI Construction Suite\n\nYour verification code to ${purposeText} BOCHI is: ${code}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this, please ignore this email.`
     });
     
     console.log(`✅ Email sent successfully to ${email}`);
@@ -82,17 +82,17 @@ async function sendInvitationCode(email, code, inviterName, companyName) {
     const transporter = getTransporter();
     
     await transporter.sendMail({
-      from: `"${inviterName} via BOCHABERI" <${process.env.EMAIL_USER}>`,
+      from: `"${inviterName} via BOCHI" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: `Invitation to join ${companyName} on BOCHABERI`,
+      subject: `Invitation to join ${companyName} on BOCHI`,
       html: `
         <h2>You're Invited!</h2>
-        <p><strong>${inviterName}</strong> has invited you to join <strong>${companyName}</strong> on BOCHABERI Construction Suite.</p>
+        <p><strong>${inviterName}</strong> has invited you to join <strong>${companyName}</strong> on BOCHI Construction Suite.</p>
         <p>Your invitation code: <strong style="font-size: 24px;">${code}</strong></p>
         <p>This code expires in 30 minutes.</p>
-        <p>Click here to register: <a href="https://app.bochaberi.com/register">Register Now</a></p>
+        <p>Click here to register: <a href="https://app.bochi.ke/register">Register Now</a></p>
       `,
-      text: `You're invited to join ${companyName} on BOCHABERI.\n\nYour invitation code: ${code}\n\nExpires in 30 minutes.\n\nRegister at: https://app.bochaberi.com/register`
+      text: `You're invited to join ${companyName} on BOCHI.\n\nYour invitation code: ${code}\n\nExpires in 30 minutes.\n\nRegister at: https://app.bochi.ke/register`
     });
     
     console.log(`✅ Invitation email sent to ${email}`);
