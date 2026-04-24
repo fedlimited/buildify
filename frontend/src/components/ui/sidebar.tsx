@@ -71,7 +71,7 @@ export function Sidebar() {
             <HardHat size={20} className="text-white" />
           </div>
           {!sidebarCollapsed && (
-            <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white">BOCHABERI</span>
+            <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white">BOCHI</span>
           )}
         </div>
       </div>

@@ -188,7 +188,7 @@ const Login: React.FC = () => {
                 <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded flex items-center justify-center shadow-lg shadow-amber-500/25">
                   <HardHat size={20} className="text-white" />
                 </div>
-                <span className="text-white font-semibold text-xl tracking-tight">BOCHABERI</span>
+                <span className="text-white font-semibold text-xl tracking-tight">BOCHI</span>
               </div>
               <h1 className="text-3xl font-bold text-white mb-1">Welcome back</h1>
               <p className="text-gray-400 text-sm">Please enter your details to sign in</p>
@@ -209,7 +209,7 @@ const Login: React.FC = () => {
                         autoFocus
                       />
                       <span className="px-3 py-2.5 bg-gray-900 border border-l-0 border-gray-700 rounded-r text-sm text-gray-400">
-                        .bochaberi.com
+                        .bochi.com
                       </span>
                     </div>
                   </div>
@@ -298,7 +298,7 @@ const Login: React.FC = () => {
 
               {/* Bottom Start Free Trial Button */}
               <div className="mt-6 pt-4 border-t border-gray-800 text-center">
-                <p className="text-gray-400 text-xs mb-2">New to BOCHABERI?</p>
+                <p className="text-gray-400 text-xs mb-2">New to BOCHI?</p>
                 <button
                   onClick={() => navigate('/register')}
                   className="w-full bg-transparent border-2 border-amber-500 hover:bg-amber-500/10 text-amber-400 py-3 rounded text-base font-semibold transition-all duration-200 flex items-center justify-center gap-2"
@@ -478,7 +478,7 @@ const Login: React.FC = () => {
 
           <div className="mt-8 pt-6 border-t border-white/10 text-center">
             <p className="text-gray-400 text-sm">
-              Join 500+ construction companies already using BOCHABERI
+              Join 500+ construction companies already using BOCHI
             </p>
           </div>
         </div>

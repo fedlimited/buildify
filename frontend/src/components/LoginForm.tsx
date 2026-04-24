@@ -23,7 +23,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
     try {
       const response = await api.sendLoginOTP(email, subdomain);
       if (response.success) {
-        setStep('otp');
+      
         setResendCooldown(60);
         const timer = setInterval(() => {
           setResendCooldown((prev) => {
@@ -96,7 +96,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
 
   return (
     <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
-      <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>BOCHABERI Construction Suite</h2>
+      <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>BOCHI Construction Suite</h2>
       
       {error && (
         <div style={{ padding: '10px', marginBottom: '10px', backgroundColor: '#fee', color: '#c00', borderRadius: '4px' }}>
