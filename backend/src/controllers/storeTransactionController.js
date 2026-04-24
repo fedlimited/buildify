@@ -51,15 +51,17 @@ getTransactions: async (req, res) => {
     try {
       const db = getDb();
       const company_id = req.user?.companyId || req.user?.company_id;
-      const {
-        date, projectId, projectName, transactionType,
-        itemId, itemName, unit, category,
-        quantitySupplied, quantityIssued, quantityReturned,
-        balance, reference, issuedTo, returnedBy, notes
-      } = req.body;
+const {
+  date, project_id, project_name, transaction_type,
+  item_id, item_name, unit, category,
+  quantity_supplied, quantity_issued, quantity_returned,
+  balance, reference, issued_to, returned_by, notes
+} = req.body;
+
+
       
       console.log('Creating store transaction for company:', company_id);
-      console.log('Item:', itemName, 'Quantity Supplied:', quantitySupplied);
+      console.log('Item:', item_name, 'Quantity Supplied:', quantity_supplied);
       
       const result = await db.run(
         `INSERT INTO store_transactions (
@@ -68,12 +70,18 @@ getTransactions: async (req, res) => {
           quantity_supplied, quantity_issued, quantity_returned,
           balance, reference, issued_to, returned_by, notes, created_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP) RETURNING id`,
+
+
+
         [
-          company_id, date, projectId, projectName, transactionType,
-          itemId || null, itemName, unit, category,
-          quantitySupplied || 0, quantityIssued || 0, quantityReturned || 0,
-          balance || 0, reference || null, issuedTo || null, returnedBy || null, notes || null
+          company_id, date, project_id, project_name, transaction_type,
+          item_id || null, item_name, unit, category,
+          quantity_supplied || 0, quantity_issued || 0, quantity_returned || 0,
+          balance || 0, reference || null, issued_to || null, returned_by || null, notes || null
         ]
+
+
+
       );
       
       if (!result || !result.lastID) {
