@@ -42,8 +42,14 @@ app.use(cors({
   origin: [
     'http://localhost:8080',
     'http://localhost:5000',
-    'https://buildify-frontend-kohl.vercel.app'
+    'https://buildify-frontend-kohl.vercel.app',
+    'https://buildify-frontend-rnwia68nf-fedlimiteds-projects.vercel.app',
+    'https://www.bochi.ke',
+    'https://bochi.ke'
   ],
+
+
+
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']

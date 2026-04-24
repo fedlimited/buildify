@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import type { RouteObject } from 'react-router-dom';
 import { useAppStore } from '@/hooks/useAppStore';
 import Index from './pages/Index';
 import { Login } from './pages/Login';
@@ -6,15 +8,10 @@ import { Register } from './pages/Register';
 import { BillingModule } from '@/components/modules/BillingModule';
 import { Sidebar } from '@/components/Sidebar';
 import { TopBar } from '@/components/TopBar';
-import { adminRoutes } from './adminRoutes';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { authUser } = useAppStore();
-
-  if (!authUser) {
-    return <Navigate to="/login" replace />;
-  }
-
+  if (!authUser) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
@@ -31,47 +28,33 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
+const baseRoutes: RouteObject[] = [
+  { path: '/login', element: <Login /> },
+  { path: '/register', element: <Register /> },
+  { path: '/', element: <ProtectedRoute><Index /></ProtectedRoute> },
+  { path: '/dashboard', element: <ProtectedRoute><Index /></ProtectedRoute> },
+  { path: '/dashboard/billing', element: <ProtectedRoute><DashboardLayout><BillingModule /></DashboardLayout></ProtectedRoute> },
+  { path: '*', element: <Navigate to="/dashboard" replace /> },
+];
+
 export function Router() {
+  const [routes, setRoutes] = useState<RouteObject[]>(baseRoutes);
+
+  useEffect(() => {
+    import('./adminRoutesConfig').then((m) => {
+      const fallback = baseRoutes.pop();
+      setRoutes([...baseRoutes, ...m.adminRouteObjects, fallback!]);
+    }).catch((err) => {
+      console.error('Failed to load admin routes:', err);
+    });
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-
-        {/* Regular Dashboard Routes */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Index />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Index />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/billing"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <BillingModule />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Super Admin Routes */}
-        {adminRoutes}
-
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        {routes.map((route, i) => (
+          <Route key={i} path={route.path} element={route.element} />
+        ))}
       </Routes>
     </BrowserRouter>
   );

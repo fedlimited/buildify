@@ -1,2 +1,4 @@
 *.txt 
 #frontend/google*.html 
+.vercel
+.env*.local

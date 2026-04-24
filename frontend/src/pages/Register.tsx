@@ -85,7 +85,7 @@ export function Register({ onBackToLogin }: RegisterProps) {
         throw new Error(data.error || 'Registration failed');
       }
 
-      setSuccess("Welcome to BOCHABERI! Your company " + form.name + " has been successfully registered.");
+      setSuccess("Welcome to BOCHI! Your company " + form.name + " has been successfully registered.");
 
       setTimeout(() => {
         if (onBackToLogin) {
@@ -114,7 +114,7 @@ export function Register({ onBackToLogin }: RegisterProps) {
           </div>
           <CardTitle className="text-3xl font-bold">Start Your Free Trial</CardTitle>
           <CardDescription className="text-base mt-2">
-            Join thousands of construction companies using BOCHABERI Suite
+            Join thousands of construction companies using BOCHI Suite
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-6">
@@ -164,7 +164,7 @@ export function Register({ onBackToLogin }: RegisterProps) {
                       className="rounded-r-none"
                     />
                     <span className="inline-flex items-center px-3 bg-muted border border-l-0 border-border rounded-r-md text-sm text-muted-foreground">
-                      .bochaberi.com
+                      .bochi.com
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
