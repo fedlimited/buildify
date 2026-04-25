@@ -11,7 +11,8 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Home
+  Home,
+  BarChart3
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -38,6 +39,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       label: 'Dashboard', 
       icon: LayoutDashboard,
       exact: true 
+    },
+    { 
+      path: '/admin/analytics', 
+      label: 'Analytics', 
+      icon: BarChart3 
     },
     { 
       path: '/admin/companies', 

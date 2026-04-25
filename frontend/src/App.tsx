@@ -14,9 +14,10 @@ import { AuthGate } from '@/components/AuthGate';
 import './components/modules/admin-exports';
 import { AdminDashboard, AdminCompanies, AdminUsers, AdminSubscriptions, AdminPayments } from '@/components/modules/admin-exports';
 import { AdminLayout } from '@/components/AdminLayout';
+import { AdminAnalytics } from '@/components/modules/AdminAnalytics';
 
 // Dummy reference to prevent tree-shaking
-const ADMIN_COMPONENTS = { AdminDashboard, AdminCompanies, AdminUsers, AdminSubscriptions, AdminPayments, AdminLayout };
+const ADMIN_COMPONENTS = { AdminDashboard, AdminCompanies, AdminUsers, AdminSubscriptions, AdminPayments, AdminLayout, AdminAnalytics };
 console.log('Admin components registered:', Object.keys(ADMIN_COMPONENTS));
 
 const queryClient = new QueryClient();
@@ -87,6 +88,13 @@ const App = () => (
             <AuthGate>
               <AdminLayout>
                 <AdminPayments />
+              </AdminLayout>
+            </AuthGate>
+          } />
+          <Route path="/admin/analytics" element={
+            <AuthGate>
+              <AdminLayout>
+                <AdminAnalytics />
               </AdminLayout>
             </AuthGate>
           } />
