@@ -1,22 +1,14 @@
+import { PrintableInvoice } from './PrintableInvoice';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@/hooks/useAppStore';
 import api from '@/services/api';
-
-
-
-
-
 import {
   TrendingUp, TrendingDown, DollarSign, Users, CreditCard,
   Activity, BarChart3, PieChart, Loader2, Download, Printer,
   Calendar, ArrowUpRight, ArrowDownRight, RefreshCw,
   FileText, Receipt, Calculator, Building2
 } from 'lucide-react';
-
-
-
-
 
 interface RevenueData {
   month: string;
@@ -49,6 +41,7 @@ export function AdminAnalytics() {
   const [stats, setStats] = useState<any>(null);
   const [payments, setPayments] = useState<any[]>([]);
   const [dateRange, setDateRange] = useState('12');
+  const [selectedPayment, setSelectedPayment] = useState<any>(null);
 
   useEffect(() => {
     if (authUser && !authUser.isSuperAdmin) {
@@ -382,7 +375,7 @@ export function AdminAnalytics() {
                     </td>
                     <td className="py-3 px-4 text-center">
                       <button
-                        onClick={() => alert(`Invoice for ${p.company_name}\nAmount: KES ${p.amount_kes?.toLocaleString()}\nDate: ${new Date(p.paid_at || p.created_at).toLocaleDateString()}\nMethod: ${p.payment_method}\nReference: ${p.mpesa_transaction_id || p.stripe_payment_intent_id || 'N/A'}`)}
+                        onClick={() => setSelectedPayment(p)}
                         className="p-1.5 hover:bg-muted rounded-lg"
                         title="View Invoice"
                       >
@@ -395,6 +388,14 @@ export function AdminAnalytics() {
             </table>
           </div>
         </div>
+      )}
+
+      {/* Invoice Modal */}
+      {selectedPayment && (
+        <PrintableInvoice
+          payment={selectedPayment}
+          onClose={() => setSelectedPayment(null)}
+        />
       )}
     </div>
   );
