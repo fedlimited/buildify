@@ -87,9 +87,11 @@ export function Sidebar() {
       {/* Logo + Collapse */}
       <div className="flex items-center justify-between px-4 h-16 border-b border-sidebar-hover shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center shrink-0">
-            <HardHat size={20} className="text-accent-foreground" />
-          </div>
+          <img 
+            src="/Bochi_logo_transparent.PNG" 
+            alt="BOCHI" 
+            className="h-9 w-auto"
+          />
           {!sidebarCollapsed && (
             <span className="text-lg font-bold tracking-tight">BOCHI</span>
           )}

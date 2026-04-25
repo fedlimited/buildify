@@ -249,11 +249,20 @@ const LandingPage: React.FC = () => {
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               whileHover={{ scale: 1.02 }}
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center shadow-lg shadow-amber-500/25 mr-2 group-hover:scale-105 transition-transform">
-                <HardHat size={18} className="text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">BOCHI</span>
-              <span className="ml-1 text-xs text-slate-400">Construction Suite</span>
+
+
+<img 
+  src="/Bochi_logo_transparent.PNG" 
+  alt="BOCHI Construction Suite" 
+  className="h-8 w-auto mr-2 group-hover:scale-105 transition-transform"
+/>
+<span className="text-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">BOCHI</span>
+<span className="ml-1 text-xs text-slate-400">Construction Suite</span>
+
+
+
+
+
             </motion.div>
             <div className="hidden md:flex items-center gap-6">
               {['features', 'subscription', 'testimonials', 'pricing', 'faq'].map((item) => (
@@ -1028,9 +1037,20 @@ const LandingPage: React.FC = () => {
               className="flex items-center gap-2 mb-4"
               whileHover={{ scale: 1.02 }}
             >
-              <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/25">
-                <HardHat size={20} className="text-white" />
-              </div>
+
+
+
+
+
+<img 
+  src="/Bochi_logo_transparent.PNG" 
+  alt="BOCHI" 
+  className="h-10 w-auto"
+/>
+
+
+
+
               <span className="text-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">BOCHI</span>
               <span className="text-xs text-slate-400">Construction Suite</span>
             </motion.div>
