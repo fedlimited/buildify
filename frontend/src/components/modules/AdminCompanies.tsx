@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAppStore } from '@/hooks/useAppStore';
 import api from '@/services/api';
 import { 
@@ -14,7 +14,11 @@ import {
   AlertCircle,
   MoreHorizontal,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ArrowLeft,
+  Globe,
+  Clock,
+  CreditCard
 } from 'lucide-react';
 
 interface Company {
@@ -27,10 +31,15 @@ interface Company {
   project_count: number;
   subscription_status: string;
   plan_name: string;
+  plan_display_name?: string;
+  start_date?: string;
+  end_date?: string;
+  trial_end_date?: string;
 }
 
 export function AdminCompanies() {
   const navigate = useNavigate();
+  const { companyId } = useParams();
   const { authUser } = useAppStore();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
@@ -39,6 +48,8 @@ export function AdminCompanies() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const itemsPerPage = 10;
 
   // Redirect if not super admin
@@ -56,6 +67,15 @@ export function AdminCompanies() {
     filterCompanies();
   }, [companies, searchTerm, statusFilter]);
 
+  // Fetch single company details if companyId is in URL
+  useEffect(() => {
+    if (companyId) {
+      fetchCompanyDetails(Number(companyId));
+    } else {
+      setSelectedCompany(null);
+    }
+  }, [companyId]);
+
   const fetchCompanies = async () => {
     try {
       setLoading(true);
@@ -67,6 +87,20 @@ export function AdminCompanies() {
       setError('Failed to load companies');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCompanyDetails = async (id: number) => {
+    try {
+      setDetailLoading(true);
+      const data = await api.getCompanyDetails(id);
+      setSelectedCompany(data);
+      setError(null);
+    } catch (err) {
+      console.error('Failed to fetch company details:', err);
+      setError('Failed to load company details');
+    } finally {
+      setDetailLoading(false);
     }
   };
 
@@ -126,6 +160,15 @@ export function AdminCompanies() {
     );
   };
 
+  const formatDate = (date: string) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleDateString('en-KE', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   // Pagination
   const totalPages = Math.ceil(filteredCompanies.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -139,6 +182,183 @@ export function AdminCompanies() {
     );
   }
 
+  // ========== COMPANY DETAIL VIEW ==========
+  if (companyId) {
+    if (detailLoading) {
+      return (
+        <div className="flex items-center justify-center h-96">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="p-6 max-w-7xl mx-auto">
+          <button
+            onClick={() => navigate('/admin/companies')}
+            className="mb-4 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Companies
+          </button>
+          <div className="bg-destructive/10 text-destructive rounded-lg p-4">{error}</div>
+        </div>
+      );
+    }
+
+    if (!selectedCompany) {
+      return (
+        <div className="p-6 max-w-7xl mx-auto">
+          <button
+            onClick={() => navigate('/admin/companies')}
+            className="mb-4 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Companies
+          </button>
+          <div className="text-center py-12 text-muted-foreground">Company not found</div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-6 max-w-7xl mx-auto">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate('/admin/companies')}
+          className="mb-4 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to Companies
+        </button>
+
+        {/* Company Header */}
+        <div className="bg-card rounded-xl border p-6 mb-6">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-primary/10 rounded-xl">
+                <Building2 className="w-8 h-8 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">{selectedCompany.name}</h1>
+                <div className="flex items-center gap-3 mt-1">
+                  <code className="text-sm bg-muted px-2 py-1 rounded">{selectedCompany.subdomain}</code>
+                  {getStatusBadge(selectedCompany.is_active)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Company Details Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          {/* Users Card */}
+          <div className="bg-card rounded-lg border p-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <Users className="w-5 h-5 text-blue-600" />
+              </div>
+              <h3 className="font-medium">Users</h3>
+            </div>
+            <p className="text-3xl font-bold">{selectedCompany.user_count || 0}</p>
+          </div>
+
+          {/* Projects Card */}
+          <div className="bg-card rounded-lg border p-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-green-500/10 rounded-lg">
+                <Building2 className="w-5 h-5 text-green-600" />
+              </div>
+              <h3 className="font-medium">Projects</h3>
+            </div>
+            <p className="text-3xl font-bold">{selectedCompany.project_count || 0}</p>
+          </div>
+
+          {/* Subscription Card */}
+          <div className="bg-card rounded-lg border p-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-purple-500/10 rounded-lg">
+                <CreditCard className="w-5 h-5 text-purple-600" />
+              </div>
+              <h3 className="font-medium">Subscription</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold">{selectedCompany.plan_name || 'Free'}</span>
+              {getSubscriptionBadge(selectedCompany.subscription_status)}
+            </div>
+          </div>
+
+          {/* Plan Details Card */}
+          <div className="bg-card rounded-lg border p-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-amber-500/10 rounded-lg">
+                <Clock className="w-5 h-5 text-amber-600" />
+              </div>
+              <h3 className="font-medium">Plan</h3>
+            </div>
+            <p className="text-sm">{selectedCompany.plan_display_name || selectedCompany.plan_name || 'Free'}</p>
+          </div>
+
+          {/* Start Date Card */}
+          <div className="bg-card rounded-lg border p-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-emerald-500/10 rounded-lg">
+                <Calendar className="w-5 h-5 text-emerald-600" />
+              </div>
+              <h3 className="font-medium">Start Date</h3>
+            </div>
+            <p className="text-sm">{formatDate(selectedCompany.start_date || selectedCompany.created_at)}</p>
+          </div>
+
+          {/* End Date Card */}
+          <div className="bg-card rounded-lg border p-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-red-500/10 rounded-lg">
+                <Calendar className="w-5 h-5 text-red-600" />
+              </div>
+              <h3 className="font-medium">End Date</h3>
+            </div>
+            <p className="text-sm">{formatDate(selectedCompany.end_date)}</p>
+          </div>
+
+          {/* Domain Card */}
+          <div className="bg-card rounded-lg border p-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-cyan-500/10 rounded-lg">
+                <Globe className="w-5 h-5 text-cyan-600" />
+              </div>
+              <h3 className="font-medium">Subdomain</h3>
+            </div>
+            <code className="text-sm bg-muted px-2 py-1 rounded">{selectedCompany.subdomain}</code>
+          </div>
+
+          {/* Joined Card */}
+          <div className="bg-card rounded-lg border p-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-indigo-500/10 rounded-lg">
+                <Calendar className="w-5 h-5 text-indigo-600" />
+              </div>
+              <h3 className="font-medium">Joined</h3>
+            </div>
+            <p className="text-sm">{formatDate(selectedCompany.created_at)}</p>
+          </div>
+
+          {/* Trial End Card */}
+          {selectedCompany.trial_end_date && (
+            <div className="bg-card rounded-lg border p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-orange-500/10 rounded-lg">
+                  <AlertCircle className="w-5 h-5 text-orange-600" />
+                </div>
+                <h3 className="font-medium">Trial Ends</h3>
+              </div>
+              <p className="text-sm">{formatDate(selectedCompany.trial_end_date)}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ========== COMPANIES LIST VIEW ==========
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
