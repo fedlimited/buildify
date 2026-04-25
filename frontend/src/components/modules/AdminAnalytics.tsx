@@ -2,12 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@/hooks/useAppStore';
 import api from '@/services/api';
+
+
+
+
+
 import {
   TrendingUp, TrendingDown, DollarSign, Users, CreditCard,
   Activity, BarChart3, PieChart, Loader2, Download, Printer,
   Calendar, ArrowUpRight, ArrowDownRight, RefreshCw,
-  FileText, Receipt, Calculator
+  FileText, Receipt, Calculator, Building2
 } from 'lucide-react';
+
+
+
+
 
 interface RevenueData {
   month: string;
