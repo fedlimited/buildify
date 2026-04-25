@@ -18,7 +18,9 @@ import {
   ArrowLeft,
   Globe,
   Clock,
-  CreditCard
+  CreditCard,
+  Edit3,
+  Save
 } from 'lucide-react';
 
 interface Company {
@@ -32,6 +34,8 @@ interface Company {
   subscription_status: string;
   plan_name: string;
   plan_display_name?: string;
+  plan_id?: number;
+  subscription_id?: number;
   start_date?: string;
   end_date?: string;
   trial_end_date?: string;
@@ -52,6 +56,13 @@ export function AdminCompanies() {
   const [detailLoading, setDetailLoading] = useState(false);
   const itemsPerPage = 10;
 
+  // Plan Editor State
+  const [showPlanEditor, setShowPlanEditor] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<number>(0);
+  const [subscriptionStatus, setSubscriptionStatus] = useState('active');
+  const [allPlans, setAllPlans] = useState<any[]>([]);
+  const [updatingPlan, setUpdatingPlan] = useState(false);
+
   // Redirect if not super admin
   useEffect(() => {
     if (authUser && !authUser.isSuperAdmin) {
@@ -61,6 +72,7 @@ export function AdminCompanies() {
 
   useEffect(() => {
     fetchCompanies();
+    loadPlans();
   }, []);
 
   useEffect(() => {
@@ -101,6 +113,43 @@ export function AdminCompanies() {
       setError('Failed to load company details');
     } finally {
       setDetailLoading(false);
+    }
+  };
+
+  const loadPlans = async () => {
+    try {
+      const response = await api.request('/subscription/plans');
+      setAllPlans(response || []);
+    } catch (err) {
+      console.error('Failed to load plans:', err);
+    }
+  };
+
+  const handleUpdateSubscription = async () => {
+    if (!selectedCompany || !selectedPlanId) return;
+    setUpdatingPlan(true);
+    try {
+      await fetch(`https://buildify-backend-kye8.onrender.com/api/super-admin/companies/${selectedCompany.id}/subscription`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          planId: selectedPlanId,
+          status: subscriptionStatus,
+          startDate: new Date().toISOString().split('T')[0]
+        })
+      });
+      alert('Subscription updated successfully!');
+      setShowPlanEditor(false);
+      fetchCompanyDetails(selectedCompany.id); // Refresh
+      fetchCompanies(); // Refresh list
+    } catch (err) {
+      console.error('Failed to update subscription:', err);
+      alert('Failed to update subscription');
+    } finally {
+      setUpdatingPlan(false);
     }
   };
 
@@ -245,6 +294,17 @@ export function AdminCompanies() {
                 </div>
               </div>
             </div>
+            {/* Edit Plan Button */}
+            <button
+              onClick={() => {
+                setSelectedPlanId(selectedCompany.plan_id || 0);
+                setSubscriptionStatus(selectedCompany.subscription_status || 'active');
+                setShowPlanEditor(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors"
+            >
+              <Edit3 className="w-4 h-4" /> Edit Plan
+            </button>
           </div>
         </div>
 
@@ -354,6 +414,61 @@ export function AdminCompanies() {
             </div>
           )}
         </div>
+
+        {/* Plan Editor Modal */}
+        {showPlanEditor && selectedCompany && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" onClick={() => setShowPlanEditor(false)}>
+            <div className="bg-card rounded-xl shadow-2xl max-w-md w-full mx-4 p-6" onClick={e => e.stopPropagation()}>
+              <h3 className="text-lg font-semibold mb-4">Edit Subscription - {selectedCompany.name}</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Select Plan</label>
+                  <select
+                    value={selectedPlanId}
+                    onChange={(e) => setSelectedPlanId(Number(e.target.value))}
+                    className="w-full p-2 border rounded-lg bg-background"
+                  >
+                    <option value={0}>Select a plan...</option>
+                    {allPlans.map((plan: any) => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.display_name || plan.name} - KES {plan.price_monthly_kes?.toLocaleString()}/mo
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Status</label>
+                  <select
+                    value={subscriptionStatus}
+                    onChange={(e) => setSubscriptionStatus(e.target.value)}
+                    className="w-full p-2 border rounded-lg bg-background"
+                  >
+                    <option value="active">Active</option>
+                    <option value="trial">Trial</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="expired">Expired</option>
+                  </select>
+                </div>
+
+                <div className="flex gap-2 justify-end pt-2">
+                  <button onClick={() => setShowPlanEditor(false)} className="px-4 py-2 border rounded-lg">
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleUpdateSubscription}
+                    disabled={updatingPlan || !selectedPlanId}
+                    className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg disabled:opacity-50"
+                  >
+                    <Save className="w-4 h-4" />
+                    {updatingPlan ? 'Updating...' : 'Update Plan'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

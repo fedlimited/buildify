@@ -39,6 +39,8 @@ class SuperAdminController {
          cs.start_date,
          cs.end_date,
          cs.trial_end_date,
+         cs.id as subscription_id,
+         cs.plan_id,
          sp.name as plan_name,
          sp.display_name as plan_display_name
          FROM companies c
@@ -160,6 +162,68 @@ class SuperAdminController {
       res.json(stats);
     } catch (error) {
       console.error('Get system stats error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  // Update company subscription plan (Super Admin only)
+  static async updateCompanySubscription(req, res) {
+    try {
+      const db = getDb();
+      const { companyId } = req.params;
+      const { planId, status, startDate, endDate } = req.body;
+
+      // Validate the plan exists
+      const plan = await db.get('SELECT * FROM subscription_plans WHERE id = ?', [planId]);
+      if (!plan) {
+        return res.status(404).json({ error: 'Plan not found' });
+      }
+
+      // Validate the company exists
+      const company = await db.get('SELECT * FROM companies WHERE id = ?', [companyId]);
+      if (!company) {
+        return res.status(404).json({ error: 'Company not found' });
+      }
+
+      // Check if company already has a subscription
+      const existingSub = await db.get(
+        'SELECT * FROM company_subscriptions WHERE company_id = ?',
+        [companyId]
+      );
+
+      if (existingSub) {
+        // Update existing subscription
+        await db.run(
+          `UPDATE company_subscriptions 
+           SET plan_id = ?, 
+               status = ?, 
+               start_date = ?,
+               end_date = ?,
+               updated_at = CURRENT_TIMESTAMP 
+           WHERE company_id = ?`,
+          [planId, status || 'active', startDate || new Date().toISOString().split('T')[0], endDate || null, companyId]
+        );
+        console.log(`📝 Updated subscription for company ${companyId} to plan ${plan.name} (${status || 'active'})`);
+      } else {
+        // Create new subscription
+        await db.run(
+          `INSERT INTO company_subscriptions 
+           (company_id, plan_id, status, start_date, end_date, created_at, updated_at) 
+           VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+          [companyId, planId, status || 'active', startDate || new Date().toISOString().split('T')[0], endDate || null]
+        );
+        console.log(`📝 Created new subscription for company ${companyId} with plan ${plan.name} (${status || 'active'})`);
+      }
+
+      res.json({
+        success: true,
+        message: `Company ${company.name} subscription updated to ${plan.name}`,
+        plan: plan.name,
+        status: status || 'active'
+      });
+
+    } catch (error) {
+      console.error('Update company subscription error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   }

@@ -24,4 +24,7 @@ router.get('/subscriptions', SuperAdminController.getAllSubscriptions);
 // Payment management
 router.get('/payments', SuperAdminController.getAllPayments);
 
+// Subscription plan management
+router.put('/companies/:companyId/subscription', SuperAdminController.updateCompanySubscription);
+
 module.exports = router;

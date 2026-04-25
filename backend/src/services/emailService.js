@@ -103,6 +103,139 @@ async function sendInvitationCode(email, code, inviterName, companyName) {
   }
 }
 
+async function sendInvoiceEmail(email, payment) {
+  const invoiceNumber = `INV-BOCHI-${String(payment.id).padStart(6, '0')}`;
+  const invoiceDate = new Date(payment.paid_at || payment.created_at).toLocaleDateString('en-KE', {
+    year: 'numeric', month: 'long', day: 'numeric'
+  });
+  const amountKES = payment.amount_kes || 0;
+  const usdAmount = payment.amount_usd || 0;
+  const vatRate = 0.16;
+  const vatAmount = amountKES * vatRate;
+  const subtotal = amountKES - vatAmount;
+
+  console.log('\n📄 ========================================');
+  console.log(`📧 Sending invoice to: ${email}`);
+  console.log(`🧾 Invoice #: ${invoiceNumber}`);
+  console.log(`💰 Amount: KES ${amountKES.toLocaleString()}`);
+  console.log('========================================\n');
+
+  try {
+    const transporter = getTransporter();
+    
+    await transporter.sendMail({
+      from: `"BOCHI Construction Suite" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: `Invoice ${invoiceNumber} - BOCHI Construction Suite`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
+            .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+            .header { background: #1a1a1a; padding: 25px; text-align: center; }
+            .header h1 { color: #f59e0b; margin: 0; font-size: 28px; }
+            .header p { color: #888; margin: 5px 0 0 0; font-size: 13px; }
+            .body { padding: 25px; }
+            .body h2 { margin: 0 0 5px 0; color: #333; }
+            .info-table { width: 100%; margin: 15px 0; }
+            .info-table td { padding: 3px 0; font-size: 14px; color: #555; }
+            table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+            th { text-align: left; padding: 10px; background: #f9fafb; font-size: 11px; color: #666; text-transform: uppercase; border-bottom: 1px solid #e5e7eb; }
+            td { padding: 10px; font-size: 14px; border-bottom: 1px solid #e5e7eb; }
+            .text-right { text-align: right; }
+            .total-row td { font-size: 18px; font-weight: bold; border-top: 2px solid #333; padding-top: 12px; }
+            .footer { background: #f9fafb; padding: 20px; text-align: center; font-size: 12px; color: #888; border-top: 1px solid #eee; }
+            .paid-badge { display: inline-block; background: #d4edda; color: #155724; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>BOCHI</h1>
+              <p>Construction Suite</p>
+            </div>
+            <div class="body">
+              <h2>Invoice #${invoiceNumber}</h2>
+              <table class="info-table">
+                <tr><td><strong>Date:</strong></td><td>${invoiceDate}</td></tr>
+                <tr><td><strong>Status:</strong></td><td><span class="paid-badge">PAID</span></td></tr>
+                <tr><td><strong>Payment Method:</strong></td><td style="text-transform: capitalize;">${payment.payment_method || 'N/A'}</td></tr>
+                ${payment.mpesa_transaction_id ? `<tr><td><strong>M-Pesa Ref:</strong></td><td>${payment.mpesa_transaction_id}</td></tr>` : ''}
+              </table>
+              
+              <div style="border: 1px solid #eee; padding: 12px; border-radius: 4px; margin: 15px 0;">
+                <p style="margin: 0; font-weight: bold;">From:</p>
+                <p style="margin: 3px 0; font-size: 14px;">Finite Element Designs Limited</p>
+                <p style="margin: 2px 0; font-size: 13px; color: #555;">P.O. Box 197-00618 Ruaraka, Nairobi, Kenya</p>
+                <p style="margin: 2px 0; font-size: 13px; color: #555;">KRA PIN: P051927399I</p>
+                <p style="margin: 2px 0; font-size: 13px; color: #555;">Email: info@bochi.ke | Web: bochi.ke</p>
+              </div>
+              
+              <table>
+                <thead>
+                  <tr>
+                    <th>Description</th>
+                    <th class="text-right">Amount (KES)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Subscription Payment</td>
+                    <td class="text-right">${subtotal.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</td>
+                  </tr>
+                  <tr>
+                    <td>VAT (16%)</td>
+                    <td class="text-right">${vatAmount.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</td>
+                  </tr>
+                  <tr class="total-row">
+                    <td>Total</td>
+                    <td class="text-right">KES ${amountKES.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</td>
+                  </tr>
+                  ${usdAmount > 0 ? `<tr><td style="font-size: 12px; color: #888;">Equivalent (USD)</td><td class="text-right" style="font-size: 12px; color: #888;">$${usdAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td></tr>` : ''}
+                </tbody>
+              </table>
+              
+              <p style="margin-top: 20px; color: #555;">Thank you for your business!</p>
+            </div>
+            <div class="footer">
+              <p>BOCHI Construction Suite | info@bochi.ke | bochi.ke</p>
+              <p>This is a computer-generated invoice.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      text: [
+        `INVOICE ${invoiceNumber}`,
+        `Date: ${invoiceDate}`,
+        `Status: PAID`,
+        ``,
+        `From: Finite Element Designs Limited`,
+        `P.O. Box 197-00618 Ruaraka, Nairobi, Kenya`,
+        `KRA PIN: P051927399I`,
+        ``,
+        `Subtotal: KES ${subtotal.toLocaleString('en-KE', { minimumFractionDigits: 2 })}`,
+        `VAT (16%): KES ${vatAmount.toLocaleString('en-KE', { minimumFractionDigits: 2 })}`,
+        `Total: KES ${amountKES.toLocaleString('en-KE', { minimumFractionDigits: 2 })}`,
+        ``,
+        `Payment Method: ${payment.payment_method || 'N/A'}`,
+        `${payment.mpesa_transaction_id ? `M-Pesa Ref: ${payment.mpesa_transaction_id}` : ''}`,
+        ``,
+        `Thank you for your business!`,
+        `BOCHI Construction Suite | info@bochi.ke | bochi.ke`
+      ].filter(Boolean).join('\n')
+    });
+    
+    console.log(`✅ Invoice email sent to ${email}`);
+    return true;
+  } catch (error) {
+    console.error(`❌ Failed to send invoice email to ${email}:`, error.message);
+    return false;
+  }
+}
+
 async function verifyTransporter() {
   try {
     const transporter = getTransporter();
@@ -117,4 +250,4 @@ async function verifyTransporter() {
   }
 }
 
-module.exports = { sendOTP, sendInvitationCode, verifyTransporter };
+module.exports = { sendOTP, sendInvitationCode, sendInvoiceEmail, verifyTransporter };
