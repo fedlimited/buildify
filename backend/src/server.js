@@ -45,7 +45,7 @@ app.use(cors({
     'https://buildify-frontend-kohl.vercel.app',
     'https://buildify-frontend-rnwia68nf-fedlimiteds-projects.vercel.app',
     'https://www.bochi.ke',
-    'https://bochi.ke'
+    'https://bochi.ke',
     'https://bochi-buildify.netlify.app'
   ],
 
