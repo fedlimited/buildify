@@ -62,6 +62,13 @@ const App = () => (
               </AdminLayout>
             </AuthGate>
           } />
+          <Route path="/admin/companies/:companyId" element={
+            <AuthGate>
+              <AdminLayout>
+                <AdminCompanies />
+              </AdminLayout>
+            </AuthGate>
+          } />
           <Route path="/admin/users" element={
             <AuthGate>
               <AdminLayout>
