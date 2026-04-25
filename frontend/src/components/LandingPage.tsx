@@ -251,11 +251,15 @@ const LandingPage: React.FC = () => {
             >
 
 
-<img 
-  src="/Bochi_logo_transparent.PNG" 
-  alt="BOCHI Construction Suite" 
-  className="h-8 w-auto mr-2 group-hover:scale-105 transition-transform"
-/>
+
+
+<div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center shadow-lg shadow-amber-500/25 mr-2 group-hover:scale-105 transition-transform">
+  <HardHat size={18} className="text-white" />
+</div>
+
+
+
+
 <span className="text-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">BOCHI</span>
 <span className="ml-1 text-xs text-slate-400">Construction Suite</span>
 
@@ -1041,12 +1045,9 @@ const LandingPage: React.FC = () => {
 
 
 
-
-<img 
-  src="/Bochi_logo_transparent.PNG" 
-  alt="BOCHI" 
-  className="h-10 w-auto"
-/>
+<div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center shadow-lg shadow-amber-500/25 mr-2 group-hover:scale-105 transition-transform">
+  <HardHat size={18} className="text-white" />
+</div>
 
 
 
