@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HardHat, Check, ArrowRight, Sparkles, Shield, Building2, Users, Award, TrendingUp, Clock, Globe } from 'lucide-react';
 
-// Testimonial Form Component
+
 function TestimonialForm() {
   const [form, setForm] = useState({ name: '', role: '', company: '', text: '', rating: 5 });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [hoveredStar, setHoveredStar] = useState(0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,70 +40,138 @@ function TestimonialForm() {
 
   if (submitted) {
     return (
-      <div className="text-center py-4">
-        <p className="text-green-400 text-lg">✅ Thank you for your testimonial!</p>
-        <p className="text-slate-400 text-sm mt-2">It will appear on the site after review.</p>
-      </div>
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="text-center py-8"
+      >
+        <motion.div 
+          animate={{ scale: [1, 1.2, 1] }}
+          transition={{ duration: 0.5, repeat: 2 }}
+          className="text-5xl mb-4"
+        >
+          ✅
+        </motion.div>
+        <p className="text-amber-400 text-xl font-bold mb-2">Thank You!</p>
+        <p className="text-slate-300">Your testimonial has been submitted for review.</p>
+        <p className="text-slate-500 text-sm mt-2">It will appear on the site once approved.</p>
+      </motion.div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      <input
-        type="text"
-        placeholder="Your Name *"
-        value={form.name}
-        onChange={e => setForm({...form, name: e.target.value})}
-        className="w-full p-2 bg-slate-700 rounded-lg text-white text-sm border border-slate-600"
-        required
-      />
-      <div className="grid grid-cols-2 gap-3">
+    <motion.form 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      onSubmit={handleSubmit} 
+      className="space-y-4"
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs font-medium text-slate-400 mb-1">Your Name *</label>
+          <input
+            type="text"
+            placeholder="John Doe"
+            value={form.name}
+            onChange={e => setForm({...form, name: e.target.value})}
+            className="w-full p-3 bg-slate-700/50 rounded-xl text-white text-sm border border-slate-600 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all placeholder:text-slate-500"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-slate-400 mb-1">Your Role</label>
+          <input
+            type="text"
+            placeholder="e.g., Project Manager"
+            value={form.role}
+            onChange={e => setForm({...form, role: e.target.value})}
+            className="w-full p-3 bg-slate-700/50 rounded-xl text-white text-sm border border-slate-600 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all placeholder:text-slate-500"
+          />
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-slate-400 mb-1">Company Name</label>
         <input
           type="text"
-          placeholder="Your Role (e.g., Project Manager)"
-          value={form.role}
-          onChange={e => setForm({...form, role: e.target.value})}
-          className="w-full p-2 bg-slate-700 rounded-lg text-white text-sm border border-slate-600"
-        />
-        <input
-          type="text"
-          placeholder="Company Name"
+          placeholder="e.g., Nairobi Heights Construction"
           value={form.company}
           onChange={e => setForm({...form, company: e.target.value})}
-          className="w-full p-2 bg-slate-700 rounded-lg text-white text-sm border border-slate-600"
+          className="w-full p-3 bg-slate-700/50 rounded-xl text-white text-sm border border-slate-600 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all placeholder:text-slate-500"
         />
       </div>
-      <textarea
-        placeholder="Your testimonial *"
-        value={form.text}
-        onChange={e => setForm({...form, text: e.target.value})}
-        className="w-full p-2 bg-slate-700 rounded-lg text-white text-sm border border-slate-600 h-24"
-        required
-      />
-      <div className="flex items-center gap-2">
-        <span className="text-slate-400 text-sm">Rating:</span>
-        {[1,2,3,4,5].map(star => (
-          <button
-            key={star}
-            type="button"
-            onClick={() => setForm({...form, rating: star})}
-            className={`text-xl ${star <= form.rating ? 'text-yellow-500' : 'text-slate-600'}`}
-          >
-            ★
-          </button>
-        ))}
+      <div>
+        <label className="block text-xs font-medium text-slate-400 mb-1">Your Testimonial *</label>
+        <textarea
+          placeholder="Share your experience with BOCHI..."
+          value={form.text}
+          onChange={e => setForm({...form, text: e.target.value})}
+          className="w-full p-3 bg-slate-700/50 rounded-xl text-white text-sm border border-slate-600 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all placeholder:text-slate-500 h-28 resize-none"
+          required
+        />
       </div>
-      {error && <p className="text-red-400 text-sm">{error}</p>}
-      <button
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-slate-400">Rating:</span>
+          <div className="flex gap-1">
+            {[1,2,3,4,5].map(star => (
+              <motion.button
+                key={star}
+                type="button"
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setForm({...form, rating: star})}
+                onMouseEnter={() => setHoveredStar(star)}
+                onMouseLeave={() => setHoveredStar(0)}
+                className={`text-2xl transition-colors ${
+                  star <= (hoveredStar || form.rating) 
+                    ? 'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]' 
+                    : 'text-slate-600'
+                }`}
+              >
+                ★
+              </motion.button>
+            ))}
+          </div>
+          <span className="text-xs text-slate-500 ml-1">
+            {['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent!'][form.rating]}
+          </span>
+        </div>
+      </div>
+      {error && (
+        <motion.div 
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm flex items-center gap-2"
+        >
+          <span>⚠️</span> {error}
+        </motion.div>
+      )}
+      <motion.button
         type="submit"
         disabled={loading}
-        className="w-full py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 disabled:opacity-50"
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.98 }}
+        className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl font-semibold hover:from-amber-600 hover:to-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2"
       >
-        {loading ? 'Submitting...' : 'Submit Testimonial'}
-      </button>
-    </form>
+        {loading ? (
+          <>
+            <motion.div 
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
+            />
+            Submitting...
+          </>
+        ) : (
+          <>
+            <span>🌟</span> Submit Testimonial
+          </>
+        )}
+      </motion.button>
+    </motion.form>
   );
 }
+
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -406,15 +475,42 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Submit Testimonial Form */}
-      <section className="py-12 px-4">
-        <div className="max-w-2xl mx-auto">
-          <h2 className="text-2xl font-bold text-white text-center mb-6">Share Your Experience</h2>
-          <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
-            <TestimonialForm />
-          </div>
-        </div>
-      </section>
+
+
+
+{/* Submit Testimonial Form */}
+<section className="py-16 px-4">
+  <div className="max-w-2xl mx-auto">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      className="text-center mb-8"
+    >
+      <motion.div 
+        animate={{ scale: [1, 1.05, 1] }}
+        transition={{ duration: 3, repeat: Infinity }}
+        className="text-4xl mb-3"
+      >
+        🌟
+      </motion.div>
+      <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Share Your Experience</h2>
+      <p className="text-slate-400 text-sm">We'd love to hear how BOCHI has helped your construction business</p>
+    </motion.div>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: 0.1 }}
+      className="bg-gradient-to-br from-slate-800/80 to-slate-800/40 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-slate-700/50 shadow-xl"
+    >
+      <TestimonialForm />
+    </motion.div>
+  </div>
+</section>
+
+
+
 
       {/* Testimonials Section */}
       <section id="testimonials" className="py-20 px-4 bg-slate-800/30">
