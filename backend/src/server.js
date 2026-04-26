@@ -30,6 +30,7 @@ const { verifyTransporter } = require('./services/emailService');
 const SubscriptionController = require('./controllers/subscriptionController');
 const subscriptionPaymentController = require('./controllers/subscriptionPaymentController');
 const superAdminRoutes = require('./routes/superAdminRoutes');
+const testimonialRoutes = require('./routes/testimonialRoutes');
 const app = express();
 // FORCE RENDER REBUILD - Super Admin Implementation v2
 const PORT = process.env.PORT || 5000;
@@ -127,6 +128,9 @@ app.post('/api/auth/resend-otp', otpController.resendOTP);
 // Traditional login (keep for backward compatibility)
 app.post('/api/auth/login', authController.login);
 app.post('/api/companies/register', companyController.registerCompany);
+
+// ========== TESTIMONIAL ROUTES ==========
+app.use('/api/testimonials', testimonialRoutes);
 
 // ========== PUBLIC SUBSCRIPTION PAYMENT ROUTES (Callbacks) ==========
 app.post('/api/subscription/mpesa-callback', subscriptionPaymentController.handleCallback);

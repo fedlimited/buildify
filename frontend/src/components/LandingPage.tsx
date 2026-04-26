@@ -3,20 +3,134 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HardHat, Check, ArrowRight, Sparkles, Shield, Building2, Users, Award, TrendingUp, Clock, Globe } from 'lucide-react';
 
+// Testimonial Form Component
+function TestimonialForm() {
+  const [form, setForm] = useState({ name: '', role: '', company: '', text: '', rating: 5 });
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name || !form.text) {
+      setError('Name and testimonial are required');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch('https://buildify-backend-kye8.onrender.com/api/testimonials/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
+      if (response.ok) {
+        setSubmitted(true);
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to submit. Please try again.');
+      }
+    } catch (err) {
+      setError('Failed to submit. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (submitted) {
+    return (
+      <div className="text-center py-4">
+        <p className="text-green-400 text-lg">✅ Thank you for your testimonial!</p>
+        <p className="text-slate-400 text-sm mt-2">It will appear on the site after review.</p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <input
+        type="text"
+        placeholder="Your Name *"
+        value={form.name}
+        onChange={e => setForm({...form, name: e.target.value})}
+        className="w-full p-2 bg-slate-700 rounded-lg text-white text-sm border border-slate-600"
+        required
+      />
+      <div className="grid grid-cols-2 gap-3">
+        <input
+          type="text"
+          placeholder="Your Role (e.g., Project Manager)"
+          value={form.role}
+          onChange={e => setForm({...form, role: e.target.value})}
+          className="w-full p-2 bg-slate-700 rounded-lg text-white text-sm border border-slate-600"
+        />
+        <input
+          type="text"
+          placeholder="Company Name"
+          value={form.company}
+          onChange={e => setForm({...form, company: e.target.value})}
+          className="w-full p-2 bg-slate-700 rounded-lg text-white text-sm border border-slate-600"
+        />
+      </div>
+      <textarea
+        placeholder="Your testimonial *"
+        value={form.text}
+        onChange={e => setForm({...form, text: e.target.value})}
+        className="w-full p-2 bg-slate-700 rounded-lg text-white text-sm border border-slate-600 h-24"
+        required
+      />
+      <div className="flex items-center gap-2">
+        <span className="text-slate-400 text-sm">Rating:</span>
+        {[1,2,3,4,5].map(star => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => setForm({...form, rating: star})}
+            className={`text-xl ${star <= form.rating ? 'text-yellow-500' : 'text-slate-600'}`}
+          >
+            ★
+          </button>
+        ))}
+      </div>
+      {error && <p className="text-red-400 text-sm">{error}</p>}
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 disabled:opacity-50"
+      >
+        {loading ? 'Submitting...' : 'Submit Testimonial'}
+      </button>
+    </form>
+  );
+}
+
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [hoveredFeature, setHoveredFeature] = useState<number | null>(null);
   const [hoveredTestimonial, setHoveredTestimonial] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [approvedTestimonials, setApprovedTestimonials] = useState<any[]>([]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
-    // Simulate loading
     setTimeout(() => setLoading(false), 500);
+    loadTestimonials();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const loadTestimonials = async () => {
+    try {
+      const response = await fetch('https://buildify-backend-kye8.onrender.com/api/testimonials/approved');
+      const data = await response.json();
+      if (data && data.length > 0) {
+        setApprovedTestimonials(data);
+      }
+    } catch (err) {
+      console.error('Failed to load testimonials:', err);
+    }
+  };
 
   // Moving text animation words
   const heroMovingWords = [
@@ -56,11 +170,13 @@ const LandingPage: React.FC = () => {
     { icon: '🧾', title: 'Invoice Management', description: 'Create and track client invoices with automatic 16% VAT calculations.', benefits: 'KRA compliant' }
   ];
 
-  const testimonials = [
+  const defaultTestimonials = [
     { name: 'John Mwangi', role: 'Project Manager', company: 'Nairobi Heights Construction', text: 'BOCHI has transformed how we manage subcontractor payments. The quotation and payment tracking alone saves us 5+ hours every week!', rating: 5, image: '👨‍💼' },
     { name: 'Mary Wanjiku', role: 'Site Supervisor', company: 'Kisii Teaching Hospital Project', text: 'The site diary feature is brilliant. We can now track daily activities, workers, and deliveries all in one place. Game changer!', rating: 5, image: '👩‍💼' },
     { name: 'James Otieno', role: 'Quantity Surveyor', company: 'Mombasa Port Road Project', text: 'The reports module gives me exactly what I need. Project profitability at a glance with just a few clicks. Highly recommended!', rating: 5, image: '👨‍💻' }
   ];
+
+  const displayTestimonials = approvedTestimonials.length > 0 ? approvedTestimonials : defaultTestimonials;
 
   const faqs = [
     { question: 'How does the free trial work?', answer: 'Our 14-day free trial gives you full access to all Pro plan features. No credit card required. You can cancel anytime.' },
@@ -290,6 +406,16 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
+      {/* Submit Testimonial Form */}
+      <section className="py-12 px-4">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-2xl font-bold text-white text-center mb-6">Share Your Experience</h2>
+          <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+            <TestimonialForm />
+          </div>
+        </div>
+      </section>
+
       {/* Testimonials Section */}
       <section id="testimonials" className="py-20 px-4 bg-slate-800/30">
         <div className="max-w-7xl mx-auto">
@@ -305,7 +431,7 @@ const LandingPage: React.FC = () => {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {testimonials.map((testimonial, idx) => (
+            {displayTestimonials.map((testimonial, idx) => (
               <motion.div
                 key={idx}
                 initial={{ opacity: 0, y: 30 }}
@@ -318,7 +444,7 @@ const LandingPage: React.FC = () => {
                 className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700 hover:border-amber-500/30 transition-all"
               >
                 <div className="flex gap-1 mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
+                  {[...Array(testimonial.rating || 5)].map((_, i) => (
                     <motion.span
                       key={i}
                       className="text-yellow-500"
@@ -335,12 +461,12 @@ const LandingPage: React.FC = () => {
                     className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-white text-lg"
                     whileHover={{ scale: 1.1, rotate: 5 }}
                   >
-                    {testimonial.image}
+                    {testimonial.image || '👤'}
                   </motion.div>
                   <div>
                     <p className="font-semibold text-white text-sm">{testimonial.name}</p>
-                    <p className="text-xs text-slate-400">{testimonial.role}</p>
-                    <p className="text-xs text-amber-500/70">{testimonial.company}</p>
+                    <p className="text-xs text-slate-400">{testimonial.role || ''}</p>
+                    <p className="text-xs text-amber-500/70">{testimonial.company || ''}</p>
                   </div>
                 </div>
               </motion.div>
