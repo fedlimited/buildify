@@ -30,7 +30,6 @@ export function AdminDashboard() {
 
   useEffect(() => {
     if (authUser && !authUser.isSuperAdmin) navigate('/dashboard');
-    // Set greeting based on time of day
     const hour = new Date().getHours();
     if (hour < 12) setGreeting('Good Morning');
     else if (hour < 17) setGreeting('Good Afternoon');
@@ -87,13 +86,10 @@ export function AdminDashboard() {
   const totalRevKES = payments.filter(p => p.status === 'completed').reduce((s, p) => s + (p.amount_kes || 0), 0);
   const totalRevUSD = payments.filter(p => p.status === 'completed').reduce((s, p) => s + (p.amount_usd || 0), 0);
   const maxRev = Math.max(...revenueData.map(d => d[1]), 1);
-  const pendingTestimonials = 0; // You can replace this with actual count from API
 
-  // Get today's date info
   const today = new Date();
   const todayStr = today.toLocaleDateString('en-KE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-  // Recent activity (combine payments + companies)
   const recentActivity = [
     ...payments.filter(p => p.status === 'completed').slice(0, 3).map(p => ({
       type: 'payment',
@@ -121,16 +117,9 @@ export function AdminDashboard() {
               <Shield className="w-5 h-5 text-primary" />
               <h1 className="text-xl font-bold">{greeting}, {authUser?.name?.split(' ')[0] || 'Admin'}! 👋</h1>
             </div>
-            <p className="text-sm text-muted-foreground">
-              {todayStr} • You have full system access. 
-              {pendingTestimonials > 0 && (
-                <span className="ml-2 text-amber-500 font-medium">
-                  {pendingTestimonials} testimonial{pendingTestimonials > 1 ? 's' : ''} awaiting review.
-                </span>
-              )}
-            </p>
+            <p className="text-sm text-muted-foreground">{todayStr} • You have full system access.</p>
           </div>
-          <div className="hidden md:flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="hidden md:flex items-center gap-3 text-sm text-muted-foreground">
             <div className="text-right">
               <p className="font-medium text-foreground">{stats?.total_companies || 0}</p>
               <p>Companies</p>
@@ -164,8 +153,8 @@ export function AdminDashboard() {
             </div>
             <p className="text-lg font-bold">{s.value}</p>
             <div className="flex items-center justify-center gap-1">
-              <p className="text-[10px] text-muted-foreground uppercase">{s.label}</p>
-              <span className={`text-[10px] ${s.up ? 'text-green-500' : 'text-red-500'}`}>{s.trend}</span>
+              <p className="text-xs text-muted-foreground uppercase">{s.label}</p>
+              <span className={`text-xs ${s.up ? 'text-green-500' : 'text-red-500'}`}>{s.trend}</span>
             </div>
           </div>
         ))}
@@ -173,9 +162,9 @@ export function AdminDashboard() {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Revenue Chart */}
+        {/* Revenue Chart - Vertical Bars */}
         <div className="lg:col-span-2 bg-card rounded-xl border p-4">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-primary" />
               Revenue Trend (KES)
@@ -183,41 +172,49 @@ export function AdminDashboard() {
             <span className="text-xs text-muted-foreground">Last 6 months</span>
           </div>
           {revenueData.length > 0 ? (
-            <div className="space-y-2">
-              {revenueData.map(([month, amount]) => (
-                <div key={month} className="flex items-center gap-2">
-                  <span className="text-[10px] text-muted-foreground w-14">
-                    {new Date(month + '-01').toLocaleDateString('en-US', { month: 'short' })}
-                  </span>
-                  <div className="flex-1 bg-muted rounded-full h-6 overflow-hidden">
-                    <div className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-full rounded-full flex items-center justify-end pr-2 transition-all duration-500"
-                      style={{ width: `${(amount / maxRev) * 100}%` }}>
-                      {((amount / maxRev) * 100) > 25 && (
-                        <span className="text-[10px] text-white font-medium">KES {amount.toLocaleString()}</span>
-                      )}
+            <div className="relative" style={{ height: '220px' }}>
+              <div className="absolute left-0 top-0 bottom-8 w-16 flex flex-col justify-between text-xs text-muted-foreground">
+                <span>KES {maxRev.toLocaleString()}</span>
+                <span>KES {Math.round(maxRev / 2).toLocaleString()}</span>
+                <span>KES 0</span>
+              </div>
+              <div className="ml-16 h-full flex items-end gap-2" style={{ paddingBottom: '28px' }}>
+                {revenueData.map(([month, amount]) => {
+                  const height = (amount / maxRev) * 100;
+                  const monthLabel = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short' });
+                  return (
+                    <div key={month} className="flex-1 flex flex-col items-center justify-end h-full">
+                      <span className="text-xs text-muted-foreground mb-1">KES {Math.round(amount / 1000)}k</span>
+                      <div className="w-full bg-gradient-to-t from-emerald-500 to-emerald-400 rounded-t-md transition-all hover:from-emerald-600 hover:to-emerald-500 cursor-pointer relative group"
+                        style={{ height: `${height}%`, minHeight: '4px' }}>
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-foreground text-background text-xs px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">
+                          KES {amount.toLocaleString()}
+                        </div>
+                      </div>
+                      <span className="text-xs text-muted-foreground mt-1.5">{monthLabel}</span>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
+              </div>
+              <div className="ml-16 border-t border-border absolute bottom-7 left-0 right-0"></div>
             </div>
           ) : (
             <div className="text-center py-8">
               <BarChart3 className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-50" />
-              <p className="text-xs text-muted-foreground">No revenue data yet</p>
+              <p className="text-sm text-muted-foreground">No revenue data yet</p>
             </div>
           )}
-          <div className="mt-3 pt-3 border-t flex justify-between text-xs text-muted-foreground">
-            <span>Total: KES {totalRevKES.toLocaleString()}</span>
-            <span>USD: ${totalRevUSD.toLocaleString()}</span>
+          <div className="mt-3 pt-3 border-t flex justify-between text-sm text-muted-foreground">
+            <span>Total: <strong className="text-foreground">KES {totalRevKES.toLocaleString()}</strong></span>
+            <span>USD: <strong className="text-foreground">${totalRevUSD.toLocaleString()}</strong></span>
           </div>
         </div>
 
         {/* Right Panel - Quick Stats + Activity */}
         <div className="space-y-4">
-          {/* Quick Stats */}
           <div className="bg-card rounded-xl border p-4">
             <h3 className="text-sm font-semibold mb-3">Quick Overview</h3>
-            <div className="space-y-2 text-xs">
+            <div className="space-y-2 text-sm">
               {[
                 { label: 'Conversion Rate', value: `${stats?.trial_subscriptions ? Math.round((stats.active_subscriptions / stats.trial_subscriptions) * 100) : 0}%` },
                 { label: 'Avg Users/Company', value: (stats?.total_companies ? (stats.total_users / stats.total_companies).toFixed(1) : '0') },
@@ -232,7 +229,6 @@ export function AdminDashboard() {
             </div>
           </div>
 
-          {/* Recent Activity */}
           <div className="bg-card rounded-xl border p-4">
             <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
               <Activity className="w-4 h-4 text-primary" />
@@ -241,23 +237,22 @@ export function AdminDashboard() {
             {recentActivity.length > 0 ? (
               <div className="space-y-2">
                 {recentActivity.map((activity, i) => (
-                  <div key={i} className="flex items-start gap-2 text-xs">
+                  <div key={i} className="flex items-start gap-2 text-sm">
                     <div className={`p-1 rounded ${activity.color} mt-0.5`}>
                       <activity.icon className="w-3 h-3" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="truncate">{activity.text}</p>
-                      <p className="text-muted-foreground">{activity.time}</p>
+                      <p className="text-xs text-muted-foreground">{activity.time}</p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground text-center py-4">No recent activity</p>
+              <p className="text-sm text-muted-foreground text-center py-4">No recent activity</p>
             )}
           </div>
 
-          {/* Quick Actions */}
           <div className="bg-card rounded-xl border p-4">
             <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
               <Zap className="w-4 h-4 text-amber-500" />
@@ -271,7 +266,7 @@ export function AdminDashboard() {
                 { label: 'Review Testimonials', path: '/admin/testimonials' },
               ].map((a, i) => (
                 <button key={i} onClick={() => navigate(a.path)}
-                  className="w-full flex items-center justify-between text-xs py-2 px-2 hover:bg-muted rounded-md transition-colors group">
+                  className="w-full flex items-center justify-between text-sm py-2 px-2 hover:bg-muted rounded-md transition-colors group">
                   <span>{a.label}</span>
                   <ChevronRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
@@ -283,7 +278,6 @@ export function AdminDashboard() {
 
       {/* Bottom Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Recent Payments Table */}
         <div className="md:col-span-2 bg-card rounded-xl border p-4">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold">Recent Payments</h3>
@@ -291,7 +285,7 @@ export function AdminDashboard() {
           </div>
           {payments.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full text-xs">
+              <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-muted-foreground border-b">
                     <th className="py-1.5 pr-2">Company</th>
@@ -307,7 +301,7 @@ export function AdminDashboard() {
                       <td className="py-1.5 pr-2 font-mono">{p.amount_kes ? `KES ${p.amount_kes.toLocaleString()}` : `$${p.amount_usd || 0}`}</td>
                       <td className="py-1.5 pr-2 capitalize">{p.payment_method || 'N/A'}</td>
                       <td className="py-1.5">
-                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
+                        <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
                           p.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                         }`}>{p.status}</span>
                       </td>
@@ -317,14 +311,13 @@ export function AdminDashboard() {
               </table>
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground text-center py-6">No payments recorded yet</p>
+            <p className="text-sm text-muted-foreground text-center py-6">No payments recorded yet</p>
           )}
         </div>
 
-        {/* System Status */}
         <div className="bg-card rounded-xl border p-4">
           <h3 className="text-sm font-semibold mb-2">System Status</h3>
-          <div className="space-y-2 text-xs">
+          <div className="space-y-2 text-sm">
             {[
               { label: 'Database', status: 'Healthy', icon: CheckCircle, color: 'green' },
               { label: 'API Services', status: 'Operational', icon: Activity, color: 'green' },
