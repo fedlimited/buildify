@@ -264,7 +264,7 @@ export function UsersModule() {
               <Input 
                 value={form.name} 
                 onChange={e => setForm({ ...form, name: e.target.value })} 
-                placeholder="John Doe"
+                placeholder="Mogaka Mokua"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
