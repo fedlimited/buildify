@@ -37,8 +37,7 @@ async function sendLoginOTP(req, res) {
   res.status(200).json({
     success: true,
     message: 'OTP sent successfully',
-    code: code,
-    email: email
+       email: email
   });
 }
 
