@@ -164,7 +164,7 @@ export function Register({ onBackToLogin }: RegisterProps) {
                       className="rounded-r-none"
                     />
                     <span className="inline-flex items-center px-3 bg-muted border border-l-0 border-border rounded-r-md text-sm text-muted-foreground">
-                      .bochi.com
+                      .bochi.ke
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
