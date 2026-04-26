@@ -10,6 +10,8 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { AuthGate } from '@/components/AuthGate';
 
+import { AdminTestimonials } from '@/components/modules/AdminTestimonials';
+
 // Admin components
 import './components/modules/admin-exports';
 import { AdminDashboard, AdminCompanies, AdminUsers, AdminSubscriptions, AdminPayments } from '@/components/modules/admin-exports';
@@ -17,7 +19,7 @@ import { AdminLayout } from '@/components/AdminLayout';
 import { AdminAnalytics } from '@/components/modules/AdminAnalytics';
 
 // Dummy reference to prevent tree-shaking
-const ADMIN_COMPONENTS = { AdminDashboard, AdminCompanies, AdminUsers, AdminSubscriptions, AdminPayments, AdminLayout, AdminAnalytics };
+const ADMIN_COMPONENTS = { AdminDashboard, AdminCompanies, AdminUsers, AdminSubscriptions, AdminPayments, AdminLayout, AdminAnalytics, AdminTestimonials };
 console.log('Admin components registered:', Object.keys(ADMIN_COMPONENTS));
 
 const queryClient = new QueryClient();
@@ -95,6 +97,13 @@ const App = () => (
             <AuthGate>
               <AdminLayout>
                 <AdminAnalytics />
+              </AdminLayout>
+            </AuthGate>
+          } />
+          <Route path="/admin/testimonials" element={
+            <AuthGate>
+              <AdminLayout>
+                <AdminTestimonials />
               </AdminLayout>
             </AuthGate>
           } />

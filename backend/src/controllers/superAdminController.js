@@ -248,6 +248,57 @@ class SuperAdminController {
       res.status(500).json({ error: 'Internal server error' });
     }
   }
+
+
+// Get all testimonials (pending and approved)
+static async getAllTestimonials(req, res) {
+  try {
+    const db = getDb();
+    const testimonials = await db.all(
+      'SELECT * FROM testimonials ORDER BY created_at DESC'
+    );
+    res.json(testimonials);
+  } catch (error) {
+    console.error('Get all testimonials error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+// Approve or reject a testimonial
+static async approveTestimonial(req, res) {
+  try {
+    const db = getDb();
+    const { id } = req.params;
+    const { is_approved } = req.body;
+    
+    await db.run(
+      'UPDATE testimonials SET is_approved = ? WHERE id = ?',
+      [is_approved ? 1 : 0, id]
+    );
+    
+    res.json({ success: true, message: is_approved ? 'Testimonial approved' : 'Testimonial rejected' });
+  } catch (error) {
+    console.error('Approve testimonial error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+// Delete a testimonial
+static async deleteTestimonial(req, res) {
+  try {
+    const db = getDb();
+    const { id } = req.params;
+    
+    await db.run('DELETE FROM testimonials WHERE id = ?', [id]);
+    
+    res.json({ success: true, message: 'Testimonial deleted' });
+  } catch (error) {
+    console.error('Delete testimonial error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+
 }
 
 module.exports = SuperAdminController;

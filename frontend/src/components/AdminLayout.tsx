@@ -12,7 +12,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Home,
-  BarChart3
+  BarChart3,
+  Star
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -64,6 +65,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       path: '/admin/payments', 
       label: 'Payments', 
       icon: DollarSign 
+    },
+    { 
+      path: '/admin/testimonials', 
+      label: 'Testimonials', 
+      icon: Star 
     }
   ];
 

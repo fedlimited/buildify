@@ -27,4 +27,11 @@ router.get('/payments', SuperAdminController.getAllPayments);
 // Subscription plan management
 router.put('/companies/:companyId/subscription', SuperAdminController.updateCompanySubscription);
 
+
+// Testimonial management
+router.get('/testimonials', SuperAdminController.getAllTestimonials);
+router.put('/testimonials/:id/approve', SuperAdminController.approveTestimonial);
+router.delete('/testimonials/:id', SuperAdminController.deleteTestimonial);
+
+
 module.exports = router;
