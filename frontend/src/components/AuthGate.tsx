@@ -217,7 +217,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
                         autoFocus
                       />
                       <span className="px-3 py-2.5 bg-gray-900 border border-l-0 border-gray-700 rounded-r text-sm text-gray-400">
-                        .bochi.com
+                        .bochi.ke
                       </span>
                     </div>
                   </div>
