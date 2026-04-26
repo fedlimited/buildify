@@ -18,7 +18,15 @@ class SuperAdminController {
          LEFT JOIN subscription_plans sp ON cs.plan_id = sp.id
          ORDER BY c.created_at DESC`
       );
-      res.json(companies);
+      
+      // Parse counts as integers
+      const parsed = companies.map(c => ({
+        ...c,
+        user_count: parseInt(c.user_count) || 0,
+        project_count: parseInt(c.project_count) || 0
+      }));
+      
+      res.json(parsed);
     } catch (error) {
       console.error('Get all companies error:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -54,7 +62,12 @@ class SuperAdminController {
         return res.status(404).json({ error: 'Company not found' });
       }
       
-      res.json(company);
+      // Parse counts as integers
+      res.json({
+        ...company,
+        user_count: parseInt(company.user_count) || 0,
+        project_count: parseInt(company.project_count) || 0
+      });
     } catch (error) {
       console.error('Get company details error:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -159,7 +172,15 @@ class SuperAdminController {
         `
       );
       
-      res.json(stats);
+      // Parse all values as proper numbers
+      res.json({
+        total_companies: parseInt(stats.total_companies) || 0,
+        total_users: parseInt(stats.total_users) || 0,
+        total_projects: parseInt(stats.total_projects) || 0,
+        active_subscriptions: parseInt(stats.active_subscriptions) || 0,
+        trial_subscriptions: parseInt(stats.trial_subscriptions) || 0,
+        total_revenue_usd: parseFloat(stats.total_revenue_usd) || 0
+      });
     } catch (error) {
       console.error('Get system stats error:', error);
       res.status(500).json({ error: 'Internal server error' });
