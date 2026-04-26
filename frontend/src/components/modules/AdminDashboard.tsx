@@ -162,9 +162,9 @@ export function AdminDashboard() {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Revenue Chart - Vertical Bars */}
+        {/* Revenue Chart - Compact Vertical Bars */}
         <div className="lg:col-span-2 bg-card rounded-xl border p-4">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-primary" />
               Revenue Trend (KES)
@@ -172,31 +172,35 @@ export function AdminDashboard() {
             <span className="text-xs text-muted-foreground">Last 6 months</span>
           </div>
           {revenueData.length > 0 ? (
-            <div className="relative" style={{ height: '220px' }}>
-              <div className="absolute left-0 top-0 bottom-8 w-16 flex flex-col justify-between text-xs text-muted-foreground">
-                <span>KES {maxRev.toLocaleString()}</span>
-                <span>KES {Math.round(maxRev / 2).toLocaleString()}</span>
-                <span>KES 0</span>
+            <div className="relative" style={{ height: '180px' }}>
+              {/* Y-Axis */}
+              <div className="absolute left-0 top-0 bottom-6 w-12 flex flex-col justify-between text-[11px] text-muted-foreground leading-none">
+                <span>{Math.round(maxRev / 1000)}k</span>
+                <span>{Math.round(maxRev / 2 / 1000)}k</span>
+                <span>0</span>
               </div>
-              <div className="ml-16 h-full flex items-end gap-2" style={{ paddingBottom: '28px' }}>
+              {/* Bars */}
+              <div className="ml-14 h-full flex items-end gap-1.5 pb-5">
                 {revenueData.map(([month, amount]) => {
-                  const height = (amount / maxRev) * 100;
+                  const height = Math.max((amount / maxRev) * 100, 2);
                   const monthLabel = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short' });
                   return (
-                    <div key={month} className="flex-1 flex flex-col items-center justify-end h-full">
-                      <span className="text-xs text-muted-foreground mb-1">KES {Math.round(amount / 1000)}k</span>
-                      <div className="w-full bg-gradient-to-t from-emerald-500 to-emerald-400 rounded-t-md transition-all hover:from-emerald-600 hover:to-emerald-500 cursor-pointer relative group"
-                        style={{ height: `${height}%`, minHeight: '4px' }}>
-                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-foreground text-background text-xs px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">
-                          KES {amount.toLocaleString()}
-                        </div>
-                      </div>
-                      <span className="text-xs text-muted-foreground mt-1.5">{monthLabel}</span>
+                    <div key={month} className="flex-1 flex flex-col items-center justify-end h-full group cursor-pointer">
+                      <span className="text-[10px] text-muted-foreground mb-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {Math.round(amount / 1000)}k
+                      </span>
+                      <div 
+                        className="w-full bg-gradient-to-t from-emerald-500 to-emerald-400 rounded-t-sm hover:from-emerald-600 hover:to-emerald-500 transition-all relative min-h-[2px]"
+                        style={{ height: `${height}%` }}
+                        title={`KES ${amount.toLocaleString()}`}
+                      />
+                      <span className="text-[11px] text-muted-foreground mt-1">{monthLabel}</span>
                     </div>
                   );
                 })}
               </div>
-              <div className="ml-16 border-t border-border absolute bottom-7 left-0 right-0"></div>
+              {/* Baseline */}
+              <div className="ml-14 border-t border-border absolute bottom-4 left-0 right-0"></div>
             </div>
           ) : (
             <div className="text-center py-8">
@@ -204,9 +208,11 @@ export function AdminDashboard() {
               <p className="text-sm text-muted-foreground">No revenue data yet</p>
             </div>
           )}
-          <div className="mt-3 pt-3 border-t flex justify-between text-sm text-muted-foreground">
-            <span>Total: <strong className="text-foreground">KES {totalRevKES.toLocaleString()}</strong></span>
-            <span>USD: <strong className="text-foreground">${totalRevUSD.toLocaleString()}</strong></span>
+          {/* Summary Row */}
+          <div className="flex justify-between text-xs text-muted-foreground pt-2 border-t">
+            <span>Total KES: <strong className="text-foreground">{totalRevKES.toLocaleString()}</strong></span>
+            <span>Total USD: <strong className="text-foreground">${totalRevUSD.toLocaleString()}</strong></span>
+            <span>Payments: <strong className="text-foreground">{payments.filter(p => p.status === 'completed').length}</strong></span>
           </div>
         </div>
 
