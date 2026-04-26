@@ -71,7 +71,7 @@ function TestimonialForm() {
           <label className="block text-xs font-medium text-slate-400 mb-1">Your Name *</label>
           <input
             type="text"
-            placeholder="John Doe"
+            placeholder="Mogaka Mokua"
             value={form.name}
             onChange={e => setForm({...form, name: e.target.value})}
             className="w-full p-3 bg-slate-700/50 rounded-xl text-white text-sm border border-slate-600 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all placeholder:text-slate-500"
