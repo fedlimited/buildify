@@ -173,7 +173,7 @@ export function HelpModule() {
                 Frequently Asked Questions
               </CardTitle>
               <CardDescription>
-                Comprehensive answers to common questions about using BOCHABERI Construction Suite
+                Comprehensive answers to common questions about using bochi Construction Suite
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -575,7 +575,7 @@ export function HelpModule() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Globe size={20} className="text-primary" />
-                About BOCHABERI Construction Suite
+                About bochi Construction Suite
               </CardTitle>
               <CardDescription>
                 Version 2.1.0 | Enterprise Construction Management System
@@ -583,7 +583,7 @@ export function HelpModule() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm">
-                BOCHABERI Construction Suite is a comprehensive construction management system designed specifically for 
+                bochi Construction Suite is a comprehensive construction management system designed specifically for 
                 construction companies in Kenya and East Africa. It helps manage projects, finances, payroll, procurement, 
                 inventory, and site operations in one integrated platform.
               </p>
@@ -652,7 +652,7 @@ export function HelpModule() {
               To our Lovely Daughter
             </span>
             <span className="text-sm font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-              BOCHABERI NYABOE
+              bochi NYABOE
             </span>
             <Heart size={14} className="text-pink-500 fill-pink-500/30" />
           </div>

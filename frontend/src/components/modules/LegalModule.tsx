@@ -47,7 +47,7 @@ export function LegalModule() {
               <div className="bg-primary/5 rounded-lg p-4 mb-4 border-l-4 border-primary">
                 <p className="text-sm font-semibold mb-2">⚠️ IMPORTANT LEGAL NOTICE</p>
                 <p className="text-xs text-muted-foreground">
-                  By accessing or using the BOCHABERI Construction Suite ("the Software"), you acknowledge that you have read, 
+                  By accessing or using the BOCHI Construction Suite ("the Software"), you acknowledge that you have read, 
                   understood, and agree to be bound by these Terms of Service. If you do not agree to these terms, you must 
                   immediately cease using the Software.
                 </p>
@@ -56,7 +56,7 @@ export function LegalModule() {
               <h3 className="text-base font-semibold mt-4">1. DEFINITIONS</h3>
               <p className="text-sm text-muted-foreground">
                 <strong>"Company"</strong> means Finite Element Designs Ltd, a company duly registered in the Republic of Kenya.<br/>
-                <strong>"Software"</strong> means the BOCHABERI Construction Suite, including all source code, documentation, and related materials.<br/>
+                <strong>"Software"</strong> means the BOCHI Construction Suite, including all source code, documentation, and related materials.<br/>
                 <strong>"User"</strong> means any individual or entity accessing or using the Software.<br/>
                 <strong>"Data"</strong> means all information, records, and content input into the Software by the User.
               </p>
@@ -179,7 +179,7 @@ export function LegalModule() {
                 <p className="text-sm font-semibold mb-2">🔒 PRIVACY COMMITMENT</p>
                 <p className="text-xs text-muted-foreground">
                   Finite Element Designs Ltd is committed to protecting your privacy. This Privacy Policy explains how we handle 
-                  information collected through the BOCHABERI Construction Suite.
+                  information collected through the BOCHI Construction Suite.
                 </p>
               </div>
 
@@ -269,7 +269,7 @@ export function LegalModule() {
 
               <h3 className="text-base font-semibold mt-4">1. FINANCIAL DISCLAIMER</h3>
               <p className="text-sm text-muted-foreground">
-                The BOCHABERI Construction Suite is a tool to assist with financial management. It is NOT a substitute for:
+                The BOCHI Construction Suite is a tool to assist with financial management. It is NOT a substitute for:
               </p>
               <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
                 <li>Professional accounting advice</li>
@@ -380,7 +380,7 @@ export function LegalModule() {
 
               <h3 className="text-base font-semibold mt-4">1. COPYRIGHT OWNERSHIP</h3>
               <p className="text-sm text-muted-foreground">
-                The BOCHABERI Construction Suite, including but not limited to all source code, object code, architecture, 
+                The BOCHI Construction Suite, including but not limited to all source code, object code, architecture, 
                 design, user interface, graphics, icons, documentation, and all intellectual property embodied therein, is the 
                 exclusive property of <strong>Finite Element Designs Ltd</strong>, a company registered in the Republic of Kenya.
               </p>
@@ -410,7 +410,7 @@ export function LegalModule() {
 
               <h3 className="text-base font-semibold mt-4">3. ENFORCEMENT & PENALTIES</h3>
               <p className="text-sm text-muted-foreground">
-                Copyright infringement of the BOCHABERI Construction Suite will be pursued to the fullest extent of the law. 
+                Copyright infringement of the BOCHI Construction Suite will be pursued to the fullest extent of the law. 
                 Penalties may include:
               </p>
               <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
@@ -424,7 +424,7 @@ export function LegalModule() {
 
               <h3 className="text-base font-semibold mt-4">4. TRADEMARK PROTECTION</h3>
               <p className="text-sm text-muted-foreground">
-                "BOCHABERI", the BOCHABERI logo, and all related names, logos, product and service names are trademarks of 
+                "BOCHI", the BOCHI logo, and all related names, logos, product and service names are trademarks of 
                 Finite Element Designs Ltd. You may not use these marks without prior written permission.
               </p>
 
@@ -550,7 +550,7 @@ export function LegalModule() {
             </span>
           </div>
           <p className="text-[10px] text-muted-foreground mt-2">
-            BOCHABERI Construction Suite v1.0.0 | Protected under Kenyan and International Copyright Law<br/>
+            BOCHI Construction Suite v1.0.0 | Protected under Kenyan and International Copyright Law<br/>
             Unauthorized reproduction, distribution, or modification of this software is strictly prohibited and may result in legal action.
           </p>
         </div>
