@@ -3,9 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@/hooks/useAppStore';
 import api from '@/services/api';
 import { 
-  Building2, Users, CreditCard, DollarSign,
-  TrendingUp, Activity, Loader2, ArrowUpRight,
-  Shield, BarChart3, CheckCircle, Clock, AlertCircle
+  Building2, 
+  Users, 
+  CreditCard, 
+  DollarSign,
+  TrendingUp,
+  Activity,
+  Loader2,
+  ArrowUpRight,
+  Shield
 } from 'lucide-react';
 
 interface SystemStats {
@@ -24,11 +30,16 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Redirect if not super admin
   useEffect(() => {
-    if (authUser && !authUser.isSuperAdmin) navigate('/dashboard');
+    if (authUser && !authUser.isSuperAdmin) {
+      navigate('/dashboard');
+    }
   }, [authUser, navigate]);
 
-  useEffect(() => { fetchStats(); }, []);
+  useEffect(() => {
+    fetchStats();
+  }, []);
 
   const fetchStats = async () => {
     try {
@@ -45,136 +56,214 @@ export function AdminDashboard() {
   };
 
   if (!authUser?.isSuperAdmin) {
-    return <div className="flex items-center justify-center h-96"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center h-96"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="p-6"><div className="bg-destructive/10 text-destructive rounded-lg p-4">{error}</div></div>;
+    return (
+      <div className="p-6">
+        <div className="bg-destructive/10 text-destructive rounded-lg p-4">
+          {error}
+        </div>
+      </div>
+    );
   }
 
   const statCards = [
-    { title: 'Total Companies', value: stats?.total_companies || 0, icon: Building2, color: 'blue', path: '/admin/companies' },
-    { title: 'Total Users', value: stats?.total_users || 0, icon: Users, color: 'green', path: '/admin/users' },
-    { title: 'Active Subscriptions', value: stats?.active_subscriptions || 0, icon: CreditCard, color: 'purple', path: '/admin/subscriptions' },
-    { title: 'Trial Subscriptions', value: stats?.trial_subscriptions || 0, icon: Clock, color: 'amber', path: '/admin/subscriptions' },
-    { title: 'Total Projects', value: stats?.total_projects || 0, icon: TrendingUp, color: 'pink', path: '/admin/companies' },
-    { title: 'Revenue (USD)', value: `$${(stats?.total_revenue_usd || 0).toLocaleString()}`, icon: DollarSign, color: 'emerald', path: '/admin/payments' },
+    {
+      title: 'Total Companies',
+      value: stats?.total_companies || 0,
+      icon: Building2,
+      color: 'bg-blue-500/10 text-blue-600',
+      change: '+12%',
+      link: '/admin/companies'
+    },
+    {
+      title: 'Total Users',
+      value: stats?.total_users || 0,
+      icon: Users,
+      color: 'bg-green-500/10 text-green-600',
+      change: '+8%',
+      link: '/admin/users'
+    },
+    {
+      title: 'Active Subscriptions',
+      value: stats?.active_subscriptions || 0,
+      icon: CreditCard,
+      color: 'bg-purple-500/10 text-purple-600',
+      change: '+5%',
+      link: '/admin/subscriptions'
+    },
+    {
+      title: 'Trial Subscriptions',
+      value: stats?.trial_subscriptions || 0,
+      icon: Activity,
+      color: 'bg-orange-500/10 text-orange-600',
+      change: '+15%',
+      link: '/admin/subscriptions'
+    },
+    {
+      title: 'Total Projects',
+      value: stats?.total_projects || 0,
+      icon: TrendingUp,
+      color: 'bg-pink-500/10 text-pink-600',
+      change: '+20%',
+      link: '/admin/companies'
+    },
+    {
+      title: 'Total Revenue (USD)',
+      value: `$${(stats?.total_revenue_usd || 0).toLocaleString()}`,
+      icon: DollarSign,
+      color: 'bg-emerald-500/10 text-emerald-600',
+      change: '+18%',
+      link: '/admin/payments'
+    }
   ];
 
   const quickActions = [
-    { label: 'Companies', icon: Building2, path: '/admin/companies', desc: 'Manage all registered companies' },
-    { label: 'Users', icon: Users, path: '/admin/users', desc: 'View and manage system users' },
-    { label: 'Analytics', icon: BarChart3, path: '/admin/analytics', desc: 'Revenue, growth & tax reports' },
-    { label: 'Testimonials', icon: CheckCircle, path: '/admin/testimonials', desc: 'Approve user testimonials' },
+    { label: 'View All Companies', icon: Building2, path: '/admin/companies' },
+    { label: 'Manage Users', icon: Users, path: '/admin/users' },
+    { label: 'Subscription Plans', icon: CreditCard, path: '/admin/subscriptions' },
+    { label: 'Payment History', icon: DollarSign, path: '/admin/payments' }
   ];
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Shield className="w-5 h-5 text-primary" />
-            </div>
-            <h1 className="text-2xl font-bold">Super Admin Dashboard</h1>
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <Shield className="w-6 h-6 text-primary" />
           </div>
-          <p className="text-sm text-muted-foreground">
-            Welcome back, {authUser?.name}. System overview at a glance.
-          </p>
+          <h1 className="text-3xl font-bold">Super Admin Dashboard</h1>
         </div>
-        <div className="text-right text-xs text-muted-foreground">
-          <p>Last updated: {new Date().toLocaleTimeString()}</p>
-          <button onClick={fetchStats} className="text-primary hover:underline mt-1">Refresh</button>
+        <p className="text-muted-foreground">
+          System-wide overview and management. You have full access to all companies and users.
+        </p>
+      </div>
+
+      {/* Welcome Banner */}
+      <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-xl p-6 mb-8 border border-primary/20">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold mb-1">Welcome back, {authUser?.name}!</h2>
+            <p className="text-muted-foreground">
+              You are logged in as a <span className="font-medium text-primary">Super Administrator</span> with full system access.
+            </p>
+          </div>
+          <Shield className="w-12 h-12 text-primary/50" />
         </div>
       </div>
 
-      {/* Stat Cards - Clean 3-column grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {statCards.map((stat, index) => (
           <div
             key={index}
-            onClick={() => stat.path && navigate(stat.path)}
-            className="group bg-card hover:bg-accent/5 rounded-xl border p-5 cursor-pointer transition-all hover:shadow-md"
+            onClick={() => stat.link && navigate(stat.link)}
+            className={`bg-card rounded-xl p-6 border shadow-sm hover:shadow-md transition-all cursor-pointer group`}
           >
-            <div className="flex items-start justify-between mb-3">
-              <div className={`p-2.5 rounded-lg bg-${stat.color}-500/10`}>
-                <stat.icon className={`w-5 h-5 text-${stat.color}-600`} />
+            <div className="flex items-start justify-between mb-4">
+              <div className={`p-3 rounded-lg ${stat.color}`}>
+                <stat.icon className="w-5 h-5" />
               </div>
-              <ArrowUpRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              <span className="text-xs font-medium text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">
+                {stat.change}
+              </span>
             </div>
-            <p className="text-2xl font-bold tracking-tight">{stat.value}</p>
-            <p className="text-sm text-muted-foreground mt-1">{stat.title}</p>
+            <h3 className="text-3xl font-bold mb-1">{stat.value}</h3>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">{stat.title}</p>
+              <ArrowUpRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
+            </div>
           </div>
         ))}
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-card rounded-xl border p-5">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="bg-card rounded-xl border p-6">
+        <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {quickActions.map((action, index) => (
             <button
               key={index}
               onClick={() => navigate(action.path)}
-              className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30 hover:bg-muted transition-colors text-left group"
+              className="flex flex-col items-center gap-2 p-4 rounded-lg border bg-muted/30 hover:bg-muted transition-colors group"
             >
-              <div className="p-2 bg-background rounded-lg group-hover:bg-primary/10 transition-colors">
-                <action.icon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              <div className="p-2 bg-background rounded-full group-hover:bg-primary/10 transition-colors">
+                <action.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium">{action.label}</p>
-                <p className="text-xs text-muted-foreground truncate">{action.desc}</p>
-              </div>
+              <span className="text-sm font-medium text-center">{action.label}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Bottom Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* System Status */}
-        <div className="bg-card rounded-xl border p-5">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">System Status</h2>
-          <div className="space-y-3">
-            {[
-              { label: 'Database', status: 'Healthy', color: 'green' },
-              { label: 'API', status: 'Operational', color: 'green' },
-              { label: 'M-Pesa Integration', status: 'Connected', color: 'green' },
-              { label: 'Email Service', status: 'Running', color: 'green' },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center justify-between py-2 border-b last:border-0">
-                <span className="text-sm">{item.label}</span>
-                <span className="flex items-center gap-2 text-sm">
-                  <span className={`w-2 h-2 rounded-full bg-${item.color}-500`}></span>
-                  <span className="text-muted-foreground">{item.status}</span>
-                </span>
-              </div>
-            ))}
+      {/* Recent Activity Section (Placeholder) */}
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-card rounded-xl border p-6">
+          <h2 className="text-lg font-semibold mb-4">System Status</h2>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between py-2 border-b">
+              <span className="text-muted-foreground">Database Connection</span>
+              <span className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                <span className="text-sm font-medium">Healthy</span>
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-2 border-b">
+              <span className="text-muted-foreground">API Status</span>
+              <span className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                <span className="text-sm font-medium">Operational</span>
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-2 border-b">
+              <span className="text-muted-foreground">M-Pesa Integration</span>
+              <span className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                <span className="text-sm font-medium">Connected</span>
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <span className="text-muted-foreground">Last Backup</span>
+              <span className="text-sm font-medium">v1.0-mpesa-ready</span>
+            </div>
           </div>
         </div>
 
-        {/* Quick Info */}
-        <div className="bg-card rounded-xl border p-5">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Information</h2>
-          <div className="space-y-3 text-sm text-muted-foreground">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-              <p>Use the sidebar to navigate between different admin sections. You have full system access.</p>
-            </div>
-            <div className="flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-              <p>Company details page now has an "Edit Plan" button to manually upgrade/downgrade subscriptions.</p>
-            </div>
-            <div className="flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-              <p>Analytics section provides revenue reports, tax summaries, and printable VAT invoices.</p>
-            </div>
-          </div>
+        <div className="bg-card rounded-xl border p-6">
+          <h2 className="text-lg font-semibold mb-4">Quick Tips</h2>
+          <ul className="space-y-3 text-sm text-muted-foreground">
+            <li className="flex items-start gap-2">
+              <span className="text-primary mt-1">•</span>
+              <span>View all registered companies in the Companies section</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-primary mt-1">•</span>
+              <span>Manage user permissions and toggle super admin status in Users</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-primary mt-1">•</span>
+              <span>Monitor all subscription payments in the Payments section</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-primary mt-1">•</span>
+              <span>Use the sidebar to switch between regular dashboard and admin panel</span>
+            </li>
+          </ul>
         </div>
       </div>
     </div>
