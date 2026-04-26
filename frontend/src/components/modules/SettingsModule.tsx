@@ -54,7 +54,7 @@ export function SettingsModule() {
     const blob = new Blob([data], { type: 'application/json' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `bochaberi_backup_${new Date().toISOString().split('T')[0]}.json`;
+    link.download = `bochi_backup_${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -229,8 +229,8 @@ export function SettingsModule() {
                   <span className="text-lg">🆘</span> Need Help?
                 </h3>
                 <div className="space-y-3 text-sm text-muted-foreground">
-                  <p>📧 <strong>Email Support:</strong> <a href="mailto:support@bochaberi.com" className="text-accent hover:underline ml-1">support@bochaberi.com</a></p>
-                  <p>📖 <strong>Documentation:</strong> <a href="#" className="text-accent hover:underline ml-1">docs.bochaberi.com</a></p>
+                  <p>📧 <strong>Email Support:</strong> <a href="mailto:support@bochi.ke" className="text-accent hover:underline ml-1">support@bochi.ke</a></p>
+                  <p>📖 <strong>Documentation:</strong> <a href="#" className="text-accent hover:underline ml-1">docs.bochi.ke</a></p>
                   <p>💬 <strong>Response Time:</strong> Within 24 hours</p>
                 </div>
               </div>
