@@ -4,9 +4,9 @@ import { useAppStore } from '@/hooks/useAppStore';
 import api from '@/services/api';
 import { 
   Building2, Users, CreditCard, DollarSign,
-  TrendingUp, TrendingDown, Activity, Loader2, ArrowUpRight,
+  TrendingUp, Activity, Loader2,
   Shield, BarChart3, CheckCircle, Clock, AlertCircle,
-  RefreshCw, Search, Zap, Star, Bell, ChevronRight
+  RefreshCw, Zap, Star, Bell, ChevronRight, ArrowUpRight
 } from 'lucide-react';
 
 interface SystemStats {
@@ -26,14 +26,9 @@ export function AdminDashboard() {
   const [payments, setPayments] = useState<any[]>([]);
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
-  const [greeting, setGreeting] = useState('');
 
   useEffect(() => {
     if (authUser && !authUser.isSuperAdmin) navigate('/dashboard');
-    const hour = new Date().getHours();
-    if (hour < 12) setGreeting('Good Morning');
-    else if (hour < 17) setGreeting('Good Afternoon');
-    else setGreeting('Good Evening');
   }, [authUser, navigate]);
 
   useEffect(() => { loadData(); }, []);
@@ -50,11 +45,8 @@ export function AdminDashboard() {
       setPayments(p || []);
       setCompanies(c || []);
       processRevenue(p || []);
-    } catch (err) {
-      console.error('Failed to load dashboard:', err);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   };
 
   const processRevenue = (payments: any[]) => {
@@ -68,16 +60,12 @@ export function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="p-6 max-w-7xl mx-auto space-y-4">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-muted rounded w-1/3"></div>
-          <div className="grid grid-cols-6 gap-2">
-            {[...Array(6)].map((_, i) => <div key={i} className="h-24 bg-muted rounded-lg"></div>)}
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="col-span-2 h-64 bg-muted rounded-xl"></div>
-            <div className="h-64 bg-muted rounded-xl"></div>
-          </div>
+      <div className="p-6 max-w-7xl mx-auto space-y-4 animate-pulse">
+        <div className="h-20 bg-muted rounded-xl"></div>
+        <div className="grid grid-cols-6 gap-3">{[...Array(6)].map((_, i) => <div key={i} className="h-24 bg-muted rounded-xl"></div>)}</div>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="col-span-2 h-80 bg-muted rounded-xl"></div>
+          <div className="h-80 bg-muted rounded-xl"></div>
         </div>
       </div>
     );
@@ -86,262 +74,179 @@ export function AdminDashboard() {
   const totalRevKES = payments.filter(p => p.status === 'completed').reduce((s, p) => s + (p.amount_kes || 0), 0);
   const totalRevUSD = payments.filter(p => p.status === 'completed').reduce((s, p) => s + (p.amount_usd || 0), 0);
   const maxRev = Math.max(...revenueData.map(d => d[1]), 1);
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
+  const todayStr = new Date().toLocaleDateString('en-KE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-  const today = new Date();
-  const todayStr = today.toLocaleDateString('en-KE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-  const recentActivity = [
-    ...payments.filter(p => p.status === 'completed').slice(0, 3).map(p => ({
-      type: 'payment',
-      icon: DollarSign,
-      color: 'text-emerald-500 bg-emerald-50',
-      text: `${p.company_name || 'A company'} paid $${p.amount_usd || (p.amount_kes / 130).toFixed(0)}`,
-      time: new Date(p.paid_at || p.created_at).toLocaleDateString(),
-    })),
-    ...companies.slice(0, 3).map(c => ({
-      type: 'company',
-      icon: Building2,
-      color: 'text-blue-500 bg-blue-50',
-      text: `${c.name} registered`,
-      time: new Date(c.created_at).toLocaleDateString(),
-    })),
-  ].sort((a, b) => b.time.localeCompare(a.time)).slice(0, 5);
+  const kpis = [
+    { label: 'Companies', value: stats?.total_companies || 0, icon: Building2, color: 'blue', path: '/admin/companies' },
+    { label: 'Users', value: stats?.total_users || 0, icon: Users, color: 'green', path: '/admin/users' },
+    { label: 'Active Subs', value: stats?.active_subscriptions || 0, icon: CreditCard, color: 'purple', path: '/admin/subscriptions' },
+    { label: 'Trials', value: stats?.trial_subscriptions || 0, icon: Clock, color: 'amber', path: '/admin/subscriptions' },
+    { label: 'Projects', value: stats?.total_projects || 0, icon: TrendingUp, color: 'pink', path: '/admin/companies' },
+    { label: 'Revenue (USD)', value: `$${(stats?.total_revenue_usd || 0).toLocaleString()}`, icon: DollarSign, color: 'emerald', path: '/admin/payments' },
+  ];
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4">
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-xl p-5 border border-primary/20">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Shield className="w-5 h-5 text-primary" />
-              <h1 className="text-xl font-bold">{greeting}, {authUser?.name?.split(' ')[0] || 'Admin'}! 👋</h1>
-            </div>
-            <p className="text-sm text-muted-foreground">{todayStr} • You have full system access.</p>
+    <div className="p-5 max-w-7xl mx-auto space-y-5">
+      {/* === ROW 1: Welcome + KPI Chips === */}
+      <div className="bg-card rounded-xl border p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-primary" />
+            <h1 className="text-lg font-bold">{greeting}, {authUser?.name?.split(' ')[0] || 'Admin'}! 👋</h1>
           </div>
-          <div className="hidden md:flex items-center gap-3 text-sm text-muted-foreground">
-            <div className="text-right">
-              <p className="font-medium text-foreground">{stats?.total_companies || 0}</p>
-              <p>Companies</p>
+          <button onClick={loadData} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">
+            <RefreshCw className="w-3 h-3" /> Refresh
+          </button>
+        </div>
+        <p className="text-xs text-muted-foreground">{todayStr} • Full system access</p>
+        
+        {/* KPI Row */}
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mt-3">
+          {kpis.map((k, i) => (
+            <div key={i} onClick={() => navigate(k.path)}
+              className="bg-muted/40 hover:bg-muted rounded-lg p-3 cursor-pointer transition-colors text-center group">
+              <div className={`w-7 h-7 rounded-lg bg-${k.color}-500/10 flex items-center justify-center mx-auto mb-1.5`}>
+                <k.icon className={`w-3.5 h-3.5 text-${k.color}-600`} />
+              </div>
+              <p className="text-base font-bold">{k.value}</p>
+              <p className="text-[11px] text-muted-foreground">{k.label}</p>
             </div>
-            <div className="text-right">
-              <p className="font-medium text-foreground">{stats?.total_users || 0}</p>
-              <p>Users</p>
-            </div>
-            <div className="text-right">
-              <p className="font-medium text-foreground">${(stats?.total_revenue_usd || 0).toLocaleString()}</p>
-              <p>Revenue</p>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* Stat Chips - With Trend Indicators */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-        {[
-          { label: 'Companies', value: stats?.total_companies || 0, icon: Building2, color: 'text-blue-600 bg-blue-50', trend: '+12%', up: true },
-          { label: 'Users', value: stats?.total_users || 0, icon: Users, color: 'text-green-600 bg-green-50', trend: '+8%', up: true },
-          { label: 'Active Subs', value: stats?.active_subscriptions || 0, icon: CreditCard, color: 'text-purple-600 bg-purple-50', trend: '+5%', up: true },
-          { label: 'Trials', value: stats?.trial_subscriptions || 0, icon: Clock, color: 'text-amber-600 bg-amber-50', trend: '+15%', up: true },
-          { label: 'Projects', value: stats?.total_projects || 0, icon: TrendingUp, color: 'text-pink-600 bg-pink-50', trend: '+20%', up: true },
-          { label: 'Revenue', value: `$${totalRevUSD.toLocaleString()}`, icon: DollarSign, color: 'text-emerald-600 bg-emerald-50', trend: '+18%', up: true },
-        ].map((s, i) => (
-          <div key={i} className="bg-card rounded-lg border p-3 text-center cursor-pointer hover:shadow-sm hover:border-primary/30 transition-all"
-            onClick={() => navigate(s.label === 'Revenue' ? '/admin/payments' : s.label === 'Users' ? '/admin/users' : '/admin/companies')}>
-            <div className={`w-8 h-8 rounded-lg ${s.color} flex items-center justify-center mx-auto mb-1.5`}>
-              <s.icon className="w-4 h-4" />
-            </div>
-            <p className="text-lg font-bold">{s.value}</p>
-            <div className="flex items-center justify-center gap-1">
-              <p className="text-xs text-muted-foreground uppercase">{s.label}</p>
-              <span className={`text-xs ${s.up ? 'text-green-500' : 'text-red-500'}`}>{s.trend}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Revenue Chart - Compact Vertical Bars */}
-        <div className="lg:col-span-2 bg-card rounded-xl border p-4">
-          <div className="flex items-center justify-between mb-3">
+      {/* === ROW 2: Revenue Chart (2/3) + Quick Actions (1/3) === */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Revenue Chart */}
+        <div className="lg:col-span-2 bg-card rounded-xl border p-4 flex flex-col">
+          <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-primary" />
-              Revenue Trend (KES)
+              <BarChart3 className="w-4 h-4 text-primary" /> Revenue
             </h3>
-            <span className="text-xs text-muted-foreground">Last 6 months</span>
+            <span className="text-xs text-muted-foreground">KES • 6 months</span>
           </div>
           {revenueData.length > 0 ? (
-            <div className="relative" style={{ height: '180px' }}>
-              {/* Y-Axis */}
-              <div className="absolute left-0 top-0 bottom-6 w-12 flex flex-col justify-between text-[11px] text-muted-foreground leading-none">
-                <span>{Math.round(maxRev / 1000)}k</span>
-                <span>{Math.round(maxRev / 2 / 1000)}k</span>
-                <span>0</span>
-              </div>
-              {/* Bars */}
-              <div className="ml-14 h-full flex items-end gap-1.5 pb-5">
+            <div className="flex-1 flex flex-col justify-end">
+              <div className="flex items-end gap-2 h-48 pb-5">
                 {revenueData.map(([month, amount]) => {
-                  const height = Math.max((amount / maxRev) * 100, 2);
-                  const monthLabel = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short' });
+                  const h = Math.max((amount / maxRev) * 100, 3);
+                  const lbl = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short' });
                   return (
-                    <div key={month} className="flex-1 flex flex-col items-center justify-end h-full group cursor-pointer">
-                      <span className="text-[10px] text-muted-foreground mb-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {Math.round(amount / 1000)}k
-                      </span>
-                      <div 
-                        className="w-full bg-gradient-to-t from-emerald-500 to-emerald-400 rounded-t-sm hover:from-emerald-600 hover:to-emerald-500 transition-all relative min-h-[2px]"
-                        style={{ height: `${height}%` }}
-                        title={`KES ${amount.toLocaleString()}`}
-                      />
-                      <span className="text-[11px] text-muted-foreground mt-1">{monthLabel}</span>
+                    <div key={month} className="flex-1 flex flex-col items-center justify-end h-full group">
+                      <span className="text-[10px] text-muted-foreground mb-0.5 opacity-0 group-hover:opacity-100">{Math.round(amount/1000)}k</span>
+                      <div className="w-full bg-gradient-to-t from-emerald-500 to-emerald-400 rounded-t hover:from-emerald-600 hover:to-emerald-500 transition-colors" style={{ height: `${h}%`, minHeight: 3 }}
+                        title={`KES ${amount.toLocaleString()}`} />
+                      <span className="text-[10px] text-muted-foreground mt-1">{lbl}</span>
                     </div>
                   );
                 })}
               </div>
-              {/* Baseline */}
-              <div className="ml-14 border-t border-border absolute bottom-4 left-0 right-0"></div>
+              <div className="flex justify-between text-[11px] text-muted-foreground pt-2 border-t mt-auto">
+                <span>Total KES <strong className="text-foreground">{totalRevKES.toLocaleString()}</strong></span>
+                <span>USD <strong className="text-foreground">${totalRevUSD.toLocaleString()}</strong></span>
+                <span>Payments <strong className="text-foreground">{payments.filter(p => p.status === 'completed').length}</strong></span>
+              </div>
             </div>
           ) : (
-            <div className="text-center py-8">
-              <BarChart3 className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-50" />
-              <p className="text-sm text-muted-foreground">No revenue data yet</p>
-            </div>
+            <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">No data yet</div>
           )}
-          {/* Summary Row */}
-          <div className="flex justify-between text-xs text-muted-foreground pt-2 border-t">
-            <span>Total KES: <strong className="text-foreground">{totalRevKES.toLocaleString()}</strong></span>
-            <span>Total USD: <strong className="text-foreground">${totalRevUSD.toLocaleString()}</strong></span>
-            <span>Payments: <strong className="text-foreground">{payments.filter(p => p.status === 'completed').length}</strong></span>
-          </div>
         </div>
 
-        {/* Right Panel - Quick Stats + Activity */}
-        <div className="space-y-4">
+        {/* Quick Actions + Overview */}
+        <div className="space-y-3">
           <div className="bg-card rounded-xl border p-4">
-            <h3 className="text-sm font-semibold mb-3">Quick Overview</h3>
-            <div className="space-y-2 text-sm">
+            <h3 className="text-sm font-semibold mb-2">Quick Actions</h3>
+            <div className="grid grid-cols-2 gap-1.5">
               {[
-                { label: 'Conversion Rate', value: `${stats?.trial_subscriptions ? Math.round((stats.active_subscriptions / stats.trial_subscriptions) * 100) : 0}%` },
-                { label: 'Avg Users/Company', value: (stats?.total_companies ? (stats.total_users / stats.total_companies).toFixed(1) : '0') },
-                { label: 'Avg Projects/Co', value: (stats?.total_companies ? (stats.total_projects / stats.total_companies).toFixed(1) : '0') },
-                { label: 'Revenue/User', value: `$${stats?.total_users ? (stats.total_revenue_usd / stats.total_users).toFixed(2) : '0.00'}` },
-              ].map((item, i) => (
-                <div key={i} className="flex justify-between py-1.5 border-b last:border-0">
-                  <span className="text-muted-foreground">{item.label}</span>
-                  <span className="font-medium">{item.value}</span>
-                </div>
+                { label: 'Companies', icon: Building2, path: '/admin/companies' },
+                { label: 'Users', icon: Users, path: '/admin/users' },
+                { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
+                { label: 'Testimonials', icon: Star, path: '/admin/testimonials' },
+                { label: 'Payments', icon: DollarSign, path: '/admin/payments' },
+                { label: 'Subscriptions', icon: CreditCard, path: '/admin/subscriptions' },
+              ].map((a, i) => (
+                <button key={i} onClick={() => navigate(a.path)}
+                  className="flex items-center gap-2 text-xs py-2 px-2.5 bg-muted/40 hover:bg-muted rounded-lg transition-colors">
+                  <a.icon className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span>{a.label}</span>
+                </button>
               ))}
             </div>
           </div>
 
           <div className="bg-card rounded-xl border p-4">
-            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-              <Activity className="w-4 h-4 text-primary" />
-              Recent Activity
-            </h3>
-            {recentActivity.length > 0 ? (
-              <div className="space-y-2">
-                {recentActivity.map((activity, i) => (
-                  <div key={i} className="flex items-start gap-2 text-sm">
-                    <div className={`p-1 rounded ${activity.color} mt-0.5`}>
-                      <activity.icon className="w-3 h-3" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="truncate">{activity.text}</p>
-                      <p className="text-xs text-muted-foreground">{activity.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">No recent activity</p>
-            )}
-          </div>
-
-          <div className="bg-card rounded-xl border p-4">
-            <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-              <Zap className="w-4 h-4 text-amber-500" />
-              Quick Actions
-            </h3>
-            <div className="space-y-1">
+            <h3 className="text-sm font-semibold mb-2">Overview</h3>
+            <div className="space-y-1.5 text-xs">
               {[
-                { label: 'View Companies', path: '/admin/companies' },
-                { label: 'Manage Users', path: '/admin/users' },
-                { label: 'Analytics & Reports', path: '/admin/analytics' },
-                { label: 'Review Testimonials', path: '/admin/testimonials' },
-              ].map((a, i) => (
-                <button key={i} onClick={() => navigate(a.path)}
-                  className="w-full flex items-center justify-between text-sm py-2 px-2 hover:bg-muted rounded-md transition-colors group">
-                  <span>{a.label}</span>
-                  <ChevronRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                </button>
+                { l: 'Conversion', v: `${stats?.trial_subscriptions ? Math.round((stats.active_subscriptions / stats.trial_subscriptions) * 100) : 0}%` },
+                { l: 'Users/Company', v: (stats?.total_companies ? (stats.total_users / stats.total_companies).toFixed(1) : '0') },
+                { l: 'Projects/Co', v: (stats?.total_companies ? (stats.total_projects / stats.total_companies).toFixed(1) : '0') },
+                { l: 'Rev/User', v: `$${stats?.total_users ? (stats.total_revenue_usd / stats.total_users).toFixed(2) : '0.00'}` },
+              ].map((r, i) => (
+                <div key={i} className="flex justify-between py-1 border-b last:border-0">
+                  <span className="text-muted-foreground">{r.l}</span><span className="font-medium">{r.v}</span>
+                </div>
               ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Bottom Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2 bg-card rounded-xl border p-4">
+      {/* === ROW 3: Payments Table + System Status === */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2 bg-card rounded-xl border p-4">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold">Recent Payments</h3>
-            <button onClick={() => navigate('/admin/payments')} className="text-xs text-primary hover:underline">View all</button>
+            <button onClick={() => navigate('/admin/payments')} className="text-xs text-primary hover:underline">View all →</button>
           </div>
           {payments.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-muted-foreground border-b">
-                    <th className="py-1.5 pr-2">Company</th>
-                    <th className="py-1.5 pr-2">Amount</th>
-                    <th className="py-1.5 pr-2">Method</th>
-                    <th className="py-1.5">Status</th>
+            <table className="w-full text-xs">
+              <thead><tr className="text-left text-muted-foreground border-b"><th className="py-1.5 pr-2">Company</th><th className="py-1.5 pr-2">Amount</th><th className="py-1.5 pr-2">Method</th><th className="py-1.5">Status</th></tr></thead>
+              <tbody>
+                {payments.slice(0, 5).map((p: any) => (
+                  <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30">
+                    <td className="py-1.5 pr-2 font-medium truncate max-w-[140px]">{p.company_name || '—'}</td>
+                    <td className="py-1.5 pr-2 font-mono">{p.amount_kes ? `KES ${p.amount_kes.toLocaleString()}` : `$${p.amount_usd || 0}`}</td>
+                    <td className="py-1.5 pr-2 capitalize">{p.payment_method || '—'}</td>
+                    <td className="py-1.5"><span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${p.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{p.status}</span></td>
                   </tr>
-                </thead>
-                <tbody>
-                  {payments.slice(0, 5).map((p: any) => (
-                    <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30">
-                      <td className="py-1.5 pr-2 font-medium truncate max-w-[150px]">{p.company_name || 'Unknown'}</td>
-                      <td className="py-1.5 pr-2 font-mono">{p.amount_kes ? `KES ${p.amount_kes.toLocaleString()}` : `$${p.amount_usd || 0}`}</td>
-                      <td className="py-1.5 pr-2 capitalize">{p.payment_method || 'N/A'}</td>
-                      <td className="py-1.5">
-                        <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
-                          p.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                        }`}>{p.status}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground text-center py-6">No payments recorded yet</p>
-          )}
+                ))}
+              </tbody>
+            </table>
+          ) : <p className="text-xs text-muted-foreground text-center py-6">No payments yet</p>}
         </div>
 
         <div className="bg-card rounded-xl border p-4">
           <h3 className="text-sm font-semibold mb-2">System Status</h3>
-          <div className="space-y-2 text-sm">
+          <div className="space-y-1.5 text-xs">
             {[
-              { label: 'Database', status: 'Healthy', icon: CheckCircle, color: 'green' },
-              { label: 'API Services', status: 'Operational', icon: Activity, color: 'green' },
-              { label: 'M-Pesa Integration', status: 'Connected', icon: Zap, color: 'green' },
-              { label: 'Email Service', status: 'Running', icon: Bell, color: 'green' },
-              { label: 'Version', status: 'v2.1.0', icon: Star, color: 'blue' },
-            ].map((s, i) => (
-              <div key={i} className="flex items-center justify-between py-1.5 border-b last:border-0">
-                <div className="flex items-center gap-2">
-                  <s.icon className={`w-3 h-3 text-${s.color}-500`} />
-                  <span className="text-muted-foreground">{s.label}</span>
-                </div>
+              { l: 'Database', s: 'Healthy', c: 'green' },
+              { l: 'API', s: 'Operational', c: 'green' },
+              { l: 'M-Pesa', s: 'Connected', c: 'green' },
+              { l: 'Email', s: 'Running', c: 'green' },
+              { l: 'Version', s: 'v2.1.0', c: 'blue' },
+            ].map((x, i) => (
+              <div key={i} className="flex justify-between py-1.5 border-b last:border-0">
+                <span className="text-muted-foreground">{x.l}</span>
                 <span className="flex items-center gap-1.5 font-medium">
-                  <span className={`w-1.5 h-1.5 rounded-full bg-${s.color}-500`}></span>
-                  {s.status}
+                  <span className={`w-1.5 h-1.5 rounded-full bg-${x.c}-500`}></span>{x.s}
                 </span>
               </div>
             ))}
+          </div>
+          
+          {/* Recent Companies */}
+          <div className="mt-3 pt-3 border-t">
+            <h4 className="text-xs font-semibold text-muted-foreground mb-1.5">Recent Signups</h4>
+            {companies.slice(0, 4).map((c: any) => (
+              <div key={c.id} className="flex items-center justify-between py-1 text-xs">
+                <span className="font-medium truncate">{c.name}</span>
+                <span className="text-muted-foreground">{new Date(c.created_at).toLocaleDateString('en-KE', { month: 'short', day: 'numeric' })}</span>
+              </div>
+            ))}
+            {companies.length === 0 && <p className="text-xs text-muted-foreground">No signups yet</p>}
           </div>
         </div>
       </div>
