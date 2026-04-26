@@ -272,8 +272,8 @@ static async approveTestimonial(req, res) {
     const { is_approved } = req.body;
     
     await db.run(
-      'UPDATE testimonials SET is_approved = ? WHERE id = ?',
-      [is_approved ? 1 : 0, id]
+'UPDATE testimonials SET is_approved = ? WHERE id = ?',
+[is_approved ? true : false, id]
     );
     
     res.json({ success: true, message: is_approved ? 'Testimonial approved' : 'Testimonial rejected' });

@@ -34,7 +34,7 @@ router.get('/approved', async (req, res) => {
   try {
     const db = getDb();
     const testimonials = await db.all(
-      'SELECT * FROM testimonials WHERE is_approved = 1 ORDER BY created_at DESC LIMIT 10'
+      'SELECT * FROM testimonials WHERE is_approved = true ORDER BY created_at DESC LIMIT 10'
     );
     res.json(testimonials);
   } catch (error) {
@@ -66,7 +66,7 @@ router.put('/:id/approve', async (req, res) => {
     
     await db.run(
       'UPDATE testimonials SET is_approved = ? WHERE id = ?',
-      [is_approved ? 1 : 0, id]
+      [is_approved ? true : false, id]
     );
     
     res.json({ success: true });
