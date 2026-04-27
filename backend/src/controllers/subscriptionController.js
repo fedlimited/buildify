@@ -58,7 +58,6 @@ const SubscriptionController = {
       let subscription = process.env.NODE_ENV === 'production' ? result.rows[0] : result;
       
       if (!subscription) {
-        // Return free plan as default
         let freePlan;
         if (process.env.NODE_ENV === 'production') {
           const freeResult = await db.query("SELECT * FROM subscription_plans WHERE name = 'free'");
@@ -78,104 +77,90 @@ const SubscriptionController = {
         if (daysRemaining <= 0) {
           console.log(`Trial expired for company ${company_id}, downgrading to Free plan...`);
           
-          // Get free plan ID
+          // Get free plan
           let freePlan;
           if (process.env.NODE_ENV === 'production') {
-            const freeResult = await db.query("SELECT id, * FROM subscription_plans WHERE name = 'free'");
+            const freeResult = await db.query("SELECT * FROM subscription_plans WHERE name = 'free'");
             freePlan = freeResult.rows[0];
           } else {
-            freePlan = await db.get("SELECT id, * FROM subscription_plans WHERE name = 'free'");
+            freePlan = await db.get("SELECT * FROM subscription_plans WHERE name = 'free'");
           }
           
-          // Get current counts before downgrade and archive excess if needed
+          // Get current counts
           const currentLimits = await LimitChecker.checkAllLimits(company_id, subscription);
           
-          // If over project limits, archive excess projects
-          if (currentLimits.projects.isOverLimit && freePlan.max_projects < 999999) {
+          // Archive excess projects
+          if (currentLimits.projects && currentLimits.projects.isOverLimit && freePlan.max_projects < 999999) {
             const excessCount = currentLimits.projects.current - freePlan.max_projects;
             if (excessCount > 0) {
-              if (process.env.NODE_ENV === 'production') {
-                await db.query(`
-                  UPDATE projects 
-                  SET status = 'Archived', is_active = false 
-                  WHERE company_id = $1 AND status != 'Archived'
-                  ORDER BY created_at DESC
-                  LIMIT $2
-                `, [company_id, excessCount]);
-              } else {
-                await db.run(`
-                  UPDATE projects 
-                  SET status = 'Archived', is_active = 0 
-                  WHERE company_id = ? AND status != 'Archived'
-                  ORDER BY created_at DESC
-                  LIMIT ?
-                `, [company_id, excessCount]);
-              }
-              console.log(`Archived ${excessCount} projects due to Free plan limit`);
+              try {
+                if (process.env.NODE_ENV === 'production') {
+                  await db.query(
+                    "UPDATE projects SET status = 'Archived' WHERE id IN (SELECT id FROM projects WHERE company_id = $1 AND status != 'Archived' ORDER BY created_at DESC LIMIT $2)",
+                    [company_id, excessCount]
+                  );
+                } else {
+                  await db.run(
+                    "UPDATE projects SET status = 'Archived' WHERE id IN (SELECT id FROM projects WHERE company_id = ? AND status != 'Archived' ORDER BY created_at DESC LIMIT ?)",
+                    [company_id, excessCount]
+                  );
+                }
+                console.log(`Archived ${excessCount} projects due to Free plan limit`);
+              } catch (e) { console.error('Error archiving projects:', e.message); }
             }
           }
           
-          // If over worker limits, deactivate excess workers
-          if (currentLimits.workers.isOverLimit && freePlan.max_workers < 999999) {
+          // Deactivate excess workers
+          if (currentLimits.workers && currentLimits.workers.isOverLimit && freePlan.max_workers < 999999) {
             const excessCount = currentLimits.workers.current - freePlan.max_workers;
             if (excessCount > 0) {
-              if (process.env.NODE_ENV === 'production') {
-                await db.query(`
-                  UPDATE workers 
-                  SET is_active = false 
-                  WHERE company_id = $1 AND is_active = true
-                  ORDER BY id DESC
-                  LIMIT $2
-                `, [company_id, excessCount]);
-              } else {
-                await db.run(`
-                  UPDATE workers 
-                  SET is_active = 0 
-                  WHERE company_id = ? AND is_active = 1
-                  ORDER BY id DESC
-                  LIMIT ?
-                `, [company_id, excessCount]);
-              }
-              console.log(`Deactivated ${excessCount} workers due to Free plan limit`);
+              try {
+                if (process.env.NODE_ENV === 'production') {
+                  await db.query(
+                    "UPDATE workers SET is_active = false WHERE id IN (SELECT id FROM workers WHERE company_id = $1 AND is_active = 1 ORDER BY id DESC LIMIT $2)",
+                    [company_id, excessCount]
+                  );
+                } else {
+                  await db.run(
+                    "UPDATE workers SET is_active = 0 WHERE id IN (SELECT id FROM workers WHERE company_id = ? AND is_active = 1 ORDER BY id DESC LIMIT ?)",
+                    [company_id, excessCount]
+                  );
+                }
+                console.log(`Deactivated ${excessCount} workers due to Free plan limit`);
+              } catch (e) { console.error('Error deactivating workers:', e.message); }
             }
           }
           
           // Mark current subscription as expired
-          if (process.env.NODE_ENV === 'production') {
-            await db.query(`
-              UPDATE company_subscriptions 
-              SET status = 'expired', updated_at = CURRENT_TIMESTAMP 
-              WHERE id = $1
-            `, [subscription.id]);
-          } else {
-            await db.run(`
-              UPDATE company_subscriptions 
-              SET status = 'expired', updated_at = CURRENT_TIMESTAMP 
-              WHERE id = ?
-            `, [subscription.id]);
-          }
+          try {
+            if (process.env.NODE_ENV === 'production') {
+              await db.query("UPDATE company_subscriptions SET status = 'expired', updated_at = CURRENT_TIMESTAMP WHERE id = $1", [subscription.id]);
+            } else {
+              await db.run("UPDATE company_subscriptions SET status = 'expired', updated_at = CURRENT_TIMESTAMP WHERE id = ?", [subscription.id]);
+            }
+          } catch (e) { console.error('Error expiring subscription:', e.message); }
           
           // Create new free subscription
-          const startDate = new Date();
-          const endDate = new Date();
-          endDate.setFullYear(endDate.getFullYear() + 100); // Effectively never expires
+          try {
+            const startDate = new Date().toISOString().split('T')[0];
+            const endDate = new Date();
+            endDate.setFullYear(endDate.getFullYear() + 100);
+            const endDateStr = endDate.toISOString().split('T')[0];
+            
+            if (process.env.NODE_ENV === 'production') {
+              await db.query(
+                "INSERT INTO company_subscriptions (company_id, plan_id, status, start_date, end_date, created_at, updated_at) VALUES ($1, $2, 'active', $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                [company_id, freePlan.id, startDate, endDateStr]
+              );
+            } else {
+              await db.run(
+                "INSERT INTO company_subscriptions (company_id, plan_id, status, start_date, end_date, created_at, updated_at) VALUES (?, ?, 'active', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                [company_id, freePlan.id, startDate, endDateStr]
+              );
+            }
+          } catch (e) { console.error('Error creating free subscription:', e.message); }
           
-          if (process.env.NODE_ENV === 'production') {
-            await db.query(`
-              INSERT INTO company_subscriptions 
-              (company_id, plan_id, status, start_date, end_date, created_at, updated_at)
-              VALUES ($1, $2, 'active', $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            `, [company_id, freePlan.id, startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]);
-          } else {
-            await db.run(`
-              INSERT INTO company_subscriptions 
-              (company_id, plan_id, status, start_date, end_date, created_at, updated_at)
-              VALUES (?, ?, 'active', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            `, [company_id, freePlan.id, startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]);
-          }
-          
-          // Return free plan
-          return res.json({ ...freePlan, is_default: true });
+          return res.json({ ...freePlan, is_default: true, was_downgraded: true });
         }
         
         subscription.trial_days_remaining = daysRemaining;
@@ -195,7 +180,6 @@ const SubscriptionController = {
       const company_id = req.user.companyId;
       const { type } = req.query;
       
-      // Get current subscription
       let subscription;
       if (process.env.NODE_ENV === 'production') {
         const result = await db.query(`
@@ -224,8 +208,8 @@ const SubscriptionController = {
       
       if (type === 'project') {
         if (process.env.NODE_ENV === 'production') {
-          const result = await db.query('SELECT COUNT(*) as count FROM projects WHERE company_id = $1 AND status != \'Archived\'', [company_id]);
-          currentCount = result.rows[0].count;
+          const result = await db.query("SELECT COUNT(*) as count FROM projects WHERE company_id = $1 AND status != 'Archived'", [company_id]);
+          currentCount = parseInt(result.rows[0].count);
         } else {
           const result = await db.get("SELECT COUNT(*) as count FROM projects WHERE company_id = ? AND status != 'Archived'", [company_id]);
           currentCount = result.count;
@@ -234,8 +218,8 @@ const SubscriptionController = {
         allowed = currentCount < max;
       } else if (type === 'worker') {
         if (process.env.NODE_ENV === 'production') {
-          const result = await db.query('SELECT COUNT(*) as count FROM workers WHERE company_id = $1 AND is_active = true', [company_id]);
-          currentCount = result.rows[0].count;
+          const result = await db.query('SELECT COUNT(*) as count FROM workers WHERE company_id = $1 AND is_active = 1', [company_id]);
+          currentCount = parseInt(result.rows[0].count);
         } else {
           const result = await db.get('SELECT COUNT(*) as count FROM workers WHERE company_id = ? AND is_active = 1', [company_id]);
           currentCount = result.count;
@@ -245,7 +229,7 @@ const SubscriptionController = {
       } else if (type === 'user') {
         if (process.env.NODE_ENV === 'production') {
           const result = await db.query("SELECT COUNT(*) as count FROM users WHERE company_id = $1 AND role = 'admin'", [company_id]);
-          currentCount = result.rows[0].count;
+          currentCount = parseInt(result.rows[0].count);
         } else {
           const result = await db.get("SELECT COUNT(*) as count FROM users WHERE company_id = ? AND role = 'admin'", [company_id]);
           currentCount = result.count;
@@ -254,18 +238,10 @@ const SubscriptionController = {
         allowed = currentCount < max;
       } else if (type === 'income') {
         if (process.env.NODE_ENV === 'production') {
-          const result = await db.query(`
-            SELECT COUNT(*) as count FROM income 
-            WHERE company_id = $1 
-            AND date >= DATE_TRUNC('month', CURRENT_DATE)
-          `, [company_id]);
-          currentCount = result.rows[0].count;
+          const result = await db.query("SELECT COUNT(*) as count FROM income WHERE company_id = $1 AND date >= DATE_TRUNC('month', CURRENT_DATE)", [company_id]);
+          currentCount = parseInt(result.rows[0].count);
         } else {
-          const result = await db.get(`
-            SELECT COUNT(*) as count FROM income 
-            WHERE company_id = ? 
-            AND date >= date('now', 'start of month')
-          `, [company_id]);
+          const result = await db.get("SELECT COUNT(*) as count FROM income WHERE company_id = ? AND date >= date('now', 'start of month')", [company_id]);
           currentCount = result.count;
         }
         max = limits.max_income_records;
@@ -294,36 +270,24 @@ const SubscriptionController = {
       const company_id = req.user.companyId;
       const { targetPlanId } = req.body;
       
-      if (!targetPlanId) {
-        return res.status(400).json({ error: 'targetPlanId is required' });
-      }
+      if (!targetPlanId) return res.status(400).json({ error: 'targetPlanId is required' });
       
-      // Get current subscription with limits
       let currentSub;
       if (process.env.NODE_ENV === 'production') {
-        const result = await db.query(`
-          SELECT cs.*, sp.max_projects, sp.max_workers, sp.max_users
-          FROM company_subscriptions cs
-          JOIN subscription_plans sp ON cs.plan_id = sp.id
-          WHERE cs.company_id = $1 AND cs.status IN ('active', 'trial')
-          LIMIT 1
-        `, [company_id]);
+        const result = await db.query(
+          "SELECT cs.*, sp.max_projects, sp.max_workers, sp.max_users FROM company_subscriptions cs JOIN subscription_plans sp ON cs.plan_id = sp.id WHERE cs.company_id = $1 AND cs.status IN ('active', 'trial') LIMIT 1",
+          [company_id]
+        );
         currentSub = result.rows[0];
       } else {
-        currentSub = await db.get(`
-          SELECT cs.*, sp.max_projects, sp.max_workers, sp.max_users
-          FROM company_subscriptions cs
-          JOIN subscription_plans sp ON cs.plan_id = sp.id
-          WHERE cs.company_id = ? AND cs.status IN ('active', 'trial')
-          LIMIT 1
-        `, [company_id]);
+        currentSub = await db.get(
+          "SELECT cs.*, sp.max_projects, sp.max_workers, sp.max_users FROM company_subscriptions cs JOIN subscription_plans sp ON cs.plan_id = sp.id WHERE cs.company_id = ? AND cs.status IN ('active', 'trial') LIMIT 1",
+          [company_id]
+        );
       }
       
-      if (!currentSub) {
-        return res.status(404).json({ error: 'No active subscription found' });
-      }
+      if (!currentSub) return res.status(404).json({ error: 'No active subscription found' });
       
-      // Get target plan
       let targetPlan;
       if (process.env.NODE_ENV === 'production') {
         const result = await db.query('SELECT * FROM subscription_plans WHERE id = $1', [targetPlanId]);
@@ -332,11 +296,8 @@ const SubscriptionController = {
         targetPlan = await db.get('SELECT * FROM subscription_plans WHERE id = ?', [targetPlanId]);
       }
       
-      if (!targetPlan) {
-        return res.status(404).json({ error: 'Plan not found' });
-      }
+      if (!targetPlan) return res.status(404).json({ error: 'Plan not found' });
       
-      // Get current counts
       const limits = await LimitChecker.checkAllLimits(company_id, currentSub);
       const downgradeCheck = LimitChecker.canDowngradeToPlan(limits, targetPlan);
       
@@ -353,30 +314,21 @@ const SubscriptionController = {
       const db = await getDb();
       const company_id = req.user.companyId;
       
-      // Get current subscription
       let subscription;
       if (process.env.NODE_ENV === 'production') {
-        const result = await db.query(`
-          SELECT sp.max_projects, sp.max_workers, sp.max_users, sp.max_income_records
-          FROM company_subscriptions cs
-          JOIN subscription_plans sp ON cs.plan_id = sp.id
-          WHERE cs.company_id = $1 AND cs.status IN ('active', 'trial')
-          LIMIT 1
-        `, [company_id]);
+        const result = await db.query(
+          "SELECT sp.max_projects, sp.max_workers, sp.max_users, sp.max_income_records FROM company_subscriptions cs JOIN subscription_plans sp ON cs.plan_id = sp.id WHERE cs.company_id = $1 AND cs.status IN ('active', 'trial') LIMIT 1",
+          [company_id]
+        );
         subscription = result.rows[0];
       } else {
-        subscription = await db.get(`
-          SELECT sp.max_projects, sp.max_workers, sp.max_users, sp.max_income_records
-          FROM company_subscriptions cs
-          JOIN subscription_plans sp ON cs.plan_id = sp.id
-          WHERE cs.company_id = ? AND cs.status IN ('active', 'trial')
-          LIMIT 1
-        `, [company_id]);
+        subscription = await db.get(
+          "SELECT sp.max_projects, sp.max_workers, sp.max_users, sp.max_income_records FROM company_subscriptions cs JOIN subscription_plans sp ON cs.plan_id = sp.id WHERE cs.company_id = ? AND cs.status IN ('active', 'trial') LIMIT 1",
+          [company_id]
+        );
       }
       
-      if (!subscription) {
-        return res.status(404).json({ error: 'No active subscription found' });
-      }
+      if (!subscription) return res.status(404).json({ error: 'No active subscription found' });
       
       const limits = await LimitChecker.checkAllLimits(company_id, subscription);
       res.json(limits);
