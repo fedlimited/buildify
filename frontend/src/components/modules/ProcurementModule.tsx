@@ -838,7 +838,7 @@ const printPurchaseOrder = (order) => {
 
 
 function SuppliesTab() {
-  const { supplies, projects, suppliers, approvedItems, selectedProjectId, addSupply, addStoreTransaction, fetchSupplies } = useAppStore();
+  const { supplies, projects, suppliers, approvedItems, selectedProjectId, addSupply, fetchSupplies } = useAppStore();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     supplierId: 0, supplierName: '',
@@ -953,39 +953,16 @@ const handleSave = () => {
     vat: (form.quantity * form.unitPrice) * 0.16,
     createdAt: new Date().toISOString()
   } as any);
-  
-  // Create store transaction to update inventory
-  console.log('Calling addStoreTransaction...');
-  console.log('Store transaction data:', {
-    date: form.date,
-    projectId: form.projectId,
-    projectName: project?.name || '',
-    itemId: form.itemId,
-    itemName: form.itemName,
-    unit: form.unit,
-    category: selectedItem?.category || '',
-    quantitySupplied: form.quantity,
-    transactionType: 'SUPPLY',
-  });
-  
-  addStoreTransaction({
-    date: form.date,
-    projectId: form.projectId,
-    projectName: project?.name || '',
-    itemId: form.itemId,
-    itemName: form.itemName,
-    unit: form.unit,
-    category: selectedItem?.category || '',
-    quantitySupplied: form.quantity,
-    quantityIssued: 0,
-    quantityReturned: 0,
-    balance: form.quantity,
-    transactionType: 'SUPPLY',
-    reference: `SUPPLY-${Date.now()}`,
-    issuedTo: '',
-    returnedBy: '',
-    notes: form.notes || ''
-  });
+
+
+
+
+
+
+
+
+
+
   
   console.log('Closing dialog...');
   setOpen(false);
