@@ -55,9 +55,9 @@ export function SubscriptionPlansTable({ currency }: { currency: 'KES' | 'USD' }
         <h3 className="text-sm font-semibold text-foreground">Plan Comparison</h3>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-visible">
         <table className="w-full border-collapse">
-          <thead>
+          <thead className="relative z-20">
             <tr>
               <th className="text-left p-4 font-semibold text-sm text-muted-foreground bg-muted/30 border-b border-border min-w-[180px]">
                 Feature
@@ -68,9 +68,15 @@ export function SubscriptionPlansTable({ currency }: { currency: 'KES' | 'USD' }
                     plan.name === 'pro' ? 'bg-amber-50/5 dark:bg-amber-950/10 border-x border-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.05)]' : ''
                   }`}>
                   {plan.name === 'pro' && (
-                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-[11px] font-semibold px-3 py-0.5 rounded-full shadow-lg shadow-amber-500/25 whitespace-nowrap z-10">
-                      Most Popular
-                    </span>
+
+
+
+<span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-[11px] font-semibold px-3 py-0.5 rounded-full shadow-lg shadow-amber-500/25 whitespace-nowrap z-30">
+  Most Popular
+</span>
+
+
+
                   )}
                   <p className="text-sm font-semibold text-foreground">{plan.display_name || plan.name}</p>
                   <div className="mt-1.5">
