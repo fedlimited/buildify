@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { UpgradeModal } from '@/components/UpgradeModal';
+import { Plus, Pencil, Trash2, Shield, ShieldCheck, RefreshCw } from 'lucide-react';
 import api from '@/services/api';
 
 const ALL_MODULES: { id: ModuleId; label: string }[] = [
@@ -38,10 +38,7 @@ export function UsersModule() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<AppUser | null>(null);
   const [form, setForm] = useState(emptyUser);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-
-
-
+ 
 
   // Load users from backend when component mounts
   useEffect(() => {
@@ -96,11 +93,11 @@ export function UsersModule() {
   };
 
 
-  const handleSave = async () => {
-    // Check free plan limit - Free plan allows only admin user (no additional users)
+const handleSave = async () => {
+    // FREE PLAN LIMIT CHECK - Prevent adding more than 1 additional user
     const nonAdminUsersCount = users.filter(u => u.role !== 'admin').length;
     if (!editing && nonAdminUsersCount >= 1 && authUser?.subscription?.plan_name === 'free') {
-      setShowUpgradeModal(true);
+      alert('⚠️ Free plan allows only 1 additional user.\n\nYou have reached your limit.\n\nUpgrade to Pro to add more users.');
       return;
     }
     
@@ -357,13 +354,6 @@ export function UsersModule() {
         </DialogContent>
       </Dialog>
       
-      <UpgradeModal 
-        open={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        limitType="users"
-        currentCount={users.filter(u => u.role !== 'admin').length}
-        maxLimit={1}
-      />
     </div>
   );
 }
