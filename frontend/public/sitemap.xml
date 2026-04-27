@@ -9,74 +9,34 @@
   
   <!-- Landing Page -->
   <url>
-    <loc>https://bochaberi.vercel.app/</loc>
-    <lastmod>2026-04-22</lastmod>
+    <loc>https://bochi.ke/</loc>
+    <lastmod>2026-04-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   
-  <!-- Features Page -->
+  <!-- Features (anchor on landing page) -->
   <url>
-    <loc>https://bochaberi.vercel.app/features</loc>
-    <lastmod>2026-04-22</lastmod>
+    <loc>https://bochi.ke/#features</loc>
+    <lastmod>2026-04-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   
-  <!-- Pricing Page -->
+  <!-- Testimonials (anchor on landing page) -->
   <url>
-    <loc>https://bochaberi.vercel.app/pricing</loc>
-    <lastmod>2026-04-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  
-  <!-- About Page -->
-  <url>
-    <loc>https://bochaberi.vercel.app/about</loc>
-    <lastmod>2026-04-22</lastmod>
+    <loc>https://bochi.ke/#testimonials</loc>
+    <lastmod>2026-04-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   
-  <!-- Contact Page -->
+  <!-- FAQ (anchor on landing page) -->
   <url>
-    <loc>https://bochaberi.vercel.app/contact</loc>
-    <lastmod>2026-04-22</lastmod>
+    <loc>https://bochi.ke/#faq</loc>
+    <lastmod>2026-04-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-  </url>
-  
-  <!-- Blog / Resources -->
-  <url>
-    <loc>https://bochaberi.vercel.app/blog</loc>
-    <lastmod>2026-04-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  
-  <!-- Help Center -->
-  <url>
-    <loc>https://bochaberi.vercel.app/help</loc>
-    <lastmod>2026-04-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  
-  <!-- Terms of Service -->
-  <url>
-    <loc>https://bochaberi.vercel.app/terms</loc>
-    <lastmod>2026-04-22</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
-  </url>
-  
-  <!-- Privacy Policy -->
-  <url>
-    <loc>https://bochaberi.vercel.app/privacy</loc>
-    <lastmod>2026-04-22</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
   </url>
   
   <!-- ============================================ -->
@@ -85,26 +45,18 @@
   
   <!-- Login -->
   <url>
-    <loc>https://bochaberi.vercel.app/login</loc>
-    <lastmod>2026-04-22</lastmod>
+    <loc>https://bochi.ke/login</loc>
+    <lastmod>2026-04-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   
   <!-- Register / Sign Up -->
   <url>
-    <loc>https://bochaberi.vercel.app/register</loc>
-    <lastmod>2026-04-22</lastmod>
+    <loc>https://bochi.ke/register</loc>
+    <lastmod>2026-04-27</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  
-  <!-- Forgot Password -->
-  <url>
-    <loc>https://bochaberi.vercel.app/forgot-password</loc>
-    <lastmod>2026-04-22</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
+    <priority>0.9</priority>
   </url>
 
 </urlset>

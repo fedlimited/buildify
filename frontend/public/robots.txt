@@ -1,5 +1,5 @@
-# BOCHABERI - Construction Financial Management
-# https://bochaberi.vercel.app
+# BOCHI Construction Suite - bochi.ke
+# https://bochi.ke
 
 User-agent: *
 Allow: /
@@ -7,18 +7,14 @@ Allow: /
 # Public pages
 Allow: /$
 Allow: /features
-Allow: /pricing
-Allow: /about
-Allow: /contact
-Allow: /blog
-Allow: /help
-
-# Auth pages
+Allow: /testimonials
+Allow: /faq
 Allow: /login
 Allow: /register
 
-# Disallow authenticated routes (these require login)
+# Disallow authenticated routes (require login)
 Disallow: /dashboard
+Disallow: /admin
 Disallow: /projects
 Disallow: /workers
 Disallow: /payroll
@@ -30,7 +26,7 @@ Disallow: /settings
 Disallow: /billing
 
 # Sitemap location
-Sitemap: https://bochaberi.vercel.app/sitemap.xml
+Sitemap: https://bochi.ke/sitemap.xml
 
 # Crawl delay (be nice to the server)
 Crawl-delay: 10
