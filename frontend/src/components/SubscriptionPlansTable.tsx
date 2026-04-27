@@ -66,7 +66,7 @@ export function SubscriptionPlansTable({ currency }: { currency: 'KES' | 'USD' }
                 <th key={plan.id} 
                   className={`text-center pt-6 pb-4 px-4 border-b border-x w-[25%] min-w-[140px] relative ${
                     plan.name === 'pro' 
-                      ? 'bg-amber-50/5 dark:bg-amber-950/10 border-amber-500/25 shadow-[0_0_20px_rgba(245,158,11,0.05)]' 
+                      ? 'bg-amber-50/5 dark:bg-amber-950/10 border-amber-500/10 shadow-[0_0_20px_rgba(245,158,11,0.05)]' 
                       : 'border-amber-500/10'
                   }`}>
                   {plan.name === 'pro' && (
@@ -125,9 +125,9 @@ export function SubscriptionPlansTable({ currency }: { currency: 'KES' | 'USD' }
                         </span>
                       ) : val || 0;
                       return (
-                        <td key={plan.id} className={`text-center py-3 px-4 border-x ${
+                        <td key={plan.id} className={`text-center py-3 px-4 border-x w-[25%] ${
                           highlightPro 
-                            ? 'bg-amber-50/5 dark:bg-amber-950/5 border-amber-500/25' 
+                            ? 'bg-amber-50/5 dark:bg-amber-950/5 border-amber-500/10' 
                             : 'border-amber-500/10'
                         }`}>
                           <span className="text-sm font-semibold text-foreground">{display}</span>
@@ -139,9 +139,9 @@ export function SubscriptionPlansTable({ currency }: { currency: 'KES' | 'USD' }
                     const hasFeature = plan.name === 'premier' || features.includes(row.key!);
                     
                     return (
-                      <td key={plan.id} className={`text-center py-3 px-4 border-x ${
+                      <td key={plan.id} className={`text-center py-3 px-4 border-x w-[25%] ${
                         highlightPro 
-                          ? 'bg-amber-50/5 dark:bg-amber-950/5 border-amber-500/25' 
+                          ? 'bg-amber-50/5 dark:bg-amber-950/5 border-amber-500/10' 
                           : 'border-amber-500/10'
                       }`}>
                         <div className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${
