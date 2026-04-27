@@ -282,9 +282,14 @@ export function SettingsModule() {
 
 
 
+
+
+
 <TabsContent value="billing" className="space-y-4 mt-3">
+  <BillingModule />
   <SubscriptionPlansTable />
 </TabsContent>
+
 
 
         {/* Users Tab */}
