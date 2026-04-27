@@ -249,7 +249,59 @@ export const BillingModule = () => {
         )}
       </div>
 
+      {/* Pricing Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {plans.map((plan) => {
+          const price = getPrice(plan);
+          const currencySymbol = getCurrencySymbol();
+          const isPopular = plan.name === 'pro';
+          
+          return (
+            <div key={plan.id}
+              className={`relative bg-white dark:bg-gray-800/50 rounded-xl border p-5 flex flex-col ${
+                isPopular ? 'border-amber-500 shadow-lg shadow-amber-500/10' : 'border-gray-200 dark:border-gray-700'
+              } hover:shadow-md transition-all`}
+            >
+              {getPlanBadge(plan)}
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{plan.display_name}</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{plan.description}</p>
+              
+              <div className="mt-4 mb-4">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-gray-400 text-sm">{currencySymbol}</span>
+                  <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                    {formatPriceWithCommas(price)}
+                  </span>
+                </div>
+                <span className="text-xs text-gray-500">/{selectedCycle}</span>
+              </div>
 
+              <ul className="space-y-2 mb-4 flex-grow">
+                <li className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
+                  <Check size={14} className="text-green-500" />
+                  {plan.max_projects === 999999 ? 'Unlimited' : plan.max_projects} Projects
+                </li>
+                <li className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
+                  <Check size={14} className="text-green-500" />
+                  {plan.max_workers === 999999 ? 'Unlimited' : plan.max_workers} Workers
+                </li>
+                <li className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
+                  <Check size={14} className="text-green-500" />
+                  {plan.max_users === 999999 ? 'Unlimited' : plan.max_users} Users
+                </li>
+              </ul>
+
+              <button
+                onClick={() => handleUpgrade(plan)}
+                disabled={isCurrentPlan(plan)}
+                className={getButtonClass(plan)}
+              >
+                {getButtonText(plan)}
+              </button>
+            </div>
+          );
+        })}
+      </div>
 
 
 
