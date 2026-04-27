@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Check, Smartphone, CreditCard, Globe, MapPin, Loader2, Zap, Building2, Users, Shield, TrendingUp, Clock, Crown, Sparkles } from 'lucide-react';
 import api from '@/services/api';
+import { SubscriptionPlansTable } from '@/components/SubscriptionPlansTable';
 
 interface Plan {
   id: number;
@@ -248,6 +249,12 @@ export const BillingModule = () => {
         )}
       </div>
 
+
+
+
+
+
+
       {/* Pricing Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
         {plans.map((plan) => (
@@ -324,6 +331,13 @@ export const BillingModule = () => {
             </div>
           </div>
         ))}
+      </div>
+
+ 
+      {/* Detailed Plans Comparison Table */}
+      <div className="mt-8">
+        <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Compare All Features</h3>
+        <SubscriptionPlansTable />
       </div>
 
       {/* Trust Indicators */}
