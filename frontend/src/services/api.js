@@ -1,13 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-
-
-
-
-
-
-
-
 class ApiService {
   constructor() {
     this.token = localStorage.getItem('token');
@@ -40,7 +32,6 @@ class ApiService {
       throw new Error(error.error || 'API request failed');
     }
 
-    // Handle 204 No Content
     if (response.status === 204) {
       return null;
     }
@@ -61,27 +52,17 @@ class ApiService {
     return data;
   }
 
-
-
-
-
-async verifyLoginOTP(email, code, subdomain) {
-  const data = await this.request('/auth/verify-login-otp', {
-    method: 'POST',
-    body: JSON.stringify({ email, code, subdomain })
-  });
-  console.log('api.verifyLoginOTP raw response:', data);
-  if (data.token) {
-    this.setToken(data.token);
+  async verifyLoginOTP(email, code, subdomain) {
+    const data = await this.request('/auth/verify-login-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, code, subdomain })
+    });
+    console.log('api.verifyLoginOTP raw response:', data);
+    if (data.token) {
+      this.setToken(data.token);
+    }
+    return data;
   }
-  // Return the FULL response so isSuperAdmin is captured
-  return data;  // Contains { token, user: { ...isSuperAdmin } }
-}
-
-
-
-
-
 
   async sendRegistrationOTP(email, subdomain) {
     const data = await this.request('/auth/send-registration-otp', {
@@ -110,21 +91,15 @@ async verifyLoginOTP(email, code, subdomain) {
     return data;
   }
 
-
-
-  // ========== TRADITIONAL AUTH (keep for backward compatibility) ==========
-async login(email, password, subdomain) {
-  const data = await this.request('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ email, password, subdomain })
-  });
-  this.setToken(data.token);
-  // Return FULL response so store can capture isSuperAdmin
-  return data;  // NOT just data.user
-}
-
-
-
+  // ========== TRADITIONAL AUTH ==========
+  async login(email, password, subdomain) {
+    const data = await this.request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, subdomain })
+    });
+    this.setToken(data.token);
+    return data;
+  }
 
   async logout() {
     this.setToken(null);
@@ -153,7 +128,6 @@ async login(email, password, subdomain) {
     });
   }
 
-
   // ========== CURRENCY ==========
   async getCurrencySettings() {
     return this.request('/currency/settings');
@@ -169,7 +143,6 @@ async login(email, password, subdomain) {
   async getAvailableCurrencies() {
     return this.request('/currency/available');
   }
-
 
   // ========== USERS ==========
   async getUsers() {
@@ -571,12 +544,6 @@ async login(email, password, subdomain) {
     });
   }
 
-
-
-
-
-
-
   // ========== QUOTATIONS ==========
   async getQuotations() {
     return this.request('/quotations');
@@ -607,13 +574,6 @@ async login(email, password, subdomain) {
     });
   }
 
-
-
-
-
-
-
-
   // ========== INVOICES ==========
   async getInvoices() {
     return this.request('/invoices');
@@ -643,15 +603,12 @@ async login(email, password, subdomain) {
     });
   }
 
-
-
   // ========== SETTINGS ==========
   async getSettings() {
     console.log('📥 Fetching settings from backend...');
     const data = await this.request('/settings');
     console.log('📥 Raw data from backend:', data);
     
-    // Transform snake_case to camelCase for frontend
     const transformedData = {
       name: data.name,
       email: data.email,
@@ -670,7 +627,6 @@ async login(email, password, subdomain) {
   async updateSettings(data) {
     console.log('📤 Original data received in updateSettings:', data);
     
-    // Transform camelCase to snake_case for backend
     const transformedData = {
       name: data.name,
       email: data.email,
@@ -692,9 +648,6 @@ async login(email, password, subdomain) {
     console.log('✅ Backend response:', response);
     return response;
   }
-
-
-
 
   // ========== SUPER ADMIN ==========
   async getSuperAdminStats() {
@@ -727,7 +680,6 @@ async login(email, password, subdomain) {
   async getAllPayments() {
     return this.request('/super-admin/payments');
   }
-
 }
 
 export default new ApiService();
