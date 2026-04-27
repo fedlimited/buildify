@@ -80,6 +80,11 @@ interface AppState {
   invoices: Invoice[];
 
 
+limits: {
+    projects: { current: number; max: number; isOverLimit: boolean };
+    workers: { current: number; max: number; isOverLimit: boolean };
+    users: { current: number; max: number; isOverLimit: boolean };
+  };
 
   currencySettings: {
     currency_code: string;
@@ -274,7 +279,8 @@ login: async (email, password, subdomain) => {
       get().fetchQuotations(),
       get().fetchInvoices(),
       get().fetchCompanySettings(),
-      get().fetchCurrencySettings()
+      get().fetchCurrencySettings(),
+      get().fetchLimits()  // ← ADD THIS LINE
     ]);
     
     return true;
@@ -315,8 +321,15 @@ logout: () => {
   subcontractors: [],
   quotations: [],
   invoices: [],
+  
+  // ADD THIS after invoices
+  limits: {
+    projects: { current: 0, max: 0, isOverLimit: false },
+    workers: { current: 0, max: 0, isOverLimit: false },
+    users: { current: 0, max: 0, isOverLimit: false }
+  },
+  
   currencySettings: null,
-
 
 
 
@@ -2467,6 +2480,21 @@ updateCompanySettings: async (s) => {
     throw error;
   }
 },
+
+
+
+  // ========== LIMITS ==========
+  fetchLimits: async () => {
+    try {
+      const response = await api.get('/subscription/limits');
+      set({ limits: response });
+      console.log('Limits fetched:', response);
+    } catch (error) {
+      console.error('Failed to fetch limits:', error);
+    }
+  },
+
+  // ========== CLEARING ACTIONS ==========
 
 
 
