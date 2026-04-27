@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Pencil, Trash2, Shield, ShieldCheck, RefreshCw } from 'lucide-react';
+import { UpgradeModal } from '@/components/UpgradeModal';
 import api from '@/services/api';
 
 const ALL_MODULES: { id: ModuleId; label: string }[] = [
@@ -38,6 +38,10 @@ export function UsersModule() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<AppUser | null>(null);
   const [form, setForm] = useState(emptyUser);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+
+
 
   // Load users from backend when component mounts
   useEffect(() => {
@@ -91,8 +95,19 @@ export function UsersModule() {
     setError('');
   };
 
+
   const handleSave = async () => {
+    // Check free plan limit - Free plan allows only admin user (no additional users)
+    const nonAdminUsersCount = users.filter(u => u.role !== 'admin').length;
+    if (!editing && nonAdminUsersCount >= 1 && authUser?.subscription?.plan_name === 'free') {
+      setShowUpgradeModal(true);
+      return;
+    }
+    
     if (!form.name || !form.email) {
+
+
+
       setError('Name and email are required');
       return;
     }
@@ -341,6 +356,14 @@ export function UsersModule() {
           </div>
         </DialogContent>
       </Dialog>
+      
+      <UpgradeModal 
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        limitType="users"
+        currentCount={users.filter(u => u.role !== 'admin').length}
+        maxLimit={1}
+      />
     </div>
   );
 }

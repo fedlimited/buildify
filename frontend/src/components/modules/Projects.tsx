@@ -1,3 +1,4 @@
+import { UpgradeModal } from '@/components/UpgradeModal';
 import { useState } from 'react';
 import { LeafletMapPicker } from '@/components/LeafletMapPicker';
 import { useAppStore } from '@/hooks/useAppStore';

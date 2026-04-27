@@ -174,7 +174,7 @@ export const BillingModule = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div id="payment-section" className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="text-center mb-4">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">Subscription Plans</h2>

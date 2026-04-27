@@ -1,3 +1,4 @@
+import { SubscriptionPlansTable } from '@/components/SubscriptionPlansTable';
 import { CurrencySelector } from '@/components/CurrencySelector';
 import { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '@/hooks/useAppStore';
@@ -20,6 +21,9 @@ export function SettingsModule() {
   const logoRef = useRef<HTMLInputElement>(null);
 
   // Check for saved tab preference from upgrade button
+
+
+
   useEffect(() => {
     const savedTab = localStorage.getItem('settingsTab');
     if (savedTab === 'billing') {
@@ -27,6 +31,23 @@ export function SettingsModule() {
       localStorage.removeItem('settingsTab');
     }
   }, []);
+
+  // Auto-open payment section when coming from upgrade modal
+  useEffect(() => {
+    if (activeTab === 'billing' && localStorage.getItem('openPaymentSection') === 'true') {
+      setTimeout(() => {
+        const paymentSection = document.getElementById('payment-section');
+        if (paymentSection) {
+          paymentSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 500);
+      localStorage.removeItem('openPaymentSection');
+    }
+  }, [activeTab]);
+
+
+
+
 
   const handleSave = () => {
     updateCompanySettings(form);
@@ -259,10 +280,12 @@ export function SettingsModule() {
           </div>
         </TabsContent>
 
-        {/* Billing Tab */}
-        <TabsContent value="billing" className="space-y-4 mt-3">
-          <BillingModule />
-        </TabsContent>
+
+
+<TabsContent value="billing" className="space-y-4 mt-3">
+  <SubscriptionPlansTable />
+</TabsContent>
+
 
         {/* Users Tab */}
         <TabsContent value="users" className="space-y-4 mt-3">
