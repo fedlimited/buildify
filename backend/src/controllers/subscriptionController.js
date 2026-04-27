@@ -224,10 +224,10 @@ const SubscriptionController = {
       
       if (type === 'project') {
         if (process.env.NODE_ENV === 'production') {
-          const result = await db.query('SELECT COUNT(*) as count FROM projects WHERE company_id = $1 AND status != "Archived"', [company_id]);
+          const result = await db.query('SELECT COUNT(*) as count FROM projects WHERE company_id = $1 AND status != \'Archived\'', [company_id]);
           currentCount = result.rows[0].count;
         } else {
-          const result = await db.get('SELECT COUNT(*) as count FROM projects WHERE company_id = ? AND status != "Archived"', [company_id]);
+          const result = await db.get("SELECT COUNT(*) as count FROM projects WHERE company_id = ? AND status != 'Archived'", [company_id]);
           currentCount = result.count;
         }
         max = limits.max_projects;
@@ -244,10 +244,10 @@ const SubscriptionController = {
         allowed = currentCount < max;
       } else if (type === 'user') {
         if (process.env.NODE_ENV === 'production') {
-          const result = await db.query('SELECT COUNT(*) as count FROM users WHERE company_id = $1 AND role != "admin"', [company_id]);
+          const result = await db.query("SELECT COUNT(*) as count FROM users WHERE company_id = $1 AND role = 'admin'", [company_id]);
           currentCount = result.rows[0].count;
         } else {
-          const result = await db.get('SELECT COUNT(*) as count FROM users WHERE company_id = ? AND role != "admin"', [company_id]);
+          const result = await db.get("SELECT COUNT(*) as count FROM users WHERE company_id = ? AND role = 'admin'", [company_id]);
           currentCount = result.count;
         }
         max = limits.max_users;
