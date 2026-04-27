@@ -4,6 +4,7 @@ import { Check, X, Loader2, Infinity } from 'lucide-react';
 export function SubscriptionPlansTable() {
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currency, setCurrency] = useState<'KES' | 'USD'>('KES');
 
   useEffect(() => {
     fetch('https://buildify-backend-kye8.onrender.com/api/subscription/plans')
@@ -51,6 +52,32 @@ export function SubscriptionPlansTable() {
 
   return (
     <div className="rounded-xl border border-border overflow-hidden">
+      {/* Currency Toggle */}
+      <div className="flex items-center justify-between px-4 py-3 bg-muted/10 border-b border-border">
+        <h3 className="text-sm font-semibold text-foreground">Plan Comparison</h3>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Currency:</span>
+          <div className="flex bg-muted rounded-lg p-0.5">
+            <button
+              onClick={() => setCurrency('KES')}
+              className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                currency === 'KES' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              KES
+            </button>
+            <button
+              onClick={() => setCurrency('USD')}
+              className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                currency === 'USD' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              USD
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
@@ -60,11 +87,11 @@ export function SubscriptionPlansTable() {
               </th>
               {plans.map((plan: any) => (
                 <th key={plan.id} 
-                  className={`text-center p-4 border-b border-border min-w-[140px] relative ${
+                  className={`text-center pt-6 pb-4 px-4 border-b border-border min-w-[140px] relative ${
                     plan.name === 'pro' ? 'bg-amber-50/5 dark:bg-amber-950/10 border-x border-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.05)]' : ''
                   }`}>
                   {plan.name === 'pro' && (
-                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-[11px] font-semibold px-3 py-0.5 rounded-full shadow-lg shadow-amber-500/25 whitespace-nowrap">
+                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-[11px] font-semibold px-3 py-0.5 rounded-full shadow-lg shadow-amber-500/25 whitespace-nowrap z-10">
                       Most Popular
                     </span>
                   )}
@@ -72,9 +99,11 @@ export function SubscriptionPlansTable() {
                   <div className="mt-1.5">
                     {plan.price_monthly_kes > 0 ? (
                       <div className="flex items-baseline justify-center gap-0.5">
-                        <span className="text-xs text-muted-foreground font-medium">KES</span>
+                        <span className="text-xs text-muted-foreground font-medium">{currency}</span>
                         <span className={`text-xl font-bold ${plan.name === 'pro' ? 'text-amber-500' : 'text-foreground'}`}>
-                          {plan.price_monthly_kes.toLocaleString()}
+                          {currency === 'KES' 
+                            ? plan.price_monthly_kes.toLocaleString() 
+                            : plan.price_monthly_usd.toLocaleString()}
                         </span>
                         <span className="text-xs text-muted-foreground">/mo</span>
                       </div>
@@ -101,7 +130,6 @@ export function SubscriptionPlansTable() {
                 );
               }
 
-              const isPro = false; // We'll set per plan
               return (
                 <tr key={row.key} 
                   className={`border-b border-border transition-colors ${
@@ -150,7 +178,7 @@ export function SubscriptionPlansTable() {
       </div>
       
       <div className="flex items-center justify-between px-4 py-2.5 bg-muted/20 border-t border-border text-xs text-muted-foreground">
-        <span>All prices in Kenyan Shillings (KES) • Annual billing saves 15%</span>
+        <span>All prices in {currency === 'KES' ? 'Kenyan Shillings (KES)' : 'US Dollars (USD)'} • Annual billing saves 15%</span>
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5">
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"><Check size={11} /></span>
