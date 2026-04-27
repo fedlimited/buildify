@@ -255,83 +255,9 @@ export const BillingModule = () => {
 
 
 
-      {/* Pricing Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-        {plans.map((plan) => (
-          <div
-            key={plan.id}
-            className={`relative rounded-xl border transition-all duration-200 flex flex-col h-full ${
-              isCurrentPlan(plan)
-                ? 'border-green-500 ring-2 ring-green-500 shadow-lg bg-white dark:bg-gray-900'
-                : plan.name === 'pro'
-                ? 'border-amber-500 shadow-md bg-white dark:bg-gray-900'
-                : 'border-gray-200 dark:border-gray-700 hover:shadow-md bg-white dark:bg-gray-900'
-            }`}
-          >
-            {getPlanBadge(plan)}
 
-            <div className="p-5 flex flex-col flex-1">
-              <div className="text-center">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">{plan.display_name}</h3>
-                <p className="text-gray-500 dark:text-gray-400 text-xs mt-1 leading-relaxed">{plan.description}</p>
-              </div>
-              
-              <div className="mt-4 text-center">
-                <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{getCurrencySymbol()}</span>
-                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {formatPriceWithCommas(getPrice(plan))}
-                  </span>
-                </div>
-                <span className="text-sm text-gray-500 dark:text-gray-400">/{selectedCycle}</span>
-              </div>
 
-              <div className="mt-4 space-y-2">
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <Building2 size={14} className="text-green-500 shrink-0" />
-                  <span className="text-sm">{plan.max_projects === 999999 ? 'Unlimited Projects' : `${plan.max_projects} Projects`}</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <Users size={14} className="text-green-500 shrink-0" />
-                  <span className="text-sm">{plan.max_workers === 999999 ? 'Unlimited Workers' : `${plan.max_workers} Workers`}</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <Users size={14} className="text-green-500 shrink-0" />
-                  <span className="text-sm">{plan.max_users === 999999 ? 'Unlimited Users' : `${plan.max_users} Users`}</span>
-                </div>
-              </div>
 
-              <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
-                <div className="space-y-1.5">
-                  {plan.features?.slice(0, 3).map((feature, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <Check size={11} className="text-green-500 shrink-0" />
-                      <span className="text-xs text-gray-600 dark:text-gray-400 capitalize">
-                        {feature.replace(/_/g, ' ')}
-                      </span>
-                    </div>
-                  ))}
-                  {plan.features?.length > 3 && (
-                    <div className="text-xs text-gray-400 dark:text-gray-500 pl-6">
-                      +{plan.features.length - 3} more features
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-auto pt-4">
-                <button
-                  onClick={() => handleUpgrade(plan)}
-                  disabled={isCurrentPlan(plan)}
-                  className={getButtonClass(plan)}
-                >
-                  {getButtonText(plan)}
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
 
  
       {/* Detailed Plans Comparison Table */}
