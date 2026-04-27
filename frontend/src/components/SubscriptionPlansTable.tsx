@@ -4,7 +4,6 @@ import { Check, X, Loader2, Infinity } from 'lucide-react';
 export function SubscriptionPlansTable() {
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currency, setCurrency] = useState<'KES' | 'USD'>('KES');
 
   useEffect(() => {
     fetch('https://buildify-backend-kye8.onrender.com/api/subscription/plans')
@@ -19,7 +18,6 @@ export function SubscriptionPlansTable() {
     </div>
   );
 
-  // Feature rows exactly matching database features
   const featureRows = [
     { section: 'Limits' },
     { label: 'Projects', type: 'number', key: 'max_projects' },
@@ -52,30 +50,9 @@ export function SubscriptionPlansTable() {
 
   return (
     <div className="rounded-xl border border-border overflow-hidden">
-      {/* Currency Toggle */}
-      <div className="flex items-center justify-between px-4 py-3 bg-muted/10 border-b border-border">
+      {/* Title Bar */}
+      <div className="flex items-center px-4 py-3 bg-muted/10 border-b border-border">
         <h3 className="text-sm font-semibold text-foreground">Plan Comparison</h3>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Currency:</span>
-          <div className="flex bg-muted rounded-lg p-0.5">
-            <button
-              onClick={() => setCurrency('KES')}
-              className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
-                currency === 'KES' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              KES
-            </button>
-            <button
-              onClick={() => setCurrency('USD')}
-              className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
-                currency === 'USD' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              USD
-            </button>
-          </div>
-        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -99,11 +76,9 @@ export function SubscriptionPlansTable() {
                   <div className="mt-1.5">
                     {plan.price_monthly_kes > 0 ? (
                       <div className="flex items-baseline justify-center gap-0.5">
-                        <span className="text-xs text-muted-foreground font-medium">{currency}</span>
+                        <span className="text-xs text-muted-foreground font-medium">KES</span>
                         <span className={`text-xl font-bold ${plan.name === 'pro' ? 'text-amber-500' : 'text-foreground'}`}>
-                          {currency === 'KES' 
-                            ? plan.price_monthly_kes.toLocaleString() 
-                            : plan.price_monthly_usd.toLocaleString()}
+                          {plan.price_monthly_kes.toLocaleString()}
                         </span>
                         <span className="text-xs text-muted-foreground">/mo</span>
                       </div>
@@ -117,7 +92,6 @@ export function SubscriptionPlansTable() {
           </thead>
           <tbody>
             {featureRows.map((row, idx) => {
-              // Section header
               if ('section' in row) {
                 return (
                   <tr key={row.section}>
@@ -135,9 +109,7 @@ export function SubscriptionPlansTable() {
                   className={`border-b border-border transition-colors ${
                     idx % 2 === 0 ? 'bg-transparent' : 'bg-muted/5'
                   } hover:bg-muted/10`}>
-                  <td className="py-3 px-4 text-sm text-foreground">
-                    {row.label}
-                  </td>
+                  <td className="py-3 px-4 text-sm text-foreground">{row.label}</td>
                   {plans.map((plan: any) => {
                     const highlightPro = plan.name === 'pro';
                     
@@ -178,7 +150,7 @@ export function SubscriptionPlansTable() {
       </div>
       
       <div className="flex items-center justify-between px-4 py-2.5 bg-muted/20 border-t border-border text-xs text-muted-foreground">
-        <span>All prices in {currency === 'KES' ? 'Kenyan Shillings (KES)' : 'US Dollars (USD)'} • Annual billing saves 15%</span>
+        <span>All prices in Kenyan Shillings (KES) • Annual billing saves 15%</span>
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5">
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"><Check size={11} /></span>
