@@ -19,7 +19,9 @@ import { AdminLayout } from '@/components/AdminLayout';
 import { AdminAnalytics } from '@/components/modules/AdminAnalytics';
 
 // Dummy reference to prevent tree-shaking
-const ADMIN_COMPONENTS = { AdminDashboard, AdminCompanies, AdminUsers, AdminSubscriptions, AdminPayments, AdminLayout, AdminAnalytics, AdminTestimonials };
+import { UsersModule } from '@/components/modules/UsersModule';
+
+const ADMIN_COMPONENTS = { AdminDashboard, AdminCompanies, AdminUsers, AdminSubscriptions, AdminPayments, AdminLayout, AdminAnalytics, AdminTestimonials, UsersModule };
 console.log('Admin components registered:', Object.keys(ADMIN_COMPONENTS));
 
 const queryClient = new QueryClient();

@@ -1,4 +1,5 @@
 // Force admin components to be included in the build
+export { UsersModule } from './UsersModule';
 export { AdminDashboard } from './AdminDashboard';
 export { AdminCompanies } from './AdminCompanies';
 export { AdminUsers } from './AdminUsers';
