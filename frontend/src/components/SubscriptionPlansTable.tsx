@@ -55,20 +55,22 @@ export function SubscriptionPlansTable({ currency }: { currency: 'KES' | 'USD' }
         <h3 className="text-sm font-semibold text-foreground">Plan Comparison</h3>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-visible">
         <table className="w-full border-collapse">
-          <thead>
+          <thead className="relative z-20">
             <tr>
               <th className="text-left p-4 font-semibold text-sm text-muted-foreground bg-muted/30 border-b border-border min-w-[180px]">
                 Feature
               </th>
               {plans.map((plan: any) => (
                 <th key={plan.id} 
-                  className={`text-center pt-6 pb-4 px-4 border-b border-border min-w-[140px] relative ${
-                    plan.name === 'pro' ? 'bg-amber-50/5 dark:bg-amber-950/10 border-x border-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.05)]' : ''
+                  className={`text-center pt-6 pb-4 px-4 border-b border-x min-w-[140px] relative ${
+                    plan.name === 'pro' 
+                      ? 'bg-amber-50/5 dark:bg-amber-950/10 border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.05)]' 
+                      : 'border-amber-500/20'
                   }`}>
                   {plan.name === 'pro' && (
-                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-[11px] font-semibold px-3 py-0.5 rounded-full shadow-lg shadow-amber-500/25 whitespace-nowrap z-10">
+                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-[11px] font-semibold px-3 py-0.5 rounded-full shadow-lg shadow-amber-500/25 whitespace-nowrap z-30">
                       Most Popular
                     </span>
                   )}
@@ -76,22 +78,12 @@ export function SubscriptionPlansTable({ currency }: { currency: 'KES' | 'USD' }
                   <div className="mt-1.5">
                     {plan.price_monthly_kes > 0 ? (
                       <div className="flex items-baseline justify-center gap-0.5">
-
-
-
-
-
-
-<span className="text-xs text-muted-foreground font-medium">{currency}</span>
-<span className={`text-xl font-bold ${plan.name === 'pro' ? 'text-amber-500' : 'text-foreground'}`}>
-  {currency === 'KES' 
-    ? plan.price_monthly_kes.toLocaleString() 
-    : plan.price_monthly_usd.toLocaleString()}
-</span>
-
-
-
-
+                        <span className="text-xs text-muted-foreground font-medium">{currency}</span>
+                        <span className={`text-xl font-bold ${plan.name === 'pro' ? 'text-amber-500' : 'text-foreground'}`}>
+                          {currency === 'KES' 
+                            ? plan.price_monthly_kes.toLocaleString() 
+                            : plan.price_monthly_usd.toLocaleString()}
+                        </span>
                         <span className="text-xs text-muted-foreground">/mo</span>
                       </div>
                     ) : (
@@ -133,7 +125,11 @@ export function SubscriptionPlansTable({ currency }: { currency: 'KES' | 'USD' }
                         </span>
                       ) : val || 0;
                       return (
-                        <td key={plan.id} className={`text-center py-3 px-4 ${highlightPro ? 'bg-amber-50/5 dark:bg-amber-950/5 border-x border-amber-500/20' : ''}`}>
+                        <td key={plan.id} className={`text-center py-3 px-4 border-x ${
+                          highlightPro 
+                            ? 'bg-amber-50/5 dark:bg-amber-950/5 border-amber-500/40' 
+                            : 'border-amber-500/20'
+                        }`}>
                           <span className="text-sm font-semibold text-foreground">{display}</span>
                         </td>
                       );
@@ -143,7 +139,11 @@ export function SubscriptionPlansTable({ currency }: { currency: 'KES' | 'USD' }
                     const hasFeature = plan.name === 'premier' || features.includes(row.key!);
                     
                     return (
-                      <td key={plan.id} className={`text-center py-3 px-4 ${highlightPro ? 'bg-amber-50/5 dark:bg-amber-950/5 border-x border-amber-500/20' : ''}`}>
+                      <td key={plan.id} className={`text-center py-3 px-4 border-x ${
+                        highlightPro 
+                          ? 'bg-amber-50/5 dark:bg-amber-950/5 border-amber-500/40' 
+                          : 'border-amber-500/20'
+                      }`}>
                         <div className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${
                           hasFeature 
                             ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' 
