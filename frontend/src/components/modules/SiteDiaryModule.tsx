@@ -19,6 +19,11 @@ import {
   Droplets, Thermometer, CloudSun, CloudLightning, CloudFog, Snowflake
 } from 'lucide-react';
 
+
+
+
+
+
 // Weather options
 const weatherOptions = [
   { 
@@ -26,74 +31,80 @@ const weatherOptions = [
     label: 'Sunny', 
     icon: Sun, 
     description: 'Clear skies, bright sunshine',
-    color: 'text-amber-500',
-    bgColor: 'bg-amber-50',
-    borderColor: 'border-amber-200'
+    color: 'text-amber-500 dark:text-amber-400',
+    bgColor: 'bg-amber-50 dark:bg-amber-950/50',
+    borderColor: 'border-amber-200 dark:border-amber-800'
   },
   { 
     value: 'partly-cloudy', 
     label: 'Partly Cloudy', 
     icon: CloudSun, 
     description: 'Mix of sun and clouds',
-    color: 'text-gray-500',
-    bgColor: 'bg-gray-50',
-    borderColor: 'border-gray-200'
+    color: 'text-gray-500 dark:text-gray-400',
+    bgColor: 'bg-gray-50 dark:bg-gray-900/50',
+    borderColor: 'border-gray-200 dark:border-gray-700'
   },
   { 
     value: 'cloudy', 
     label: 'Cloudy', 
     icon: Cloud, 
     description: 'Overcast, no direct sun',
-    color: 'text-gray-400',
-    bgColor: 'bg-gray-50',
-    borderColor: 'border-gray-200'
+    color: 'text-gray-400 dark:text-gray-500',
+    bgColor: 'bg-gray-50 dark:bg-gray-900/50',
+    borderColor: 'border-gray-200 dark:border-gray-700'
   },
   { 
     value: 'light-rain', 
     label: 'Light Rain', 
     icon: CloudRain, 
     description: 'Drizzle or light showers',
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200'
+    color: 'text-blue-500 dark:text-blue-400',
+    bgColor: 'bg-blue-50 dark:bg-blue-950/50',
+    borderColor: 'border-blue-200 dark:border-blue-800'
   },
   { 
     value: 'heavy-rain', 
     label: 'Heavy Rain', 
     icon: Droplets, 
     description: 'Steady rain, poor visibility',
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-100',
-    borderColor: 'border-blue-300'
+    color: 'text-blue-600 dark:text-blue-400',
+    bgColor: 'bg-blue-100 dark:bg-blue-950/70',
+    borderColor: 'border-blue-300 dark:border-blue-800'
   },
   { 
     value: 'windy', 
     label: 'Windy', 
     icon: Wind, 
     description: 'Strong winds',
-    color: 'text-teal-500',
-    bgColor: 'bg-teal-50',
-    borderColor: 'border-teal-200'
+    color: 'text-teal-500 dark:text-teal-400',
+    bgColor: 'bg-teal-50 dark:bg-teal-950/50',
+    borderColor: 'border-teal-200 dark:border-teal-800'
   },
   { 
     value: 'stormy', 
     label: 'Stormy', 
     icon: CloudLightning, 
     description: 'Thunderstorms, lightning',
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50',
-    borderColor: 'border-purple-200'
+    color: 'text-purple-600 dark:text-purple-400',
+    bgColor: 'bg-purple-50 dark:bg-purple-950/50',
+    borderColor: 'border-purple-200 dark:border-purple-800'
   },
   { 
     value: 'foggy', 
     label: 'Foggy', 
     icon: CloudFog, 
     description: 'Low visibility due to fog',
-    color: 'text-gray-400',
-    bgColor: 'bg-gray-50',
-    borderColor: 'border-gray-200'
+    color: 'text-gray-400 dark:text-gray-500',
+    bgColor: 'bg-gray-50 dark:bg-gray-900/50',
+    borderColor: 'border-gray-200 dark:border-gray-700'
   }
 ];
+
+
+
+
+
+
 
 interface Activity {
   id: string;
@@ -659,13 +670,17 @@ const openEdit = (entry: any) => {
     return <Sun size={20} className="text-amber-500" />;
   };
 
-  const getWeatherButtonClass = (weatherValue: string) => {
-    const weather = weatherOptions.find(w => w.value === weatherValue);
-    if (weatherCondition === weatherValue) {
-      return `${weather?.bgColor} border-2 ${weather?.borderColor} shadow-sm`;
-    }
-    return 'bg-gray-50 border border-gray-200 hover:bg-gray-100';
-  };
+
+
+const getWeatherButtonClass = (weatherValue: string) => {
+  const weather = weatherOptions.find(w => w.value === weatherValue);
+  if (weatherCondition === weatherValue) {
+    return `${weather?.bgColor} border-2 ${weather?.borderColor} shadow-sm`;
+  }
+  return 'bg-gray-50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800/50';
+};
+
+
 
   return (
     <TooltipProvider>
