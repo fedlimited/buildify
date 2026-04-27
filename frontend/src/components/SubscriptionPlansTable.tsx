@@ -64,7 +64,7 @@ export function SubscriptionPlansTable({ currency }: { currency: 'KES' | 'USD' }
               </th>
               {plans.map((plan: any) => (
                 <th key={plan.id} 
-                  className={`text-center pt-6 pb-4 px-4 border-b border-x min-w-[140px] relative ${
+                  className={`text-center pt-6 pb-4 px-4 border-b border-x w-[25%] min-w-[140px] relative ${
                     plan.name === 'pro' 
                       ? 'bg-amber-50/5 dark:bg-amber-950/10 border-amber-500/25 shadow-[0_0_20px_rgba(245,158,11,0.05)]' 
                       : 'border-amber-500/10'
