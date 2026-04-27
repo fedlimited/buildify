@@ -1,0 +1,27 @@
+{
+  "name": "BOCHI Construction Suite",
+  "short_name": "BOCHI",
+  "description": "Construction financial management platform for Kenyan contractors",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/Bochi_logo_transparent.PNG",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/Bochi_logo_transparent.PNG",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity", "finance"],
+  "lang": "en-KE",
+  "dir": "ltr"
+}
