@@ -643,32 +643,57 @@ async login(email, password, subdomain) {
     });
   }
 
+
+
   // ========== SETTINGS ==========
   async getSettings() {
-    return this.request('/settings');
+    console.log('📥 Fetching settings from backend...');
+    const data = await this.request('/settings');
+    console.log('📥 Raw data from backend:', data);
+    
+    // Transform snake_case to camelCase for frontend
+    const transformedData = {
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      address: data.address,
+      kraPin: data.kra_pin,
+      currency: data.currency,
+      currencySymbol: data.currency_symbol,
+      logoUrl: data.logo_url
+    };
+    
+    console.log('📥 Transformed data for frontend:', transformedData);
+    return transformedData;
+  }
+
+  async updateSettings(data) {
+    console.log('📤 Original data received in updateSettings:', data);
+    
+    // Transform camelCase to snake_case for backend
+    const transformedData = {
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      address: data.address,
+      kra_pin: data.kraPin,
+      currency: data.currency,
+      currency_symbol: data.currencySymbol,
+      logo_url: data.logoUrl
+    };
+    
+    console.log('📤 Transformed data being sent to backend:', transformedData);
+    
+    const response = await this.request('/settings', {
+      method: 'PUT',
+      body: JSON.stringify(transformedData)
+    });
+    
+    console.log('✅ Backend response:', response);
+    return response;
   }
 
 
-sync getSettings() {
-  const data = await this.request('/settings');
-  // Transform snake_case to camelCase for frontend
-  return {
-    name: data.name,
-    email: data.email,
-    phone: data.phone,
-    address: data.address,
-    kraPin: data.kra_pin,        // ← Convert kra_pin to kraPin
-    currency: data.currency,
-    currencySymbol: data.currency_symbol,  // ← Convert currency_symbol to currencySymbol
-    logoUrl: data.logo_url       // ← Convert logo_url to logoUrl
-  };
-
-  console.log('Sending to backend:', transformedData);
-  return this.request('/settings', {
-    method: 'PUT',
-    body: JSON.stringify(transformedData)
-  });
-}
 
 
   // ========== SUPER ADMIN ==========
