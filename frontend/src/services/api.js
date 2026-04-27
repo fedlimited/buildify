@@ -648,12 +648,28 @@ async login(email, password, subdomain) {
     return this.request('/settings');
   }
 
-  async updateSettings(data) {
-    return this.request('/settings', {
-      method: 'PUT',
-      body: JSON.stringify(data)
-    });
-  }
+
+sync getSettings() {
+  const data = await this.request('/settings');
+  // Transform snake_case to camelCase for frontend
+  return {
+    name: data.name,
+    email: data.email,
+    phone: data.phone,
+    address: data.address,
+    kraPin: data.kra_pin,        // ← Convert kra_pin to kraPin
+    currency: data.currency,
+    currencySymbol: data.currency_symbol,  // ← Convert currency_symbol to currencySymbol
+    logoUrl: data.logo_url       // ← Convert logo_url to logoUrl
+  };
+
+  console.log('Sending to backend:', transformedData);
+  return this.request('/settings', {
+    method: 'PUT',
+    body: JSON.stringify(transformedData)
+  });
+}
+
 
   // ========== SUPER ADMIN ==========
   async getSuperAdminStats() {
