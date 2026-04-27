@@ -672,6 +672,7 @@ const openEdit = (entry: any) => {
 
 
 
+
 const getWeatherButtonClass = (weatherValue: string) => {
   const weather = weatherOptions.find(w => w.value === weatherValue);
   if (weatherCondition === weatherValue) {
@@ -807,7 +808,7 @@ const getWeatherButtonClass = (weatherValue: string) => {
             </DialogHeader>
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-3">
-              <TabsList className="grid grid-cols-6 gap-1 h-auto p-1">
+              <TabsList className="grid grid-cols-6 gap-1 h-auto p-1 bg-muted dark:bg-gray-800/50">
                 <TabsTrigger value="basic" className="text-xs py-1">Basic</TabsTrigger>
                 <TabsTrigger value="workers" className="text-xs py-1">Workers</TabsTrigger>
                 <TabsTrigger value="subcontractors" className="text-xs py-1">Subs</TabsTrigger>
@@ -874,7 +875,7 @@ const getWeatherButtonClass = (weatherValue: string) => {
               <TabsContent value="workers" className="space-y-3 mt-3">
                 <div className="space-y-2">
                   {siteWorkers.map(worker => (
-                    <div key={worker.id} className="flex justify-between items-center p-2 bg-muted rounded text-sm">
+                    <div key={worker.id} className="flex justify-between items-center p-2 bg-muted dark:bg-gray-800/50 rounded-lg text-sm">
                       <div>
                         <span className="font-medium">{worker.name}</span>
                         <span className="text-xs text-muted-foreground ml-2">{worker.role}</span>
@@ -890,11 +891,11 @@ const getWeatherButtonClass = (weatherValue: string) => {
 
 
 
-<div className="border rounded p-3 space-y-2">
+<div className="border border-border rounded-lg p-3 space-y-2 bg-card">
   <p className="text-xs font-medium">Add Payroll Worker</p>
   
   {/* ===== DEBUG INFO - Remove after testing ===== */}
-  <div className="text-xs p-2 bg-yellow-50 border border-yellow-200 rounded mb-2">
+  <div className="text-xs p-2 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mb-2">
     <div><strong>Debug Info:</strong></div>
     <div>Current Project ID: <span className="font-mono font-bold">{projectId}</span></div>
     <div>Total Workers in DB: <span className="font-mono">{workers.length}</span></div>
@@ -943,7 +944,7 @@ const getWeatherButtonClass = (weatherValue: string) => {
                   </div>
                 </div>
 
-                <div className="border rounded p-3 space-y-2">
+                <div className="border border-border rounded-lg p-3 space-y-2 bg-card">
                   <div className="flex justify-between items-center">
                     <p className="text-xs font-medium">Add Casual Worker</p>
                     <Button variant="ghost" size="sm" onClick={() => setShowCustomWorker(!showCustomWorker)} className="h-6 text-xs">
@@ -965,7 +966,7 @@ const getWeatherButtonClass = (weatherValue: string) => {
               <TabsContent value="subcontractors" className="space-y-3 mt-3">
                 <div className="space-y-2">
                   {siteSubcontractors.map(sub => (
-                    <div key={sub.id} className="flex justify-between items-center p-2 bg-muted rounded text-sm">
+                    <div key={sub.id} className="flex justify-between items-center p-2 bg-muted dark:bg-gray-800/50 rounded-lg text-sm">
                       <div>
                         <span className="font-medium">{sub.name}</span>
                         <span className="text-xs text-muted-foreground ml-2">{sub.task} | {sub.workersCount} workers</span>
@@ -978,7 +979,7 @@ const getWeatherButtonClass = (weatherValue: string) => {
                   ))}
                 </div>
                 
-                <div className="border rounded p-3 space-y-2">
+                <div className="border border-border rounded-lg p-3 space-y-2 bg-card">
                   <p className="text-xs font-medium">Add Existing Subcontractor</p>
                   <div className="flex gap-2">
                     <Select value={selectedSubcontractor} onValueChange={setSelectedSubcontractor}>
@@ -1001,7 +1002,7 @@ const getWeatherButtonClass = (weatherValue: string) => {
                   </div>
                 </div>
 
-                <div className="border rounded p-3 space-y-2">
+                <div className="border border-border rounded-lg p-3 space-y-2 bg-card">
                   <div className="flex justify-between items-center">
                     <p className="text-xs font-medium">Add New Subcontractor</p>
                     <Button variant="ghost" size="sm" onClick={() => setShowCustomSubcontractor(!showCustomSubcontractor)} className="h-6 text-xs">
@@ -1029,7 +1030,7 @@ const getWeatherButtonClass = (weatherValue: string) => {
               <TabsContent value="activities" className="space-y-3 mt-3">
                 <div className="space-y-2">
                   {activities.map(activity => (
-                    <div key={activity.id} className="flex justify-between items-center p-2 bg-muted rounded text-sm">
+                    <div key={activity.id} className="flex justify-between items-center p-2 bg-muted dark:bg-gray-800/50 rounded-lg text-sm">
                       <div>
                         <span className="font-medium">{activity.description}</span>
                         <span className="text-xs text-muted-foreground ml-2">{activity.location} | {activity.startTime}-{activity.endTime}</span>
@@ -1041,7 +1042,7 @@ const getWeatherButtonClass = (weatherValue: string) => {
                   ))}
                 </div>
                 
-                <div className="border rounded p-3 space-y-2">
+                <div className="border border-border rounded-lg p-3 space-y-2 bg-card">
                   <p className="text-xs font-medium">Add Activity</p>
                   <Input placeholder="Description" value={newActivity.description} onChange={e => setNewActivity({ ...newActivity, description: e.target.value })} className="h-8 text-sm" />
                   <div className="grid grid-cols-4 gap-2">
@@ -1059,7 +1060,7 @@ const getWeatherButtonClass = (weatherValue: string) => {
               <TabsContent value="deliveries" className="space-y-3 mt-3">
                 <div className="space-y-2">
                   {deliveries.map(delivery => (
-                    <div key={delivery.id} className="flex justify-between items-center p-2 bg-muted rounded text-sm">
+                    <div key={delivery.id} className="flex justify-between items-center p-2 bg-muted dark:bg-gray-800/50 rounded-lg text-sm">
                       <div>
                         <span className="font-medium">{delivery.itemName}</span>
                         <span className="text-xs text-muted-foreground ml-2">{delivery.quantity} {delivery.unit} from {delivery.supplier}</span>
@@ -1072,7 +1073,7 @@ const getWeatherButtonClass = (weatherValue: string) => {
                   ))}
                 </div>
                 
-                <div className="border rounded p-3 space-y-2">
+                <div className="border border-border rounded-lg p-3 space-y-2 bg-card">
                   <p className="text-xs font-medium">Add Delivery</p>
                   
                   {/* Item Name and Supplier row */}
@@ -1178,7 +1179,7 @@ const getWeatherButtonClass = (weatherValue: string) => {
             </DialogHeader>
             {viewEntry && (
               <div className="space-y-3 py-2">
-                <div className="grid grid-cols-3 gap-3 bg-muted rounded p-3 text-sm">
+                <div className="grid grid-cols-3 gap-3 bg-muted dark:bg-gray-800/50 rounded-lg p-3 text-sm">
                   <div><p className="text-xs text-muted-foreground">Project</p><p className="font-medium">{viewEntry.projectName}</p></div>
                   <div><p className="text-xs text-muted-foreground">Weather</p><p className="font-medium">{weatherOptions.find(w => w.value === viewEntry.weather?.condition)?.label} • {viewEntry.weather?.temp}°C</p></div>
                   <div><p className="text-xs text-muted-foreground">Total Workers</p><p className="font-medium">{viewEntry.totalWorkers || 0}</p></div>
@@ -1189,7 +1190,7 @@ const getWeatherButtonClass = (weatherValue: string) => {
                     <h4 className="text-sm font-semibold mb-1">Workers</h4>
                     <div className="space-y-1">
                       {viewEntry.siteWorkers.map((w: any, i: number) => (
-                        <div key={i} className="bg-muted/30 rounded p-2 text-sm">
+                        <div key={i} className="bg-muted/30 dark:bg-gray-800/30 rounded-lg p-2 text-sm">
                           <span className="font-medium">{w.name}</span> - {w.role} ({w.checkIn}-{w.checkOut})
                         </div>
                       ))}
@@ -1202,7 +1203,7 @@ const getWeatherButtonClass = (weatherValue: string) => {
                     <h4 className="text-sm font-semibold mb-1">Subcontractors</h4>
                     <div className="space-y-1">
                       {viewEntry.siteSubcontractors.map((s: any, i: number) => (
-                        <div key={i} className="bg-muted/30 rounded p-2 text-sm">
+                        <div key={i} className="bg-muted/30 dark:bg-gray-800/30 rounded-lg p-2 text-sm">
                           <span className="font-medium">{s.name}</span> - {s.task} ({s.workersCount} workers) {s.checkIn}-{s.checkOut}
                         </div>
                       ))}
@@ -1215,7 +1216,7 @@ const getWeatherButtonClass = (weatherValue: string) => {
                     <h4 className="text-sm font-semibold mb-1">Activities</h4>
                     <div className="space-y-1">
                       {viewEntry.activities.map((a: any, i: number) => (
-                        <div key={i} className="bg-muted/30 rounded p-2 text-sm">
+                        <div key={i} className="bg-muted/30 dark:bg-gray-800/30 rounded-lg p-2 text-sm">
                           <span className="font-medium">{a.description}</span> - {a.location} ({a.startTime}-{a.endTime})
                         </div>
                       ))}
@@ -1228,7 +1229,7 @@ const getWeatherButtonClass = (weatherValue: string) => {
                     <h4 className="text-sm font-semibold mb-1">Deliveries</h4>
                     <div className="space-y-1">
                       {viewEntry.deliveries.map((d: any, i: number) => (
-                        <div key={i} className="bg-muted/30 rounded p-2 text-sm">
+                        <div key={i} className="bg-muted/30 dark:bg-gray-800/30 rounded-lg p-2 text-sm">
                           {d.itemName} - {d.quantity} {d.unit} from {d.supplier}
                         </div>
                       ))}
@@ -1237,7 +1238,7 @@ const getWeatherButtonClass = (weatherValue: string) => {
                 )}
 
                 {viewEntry.summary?.workDone && (
-                  <div className="bg-accent/5 border rounded p-3">
+                  <div className="bg-accent/5 dark:bg-gray-800/30 border border-border rounded-lg p-3">
                     <h4 className="text-sm font-semibold mb-1">Summary</h4>
                     <p className="text-sm">✓ {viewEntry.summary.workDone}</p>
                     {viewEntry.summary?.plansTomorrow && <p className="text-sm mt-1">📅 Tomorrow: {viewEntry.summary.plansTomorrow}</p>}
