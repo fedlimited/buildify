@@ -121,52 +121,20 @@ export function SubscriptionPlansTable({ compact = false, highlightFeature, onUp
   return (
     <div className="w-full overflow-x-auto">
       <div className="min-w-[800px]">
-        {/* Header */}
-        <div className="grid grid-cols-4 gap-4 mb-4">
-          <div className="p-4"></div>
-          <div className="p-4 text-center rounded-lg bg-muted/30">
-            <div className="flex justify-center mb-2">
-              <span className="text-3xl">🆓</span>
-            </div>
-            <h3 className="text-xl font-bold">Free</h3>
-            <p className="text-2xl font-bold mt-2">KSh 0</p>
-            <p className="text-xs text-muted-foreground">per month</p>
-            <Button variant="outline" className="mt-3 w-full" disabled>
-              Current Plan
-            </Button>
-          </div>
-          
-          <div className="p-4 text-center rounded-lg bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-2 border-amber-500 relative">
-            <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-amber-500 to-orange-500 text-white">
-              Most Popular
-            </Badge>
-            <div className="flex justify-center mb-2">
-              <Crown className="h-8 w-8 text-amber-500" />
-            </div>
-            <h3 className="text-xl font-bold">Pro</h3>
-            <p className="text-2xl font-bold mt-2">KSh 2,500</p>
-            <p className="text-xs text-muted-foreground">per month</p>
-            <Button 
-              className="mt-3 w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
-              onClick={handleUpgrade}
-            >
-              Upgrade
-            </Button>
-            <p className="text-xs text-muted-foreground mt-2">or KSh 25,000/year (save 17%)</p>
-          </div>
-          
-          <div className="p-4 text-center rounded-lg bg-muted/30">
-            <div className="flex justify-center mb-2">
-              <Sparkles className="h-8 w-8 text-purple-500" />
-            </div>
-            <h3 className="text-xl font-bold">Business</h3>
-            <p className="text-2xl font-bold mt-2">Custom</p>
-            <p className="text-xs text-muted-foreground">Contact sales</p>
-            <Button variant="outline" className="mt-3 w-full" onClick={() => window.location.href = 'mailto:sales@bochi.ke'}>
-              Contact Sales
-            </Button>
-          </div>
+
+
+
+
+        {/* Simple Column Headers */}
+        <div className="grid grid-cols-4 gap-4 mb-4 px-4 py-2 bg-muted/30 rounded-lg">
+          <div className="font-semibold text-sm text-muted-foreground">Feature</div>
+          <div className="font-semibold text-sm text-center text-muted-foreground">Free</div>
+          <div className="font-semibold text-sm text-center text-amber-600 dark:text-amber-400">Pro</div>
+          <div className="font-semibold text-sm text-center text-muted-foreground">Business</div>
         </div>
+
+
+
 
         {/* Features Table */}
         <div className="border rounded-lg overflow-hidden">
