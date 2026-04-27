@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Check, X, Loader2, Infinity } from 'lucide-react';
 
-export function SubscriptionPlansTable() {
+export function SubscriptionPlansTable({ currency }: { currency: 'KES' | 'USD' }) {
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -76,10 +76,22 @@ export function SubscriptionPlansTable() {
                   <div className="mt-1.5">
                     {plan.price_monthly_kes > 0 ? (
                       <div className="flex items-baseline justify-center gap-0.5">
-                        <span className="text-xs text-muted-foreground font-medium">KES</span>
-                        <span className={`text-xl font-bold ${plan.name === 'pro' ? 'text-amber-500' : 'text-foreground'}`}>
-                          {plan.price_monthly_kes.toLocaleString()}
-                        </span>
+
+
+
+
+
+
+<span className="text-xs text-muted-foreground font-medium">{currency}</span>
+<span className={`text-xl font-bold ${plan.name === 'pro' ? 'text-amber-500' : 'text-foreground'}`}>
+  {currency === 'KES' 
+    ? plan.price_monthly_kes.toLocaleString() 
+    : plan.price_monthly_usd.toLocaleString()}
+</span>
+
+
+
+
                         <span className="text-xs text-muted-foreground">/mo</span>
                       </div>
                     ) : (
@@ -150,7 +162,7 @@ export function SubscriptionPlansTable() {
       </div>
       
       <div className="flex items-center justify-between px-4 py-2.5 bg-muted/20 border-t border-border text-xs text-muted-foreground">
-        <span>All prices in Kenyan Shillings (KES) • Annual billing saves 15%</span>
+        <span>All prices in {currency === 'KES' ? 'Kenyan Shillings (KES)' : 'US Dollars (USD)'} • Annual billing saves 15%</span>
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5">
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"><Check size={11} /></span>

@@ -315,7 +315,7 @@ export const BillingModule = () => {
       {/* Detailed Plans Comparison Table */}
       <div className="mt-8">
         <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Compare All Features</h3>
-        <SubscriptionPlansTable />
+        <SubscriptionPlansTable currency={paymentMethod === 'mpesa' ? 'KES' : 'USD'} />
       </div>
 
       {/* Trust Indicators */}
