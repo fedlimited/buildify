@@ -84,24 +84,38 @@ export function Sidebar() {
     <aside
       className={`fixed left-0 top-0 h-screen bg-sidebar-bg text-sidebar-fg flex flex-col z-30 sidebar-transition ${sidebarCollapsed ? 'w-[68px]' : 'w-[260px]'}`}
     >
-      {/* Logo + Collapse */}
-      <div className="flex items-center justify-between px-4 h-16 border-b border-sidebar-hover shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center shrink-0">
-            <HardHat size={20} className="text-accent-foreground" />
-          </div>
-          {!sidebarCollapsed && (
-            <span className="text-lg font-bold tracking-tight">BOCHI</span>
-          )}
-        </div>
-        <button
-          onClick={toggleSidebar}
-          className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-sidebar-hover transition-colors shrink-0"
-          title={sidebarCollapsed ? 'Expand' : 'Collapse'}
-        >
-          {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
-      </div>
+
+
+
+
+
+
+{/* Logo + Collapse */}
+<div className="flex items-center justify-between px-4 h-16 border-b border-sidebar-hover shrink-0">
+  <div className="flex items-center gap-3">
+    <img 
+      src="/Bochi_logo_transparent.png" 
+      alt="BOCHI Logo" 
+      className={`${sidebarCollapsed ? 'h-8 w-8' : 'h-10 w-auto'} object-contain`}
+    />
+    {!sidebarCollapsed && (
+      <span className="text-lg font-bold tracking-tight">BOCHI</span>
+    )}
+  </div>
+  <button
+    onClick={toggleSidebar}
+    className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-sidebar-hover transition-colors shrink-0"
+    title={sidebarCollapsed ? 'Expand' : 'Collapse'}
+  >
+    {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+  </button>
+</div>
+
+
+
+
+
+
 
       {/* Super Admin Quick Access */}
       {isSuperAdmin && (
