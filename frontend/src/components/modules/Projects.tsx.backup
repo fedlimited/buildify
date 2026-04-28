@@ -1,7 +1,6 @@
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { useState } from 'react';
 import { LeafletMapPicker } from '@/components/LeafletMapPicker';
-import { GoogleMapPicker } from '@/components/GoogleMapPicker';
 import { useAppStore } from '@/hooks/useAppStore';
 import { Project } from '@/lib/types';
 import { formatCurrency, formatDate } from '@/lib/formatters';
@@ -31,7 +30,6 @@ export function Projects() {
   const [longitude, setLongitude] = useState('');
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [mapType, setMapType] = useState<'leaflet' | 'google'>('leaflet');
 
   const openNew = () => { 
     // Check limit before allowing new project
@@ -266,87 +264,35 @@ export function Projects() {
       {/* Location Dialog with Leaflet Map */}
       <Dialog open={!!locationDialog} onOpenChange={() => setLocationDialog(null)}>
         <DialogContent className="max-w-2xl">
-
-
-<DialogHeader>
-  <div className="flex items-center justify-between">
-    <DialogTitle>Set Project Location - {locationDialog?.name}</DialogTitle>
-    <div className="flex items-center gap-2">
-      <Button 
-        variant={mapType === 'leaflet' ? 'default' : 'outline'} 
-        size="sm"
-        onClick={() => setMapType('leaflet')}
-        className="text-xs"
-      >
-        OpenStreetMap
-      </Button>
-      <Button 
-        variant={mapType === 'google' ? 'default' : 'outline'} 
-        size="sm"
-        onClick={() => setMapType('google')}
-        className="text-xs"
-      >
-        Google Maps
-      </Button>
-    </div>
-  </div>
-  <p className="text-sm text-muted-foreground mt-1">
-    {mapType === 'leaflet' 
-      ? 'Click anywhere on the map to set the exact project site location' 
-      : 'Click on map to set marker | Use drawing tools (top-center) to draw site boundary | Toggle Satellite for aerial view'}
-  </p>
-</DialogHeader>
-
-
-<div className="space-y-4 py-4">
-  {locationDialog && (
-    <>
-      {mapType === 'leaflet' && (
-        <LeafletMapPicker
-          onLocationSelect={(lat, lng, address) => {
-            setLatitude(lat.toString());
-            setLongitude(lng.toString());
-            setLocationAddress(address);
-          }}
-          initialLat={locationDialog.latitude}
-          initialLng={locationDialog.longitude}
-          initialAddress={locationDialog.locationAddress}
-        />
-      )}
-      {mapType === 'google' && (
-        <GoogleMapPicker
-          onLocationSelect={(lat, lng, address) => {
-            setLatitude(lat.toString());
-            setLongitude(lng.toString());
-            setLocationAddress(address);
-          }}
-          initialLat={locationDialog.latitude}
-          initialLng={locationDialog.longitude}
-          initialAddress={locationDialog.locationAddress}
-        />
-      )}
-    </>
-  )}
-  
-  <div className="flex justify-end gap-2 pt-2">
-    <Button variant="outline" onClick={() => setLocationDialog(null)}>
-      Cancel
-    </Button>
-    <Button onClick={saveProjectLocation}>
-      Save Location
-    </Button>
-  </div>
-</div>
-
-
-
-
-
-
-
-
-
-
+          <DialogHeader>
+            <DialogTitle>Set Project Location - {locationDialog?.name}</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Click anywhere on the map to set the exact project site location
+            </p>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {locationDialog && (
+              <LeafletMapPicker
+                onLocationSelect={(lat, lng, address) => {
+                  setLatitude(lat.toString());
+                  setLongitude(lng.toString());
+                  setLocationAddress(address);
+                }}
+                initialLat={locationDialog.latitude}
+                initialLng={locationDialog.longitude}
+                initialAddress={locationDialog.locationAddress}
+              />
+            )}
+            
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setLocationDialog(null)}>
+                Cancel
+              </Button>
+              <Button onClick={saveProjectLocation}>
+                Save Location
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

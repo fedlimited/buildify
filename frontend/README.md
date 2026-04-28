@@ -1,3 +1,7 @@
-# Welcome to your Lovable project
+# Bochi Construction Suite
 
-TODO: Document your project here
+By Finite Element Designs Limited
+Deep Blue Building
+Thika Road 
+Kenya
+

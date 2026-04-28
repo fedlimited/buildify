@@ -1,6 +1,6 @@
-import { createLovableConfig } from "lovable-agent-playwright-config/config";
+import { createbochiConfig } from "bochi-agent-playwright-config/config";
 
-export default createLovableConfig({
+export default createbochiConfig({
   // Add your custom playwright configuration overrides here
   // Example:
   // timeout: 60000,
