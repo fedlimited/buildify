@@ -226,9 +226,15 @@ export function Projects() {
         })}
       </div>
 
-      {/* Add/Edit Project Dialog */}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg">
+
+
+
+{/* Add/Edit Project Dialog */}
+<Dialog open={open} onOpenChange={setOpen}>
+  <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+
+
+
           <DialogHeader><DialogTitle>{editing ? 'Edit Project' : 'New Project'}</DialogTitle></DialogHeader>
           <div className="grid gap-3 py-2">
             <div><Label className="text-xs">Project Name *</Label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
