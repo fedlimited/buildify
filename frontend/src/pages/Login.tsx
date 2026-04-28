@@ -183,16 +183,22 @@ const Login: React.FC = () => {
         {/* OTP Login Card */}
         <div className="relative z-10 flex-1 flex flex-col justify-center px-8 py-8">
           <div className="w-full max-w-md mx-auto">
-            <div className="text-center mb-6">
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded flex items-center justify-center shadow-lg shadow-amber-500/25">
-                  <HardHat size={20} className="text-white" />
-                </div>
-                <span className="text-white font-semibold text-xl tracking-tight">BOCHI</span>
-              </div>
-              <h1 className="text-3xl font-bold text-white mb-1">Welcome back</h1>
-              <p className="text-gray-400 text-sm">Please enter your details to sign in</p>
-            </div>
+
+
+
+<div className="text-center mb-6">
+  <div className="flex items-center justify-center mb-4">
+    <img 
+      src="/Bochi_logo_transparent.png" 
+      alt="BOCHI Logo" 
+      className="h-12 w-auto"
+    />
+  </div>
+  <h1 className="text-3xl font-bold text-white mb-1">Welcome back</h1>
+  <p className="text-gray-400 text-sm">Please enter your details to sign in</p>
+</div>
+
+
 
             <div className="bg-white/5 backdrop-blur-sm rounded border border-white/10 p-6">
               {step === 'email' ? (
