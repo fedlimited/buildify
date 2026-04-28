@@ -292,17 +292,23 @@ const LandingPage: React.FC = () => {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <motion.div
-              className="flex items-center cursor-pointer group"
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center shadow-lg shadow-amber-500/25 mr-2 group-hover:scale-105 transition-transform">
-                <HardHat size={18} className="text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">BOCHI</span>
-              <span className="ml-1 text-xs text-slate-400">Construction Suite</span>
-            </motion.div>
+
+
+<motion.div
+  className="flex items-center cursor-pointer group"
+  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+  whileHover={{ scale: 1.02 }}
+>
+  <img 
+    src="/Bochi_logo_transparent.png" 
+    alt="BOCHI Logo" 
+    className="h-8 w-auto mr-2 group-hover:scale-105 transition-transform"
+  />
+  <span className="text-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">BOCHI</span>
+  <span className="ml-1 text-xs text-slate-400">Construction Suite</span>
+</motion.div>
+
+
             <div className="hidden md:flex items-center gap-6">
               {['features', 'testimonials', 'faq'].map((item) => (
                 <motion.a
@@ -642,20 +648,48 @@ const LandingPage: React.FC = () => {
           </svg>
         </div>
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <motion.div
-            className="flex items-center justify-center gap-3 mb-4"
-            initial={{ scale: 0.9, opacity: 0 }}
-            whileInView={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            viewport={{ once: true }}
-          >
-            <motion.div
-              className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center"
-              animate={{ rotate: [0, 5, 0, -5, 0] }}
-              transition={{ duration: 3, repeat: Infinity }}
-            >
-              <HardHat size={24} className="text-white" />
-            </motion.div>
+
+
+
+
+
+
+
+
+
+
+
+
+<motion.div
+  className="flex items-center justify-center gap-3 mb-4"
+  initial={{ scale: 0.9, opacity: 0 }}
+  whileInView={{ scale: 1, opacity: 1 }}
+  transition={{ duration: 0.5 }}
+  viewport={{ once: true }}
+>
+  <img 
+    src="/Bochi_logo_transparent.png" 
+    alt="BOCHI Logo" 
+    className="h-12 w-auto"
+  />
+  <motion.div
+    className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center"
+    animate={{ rotate: [0, 5, 0, -5, 0] }}
+    transition={{ duration: 3, repeat: Infinity }}
+  >
+    <HardHat size={24} className="text-white" />
+  </motion.div>
+</motion.div>
+
+
+
+
+
+
+
+
+
+
             <motion.h2
               className="text-3xl md:text-4xl font-bold text-white"
               initial={{ opacity: 0, y: 20 }}
@@ -717,16 +751,27 @@ const LandingPage: React.FC = () => {
       <footer className="bg-slate-900 border-t border-slate-800 py-12 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col items-center justify-center mb-8">
-            <motion.div
-              className="flex items-center gap-2 mb-4"
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/25">
-                <HardHat size={20} className="text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">BOCHI</span>
-              <span className="text-xs text-slate-400">Construction Suite</span>
-            </motion.div>
+
+
+
+
+
+<motion.div
+  className="flex items-center gap-2 mb-4"
+  whileHover={{ scale: 1.02 }}
+>
+  <img 
+    src="/Bochi_logo_transparent.png" 
+    alt="BOCHI Logo" 
+    className="h-10 w-auto"
+  />
+  <span className="text-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">BOCHI</span>
+  <span className="text-xs text-slate-400">Construction Suite</span>
+</motion.div>
+
+
+
+
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-8 mb-8">
             {['Product', 'Company', 'Legal'].map((section, idx) => (
