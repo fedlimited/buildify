@@ -637,6 +637,9 @@ const LandingPage: React.FC = () => {
         </div>
       </div>
 
+
+
+
       {/* CTA Section */}
       <section className="py-20 px-4 bg-gradient-to-r from-amber-600 to-amber-700 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
@@ -648,58 +651,37 @@ const LandingPage: React.FC = () => {
           </svg>
         </div>
         <div className="max-w-4xl mx-auto text-center relative z-10">
-
-
-
-
-
-
-
-
-
-
-
-
-<motion.div
-  className="flex items-center justify-center gap-3 mb-4"
-  initial={{ scale: 0.9, opacity: 0 }}
-  whileInView={{ scale: 1, opacity: 1 }}
-  transition={{ duration: 0.5 }}
-  viewport={{ once: true }}
->
-  <img 
-    src="/Bochi_logo_transparent.png" 
-    alt="BOCHI Logo" 
-    className="h-12 w-auto"
-  />
-  <motion.div
-    className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center"
-    animate={{ rotate: [0, 5, 0, -5, 0] }}
-    transition={{ duration: 3, repeat: Infinity }}
-  >
-    <HardHat size={24} className="text-white" />
-  </motion.div>
-</motion.div>
-
-
-
-
-
-
-
-
-
-
-            <motion.h2
-              className="text-3xl md:text-4xl font-bold text-white"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
+          <motion.div
+            className="flex items-center justify-center gap-3 mb-4"
+            initial={{ scale: 0.9, opacity: 0 }}
+            whileInView={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+          >
+            <img 
+              src="/Bochi_logo_transparent.png" 
+              alt="BOCHI Logo" 
+              className="h-12 w-auto"
+            />
+            <motion.div
+              className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center"
+              animate={{ rotate: [0, 5, 0, -5, 0] }}
+              transition={{ duration: 3, repeat: Infinity }}
             >
-              Ready to Transform Your Construction Management?
-            </motion.h2>
+              <HardHat size={24} className="text-white" />
+            </motion.div>
           </motion.div>
+
+          <motion.h2
+            className="text-3xl md:text-4xl font-bold text-white"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+          >
+            Ready to Transform Your Construction Management?
+          </motion.h2>
+
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -709,6 +691,7 @@ const LandingPage: React.FC = () => {
           >
             Join thousands of construction professionals who trust BOCHI to manage their projects efficiently.
           </motion.p>
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -735,6 +718,7 @@ const LandingPage: React.FC = () => {
               Contact Us
             </motion.button>
           </motion.div>
+
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -746,6 +730,12 @@ const LandingPage: React.FC = () => {
           </motion.p>
         </div>
       </section>
+
+
+
+
+
+
 
       {/* Footer */}
       <footer className="bg-slate-900 border-t border-slate-800 py-12 px-4">
