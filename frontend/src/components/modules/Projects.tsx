@@ -174,27 +174,21 @@ export function Projects() {
                 <p className="text-xs text-muted-foreground truncate flex-1">
                   {p.locationAddress || p.location || 'No location set'}
                 </p>
-                <button
-                  onClick={() => openLocationDialog(p)}
-                  className="text-blue-500 hover:text-blue-700 flex items-center gap-1 ml-2 flex-shrink-0"
-                  title="Set location"
-                >
-                  <MapPin size={14} />
-                  <span className="text-xs">{p.latitude ? 'Update' : 'Set'} Location</span>
-                </button>
+
+
+
+<button
+  onClick={() => openLocationDialog(p)}
+  className="text-blue-500 hover:text-blue-700 flex items-center gap-1 ml-2 flex-shrink-0"
+  title="Set or view site location"
+>
+  <MapPin size={14} />
+  <span className="text-xs">{p.latitude ? 'View/Update' : 'Set'} Site Location</span>
+</button>
+
               </div>
-              
-              {/* Open in Google Maps button if location exists */}
-              {(p.latitude || p.longitude || p.locationAddress || p.location) && (
-                <button
-                  onClick={() => openGoogleMaps(p)}
-                  className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 mb-2"
-                >
-                  <Navigation size={12} />
-                  View on Google Maps
-                </button>
-              )}
-              
+
+            
               {/* Coordinates display if available */}
               {p.latitude && p.longitude && (
                 <p className="text-xs text-muted-foreground mb-2">
@@ -265,7 +259,7 @@ export function Projects() {
 
       {/* Location Dialog with Leaflet Map */}
       <Dialog open={!!locationDialog} onOpenChange={() => setLocationDialog(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
 
 
 <DialogHeader>
