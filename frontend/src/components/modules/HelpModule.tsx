@@ -517,7 +517,7 @@ export function HelpModule() {
                   <Mail size={24} className="text-primary" />
                   <div>
                     <p className="text-sm font-semibold">Email Support</p>
-                    <p className="text-sm text-primary font-mono">info@bochi.ke</p>
+                    <p className="text-sm text-primary font-mono">finiteelementdesignsltd@gmail.com</p>
                     <p className="text-xs text-muted-foreground mt-1">Response within 24 hours</p>
                   </div>
                 </div>
