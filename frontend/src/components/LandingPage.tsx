@@ -300,14 +300,28 @@ const LandingPage: React.FC = () => {
   onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
   whileHover={{ scale: 1.02 }}
 >
-  <motion.img 
-    src="/Bochi_logo_transparent.png" 
-    alt="BOCHI Logo" 
-    className="h-8 w-auto mr-2 group-hover:scale-105 transition-transform"
-    animate={{ rotateY: [0, 360] }}
-    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-    style={{ transformStyle: "preserve-3d" }}
-  />
+
+
+
+
+<motion.img 
+  src="/Bochi_logo_transparent.png" 
+  alt="BOCHI Logo" 
+  className="h-8 w-auto mr-2 group-hover:scale-105 transition-transform"
+  animate={{ rotateY: [0, 180, 360] }}
+  transition={{ 
+    duration: 3,
+    times: [0, 0.5, 1],
+    ease: "easeInOut",
+    repeat: Infinity,
+    repeatDelay: 4
+  }}
+  style={{ transformStyle: "preserve-3d" }}
+/>
+
+
+
+
   <span className="text-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">BOCHI</span>
   <span className="ml-1 text-xs text-slate-400">Construction Suite</span>
 </motion.div>
@@ -661,11 +675,8 @@ const LandingPage: React.FC = () => {
 
 
 
-
-
-
 <motion.div
-  className="flex items-center justify-center gap-3 mb-4"
+  className="flex flex-col items-center justify-center gap-3 mb-4"
   initial={{ scale: 0.9, opacity: 0 }}
   whileInView={{ scale: 1, opacity: 1 }}
   transition={{ duration: 0.5 }}
@@ -676,9 +687,11 @@ const LandingPage: React.FC = () => {
     alt="BOCHI Logo" 
     className="h-16 w-auto"
   />
+  <div className="text-center">
+    <span className="text-2xl font-bold bg-gradient-to-r from-white to-amber-200 bg-clip-text text-transparent">BOCHI</span>
+    <span className="text-sm text-amber-100/80 ml-2">Construction Suite</span>
+  </div>
 </motion.div>
-
-
 
 
 
