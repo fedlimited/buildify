@@ -13,7 +13,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      # Optional: install Node if frontend needs build
+      # Setup Node
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
@@ -25,13 +25,20 @@ jobs:
           cd frontend
           npm install
 
+      # Inject environment variables (production)
+      - name: Create .env.production
+        run: |
+          cd frontend
+          echo "VITE_API_URL=${{ secrets.API_URL }}" > .env.production
+          echo "VITE_GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}" >> .env.production
+
       # Build frontend
       - name: Build frontend
         run: |
           cd frontend
           npm run build
 
-      # Deploy via FTP
+      # Deploy via FTP (clean slate)
       - name: Upload to cPanel via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
@@ -39,5 +46,6 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT }}
-          local-dir: frontend/dist/   
+          local-dir: frontend/dist/
           server-dir: /
+          dangerous-clean-slate: true
