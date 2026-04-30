@@ -14,6 +14,8 @@ import { Plus, Pencil, Trash2, RefreshCw, MapPin, Navigation, Globe } from 'luci
 import { useSubscriptionLimit } from '@/hooks/useSubscriptionLimit';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
 
+// Updated: April 30, 2026 - Accessibility fixes
+
 const emptyProject: Omit<Project, 'id' | 'createdAt'> = {
   name: '', client: '', contractSum: 0, location: '', startDate: '', endDate: '', status: 'Active', projectManager: '', description: '',
   latitude: undefined, longitude: undefined, googleMapsUrl: undefined, locationAddress: undefined
