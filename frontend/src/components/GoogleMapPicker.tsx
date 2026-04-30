@@ -2,7 +2,11 @@ import { useState, useCallback, useRef } from 'react';
 import { GoogleMap, Marker, Polygon, useLoadScript } from '@react-google-maps/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MapPin, Search, Loader2, Layers, Draw } from 'lucide-react';
+import { MapPin, Search, Loader2, Layers } from 'lucide-react';
+
+// FIX 1: Move libraries OUTSIDE component to prevent re-renders
+// FIX 2: Remove 'drawing' to fix deprecation warning (deprecated Aug 2025, removed May 2026)
+const GOOGLE_MAPS_LIBRARIES = ['places', 'geometry'];
 
 const mapContainerStyle = {
   width: '100%',
@@ -12,6 +16,7 @@ const mapContainerStyle = {
 
 const defaultCenter = { lat: -1.2921, lng: 36.8219 }; // Nairobi
 
+// FIX 3: Remove drawingControl (deprecated)
 const mapOptions = {
   disableDefaultUI: false,
   zoomControl: true,
@@ -20,10 +25,11 @@ const mapOptions = {
     position: 1, // TOP_RIGHT
     style: 0 // HORIZONTAL_BAR
   },
-  drawingControl: true,
-  drawingControlOptions: {
-    drawingModes: ['polygon', 'marker']
+  fullscreenControl: true,
+  fullscreenControlOptions: {
+    position: 9 // RIGHT_BOTTOM
   }
+  // drawingControl removed - deprecated feature
 };
 
 interface GoogleMapPickerProps {
@@ -51,57 +57,18 @@ export function GoogleMapPicker({
   const [searchAddress, setSearchAddress] = useState(initialAddress || '');
   const [isSearching, setIsSearching] = useState(false);
   const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [drawingMode, setDrawingMode] = useState(false);
   const [boundary, setBoundary] = useState(initialBoundary || null);
-  const drawingManagerRef = useRef<google.maps.drawing.DrawingManager | null>(null);
 
+  // Use the static libraries array
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
-    libraries: ['places', 'drawing', 'geometry'],
+    libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
   const onMapLoad = useCallback((map: google.maps.Map) => {
     setMap(map);
-    
-    // Enable drawing tools
-    if (!readOnly && window.google) {
-      const drawingManager = new google.maps.drawing.DrawingManager({
-        drawingMode: null,
-        drawingControl: true,
-        drawingControlOptions: {
-          position: google.maps.ControlPosition.TOP_CENTER,
-          drawingModes: [google.maps.drawing.OverlayType.POLYGON],
-        },
-        polygonOptions: {
-          editable: true,
-          draggable: true,
-          fillColor: '#f59e0b',
-          fillOpacity: 0.3,
-          strokeColor: '#f59e0b',
-          strokeWeight: 2,
-        },
-      });
-      drawingManager.setMap(map);
-      drawingManagerRef.current = drawingManager;
-
-      // Listen for polygon completion
-      google.maps.event.addListener(drawingManager, 'overlaycomplete', (event: any) => {
-        if (event.type === 'polygon') {
-          const polygon = event.overlay;
-          const path = polygon.getPath();
-          const coordinates = [];
-          for (let i = 0; i < path.getLength(); i++) {
-            const point = path.getAt(i);
-            coordinates.push({ lat: point.lat(), lng: point.lng() });
-          }
-          setBoundary(coordinates);
-          if (onBoundarySave) {
-            onBoundarySave(coordinates);
-          }
-        }
-      });
-    }
-  }, [readOnly, onBoundarySave]);
+    // Drawing tools removed due to deprecation
+  }, []);
 
   const searchLocation = async () => {
     if (!searchAddress || !window.google) return;
@@ -260,7 +227,7 @@ export function GoogleMapPicker({
       </GoogleMap>
 
       <p className="text-xs text-muted-foreground text-center">
-        💡 Click on map to set marker | Use drawing tools (top-center) to draw site boundary | Toggle Satellite for aerial view
+        💡 Click on map to set marker | Toggle Satellite for aerial view
       </p>
     </div>
   );
