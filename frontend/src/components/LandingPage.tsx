@@ -11,6 +11,8 @@ function TestimonialForm() {
   const [error, setError] = useState('');
   const [hoveredStar, setHoveredStar] = useState(0);
 
+// Last updated: April 2026 - Logo animation enhancements
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.text) {
