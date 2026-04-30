@@ -677,6 +677,8 @@ const LandingPage: React.FC = () => {
 
 
 
+
+
 <motion.div
   className="flex flex-col items-center justify-center gap-3 mb-4"
   initial={{ scale: 0.9, opacity: 0 }}
@@ -684,16 +686,42 @@ const LandingPage: React.FC = () => {
   transition={{ duration: 0.5 }}
   viewport={{ once: true }}
 >
-  <img 
+  <motion.img 
     src="/Bochi_logo_transparent.png" 
     alt="BOCHI Logo" 
     className="h-16 w-auto"
+    animate={{ 
+      scale: [1, 1.05, 1],
+      rotateY: [0, 10, 0, -10, 0]
+    }}
+    transition={{ 
+      duration: 4,
+      ease: "easeInOut",
+      repeat: Infinity,
+      repeatDelay: 3
+    }}
+    style={{ transformStyle: "preserve-3d" }}
   />
-  <div className="text-center">
+  <motion.div 
+    className="text-center"
+    animate={{ 
+      y: [0, -3, 0, 3, 0],
+      opacity: [1, 0.9, 1]
+    }}
+    transition={{ 
+      duration: 5,
+      ease: "easeInOut",
+      repeat: Infinity,
+      repeatDelay: 2
+    }}
+  >
     <span className="text-2xl font-bold bg-gradient-to-r from-white to-amber-200 bg-clip-text text-transparent">BOCHI</span>
     <span className="text-sm text-amber-100/80 ml-2">Construction Suite</span>
-  </div>
+  </motion.div>
 </motion.div>
+
+
+
 
 
 
