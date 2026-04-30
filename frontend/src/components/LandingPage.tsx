@@ -311,18 +311,17 @@ const LandingPage: React.FC = () => {
   alt="BOCHI Logo" 
   className="h-8 w-auto mr-2 group-hover:scale-105 transition-transform"
   animate={{ 
-    rotateY: [0, 15, 0, -15, 0, 10, 0, -10, 0, 5, 0, -5, 0],
-    scale: [1, 1.02, 1, 1.01, 1]
+    rotateY: [0, 8, 0, -8, 0, 5, 0, -5, 0],
+    rotateX: [0, 3, 0, -3, 0]
   }}
   transition={{ 
-    duration: 8,
-    ease: "easeInOut",
+    duration: 6,
+    ease: "anticipate",
     repeat: Infinity,
-    repeatDelay: 3
+    repeatDelay: 5
   }}
   style={{ transformStyle: "preserve-3d" }}
 />
-
 
 
   <span className="text-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">BOCHI</span>
