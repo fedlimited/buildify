@@ -90,24 +90,14 @@ export function Sidebar() {
 
 
 
+
 {/* Logo + Collapse */}
 <div className="flex items-center justify-between px-4 h-16 border-b border-sidebar-hover shrink-0">
   <div className="flex items-center gap-3">
-    <motion.img 
+    <img 
       src="/Bochi_logo_transparent.png" 
       alt="BOCHI Logo" 
       className={`${sidebarCollapsed ? 'h-8 w-8' : 'h-10 w-auto'} object-contain`}
-      animate={{ 
-        rotateY: [0, 8, 0, -8, 0, 5, 0, -5, 0],
-        rotateX: [0, 3, 0, -3, 0]
-      }}
-      transition={{ 
-        duration: 6,
-        ease: "anticipate",
-        repeat: Infinity,
-        repeatDelay: 4
-      }}
-      style={{ transformStyle: "preserve-3d" }}
     />
     {!sidebarCollapsed && (
       <span className="text-lg font-bold tracking-tight">BOCHI</span>
@@ -121,6 +111,8 @@ export function Sidebar() {
     {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
   </button>
 </div>
+
+
 
 
 
