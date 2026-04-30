@@ -231,11 +231,24 @@ export function Projects() {
 
 {/* Add/Edit Project Dialog */}
 <Dialog open={open} onOpenChange={setOpen}>
-  <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
 
 
 
-          <DialogHeader><DialogTitle>{editing ? 'Edit Project' : 'New Project'}</DialogTitle></DialogHeader>
+<DialogContent 
+  className="max-w-lg max-h-[90vh] overflow-y-auto"
+  aria-describedby="project-dialog-description"
+>
+  <DialogHeader>
+    <DialogTitle>{editing ? 'Edit Project' : 'New Project'}</DialogTitle>
+    <p id="project-dialog-description" className="text-sm text-muted-foreground mt-1">
+      {editing ? 'Update the project details below' : 'Fill in the project information below'}
+    </p>
+  </DialogHeader>
+
+
+
+
+
           <div className="grid gap-3 py-2">
             <div><Label className="text-xs">Project Name *</Label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
             <div><Label className="text-xs">Client *</Label><Input value={form.client} onChange={e => setForm({ ...form, client: e.target.value })} /></div>
@@ -265,37 +278,44 @@ export function Projects() {
 
       {/* Location Dialog with Leaflet Map */}
       <Dialog open={!!locationDialog} onOpenChange={() => setLocationDialog(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
 
 
-<DialogHeader>
-  <div className="flex items-center justify-between">
-    <DialogTitle>Set Project Location - {locationDialog?.name}</DialogTitle>
-    <div className="flex items-center gap-2">
-      <Button 
-        variant={mapType === 'leaflet' ? 'default' : 'outline'} 
-        size="sm"
-        onClick={() => setMapType('leaflet')}
-        className="text-xs"
-      >
-        OpenStreetMap
-      </Button>
-      <Button 
-        variant={mapType === 'google' ? 'default' : 'outline'} 
-        size="sm"
-        onClick={() => setMapType('google')}
-        className="text-xs"
-      >
-        Google Maps
-      </Button>
+
+
+<DialogContent 
+  className="max-w-4xl max-h-[90vh] overflow-y-auto"
+  aria-describedby="location-dialog-description"
+>
+  <DialogHeader>
+    <div className="flex items-center justify-between">
+      <DialogTitle>Set Project Location - {locationDialog?.name}</DialogTitle>
+      <div className="flex items-center gap-2">
+        <Button 
+          variant={mapType === 'leaflet' ? 'default' : 'outline'} 
+          size="sm"
+          onClick={() => setMapType('leaflet')}
+          className="text-xs"
+        >
+          OpenStreetMap
+        </Button>
+        <Button 
+          variant={mapType === 'google' ? 'default' : 'outline'} 
+          size="sm"
+          onClick={() => setMapType('google')}
+          className="text-xs"
+        >
+          Google Maps
+        </Button>
+      </div>
     </div>
-  </div>
-  <p className="text-sm text-muted-foreground mt-1">
-    {mapType === 'leaflet' 
-      ? 'Click anywhere on the map to set the exact project site location' 
-      : 'Click on map to set marker | Use drawing tools (top-center) to draw site boundary | Toggle Satellite for aerial view'}
-  </p>
-</DialogHeader>
+    <p id="location-dialog-description" className="text-sm text-muted-foreground mt-1">
+      {mapType === 'leaflet' 
+        ? 'Click anywhere on the map to set the exact project site location' 
+        : 'Click on map to set marker | Use drawing tools (top-center) to draw site boundary | Toggle Satellite for aerial view'}
+    </p>
+  </DialogHeader>
+
+
 
 
 <div className="space-y-4 py-4">
