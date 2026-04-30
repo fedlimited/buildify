@@ -294,19 +294,26 @@ const LandingPage: React.FC = () => {
           <div className="flex justify-between items-center h-16">
 
 
+
 <motion.div
   className="flex items-center cursor-pointer group"
   onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
   whileHover={{ scale: 1.02 }}
 >
-  <img 
+  <motion.img 
     src="/Bochi_logo_transparent.png" 
     alt="BOCHI Logo" 
     className="h-8 w-auto mr-2 group-hover:scale-105 transition-transform"
+    animate={{ rotateY: [0, 360] }}
+    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+    style={{ transformStyle: "preserve-3d" }}
   />
   <span className="text-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">BOCHI</span>
   <span className="ml-1 text-xs text-slate-400">Construction Suite</span>
 </motion.div>
+
+
+
 
 
             <div className="hidden md:flex items-center gap-6">
@@ -651,26 +658,31 @@ const LandingPage: React.FC = () => {
           </svg>
         </div>
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <motion.div
-            className="flex items-center justify-center gap-3 mb-4"
-            initial={{ scale: 0.9, opacity: 0 }}
-            whileInView={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            viewport={{ once: true }}
-          >
-            <img 
-              src="/Bochi_logo_transparent.png" 
-              alt="BOCHI Logo" 
-              className="h-12 w-auto"
-            />
-            <motion.div
-              className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center"
-              animate={{ rotate: [0, 5, 0, -5, 0] }}
-              transition={{ duration: 3, repeat: Infinity }}
-            >
-              <HardHat size={24} className="text-white" />
-            </motion.div>
-          </motion.div>
+
+
+
+
+
+
+<motion.div
+  className="flex items-center justify-center gap-3 mb-4"
+  initial={{ scale: 0.9, opacity: 0 }}
+  whileInView={{ scale: 1, opacity: 1 }}
+  transition={{ duration: 0.5 }}
+  viewport={{ once: true }}
+>
+  <img 
+    src="/Bochi_logo_transparent.png" 
+    alt="BOCHI Logo" 
+    className="h-16 w-auto"
+  />
+</motion.div>
+
+
+
+
+
+
 
           <motion.h2
             className="text-3xl md:text-4xl font-bold text-white"
