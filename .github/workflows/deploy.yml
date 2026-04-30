@@ -1,0 +1,43 @@
+name: Deploy Frontend to cPanel via FTP
+
+on:
+  push:
+    branches:
+      - main   # change if needed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      # Optional: install Node if frontend needs build
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm install
+
+      # Build frontend
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
+
+      # Deploy via FTP
+      - name: Upload to cPanel via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          local-dir: frontend/dist/   
+          server-dir: public_html/
