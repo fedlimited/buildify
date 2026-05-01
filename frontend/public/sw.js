@@ -32,11 +32,17 @@ self.addEventListener('activate', (event) => {
 });
 
 // Fetch strategy: Network first, fallback to cache
+// BUT only cache GET requests (skip POST, PUT, DELETE)
 self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests - this fixes the POST error!
+  if (event.request.method !== 'GET') {
+    return fetch(event.request);
+  }
+  
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Cache successful responses
+        // Only cache successful GET responses
         if (response.status === 200) {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
