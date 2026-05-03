@@ -326,13 +326,36 @@ login: async (email, password, subdomain) => {
     
     set({ authUser });
     localStorage.setItem('authUser', JSON.stringify(authUser));
+
+
+
+
+    set({ authUser });
+    localStorage.setItem('authUser', JSON.stringify(authUser));
     
-
-
-
-
-
-
+    // ========== WORKAROUND: Fix missing permissions from /me ==========
+    (async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const response = await fetch(`${API_BASE_URL}/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (response.ok) {
+            const meData = await response.json();
+            if (meData.permissions && !authUser.permissions) {
+              console.log('🔧 Workaround: Updating authUser with permissions from /me');
+              const updatedAuthUser = { ...authUser, permissions: meData.permissions };
+              set({ authUser: updatedAuthUser });
+              localStorage.setItem('authUser', JSON.stringify(updatedAuthUser));
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Workaround failed:', err);
+      }
+    })();
+    // ========== END WORKAROUND ==========
 
 
 
