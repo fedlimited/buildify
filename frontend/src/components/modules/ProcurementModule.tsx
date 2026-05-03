@@ -178,7 +178,7 @@ function PurchaseOrdersTab() {
     addPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder, 
     addSupply, addStoreTransaction, addExpense, 
     fetchPurchaseOrders, fetchSupplies, fetchStoreTransactions, fetchExpenses,
-    authUser, clearPurchaseOrders 
+    authUser, clearPurchaseOrders, companySettings
   } = useAppStore();
   const [open, setOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null);
@@ -357,42 +357,18 @@ function PurchaseOrdersTab() {
 
 
 
-
-
 const printPurchaseOrder = (order) => {
   const printWindow = window.open('', '_blank');
   
-  // Get company settings from localStorage
-  let companyName = 'BOCHI Construction Suite';
-  let companyLogo = '';
-  let companyAddress = '';
-  let companyPhone = '';
-  let companyEmail = '';
-  let kraPin = '';
+  // Use companySettings from the store
+  let companyName = companySettings?.name || 'Construction Company';
+  let companyLogo = companySettings?.logoUrl || '';
+  let companyAddress = companySettings?.address || '';
+  let companyPhone = companySettings?.phone || '';
+  let companyEmail = companySettings?.email || '';
+  let kraPin = companySettings?.kraPin || '';
   
-  try {
-    const authUser = JSON.parse(localStorage.getItem('authUser') || '{}');
-    const companySettings = authUser.companySettings || {};
-    
-    // Try to get settings from multiple possible locations
-    const storedCompanySettings = localStorage.getItem('companySettings');
-    if (storedCompanySettings) {
-      const settings = JSON.parse(storedCompanySettings);
-      companyName = settings.name || companyName;
-      companyLogo = settings.logoUrl || '';
-      companyAddress = settings.address || '';
-      companyPhone = settings.phone || '';
-      companyEmail = settings.email || '';
-      kraPin = settings.kraPin || '';
-    }
-    
-    // Also check authUser for company info
-    if (authUser.company) {
-      companyName = authUser.company.name || companyName;
-    }
-  } catch (e) {
-    console.error('Error loading company settings:', e);
-  }
+  console.log('Company settings for PO:', { companyName, companyLogo, companyAddress });
   
   const itemsHtml = order.items.map(item => `
     <tr>
@@ -401,15 +377,16 @@ const printPurchaseOrder = (order) => {
       <td style="text-align: center; padding: 8px; border-bottom: 1px solid #ddd;">${item.unit || '-'}</td>
       <td style="text-align: right; padding: 8px; border-bottom: 1px solid #ddd;">${formatCurrency(item.unitPrice || 0)}</td>
       <td style="text-align: right; padding: 8px; border-bottom: 1px solid #ddd;">${formatCurrency(item.total || item.amount || 0)}</td>
-    </td>
+    </table>
   `).join('');
   
   const logoHtml = companyLogo 
-    ? `<img src="${companyLogo}" style="max-height: 60px; max-width: 200px; object-fit: contain;" />` 
+    ? `<img src="${companyLogo}" style="max-height: 60px; max-width: 200px; object-fit: contain;" onerror="this.style.display='none'" />` 
     : `<div class="company-name">${companyName}</div>`;
   
   const addressHtml = companyAddress ? `<div class="company-address">${companyAddress}</div>` : '';
-  const contactHtml = (companyPhone || companyEmail) ? `<div class="company-contact">${companyPhone ? `Tel: ${companyPhone}` : ''}${companyPhone && companyEmail ? ' | ' : ''}${companyEmail ? `Email: ${companyEmail}` : ''}</div>` : '';
+  const phoneHtml = companyPhone ? `<div class="company-phone">Tel: ${companyPhone}</div>` : '';
+  const emailHtml = companyEmail ? `<div class="company-email">Email: ${companyEmail}</div>` : '';
   const kraHtml = kraPin ? `<div class="company-kra">KRA PIN: ${kraPin}</div>` : '';
   
   const html = `
@@ -417,6 +394,7 @@ const printPurchaseOrder = (order) => {
     <html>
     <head>
       <title>Purchase Order - ${order.orderNumber}</title>
+      <meta charset="UTF-8">
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -436,7 +414,7 @@ const printPurchaseOrder = (order) => {
           border-bottom: 2px solid #1a365d;
           display: flex;
           justify-content: space-between;
-          align-items: center;
+          align-items: flex-start;
           flex-wrap: wrap;
         }
         .logo-section {
@@ -447,7 +425,7 @@ const printPurchaseOrder = (order) => {
           font-weight: bold;
           color: #1a365d;
         }
-        .company-address, .company-contact, .company-kra {
+        .company-address, .company-phone, .company-email, .company-kra {
           font-size: 11px;
           color: #4a5568;
           margin-top: 4px;
@@ -566,7 +544,8 @@ const printPurchaseOrder = (order) => {
           <div class="logo-section">
             ${logoHtml}
             ${addressHtml}
-            ${contactHtml}
+            ${phoneHtml}
+            ${emailHtml}
             ${kraHtml}
           </div>
           <div class="po-title-section">
@@ -641,8 +620,6 @@ const printPurchaseOrder = (order) => {
   printWindow.document.close();
   printWindow.print();
 };
-
-
 
 
 
