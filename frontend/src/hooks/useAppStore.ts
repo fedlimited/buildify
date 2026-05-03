@@ -253,43 +253,35 @@ authUser: (() => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  // ========== LOGIN / LOGOUT ==========
 login: async (email, password, subdomain) => {
   try {
     const response = await api.login(email, password, subdomain);
     // response contains { token, user }
     
+    console.log('🔐 Login response:', response.user);
+    
     // Parse permissions if they're a string
     let permissions = response.user.permissions;
+    console.log('📋 Raw permissions from backend:', permissions);
+    
     if (typeof permissions === 'string') {
       try {
         permissions = JSON.parse(permissions);
+        console.log('✅ Parsed string permissions:', permissions);
       } catch (e) {
+        console.error('Failed to parse permissions string:', e);
         permissions = [];
       }
     }
     if (!Array.isArray(permissions)) {
+      console.log('⚠️ Permissions not an array, defaulting to empty array');
       permissions = [];
+    }
+    
+    // If user has no permissions but is not admin, give them basic permissions
+    if (permissions.length === 0 && response.user.role !== 'admin') {
+      console.log('📌 No permissions found, giving basic dashboard access');
+      permissions = ['dashboard'];
     }
     
     const authUser = {
@@ -297,10 +289,11 @@ login: async (email, password, subdomain) => {
       permissions: permissions,
       isSuperAdmin: response.user.isSuperAdmin || false
     };
+    
+    console.log('👤 Final authUser being saved:', authUser);
+    
     set({ authUser });
     localStorage.setItem('authUser', JSON.stringify(authUser));
-
-
     
     await Promise.all([
       get().fetchProjects(),
@@ -321,7 +314,7 @@ login: async (email, password, subdomain) => {
       get().fetchInvoices(),
       get().fetchCompanySettings(),
       get().fetchCurrencySettings(),
-      get().fetchLimits()  // ← ADD THIS LINE
+      get().fetchLimits()
     ]);
     
     return true;
