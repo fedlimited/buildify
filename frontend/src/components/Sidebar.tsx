@@ -64,15 +64,41 @@ export function Sidebar() {
   const navigate = useNavigate();
   const { activeModule, setActiveModule, sidebarCollapsed, toggleSidebar, authUser, logout } = useAppStore();
 
-  const userPermissions = authUser?.permissions;
+  // Ensure permissions are always an array
+  let userPermissions: ModuleId[] = [];
+  if (authUser?.permissions) {
+    if (Array.isArray(authUser.permissions)) {
+      userPermissions = authUser.permissions;
+    } else if (typeof authUser.permissions === 'string') {
+      try {
+        const parsed = JSON.parse(authUser.permissions);
+        if (Array.isArray(parsed)) userPermissions = parsed;
+      } catch (e) {
+        console.error('Failed to parse permissions in sidebar:', e);
+      }
+    }
+  }
+  
   const isAdmin = authUser?.role === 'admin';
   const isSuperAdmin = authUser?.isSuperAdmin || false;
 
-  const canAccess = (id: ModuleId) => {
-    if (isAdmin) return true;
-    if (!userPermissions) return true;
-    return userPermissions.includes(id);
-  };
+
+
+
+
+
+const canAccess = (id: ModuleId) => {
+  // Super Admin sees everything
+  if (isSuperAdmin) return true;
+  // Company Admin sees everything
+  if (isAdmin) return true;
+  // No permissions = no access
+  if (!userPermissions || userPermissions.length === 0) return false;
+  return userPermissions.includes(id);
+};
+
+
+
 
   const handleNavigation = (item: { id: ModuleId; path?: string }) => {
     setActiveModule(item.id);
@@ -86,37 +112,26 @@ export function Sidebar() {
       className={`fixed left-0 top-0 h-screen bg-sidebar-bg text-sidebar-fg flex flex-col z-30 sidebar-transition ${sidebarCollapsed ? 'w-[68px]' : 'w-[260px]'}`}
     >
 
-
-
-
-
-
-{/* Logo + Collapse */}
-<div className="flex items-center justify-between px-4 h-16 border-b border-sidebar-hover shrink-0">
-  <div className="flex items-center gap-3">
-    <img 
-      src="/Bochi_logo_transparent.png" 
-      alt="BOCHI Logo" 
-      className={`${sidebarCollapsed ? 'h-8 w-8' : 'h-10 w-auto'} object-contain`}
-    />
-    {!sidebarCollapsed && (
-      <span className="text-lg font-bold tracking-tight">BOCHI</span>
-    )}
-  </div>
-  <button
-    onClick={toggleSidebar}
-    className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-sidebar-hover transition-colors shrink-0"
-    title={sidebarCollapsed ? 'Expand' : 'Collapse'}
-  >
-    {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-  </button>
-</div>
-
-
-
-
-
-
+      {/* Logo + Collapse */}
+      <div className="flex items-center justify-between px-4 h-16 border-b border-sidebar-hover shrink-0">
+        <div className="flex items-center gap-3">
+          <img
+            src="/Bochi_logo_transparent.png"
+            alt="BOCHI Logo"
+            className={`${sidebarCollapsed ? 'h-8 w-8' : 'h-10 w-auto'} object-contain`}
+          />
+          {!sidebarCollapsed && (
+            <span className="text-lg font-bold tracking-tight">BOCHI</span>
+          )}
+        </div>
+        <button
+          onClick={toggleSidebar}
+          className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-sidebar-hover transition-colors shrink-0"
+          title={sidebarCollapsed ? 'Expand' : 'Collapse'}
+        >
+          {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        </button>
+      </div>
 
       {/* Super Admin Quick Access */}
       {isSuperAdmin && (
@@ -186,12 +201,16 @@ export function Sidebar() {
             <p className="opacity-60">
               {authUser.role}
               {isSuperAdmin && (
-                <span className="ml-1 text-amber-500">• Super Admin</span>
+                <span className="ml-1 text-amber-500"> • Super Admin</span>
               )}
             </p>
           </div>
         )}
-        <button onClick={logout} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-sidebar-hover transition-colors text-destructive/80" title={sidebarCollapsed ? 'Logout' : undefined}>
+        <button 
+          onClick={logout} 
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-sidebar-hover transition-colors text-destructive/80" 
+          title={sidebarCollapsed ? 'Logout' : undefined}
+        >
           <LogOut size={18} />
           {!sidebarCollapsed && <span>Logout</span>}
         </button>

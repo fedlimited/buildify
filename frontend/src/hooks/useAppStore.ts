@@ -249,17 +249,58 @@ authUser: (() => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   // ========== LOGIN / LOGOUT ==========
 login: async (email, password, subdomain) => {
   try {
     const response = await api.login(email, password, subdomain);
     // response contains { token, user }
+    
+    // Parse permissions if they're a string
+    let permissions = response.user.permissions;
+    if (typeof permissions === 'string') {
+      try {
+        permissions = JSON.parse(permissions);
+      } catch (e) {
+        permissions = [];
+      }
+    }
+    if (!Array.isArray(permissions)) {
+      permissions = [];
+    }
+    
     const authUser = {
       ...response.user,
+      permissions: permissions,
       isSuperAdmin: response.user.isSuperAdmin || false
     };
     set({ authUser });
     localStorage.setItem('authUser', JSON.stringify(authUser));
+
+
     
     await Promise.all([
       get().fetchProjects(),

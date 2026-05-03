@@ -26,9 +26,25 @@ const ALL_MODULES: { id: ModuleId; label: string }[] = [
   { id: 'settings', label: 'Settings' },
   { id: 'help', label: 'Help' },
   { id: 'legal', label: 'Legal' },
+  { id: 'billing', label: 'Billing' },
 ];
 
 const emptyUser = { name: '', email: '', password: '', role: 'user' as AppUser['role'], permissions: ALL_MODULES.map(m => m.id), isActive: true };
+
+// Helper function to parse permissions from backend (could be string or array)
+const parsePermissions = (permissions: any): ModuleId[] => {
+  if (!permissions) return [];
+  if (Array.isArray(permissions)) return permissions;
+  if (typeof permissions === 'string') {
+    try {
+      const parsed = JSON.parse(permissions);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {
+      console.error('Failed to parse permissions string:', permissions, e);
+    }
+  }
+  return [];
+};
 
 export function UsersModule() {
   const { authUser } = useAppStore();
@@ -38,7 +54,6 @@ export function UsersModule() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<AppUser | null>(null);
   const [form, setForm] = useState(emptyUser);
- 
 
   // Load users from backend when component mounts
   useEffect(() => {
@@ -49,7 +64,12 @@ export function UsersModule() {
     try {
       setIsLoading(true);
       const data = await api.getUsers();
-      setUsers(data);
+      // Parse permissions for each user (backend returns JSON string)
+      const parsedUsers = data.map((user: any) => ({
+        ...user,
+        permissions: parsePermissions(user.permissions)
+      }));
+      setUsers(parsedUsers);
       setError('');
     } catch (err: any) {
       console.error('Failed to load users:', err);
@@ -71,49 +91,71 @@ export function UsersModule() {
     );
   }
 
-  const openNew = () => { 
-    setEditing(null); 
-    setForm({ ...emptyUser, permissions: ALL_MODULES.map(m => m.id) }); 
+  const openNew = () => {
+    setEditing(null);
+    setForm({ ...emptyUser, permissions: ALL_MODULES.map(m => m.id) });
     setOpen(true);
     setError('');
   };
+
+
+
+
+
+
+
+
+const openEdit = (u: AppUser) => {
+  // Ensure permissions is an array (safety check)
+  let permissions = u.permissions;
+  if (typeof permissions === 'string') {
+    try {
+      permissions = JSON.parse(permissions);
+    } catch (e) {
+      permissions = [];
+    }
+  }
+  if (!Array.isArray(permissions)) {
+    permissions = [];
+  }
   
-  const openEdit = (u: AppUser) => { 
-    setEditing(u); 
-    setForm({ 
-      name: u.name, 
-      email: u.email, 
-      password: '', // Don't show password for editing
-      role: u.role, 
-      permissions: u.permissions, 
-      isActive: u.isActive 
-    }); 
-    setOpen(true);
-    setError('');
-  };
+  setEditing(u);
+  setForm({
+    name: u.name,
+    email: u.email,
+    password: '',
+    role: u.role,
+    permissions: permissions,
+    isActive: u.isActive
+  });
+  setOpen(true);
+  setError('');
+};
 
 
-const handleSave = async () => {
+
+
+
+
+
+  const handleSave = async () => {
     // FREE PLAN LIMIT CHECK - Prevent adding more than 1 additional user
     const nonAdminUsersCount = users.filter(u => u.role !== 'admin').length;
     if (!editing && nonAdminUsersCount >= 1 && authUser?.subscription?.plan_name === 'free') {
       alert('⚠️ Free plan allows only 1 additional user.\n\nYou have reached your limit.\n\nUpgrade to Pro to add more users.');
       return;
     }
-    
+
     if (!form.name || !form.email) {
-
-
-
       setError('Name and email are required');
       return;
     }
-    
+
     if (!editing && !form.password) {
       setError('Password is required for new users');
       return;
     }
-    
+
     try {
       if (editing) {
         // Update existing user
@@ -123,7 +165,24 @@ const handleSave = async () => {
           permissions: form.permissions,
           is_active: form.isActive
         });
-        setUsers(users.map(u => u.id === updated.id ? updated : u));
+        // Parse permissions for the updated user
+        const parsedUpdated = {
+          ...updated,
+          permissions: parsePermissions(updated.permissions)
+        };
+        setUsers(users.map(u => u.id === parsedUpdated.id ? parsedUpdated : u));
+        
+        // If updating current user, also update authUser in store
+        if (editing.id === authUser?.id) {
+          // This will trigger sidebar to re-render with new permissions
+          const { setAuthUser } = useAppStore.getState();
+          setAuthUser({
+            ...authUser,
+            name: form.name,
+            role: form.role,
+            permissions: form.permissions
+          });
+        }
       } else {
         // Create new user
         const newUser = await api.createUser({
@@ -133,7 +192,12 @@ const handleSave = async () => {
           role: form.role,
           permissions: form.permissions
         });
-        setUsers([...users, newUser]);
+        // Parse permissions for the new user
+        const parsedNew = {
+          ...newUser,
+          permissions: parsePermissions(newUser.permissions)
+        };
+        setUsers([...users, parsedNew]);
       }
       setOpen(false);
       resetForm();
@@ -149,7 +213,7 @@ const handleSave = async () => {
       setError('You cannot delete your own account');
       return;
     }
-    
+
     if (confirm(`Are you sure you want to delete ${user.name}? This action cannot be undone.`)) {
       try {
         await api.deleteUser(user.id);
@@ -216,7 +280,7 @@ const handleSave = async () => {
               <th className="px-4 py-3 font-medium text-muted-foreground text-xs">Status</th>
               <th className="px-4 py-3 font-medium text-muted-foreground text-xs">Permissions</th>
               <th className="px-4 py-3 font-medium text-muted-foreground text-xs">Actions</th>
-             </tr>
+            </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {users.map(u => (
@@ -242,10 +306,10 @@ const handleSave = async () => {
                       <Pencil size={14} />
                     </Button>
                     {u.id !== authUser?.id && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-destructive hover:text-destructive" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
                         onClick={() => handleDelete(u)}
                         title="Delete user"
                       >
@@ -273,19 +337,19 @@ const handleSave = async () => {
           <div className="grid gap-3 py-2">
             <div>
               <Label className="text-xs">Name *</Label>
-              <Input 
-                value={form.name} 
-                onChange={e => setForm({ ...form, name: e.target.value })} 
+              <Input
+                value={form.name}
+                onChange={e => setForm({ ...form, name: e.target.value })}
                 placeholder="Mogaka Mokua"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">Email *</Label>
-                <Input 
-                  type="email" 
-                  value={form.email} 
-                  onChange={e => setForm({ ...form, email: e.target.value })} 
+                <Input
+                  type="email"
+                  value={form.email}
+                  onChange={e => setForm({ ...form, email: e.target.value })}
                   placeholder="user@company.com"
                   disabled={!!editing}
                 />
@@ -294,10 +358,10 @@ const handleSave = async () => {
               {!editing && (
                 <div>
                   <Label className="text-xs">Password *</Label>
-                  <Input 
-                    type="password" 
-                    value={form.password} 
-                    onChange={e => setForm({ ...form, password: e.target.value })} 
+                  <Input
+                    type="password"
+                    value={form.password}
+                    onChange={e => setForm({ ...form, password: e.target.value })}
                     placeholder="••••••"
                   />
                   <p className="text-xs text-muted-foreground mt-1">Minimum 6 characters</p>
@@ -353,7 +417,7 @@ const handleSave = async () => {
           </div>
         </DialogContent>
       </Dialog>
-      
+
     </div>
   );
 }
