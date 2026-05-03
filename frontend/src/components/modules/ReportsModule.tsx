@@ -6,7 +6,6 @@ import { exportToCSV } from '@/lib/export';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { BarChart3, DollarSign, FileSpreadsheet, Receipt, Users, ShoppingCart, Warehouse, TrendingUp, PieChart, Hammer, Truck, BookOpen, Clipboard } from 'lucide-react';
-import { AnalyticsDashboard } from './AnalyticsDashboard';
 
 interface ReportCard {
   id: string;
@@ -59,7 +58,7 @@ const renderReport = () => {
     case 'suppliers-ledger': return <SuppliersLedgerReport />;
     case 'income-ledger': return <IncomeLedgerReport />;
     case 'site-diary': return <SiteDiaryReport />;
-    case 'analytics': return <AnalyticsDashboard />;
+    
     default: return null;
   }
 };
