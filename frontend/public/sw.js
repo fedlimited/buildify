@@ -31,16 +31,9 @@ self.addEventListener('activate', (event) => {
   return self.clients.claim();
 });
 
-// ========== FIXED: Skip ALL API requests ==========
+// Fetch strategy: Network first, fallback to cache (ONLY FOR GET REQUESTS)
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-  
-  // CRITICAL: Never cache any API requests
-  if (url.pathname.startsWith('/api/')) {
-    return; // Let the browser handle API calls normally
-  }
-  
-  // Only handle GET requests for static assets
+  // IMPORTANT: Only handle GET requests. Skip POST, PUT, DELETE, etc.
   if (event.request.method !== 'GET') {
     return;
   }
@@ -48,7 +41,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Cache successful GET responses for static files only
+        // Cache successful GET responses
         if (response.status === 200) {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -58,7 +51,7 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => {
-        // Offline fallback for static assets
+        // Offline fallback
         return caches.match(event.request);
       })
   );
