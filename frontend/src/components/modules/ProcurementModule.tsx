@@ -359,12 +359,40 @@ function PurchaseOrdersTab() {
 
 
 
-
-
-
-
 const printPurchaseOrder = (order) => {
   const printWindow = window.open('', '_blank');
+  
+  // Get company settings from localStorage
+  let companyName = 'BOCHI Construction Suite';
+  let companyLogo = '';
+  let companyAddress = '';
+  let companyPhone = '';
+  let companyEmail = '';
+  let kraPin = '';
+  
+  try {
+    const authUser = JSON.parse(localStorage.getItem('authUser') || '{}');
+    const companySettings = authUser.companySettings || {};
+    
+    // Try to get settings from multiple possible locations
+    const storedCompanySettings = localStorage.getItem('companySettings');
+    if (storedCompanySettings) {
+      const settings = JSON.parse(storedCompanySettings);
+      companyName = settings.name || companyName;
+      companyLogo = settings.logoUrl || '';
+      companyAddress = settings.address || '';
+      companyPhone = settings.phone || '';
+      companyEmail = settings.email || '';
+      kraPin = settings.kraPin || '';
+    }
+    
+    // Also check authUser for company info
+    if (authUser.company) {
+      companyName = authUser.company.name || companyName;
+    }
+  } catch (e) {
+    console.error('Error loading company settings:', e);
+  }
   
   const itemsHtml = order.items.map(item => `
     <tr>
@@ -373,8 +401,16 @@ const printPurchaseOrder = (order) => {
       <td style="text-align: center; padding: 8px; border-bottom: 1px solid #ddd;">${item.unit || '-'}</td>
       <td style="text-align: right; padding: 8px; border-bottom: 1px solid #ddd;">${formatCurrency(item.unitPrice || 0)}</td>
       <td style="text-align: right; padding: 8px; border-bottom: 1px solid #ddd;">${formatCurrency(item.total || item.amount || 0)}</td>
-    </tr>
+    </td>
   `).join('');
+  
+  const logoHtml = companyLogo 
+    ? `<img src="${companyLogo}" style="max-height: 60px; max-width: 200px; object-fit: contain;" />` 
+    : `<div class="company-name">${companyName}</div>`;
+  
+  const addressHtml = companyAddress ? `<div class="company-address">${companyAddress}</div>` : '';
+  const contactHtml = (companyPhone || companyEmail) ? `<div class="company-contact">${companyPhone ? `Tel: ${companyPhone}` : ''}${companyPhone && companyEmail ? ' | ' : ''}${companyEmail ? `Email: ${companyEmail}` : ''}</div>` : '';
+  const kraHtml = kraPin ? `<div class="company-kra">KRA PIN: ${kraPin}</div>` : '';
   
   const html = `
     <!DOCTYPE html>
@@ -382,55 +418,80 @@ const printPurchaseOrder = (order) => {
     <head>
       <title>Purchase Order - ${order.orderNumber}</title>
       <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-          font-family: Arial, sans-serif;
+          font-family: 'Segoe UI', Arial, sans-serif;
           padding: 40px;
           margin: 0;
-          color: #333;
+          color: #1a202c;
+          background: white;
+        }
+        .print-container {
+          max-width: 1100px;
+          margin: 0 auto;
         }
         .header {
           margin-bottom: 30px;
           padding-bottom: 20px;
           border-bottom: 2px solid #1a365d;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+        .logo-section {
+          flex: 1;
         }
         .company-name {
           font-size: 24px;
           font-weight: bold;
           color: #1a365d;
         }
+        .company-address, .company-contact, .company-kra {
+          font-size: 11px;
+          color: #4a5568;
+          margin-top: 4px;
+        }
+        .po-title-section {
+          text-align: right;
+        }
         .po-title {
-          font-size: 20px;
+          font-size: 28px;
           font-weight: bold;
-          margin-top: 10px;
+          color: #1a365d;
+          letter-spacing: 2px;
         }
         .po-number {
-          font-size: 16px;
-          color: #666;
+          font-size: 14px;
+          color: #4a5568;
           margin-top: 5px;
+          font-family: monospace;
         }
         .info-section {
           display: flex;
           justify-content: space-between;
           margin-bottom: 30px;
+          gap: 20px;
+          flex-wrap: wrap;
         }
         .info-box {
           flex: 1;
-          padding: 15px;
-          background: #f5f5f5;
+          padding: 12px 15px;
+          background: #f7fafc;
           border-radius: 8px;
-          margin-right: 20px;
-        }
-        .info-box:last-child {
-          margin-right: 0;
+          border: 1px solid #e2e8f0;
         }
         .info-label {
           font-weight: bold;
-          font-size: 12px;
-          color: #666;
+          font-size: 11px;
+          color: #4a5568;
           margin-bottom: 8px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
         .info-value {
           font-size: 14px;
+          font-weight: 500;
         }
         .items-table {
           width: 100%;
@@ -438,19 +499,28 @@ const printPurchaseOrder = (order) => {
           margin: 20px 0;
         }
         .items-table th {
-          background: #f5f5f5;
+          background: #f7fafc;
           padding: 12px;
           text-align: left;
-          border-bottom: 2px solid #ddd;
+          border-bottom: 2px solid #e2e8f0;
+          font-size: 12px;
+          font-weight: 600;
+          color: #4a5568;
+        }
+        .items-table td {
+          padding: 10px 12px;
+          border-bottom: 1px solid #e2e8f0;
+          font-size: 13px;
         }
         .totals {
           text-align: right;
           margin-top: 20px;
           padding-top: 20px;
-          border-top: 1px solid #ddd;
+          border-top: 1px solid #e2e8f0;
         }
         .total-line {
           margin: 5px 0;
+          font-size: 13px;
         }
         .grand-total {
           font-size: 18px;
@@ -464,88 +534,104 @@ const printPurchaseOrder = (order) => {
           margin-top: 40px;
           padding-top: 20px;
           text-align: center;
-          font-size: 12px;
-          color: #999;
-          border-top: 1px solid #ddd;
+          font-size: 10px;
+          color: #a0aec0;
+          border-top: 1px solid #e2e8f0;
         }
         .status-badge {
           display: inline-block;
-          padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 12px;
+          padding: 4px 10px;
+          border-radius: 20px;
+          font-size: 11px;
           font-weight: bold;
         }
         .status-ordered { background: #fef3c7; color: #d97706; }
         .status-supplied { background: #d1fae5; color: #059669; }
         .status-paid { background: #dbeafe; color: #2563eb; }
+        .notes-section {
+          margin-top: 20px;
+          padding: 12px;
+          background: #f7fafc;
+          border-radius: 8px;
+          font-size: 12px;
+        }
         @media print {
           body { padding: 20px; }
-          .no-print { display: none; }
         }
       </style>
     </head>
     <body>
-      <div class="header">
-        <div class="company-name">BOCHABERI Construction Suite</div>
-        <div class="po-title">PURCHASE ORDER</div>
-        <div class="po-number">${order.orderNumber}</div>
-      </div>
-      
-      <div class="info-section">
-        <div class="info-box">
-          <div class="info-label">SUPPLIER</div>
-          <div class="info-value">${order.supplierName}</div>
+      <div class="print-container">
+        <div class="header">
+          <div class="logo-section">
+            ${logoHtml}
+            ${addressHtml}
+            ${contactHtml}
+            ${kraHtml}
+          </div>
+          <div class="po-title-section">
+            <div class="po-title">PURCHASE ORDER</div>
+            <div class="po-number">${order.orderNumber}</div>
+          </div>
         </div>
-        <div class="info-box">
-          <div class="info-label">PROJECT</div>
-          <div class="info-value">${order.projectName}</div>
+        
+        <div class="info-section">
+          <div class="info-box">
+            <div class="info-label">SUPPLIER</div>
+            <div class="info-value">${order.supplierName}</div>
+          </div>
+          <div class="info-box">
+            <div class="info-label">PROJECT</div>
+            <div class="info-value">${order.projectName}</div>
+          </div>
+          <div class="info-box">
+            <div class="info-label">ORDER DATE</div>
+            <div class="info-value">${formatDate(order.orderDate)}</div>
+          </div>
         </div>
-        <div class="info-box">
-          <div class="info-label">ORDER DATE</div>
-          <div class="info-value">${formatDate(order.orderDate)}</div>
+        
+        <div class="info-section">
+          <div class="info-box">
+            <div class="info-label">EXPECTED DELIVERY</div>
+            <div class="info-value">${order.expectedDate ? formatDate(order.expectedDate) : 'Not specified'}</div>
+          </div>
+          <div class="info-box">
+            <div class="info-label">STATUS</div>
+            <div class="info-value"><span class="status-badge status-${order.status === 'Supplied' ? 'supplied' : 'ordered'}">${order.status}</span></div>
+          </div>
+          <div class="info-box">
+            <div class="info-label">PAYMENT STATUS</div>
+            <div class="info-value"><span class="status-badge status-${order.paymentStatus === 'Paid' ? 'paid' : 'ordered'}">${order.paymentStatus}</span></div>
+          </div>
         </div>
-      </div>
-      
-      <div class="info-section">
-        <div class="info-box">
-          <div class="info-label">EXPECTED DELIVERY</div>
-          <div class="info-value">${order.expectedDate ? formatDate(order.expectedDate) : 'Not specified'}</div>
+        
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>Item Description</th>
+              <th style="text-align: center">Qty</th>
+              <th style="text-align: center">Unit</th>
+              <th style="text-align: right">Unit Price (KES)</th>
+              <th style="text-align: right">Total (KES)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml || '<tr><td colspan="5" style="text-align: center;">No items found</td></tr>'}
+          </tbody>
+        </table>
+        
+        <div class="totals">
+          <div class="total-line">Subtotal: ${formatCurrency(order.subtotal || 0)}</div>
+          <div class="total-line">VAT (16%): ${formatCurrency(order.vat || 0)}</div>
+          <div class="grand-total">TOTAL: ${formatCurrency(order.total || 0)}</div>
         </div>
-        <div class="info-box">
-          <div class="info-label">STATUS</div>
-          <div class="info-value"><span class="status-badge status-${order.status === 'Supplied' ? 'supplied' : order.paymentStatus === 'Paid' ? 'paid' : 'ordered'}">${order.status}</span></div>
+        
+        ${order.notes ? `<div class="notes-section"><strong>Notes:</strong> ${order.notes}</div>` : ''}
+        
+        <div class="footer">
+          <p>This is a computer-generated document. No signature is required.</p>
+          <p style="margin-top: 5px;">Generated on ${new Date().toLocaleString()}</p>
         </div>
-        <div class="info-box">
-          <div class="info-label">PAYMENT STATUS</div>
-          <div class="info-value"><span class="status-badge status-${order.paymentStatus === 'Paid' ? 'paid' : 'ordered'}">${order.paymentStatus}</span></div>
-        </div>
-      </div>
-      
-      <table class="items-table">
-        <thead>
-          <tr>
-            <th>Item Description</th>
-            <th style="text-align: center">Qty</th>
-            <th style="text-align: center">Unit</th>
-            <th style="text-align: right">Unit Price</th>
-            <th style="text-align: right">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${itemsHtml || '<tr><td colspan="5" style="text-align: center;">No items found</td></tr>'}
-        </tbody>
-      </table>
-      
-      <div class="totals">
-        <div class="total-line">Subtotal: ${formatCurrency(order.subtotal || 0)}</div>
-        <div class="total-line">VAT (16%): ${formatCurrency(order.vat || 0)}</div>
-        <div class="grand-total">TOTAL: ${formatCurrency(order.total || 0)}</div>
-      </div>
-      
-      ${order.notes ? `<div style="margin-top: 20px; padding: 10px; background: #f5f5f5; border-radius: 5px;"><strong>Notes:</strong> ${order.notes}</div>` : ''}
-      
-      <div class="footer">
-        Generated on ${new Date().toLocaleString()} | BOCHABERI Construction Suite
       </div>
     </body>
     </html>
@@ -555,7 +641,6 @@ const printPurchaseOrder = (order) => {
   printWindow.document.close();
   printWindow.print();
 };
-
 
 
 
