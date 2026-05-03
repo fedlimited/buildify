@@ -236,18 +236,37 @@ export const useAppStore = create<AppState>((set, get) => ({
 setAuthUser: (user) => set({ authUser: user }),  // ← ADD THIS LINE
 
 
-
 authUser: (() => {
   const saved = localStorage.getItem('authUser');
   if (saved) {
     const user = JSON.parse(saved);
+    // If permissions are missing, try to fetch them
+    if (!user.permissions && localStorage.getItem('token')) {
+      console.log('🔧 AuthUser missing permissions, will fetch from /me');
+      // Store that we need to fix permissions
+      setTimeout(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+          fetch(`${API_BASE_URL}/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          .then(r => r.json())
+          .then(data => {
+            if (data.permissions) {
+              const fixedUser = { ...user, permissions: data.permissions };
+              localStorage.setItem('authUser', JSON.stringify(fixedUser));
+              console.log('✅ Fixed permissions from /me on page load');
+              window.location.reload();
+            }
+          })
+          .catch(err => console.error('Failed to fix permissions:', err));
+        }
+      }, 100);
+    }
     return { ...user, isSuperAdmin: user.isSuperAdmin || false };
   }
   return null;
 })(),
-
-
-
 
 
 
@@ -356,6 +375,20 @@ login: async (email, password, subdomain) => {
       }
     })();
     // ========== END WORKAROUND ==========
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
