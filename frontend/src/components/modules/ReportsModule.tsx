@@ -6,6 +6,8 @@ import { exportToCSV } from '@/lib/export';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { BarChart3, DollarSign, FileSpreadsheet, Receipt, Users, ShoppingCart, Warehouse, TrendingUp, PieChart, Hammer, Truck, BookOpen, Clipboard } from 'lucide-react';
+import { AnalyticsDashboard } from './AnalyticsDashboard';
+
 
 interface ReportCard {
   id: string;
@@ -27,6 +29,7 @@ const reportCards: ReportCard[] = [
   { id: 'suppliers-ledger', title: 'Suppliers Ledger', description: 'Orders, payments & balances', icon: <Truck size={24} /> },
   { id: 'income-ledger', title: 'Income Ledger', description: 'Certificate-wise income tracking', icon: <BookOpen size={24} /> },
   { id: 'site-diary', title: 'Site Diary', description: 'Daily site activities & workers', icon: <Clipboard size={24} /> },
+  { id: 'analytics', title: 'Analytics Dashboard', description: 'KPIs, charts, and business insights', icon: <BarChart3 size={24} /> },
 
 
 ];
@@ -58,7 +61,7 @@ const renderReport = () => {
     case 'suppliers-ledger': return <SuppliersLedgerReport />;
     case 'income-ledger': return <IncomeLedgerReport />;
     case 'site-diary': return <SiteDiaryReport />;
-    
+    case 'analytics': return <AnalyticsDashboard />;
     default: return null;
   }
 };
