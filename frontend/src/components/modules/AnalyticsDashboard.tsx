@@ -1,1 +1,322 @@
-{"filePath": "C:\\Users\\Atai\\buildify\\frontend\\src\\components\\modules\\AnalyticsDashboard.tsx", "content": "import React, { useState, useEffect } from 'react';\nimport { useAppStore } from '@/hooks/useAppStore';\nimport { formatCurrency } from '@/lib/formatters';\nimport { exportToCSV } from '@/lib/export';\nimport { Button } from '@/components/ui/button';\nimport { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';\nimport { \n  TrendingUp, TrendingDown, DollarSign, BarChart3, PieChart, \n  RefreshCw, Download, ArrowUpRight, ArrowDownRight,\n  Target, Activity, Building2, Award, CalendarDays\n} from 'lucide-react';\nimport {\n  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,\n  Tooltip, Legend, ResponsiveContainer, PieChart as RePieChart,\n  Pie, Cell, AreaChart, Area, ComposedChart, RadarChart,\n  PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar\n} from 'recharts';\n\n// Professional color palette\nconst COLORS = {\n  primary: '#f59e0b',\n  primaryDark: '#d97706',\n  success: '#10b981',\n  successLight: '#34d399',\n  danger: '#ef4444',\n  dangerLight: '#f87171',\n  info: '#3b82f6',\n  infoLight: '#60a5fa',\n  purple: '#8b5cf6',\n  purpleLight: '#a78bfa',\n  orange: '#f97316',\n  teal: '#14b8b6',\n  pink: '#ec4899',\n  gray: '#6b7280',\n  grayLight: '#9ca3af',\n};\n\nconst CHART_GRADIENTS = [\n  { id: 'revenueGradient', color1: COLORS.successLight, color2: COLORS.success },\n  { id: 'expenseGradient', color1: COLORS.dangerLight, color2: COLORS.danger },\n  { id: 'profitGradient', color1: COLORS.primaryDark, color2: COLORS.primary },\n];\n\ninterface KpiCardProps {\n  title: string;\n  value: string | number;\n  change?: number;\n  icon: React.ReactNode;\n  color: string;\n  prefix?: string;\n  suffix?: string;\n}\n\nfunction KpiCard({ title, value, change, icon, color, prefix = '', suffix = '' }: KpiCardProps) {\n  const isPositive = change && change > 0;\n  const colorMap: Record<string, { bg: string; text: string }> = {\n    emerald: { bg: 'bg-emerald-50 dark:bg-emerald-950/30', text: 'text-emerald-600 dark:text-emerald-400' },\n    rose: { bg: 'bg-rose-50 dark:bg-rose-950/30', text: 'text-rose-600 dark:text-rose-400' },\n    green: { bg: 'bg-green-50 dark:bg-green-950/30', text: 'text-green-600 dark:text-green-400' },\n    orange: { bg: 'bg-orange-50 dark:bg-orange-950/30', text: 'text-orange-600 dark:text-orange-400' },\n    purple: { bg: 'bg-purple-50 dark:bg-purple-950/30', text: 'text-purple-600 dark:text-purple-400' },\n  };\n  const style = colorMap[color] || colorMap.emerald;\n\n  return (\n    <Card className=\"relative overflow-hidden hover:shadow-lg transition-all duration-300 group\">\n      <CardContent className=\"p-5\">\n        <div className=\"flex items-start justify-between\">\n          <div>\n            <p className=\"text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1\">{title}</p>\n            <p className=\"text-2xl font-bold text-foreground\">\n              {prefix}{typeof value === 'number' ? value.toLocaleString() : value}{suffix}\n            </p>\n            {change !== undefined && (\n              <div className={`flex items-center gap-1 mt-1 text-xs font-medium ${isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>\n                {isPositive ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}\n                <span>{Math.abs(change).toFixed(1)}% vs last quarter</span>\n              </div>\n            )}\n          </div>\n          <div className={`w-12 h-12 rounded-xl ${style.bg} flex items-center justify-center ${style.text} group-hover:scale-110 transition-transform duration-300`}>\n            {icon}\n          </div>\n        </div>\n      </CardContent>\n    </Card>\n  );\n}\n\n// Custom Tooltip\nconst CustomTooltip = ({ active, payload, label }: any) => {\n  if (active && payload && payload.length) {\n    return (\n      <div className=\"bg-background/95 backdrop-blur-sm border border-border rounded-xl shadow-xl p-3 min-w-[160px]\">\n        <p className=\"text-xs font-semibold mb-2 pb-1 border-b border-border\">{label}</p>\n        {payload.map((p: any, idx: number) => (\n          <div key={idx} className=\"flex justify-between gap-4 text-xs py-0.5\">\n            <span style={{ color: p.color }}>{p.name}:</span>\n            <span className=\"font-mono font-medium\">{formatCurrency(p.value)}</span>\n          </div>\n        ))}\n      </div>\n    );\n  }\n  return null;\n};\n\nexport function AnalyticsDashboard() {\n  const { selectedProjectId } = useAppStore();\n  const [loading, setLoading] = useState(true);\n  const [filterProject, setFilterProject] = useState('all');\n  const [dateRange, setDateRange] = useState({ start: '', end: '' });\n  const [projects, setProjects] = useState([]);\n  const [data, setData] = useState({\n    monthlyData: [],\n    projectPerformance: [],\n    categoryData: [],\n    marginData: [],\n    radarData: [],\n    kpis: {\n      totalRevenue: 0,\n      totalExpenses: 0,\n      netProfit: 0,\n      profitMargin: 0,\n      previousRevenue: 0,\n      previousExpenses: 0,\n      revenueGrowth: 0,\n      expenseGrowth: 0,\n      profitGrowth: 0,\n      activeProjects: 0,\n      completedProjects: 0,\n      totalProjects: 0,\n      completionRate: 0,\n      avgProjectValue: 0,\n      bestMarginProject: null,\n      topProject: null,\n    }\n  });\n\n  useEffect(() => {\n    async function loadProjects() {\n      try {\n        const token = localStorage.getItem('token');\n        const res = await fetch('https://buildify-backend-kye8.onrender.com/api/projects', {\n          headers: { 'Authorization': `Bearer ${token}` }\n        });\n        const projectsData = await res.json();\n        setProjects(projectsData.filter((p: any) => p.status === 'Active'));\n      } catch (err) {\n        console.error('Error loading projects:', err);\n      }\n    }\n    loadProjects();\n  }, []);\n\n  useEffect(() => {\n    async function loadData() {\n      setLoading(true);\n      try {\n        const token = localStorage.getItem('token');\n        \n        let income = await fetch('https://buildify-backend-kye8.onrender.com/api/income', {\n          headers: { 'Authorization': `Bearer ${token}` }\n        }).then(res => res.json());\n        \n        let expenses = await fetch('https://buildify-backend-kye8.onrender.com/api/expenses', {\n          headers: { 'Authorization': `Bearer ${token}` }\n        }).then(res => res.json());\n        \n        let projectsData = await fetch('https://buildify-backend-kye8.onrender.com/api/projects', {\n          headers: { 'Authorization': `Bearer ${token}` }\n        }).then(res => res.json());\n        \n        // Apply filters\n        if (selectedProjectId && selectedProjectId !== 'all') {\n          const pid = parseInt(selectedProjectId);\n          income = income.filter((i: any) => i.project_id === pid);\n          expenses = expenses.filter((e: any) => e.project_id === pid);\n          projectsData = projectsData.filter((p: any) => p.id === pid);\n        }\n        if (filterProject !== 'all') {\n          const pid = parseInt(filterProject);\n          income = income.filter((i: any) => i.project_id === pid);\n          expenses = expenses.filter((e: any) => e.project_id === pid);\n          projectsData = projectsData.filter((p: any) => p.id === pid);\n        }\n        if (dateRange.start) {\n          income = income.filter((i: any) => i.date >= dateRange.start);\n          expenses = expenses.filter((e: any) => e.date >= dateRange.start);\n        }\n        if (dateRange.end) {\n          income = income.filter((i: any) => i.date <= dateRange.end);\n          expenses = expenses.filter((e: any) => e.date <= dateRange.end);\n        }\n        \n        const currentRevenue = income.reduce((s: number, i: any) => s + (i.amount_received || i.gross_amount || 0), 0);\n        const currentExpenses = expenses.reduce((s: number, e: any) => s + (e.amount || 0), 0);\n        const currentProfit = currentRevenue - currentExpenses;\n        const profitMargin = currentRevenue > 0 ? (currentProfit / currentRevenue) * 100 : 0;\n        \n        // Previous period\n        const threeMonthsAgo = new Date();\n        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);\n        const prevIncome = income.filter((i: any) => new Date(i.date) < threeMonthsAgo).reduce((s: number, i: any) => s + (i.amount_received || i.gross_amount || 0), 0);\n        const prevExpenses = expenses.filter((e: any) => new Date(e.date) < threeMonthsAgo).reduce((s: number, e: any) => s + (e.amount || 0), 0);\n        \n        // Monthly data\n        const monthMap = new Map();\n        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];\n        \n        [...income, ...expenses].forEach((t: any) => {\n          if (t.date) {\n            const d = new Date(t.date);\n            const key = `${d.getFullYear()}-${d.getMonth() + 1}`;\n            if (!monthMap.has(key)) {\n              monthMap.set(key, { month: months[d.getMonth()], year: d.getFullYear(), revenue: 0, expenses: 0 });\n            }\n          }\n        });\n        \n        const sortedMonths = Array.from(monthMap.keys()).sort();\n        const monthlyData = sortedMonths.map(key => {\n          const m = monthMap.get(key);\n          const rev = income.filter((i: any) => new Date(i.date).toISOString().slice(0, 7) === key).reduce((s: number, i: any) => s + (i.amount_received || i.gross_amount || 0), 0);\n          const exp = expenses.filter((e: any) => new Date(e.date).toISOString().slice(0, 7) === key).reduce((s: number, e: any) => s + (e.amount || 0), 0);\n          const profit = rev - exp;\n          const margin = rev > 0 ? (profit / rev) * 100 : 0;\n          return { month: `${m.month} ${m.year}`, revenue: rev, expenses: exp, profit, margin: margin.toFixed(1) };\n        });\n        \n        // Project performance\n        const projectPerformance = projectsData.map((p: any) => {\n          const rev = income.filter((i: any) => i.project_id === p.id).reduce((s: number, i: any) => s + (i.amount_received || i.gross_amount || 0), 0);\n          const exp = expenses.filter((e: any) => e.project_id === p.id).reduce((s: number, e: any) => s + (e.amount || 0), 0);\n          const profit = rev - exp;\n          const margin = rev > 0 ? (profit / rev) * 100 : 0;\n          const progress = p.contract_sum > 0 ? (rev / p.contract_sum) * 100 : 0;\n          return { name: p.name, revenue: rev, expenses: exp, profit, margin: margin.toFixed(1), progress: Math.min(100, progress) };\n        }).filter((p: any) => p.revenue > 0 || p.expenses > 0).sort((a: any, b: any) => b.revenue - a.revenue);\n        \n        // Expense categories\n        const catMap = new Map();\n        expenses.forEach((e: any) => {\n          const cat = e.category || 'Other';\n          catMap.set(cat, (catMap.get(cat) || 0) + (e.amount || 0));\n        });\n        const categoryData = Array.from(catMap.entries()).map(([name, value]) => ({ name, value, percentage: (value / currentExpenses) * 100 })).sort((a, b) => b.value - a.value);\n        \n        // Margin trend\n        const marginData = monthlyData.map(m => ({ month: m.month, margin: parseFloat(m.margin) }));\n        \n        // Radar data for project health\n        const radarData = projectPerformance.slice(0, 6).map(p => ({\n          project: p.name.length > 15 ? p.name.substring(0, 12) + '...' : p.name,\n          revenue: (p.revenue / currentRevenue) * 100,\n          profit: p.profit > 0 ? (p.profit / currentProfit) * 100 : 0,\n          margin: parseFloat(p.margin),\n        }));\n        \n        const topProject = projectPerformance[0] || null;\n        const bestMarginProject = [...projectPerformance].sort((a, b) => parseFloat(b.margin) - parseFloat(a.margin))[0] || null;\n        const activeProjects = projectsData.filter((p: any) => p.status === 'Active').length;\n        const completedProjects = projectsData.filter((p: any) => p.status === 'Completed').length;\n        const completionRate = projectsData.length > 0 ? (completedProjects / projectsData.length) * 100 : 0;\n        const avgProjectValue = projectsData.length > 0 ? projectsData.reduce((s: number, p: any) => s + (p.contract_sum || 0), 0) / projectsData.length : 0;\n        \n        setData({\n          monthlyData,\n          projectPerformance,\n          categoryData,\n          marginData,\n          radarData,\n          kpis: {\n            totalRevenue: currentRevenue,\n            totalExpenses: currentExpenses,\n            netProfit: currentProfit,\n            profitMargin,\n            previousRevenue: prevIncome,\n            previousExpenses: prevExpenses,\n            revenueGrowth: prevIncome > 0 ? ((currentRevenue - prevIncome) / prevIncome) * 100 : 0,\n            expenseGrowth: prevExpenses > 0 ? ((currentExpenses - prevExpenses) / prevExpenses) * 100 : 0,\n            profitGrowth: (prevIncome - prevExpenses) > 0 ? ((currentProfit - (prevIncome - prevExpenses)) / (prevIncome - prevExpenses)) * 100 : 0,\n            activeProjects,\n            completedProjects,\n            totalProjects: projectsData.length,\n            completionRate,\n            avgProjectValue,\n            bestMarginProject,\n            topProject,\n          }\n        });\n        setLoading(false);\n      } catch (err) {\n        console.error('Error loading analytics:', err);\n        setLoading(false);\n      }\n    }\n    loadData();\n  }, [selectedProjectId, filterProject, dateRange.start, dateRange.end]);\n\n  if (loading) {\n    return (\n      <div className=\"flex items-center justify-center h-96\">\n        <div className=\"text-center\">\n          <RefreshCw size={48} className=\"mx-auto mb-4 animate-spin text-primary\" />\n          <p className=\"text-muted-foreground\">Loading executive dashboard...</p>\n        </div>\n      </div>\n    );\n  }\n\n  return (\n    <div className=\"space-y-6\">\n      {/* Header with Gradient */}\n      <div className=\"bg-gradient-to-r from-primary/5 via-primary/10 to-transparent rounded-2xl p-6 border border-primary/20\">\n        <div className=\"flex flex-wrap justify-between items-center\">\n          <div>\n            <h2 className=\"text-2xl font-bold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent\">\n              Executive Dashboard\n            </h2>\n            <p className=\"text-sm text-muted-foreground mt-1\">Real-time performance insights & analytics</p>\n          </div>\n          <div className=\"flex gap-3 flex-wrap\">\n            <select\n              className=\"px-3 py-2 text-sm border border-border rounded-lg bg-background shadow-sm\"\n              value={filterProject}\n              onChange={(e) => setFilterProject(e.target.value)}\n            >\n              <option value=\"all\">All Projects</option>\n              {projects.map((p: any) => (\n                <option key={p.id} value={p.id}>{p.name}</option>\n              ))}\n            </select>\n            <div className=\"flex gap-2\">\n              <input\n                type=\"date\"\n                className=\"px-3 py-2 text-sm border border-border rounded-lg bg-background\"\n                value={dateRange.start}\n                onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}\n              />\n              <input\n                type=\"date\"\n                className=\"px-3 py-2 text-sm border border-border rounded-lg bg-background\"\n                value={dateRange.end}\n                onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}\n              />\n            </div>\n            {(dateRange.start || dateRange.end) && (\n              <button\n                className=\"px-3 py-2 text-sm text-rose-500 hover:text-rose-700 transition-colors\"\n                onClick={() => setDateRange({ start: '', end: '' })}\n              >\n                Clear Dates\n              </button>\n            )}\n            <Button variant=\"outline\" size=\"default\" onClick={() => exportToCSV(data.projectPerformance, 'executive_dashboard')}>\n              <Download size={16} className=\"mr-2\" /> Export Report\n            </Button>\n          </div>\n        </div>\n      </div>\n\n      {/* KPI Cards Row 1 - Financial */}\n      <div className=\"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5\">\n        <KpiCard\n          title=\"Total Revenue\"\n          value={data.kpis.totalRevenue}\n          change={data.kpis.revenueGrowth}\n          icon={<DollarSign size={22} />}\n          color=\"emerald\"\n          prefix=\"KES \"\n        />\n        <KpiCard\n          title=\"Total Expenses\"\n          value={data.kpis.totalExpenses}\n          change={data.kpis.expenseGrowth}\n          icon={<TrendingDown size={22} />}\n          color=\"rose\"\n          prefix=\"KES \"\n        />\n        <KpiCard\n          title=\"Net Profit\"\n          value={data.kpis.netProfit}\n          change={data.kpis.profitGrowth}\n          icon={<TrendingUp size={22} />}\n          color={data.kpis.netProfit >= 0 ? \"green\" : \"orange\"}\n          prefix=\"KES \"\n        />\n        <KpiCard\n          title=\"Profit Margin\"\n          value={data.kpis.profitMargin.toFixed(1)}\n          icon={<Target size={22} />}\n          color=\"purple\"\n          suffix=\"%\"\n        />\n      </div>\n\n      {/* KPI Cards Row 2 - Project Metrics */}\n      <div className=\"grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3\">\n        <Card className=\"bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-200/50 hover:shadow-md transition-all\">\n          <CardContent className=\"p-4 text-center\">\n            <p className=\"text-[11px] text-blue-600 font-semibold uppercase tracking-wider\">Active Projects</p>\n            <p className=\"text-2xl font-bold text-blue-700\">{data.kpis.activeProjects}</p>\n          </CardContent>\n        </Card>\n        <Card className=\"bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-200/50 hover:shadow-md transition-all\">\n          <CardContent className=\"p-4 text-center\">\n            <p className=\"text-[11px] text-emerald-600 font-semibold uppercase tracking-wider\">Completed</p>\n            <p className=\"text-2xl font-bold text-emerald-700\">{data.kpis.completedProjects}</p>\n          </CardContent>\n        </Card>\n        <Card className=\"bg-gradient-to-br from-amber-500/10 to-amber-600/5 border-amber-200/50 hover:shadow-md transition-all\">\n          <CardContent className=\"p-4 text-center\">\n            <p className=\"text-[11px] text-amber-600 font-semibold uppercase tracking-wider\">Completion Rate</p>\n            <p className=\"text-2xl font-bold text-amber-700\">{data.kpis.completionRate.toFixed(0)}%</p>\n          </CardContent>\n        </Card>\n        <Card className=\"bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-200/50 hover:shadow-md transition-all\">\n          <CardContent className=\"p-4 text-center\">\n            <p className=\"text-[11px] text-purple-600 font-semibold uppercase tracking-wider\">Avg Project Value</p>\n            <p className=\"text-sm font-bold text-purple-700\">{formatCurrency(data.kpis.avgProjectValue)}</p>\n          </CardContent>\n        </Card>\n        <Card className=\"bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border-cyan-200/50 hover:shadow-md transition-all\">\n          <CardContent className=\"p-4 text-center\">\n            <p className=\"text-[11px] text-cyan-600 font-semibold uppercase tracking-wider\">Total Projects</p>\n            <p className=\"text-2xl font-bold text-cyan-700\">{data.kpis.totalProjects}</p>\n          </CardContent>\n        </Card>\n      </div>\n\n      {/* Main Chart - Revenue vs Expenses */}\n      <Card className=\"overflow-hidden\">\n        <CardHeader>\n          <CardTitle className=\"text-lg font-semibold flex items-center gap-2\">\n            <BarChart3 size={20} className=\"text-primary\" />\n            Financial Performance\n          </CardTitle>\n          <CardDescription>Revenue & expenses trend with profit analysis</CardDescription>\n        </CardHeader>\n        <CardContent>\n          <ResponsiveContainer width=\"100%\" height={400}>\n            <ComposedChart data={data.monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>\n              <defs>\n                <linearGradient id=\"revenueGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n                  <stop offset=\"5%\" stopColor={COLORS.successLight} stopOpacity={0.8}/>\n                  <stop offset=\"95%\" stopColor={COLORS.success} stopOpacity={0.3}/>\n                </linearGradient>\n                <linearGradient id=\"expenseGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n                  <stop offset=\"5%\" stopColor={COLORS.dangerLight} stopOpacity={0.8}/>\n                  <stop offset=\"95%\" stopColor={COLORS.danger} stopOpacity={0.3}/>\n                </linearGradient>\n              </defs>\n              <CartesianGrid strokeDasharray=\"3 3\" stroke=\"hsl(var(--border))\" opacity={0.5} />\n              <XAxis dataKey=\"month\" tick={{ fontSize: 12 }} stroke=\"hsl(var(--muted-foreground))\" />\n              <YAxis yAxisId=\"left\" tick={{ fontSize: 12 }} stroke=\"hsl(var(--muted-foreground))\" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />\n              <YAxis yAxisId=\"right\" orientation=\"right\" tick={{ fontSize: 12 }} stroke={COLORS.primary} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />\n              <Tooltip content={<CustomTooltip />} />\n              <Legend verticalAlign=\"top\" height={36} />\n              <Bar yAxisId=\"left\" dataKey=\"revenue\" name=\"Revenue\" fill=\"url(#revenueGrad)\" radius={[8, 8, 0, 0]} />\n              <Bar yAxisId=\"left\" dataKey=\"expenses\" name=\"Expenses\" fill=\"url(#expenseGrad)\" radius={[8, 8, 0, 0]} />\n              <Line yAxisId=\"right\" type=\"monotone\" dataKey=\"profit\" name=\"Profit\" stroke={COLORS.primary} strokeWidth={3} dot={{ r: 5, strokeWidth: 2 }} />\n            </ComposedChart>\n          </ResponsiveContainer>\n        </CardContent>\n      </Card>\n\n      {/* Secondary Charts - 2 Column Layout */}\n      <div className=\"grid grid-cols-1 lg:grid-cols-2 gap-6\">\n        {/* Profit Margin Trend */}\n        <Card>\n          <CardHeader>\n            <CardTitle className=\"text-base font-semibold flex items-center gap-2\">\n              <TrendingUp size={18} className=\"text-primary\" />\n              Profit Margin Trend\n            </CardTitle>\n            <CardDescription>Monthly profitability percentage</CardDescription>\n          </CardHeader>\n          <CardContent>\n            <ResponsiveContainer width=\"100%\" height={280}>\n              <AreaChart data={data.marginData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>\n                <defs>\n                  <linearGradient id=\"marginGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n                    <stop offset=\"5%\" stopColor={COLORS.primary} stopOpacity={0.8}/>\n                    <stop offset=\"95%\" stopColor={COLORS.primary} stopOpacity={0.1}/>\n                  </linearGradient>\n                </defs>\n                <CartesianGrid strokeDasharray=\"3 3\" stroke=\"hsl(var(--border))\" opacity={0.5} />\n                <XAxis dataKey=\"month\" tick={{ fontSize: 11 }} stroke=\"hsl(var(--muted-foreground))\" />\n                <YAxis tick={{ fontSize: 11 }} stroke=\"hsl(var(--muted-foreground))\" tickFormatter={(v) => `${v}%`} />\n                <Tooltip formatter={(value) => `${value}%`} />\n                <Area type=\"monotone\" dataKey=\"margin\" name=\"Profit Margin\" stroke={COLORS.primary} fill=\"url(#marginGrad)\" strokeWidth={2} />\n              </AreaChart>\n            </ResponsiveContainer>\n          </CardContent>\n        </Card>\n\n        {/* Expense Distribution Pie Chart */}\n        <Card>\n          <CardHeader>\n            <CardTitle className=\"text-base font-semibold flex items-center gap-2\">\n              <PieChart size={18} className=\"text-primary\" />\n              Expense Distribution\n            </CardTitle>\n            <CardDescription>Breakdown by category</CardDescription>\n          </CardHeader>\n          <CardContent>\n            <ResponsiveContainer width=\"100%\" height={280}>\n              <RePieChart>\n                <Pie\n                  data={data.categoryData}\n                  dataKey=\"value\"\n                  nameKey=\"name\"\n                  cx=\"50%\"\n                  cy=\"50%\"\n                  outerRadius={90}\n                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}\n                  labelLine={{ stroke: COLORS.gray, strokeWidth: 1 }}\n                >\n                  {data.categoryData.map((_, index) => (\n                    <Cell key={`cell-${index}`} fill={[COLORS.primary, COLORS.success, COLORS.info, COLORS.purple, COLORS.orange, COLORS.teal][index % 6]} />\n                  ))}\n                </Pie>\n                <Tooltip formatter={(value) => formatCurrency(value)} />\n              </RePieChart>\n            </ResponsiveContainer>\n          </CardContent>\n        </Card>\n      </div>\n\n      {/* Top Projects Performance */}\n      <Card>\n        <CardHeader>\n          <CardTitle className=\"text-lg font-semibold flex items-center gap-2\">\n            <Award size={20} className=\"text-primary\" />\n            Top Performing Projects\n          </CardTitle>\n          <CardDescription>Revenue, profit margin, and completion progress</CardDescription>\n        </CardHeader>\n        <CardContent>\n          <div className=\"space-y-5\">\n            {data.projectPerformance.slice(0, 6).map((project, idx) => {\n              const percent = data.kpis.totalRevenue > 0 ? (project.revenue / data.kpis.totalRevenue) * 100 : 0;\n              return (\n                <div key={project.name} className=\"group\">\n                  <div className=\"flex justify-between items-center mb-1\">\n                    <div className=\"flex items-center gap-3\">\n                      <span className=\"text-sm font-bold text-primary w-6\">#{idx + 1}</span>\n                      <span className=\"font-medium text-foreground\">{project.name}</span>\n                    </div>\n                    <div className=\"flex gap-4 text-sm\">\n                      <span className=\"text-emerald-600 font-mono\">{formatCurrency(project.revenue)}</span>\n                      <span className={`font-mono ${parseFloat(project.margin) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{project.margin}%</span>\n                    </div>\n                  </div>\n                  <div className=\"flex gap-2 items-center\">\n                    <div className=\"flex-1 bg-muted rounded-full h-2 overflow-hidden\">\n                      <div\n                        className=\"bg-gradient-to-r from-primary to-amber-500 h-2 rounded-full transition-all duration-500 group-hover:opacity-80\"\n                        style={{ width: `${percent}%` }}\n                      />\n                    </div>\n                    <span className=\"text-xs text-muted-foreground w-12 text-right\">{project.progress.toFixed(0)}%</span>\n                  </div>\n                </div>\n              );\n            })}\n          </div>\n        </CardContent>\n      </Card>\n\n      {/* Detailed Projects Table */}\n      <Card>\n        <CardHeader>\n          <CardTitle className=\"text-lg font-semibold\">Projects Performance Matrix</CardTitle>\n          <CardDescription>Complete breakdown of all projects</CardDescription>\n        </CardHeader>\n        <CardContent>\n          <div className=\"overflow-x-auto\">\n            <table className=\"w-full text-sm\">\n              <thead>\n                <tr className=\"border-b-2 border-border bg-muted/30\">\n                  <th className=\"px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider\">Project</th>\n                  <th className=\"px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider\">Revenue</th>\n                  <th className=\"px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider\">Expenses</th>\n                  <th className=\"px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider\">Profit</th>\n                  <th className=\"px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider\">Margin</th>\n                  <th className=\"px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider\">Progress</th>\n                </tr>\n              </thead>\n              <tbody className=\"divide-y divide-border\">\n                {data.projectPerformance.map(p => (\n                  <tr key={p.name} className=\"hover:bg-muted/20 transition-colors\">\n                    <td className=\"px-4 py-3 font-medium\">{p.name}</td>\n                    <td className=\"px-4 py-3 text-right font-mono text-emerald-600\">{formatCurrency(p.revenue)}</td>\n                    <td className=\"px-4 py-3 text-right font-mono text-rose-600\">{formatCurrency(p.expenses)}</td>\n                    <td className={`px-4 py-3 text-right font-mono font-bold ${p.profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{formatCurrency(p.profit)}</td>\n                    <td className={`px-4 py-3 text-right font-mono ${parseFloat(p.margin) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{p.margin}%</td>\n                    <td className=\"px-4 py-3\">\n                      <div className=\"flex items-center gap-2\">\n                        <div className=\"flex-1 bg-muted rounded-full h-2\">\n                          <div className=\"bg-primary h-2 rounded-full transition-all\" style={{ width: `${p.progress}%` }} />\n                        </div>\n                        <span className=\"text-xs font-mono w-10\">{p.progress.toFixed(0)}%</span>\n                      </div>\n                    </td>\n                  </tr>\n                ))}\n              </tbody>\n            </table>\n          </div>\n        </CardContent>\n      </Card>\n\n      {/* Spotlight Cards */}\n      <div className=\"grid grid-cols-1 md:grid-cols-2 gap-5\">\n        {data.kpis.topProject && (\n          <Card className=\"bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-transparent border-amber-500/30\">\n            <CardContent className=\"p-5\">\n              <div className=\"flex items-start gap-4\">\n                <div className=\"text-5xl\">🏆</div>\n                <div>\n                  <p className=\"text-xs text-amber-600 font-semibold uppercase tracking-wider\">Top Revenue Generator</p>\n                  <p className=\"text-xl font-bold text-amber-800 mt-1\">{data.kpis.topProject.name}</p>\n                  <div className=\"flex gap-4 mt-3\">\n                    <div>\n                      <p className=\"text-[10px] text-muted-foreground\">Revenue</p>\n                      <p className=\"text-sm font-bold\">{formatCurrency(data.kpis.topProject.revenue)}</p>\n                    </div>\n                    <div>\n                      <p className=\"text-[10px] text-muted-foreground\">Margin</p>\n                      <p className=\"text-sm font-bold text-emerald-600\">{data.kpis.topProject.margin}%</p>\n                    </div>\n                    <div>\n                      <p className=\"text-[10px] text-muted-foreground\">Progress</p>\n                      <p className=\"text-sm font-bold text-primary\">{data.kpis.topProject.progress.toFixed(0)}%</p>\n                    </div>\n                  </div>\n                </div>\n              </div>\n            </CardContent>\n          </Card>\n        )}\n\n        {data.kpis.bestMarginProject && data.kpis.bestMarginProject.name !== data.kpis.topProject?.name && (\n          <Card className=\"bg-gradient-to-r from-emerald-500/10 via-green-500/5 to-transparent border-emerald-500/30\">\n            <CardContent className=\"p-5\">\n              <div className=\"flex items-start gap-4\">\n                <div className=\"text-5xl\">⭐</div>\n                <div>\n                  <p className=\"text-xs text-emerald-600 font-semibold uppercase tracking-wider\">Highest Margin Project</p>\n                  <p className=\"text-xl font-bold text-emerald-800 mt-1\">{data.kpis.bestMarginProject.name}</p>\n                  <div className=\"flex gap-4 mt-3\">\n                    <div>\n                      <p className=\"text-[10px] text-muted-foreground\">Revenue</p>\n                      <p className=\"text-sm font-bold\">{formatCurrency(data.kpis.bestMarginProject.revenue)}</p>\n                    </div>\n                    <div>\n                      <p className=\"text-[10px] text-muted-foreground\">Margin</p>\n                      <p className=\"text-sm font-bold text-emerald-600\">{data.kpis.bestMarginProject.margin}%</p>\n                    </div>\n                  </div>\n                </div>\n              </div>\n            </CardContent>\n          </Card>\n        )}\n      </div>\n    </div>\n  );\n}\n"}
+import React, { useState, useEffect } from 'react';
+import { useAppStore } from '@/hooks/useAppStore';
+import { formatCurrency } from '@/lib/formatters';
+import { exportToCSV } from '@/lib/export';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DollarSign, TrendingUp, TrendingDown, Target, RefreshCw, Download, Building2, Activity, PieChart } from 'lucide-react';
+
+export function AnalyticsDashboard() {
+  const { selectedProjectId } = useAppStore();
+  const [loading, setLoading] = useState(true);
+  const [filterProject, setFilterProject] = useState('all');
+  const [projects, setProjects] = useState([]);
+  const [data, setData] = useState({
+    monthlyData: [],
+    projectPerformance: [],
+    categoryData: [],
+    totalRevenue: 0,
+    totalExpenses: 0,
+    netProfit: 0,
+    profitMargin: 0,
+    activeProjects: 0,
+    completedProjects: 0,
+    totalProjects: 0,
+  });
+
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        
+        let income = await fetch('https://buildify-backend-kye8.onrender.com/api/income', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }).then(res => res.json());
+        
+        let expenses = await fetch('https://buildify-backend-kye8.onrender.com/api/expenses', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }).then(res => res.json());
+        
+        let projectsData = await fetch('https://buildify-backend-kye8.onrender.com/api/projects', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }).then(res => res.json());
+        
+        if (filterProject !== 'all') {
+          const pid = parseInt(filterProject);
+          income = income.filter((i: any) => i.project_id === pid);
+          expenses = expenses.filter((e: any) => e.project_id === pid);
+          projectsData = projectsData.filter((p: any) => p.id === pid);
+        }
+        
+        const totalRevenue = income.reduce((s: number, i: any) => s + (i.amount_received || i.gross_amount || 0), 0);
+        const totalExpenses = expenses.reduce((s: number, e: any) => s + (e.amount || 0), 0);
+        const netProfit = totalRevenue - totalExpenses;
+        const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+        
+        const monthMap = new Map();
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        [...income, ...expenses].forEach((t: any) => {
+          if (t.date) {
+            const d = new Date(t.date);
+            const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+            if (!monthMap.has(key)) {
+              monthMap.set(key, { month: months[d.getMonth()], year: d.getFullYear() });
+            }
+          }
+        });
+        
+        const sortedMonths = Array.from(monthMap.keys()).sort();
+        const monthlyData = sortedMonths.map(key => {
+          const m = monthMap.get(key);
+          const rev = income.filter((i: any) => new Date(i.date).toISOString().slice(0, 7) === key).reduce((s: number, i: any) => s + (i.amount_received || i.gross_amount || 0), 0);
+          const exp = expenses.filter((e: any) => new Date(e.date).toISOString().slice(0, 7) === key).reduce((s: number, e: any) => s + (e.amount || 0), 0);
+          return { month: `${m.month} ${m.year}`, revenue: rev, expenses: exp };
+        });
+        
+        const projectPerformance = projectsData.map((p: any) => {
+          const rev = income.filter((i: any) => i.project_id === p.id).reduce((s: number, i: any) => s + (i.amount_received || i.gross_amount || 0), 0);
+          const exp = expenses.filter((e: any) => e.project_id === p.id).reduce((s: number, e: any) => s + (e.amount || 0), 0);
+          const profit = rev - exp;
+          const margin = rev > 0 ? (profit / rev) * 100 : 0;
+          const progress = p.contract_sum > 0 ? (rev / p.contract_sum) * 100 : 0;
+          return { name: p.name, revenue: rev, expenses: exp, profit, margin: margin.toFixed(1), progress: Math.min(100, progress) };
+        }).filter((p: any) => p.revenue > 0).sort((a: any, b: any) => b.revenue - a.revenue);
+        
+        const catMap = new Map();
+        expenses.forEach((e: any) => {
+          const cat = e.category || 'Other';
+          catMap.set(cat, (catMap.get(cat) || 0) + (e.amount || 0));
+        });
+        const categoryData = Array.from(catMap.entries()).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+        
+        const activeProjects = projectsData.filter((p: any) => p.status === 'Active').length;
+        const completedProjects = projectsData.filter((p: any) => p.status === 'Completed').length;
+        
+        setProjects(projectsData.filter((p: any) => p.status === 'Active'));
+        setData({
+          monthlyData,
+          projectPerformance,
+          categoryData,
+          totalRevenue,
+          totalExpenses,
+          netProfit,
+          profitMargin,
+          activeProjects,
+          completedProjects,
+          totalProjects: projectsData.length,
+        });
+        setLoading(false);
+      } catch (err) {
+        console.error('Error loading analytics:', err);
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [filterProject, selectedProjectId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <RefreshCw size={32} className="animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const maxRevenue = Math.max(...data.monthlyData.map(m => m.revenue), 1);
+  const categoryTotal = data.categoryData.reduce((sum, c) => sum + c.value, 0);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-wrap justify-between items-center gap-4">
+        <div>
+          <h2 className="text-xl font-bold">Executive Dashboard</h2>
+          <p className="text-sm text-muted-foreground">Key metrics and performance insights</p>
+        </div>
+        <div className="flex gap-2">
+          <select
+            className="px-3 py-1.5 text-sm border rounded-md"
+            value={filterProject}
+            onChange={(e) => setFilterProject(e.target.value)}
+          >
+            <option value="all">All Projects</option>
+            {projects.map((p: any) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          <Button variant="outline" size="sm" onClick={() => exportToCSV(data.projectPerformance, 'dashboard')}>
+            <Download size={14} className="mr-1" /> Export
+          </Button>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-xs text-muted-foreground">Total Revenue</p>
+                <p className="text-2xl font-bold text-green-600">{formatCurrency(data.totalRevenue)}</p>
+              </div>
+              <DollarSign className="text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-xs text-muted-foreground">Total Expenses</p>
+                <p className="text-2xl font-bold text-red-600">{formatCurrency(data.totalExpenses)}</p>
+              </div>
+              <TrendingDown className="text-red-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-xs text-muted-foreground">Net Profit</p>
+                <p className={`text-2xl font-bold ${data.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatCurrency(Math.abs(data.netProfit))}
+                </p>
+              </div>
+              <TrendingUp className={data.netProfit >= 0 ? 'text-green-500' : 'text-red-500'} />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-xs text-muted-foreground">Profit Margin</p>
+                <p className="text-2xl font-bold text-purple-600">{data.profitMargin.toFixed(1)}%</p>
+              </div>
+              <Target className="text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Second Row KPIs */}
+      <div className="grid grid-cols-3 gap-4">
+        <Card className="bg-blue-50">
+          <CardContent className="p-3 text-center">
+            <p className="text-xs text-blue-600">Active Projects</p>
+            <p className="text-2xl font-bold text-blue-700">{data.activeProjects}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-green-50">
+          <CardContent className="p-3 text-center">
+            <p className="text-xs text-green-600">Completed</p>
+            <p className="text-2xl font-bold text-green-700">{data.completedProjects}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-purple-50">
+          <CardContent className="p-3 text-center">
+            <p className="text-xs text-purple-600">Total Projects</p>
+            <p className="text-2xl font-bold text-purple-700">{data.totalProjects}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Revenue vs Expenses Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Revenue vs Expenses</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {data.monthlyData.map((item, idx) => {
+              const revPercent = (item.revenue / maxRevenue) * 100;
+              const expPercent = (item.expenses / maxRevenue) * 100;
+              return (
+                <div key={idx} className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="font-medium">{item.month}</span>
+                    <div className="flex gap-3">
+                      <span className="text-green-600">{formatCurrency(item.revenue)}</span>
+                      <span className="text-red-600">{formatCurrency(item.expenses)}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    <div className="flex-1 bg-green-100 rounded-full h-6 overflow-hidden">
+                      <div className="bg-green-500 h-full rounded-full text-[10px] text-white text-right px-2" style={{ width: `${revPercent}%` }}>
+                        {revPercent > 15 && `${(item.revenue / 1000).toFixed(0)}k`}
+                      </div>
+                    </div>
+                    <div className="flex-1 bg-red-100 rounded-full h-6 overflow-hidden">
+                      <div className="bg-red-500 h-full rounded-full text-[10px] text-white text-right px-2" style={{ width: `${expPercent}%` }}>
+                        {expPercent > 15 && `${(item.expenses / 1000).toFixed(0)}k`}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Expense Categories */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <PieChart size={16} /> Expense Categories
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {data.categoryData.slice(0, 6).map((cat, idx) => {
+              const percent = (cat.value / categoryTotal) * 100;
+              return (
+                <div key={cat.name}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span>{cat.name}</span>
+                    <span className="font-mono">{formatCurrency(cat.value)} ({percent.toFixed(0)}%)</span>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div className="bg-primary h-2 rounded-full" style={{ width: `${percent}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Top Projects */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Building2 size={16} /> Top Performing Projects
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {data.projectPerformance.slice(0, 5).map((project, idx) => (
+              <div key={project.name}>
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium">{idx + 1}. {project.name}</span>
+                  <span className="text-green-600 font-mono">{formatCurrency(project.revenue)}</span>
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground mt-0.5">
+                  <span>Profit: {formatCurrency(project.profit)}</span>
+                  <span>Margin: {project.margin}%</span>
+                  <span>Progress: {project.progress.toFixed(0)}%</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-1.5 mt-1">
+                  <div className="bg-primary h-1.5 rounded-full" style={{ width: `${project.progress}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
