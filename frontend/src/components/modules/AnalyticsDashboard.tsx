@@ -1,3 +1,4 @@
+console.log('🚀 AnalyticsDashboard v2.0 - Loaded at', new Date().toLocaleTimeString());
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '@/hooks/useAppStore';
 import { formatCurrency } from '@/lib/formatters';
