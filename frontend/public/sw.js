@@ -31,12 +31,17 @@ self.addEventListener('activate', (event) => {
   return self.clients.claim();
 });
 
-// Fetch strategy: Network first, fallback to cache
+// Fetch strategy: Network first, fallback to cache (ONLY FOR GET REQUESTS)
 self.addEventListener('fetch', (event) => {
+  // IMPORTANT: Only handle GET requests. Skip POST, PUT, DELETE, etc.
+  if (event.request.method !== 'GET') {
+    return;
+  }
+  
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Cache successful responses
+        // Cache successful GET responses
         if (response.status === 200) {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
