@@ -5,7 +5,9 @@ import { formatCurrency, calculateVAT, calculateRetention } from '@/lib/formatte
 import { exportToCSV } from '@/lib/export';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { BarChart3, DollarSign, FileSpreadsheet, Receipt, Users, ShoppingCart, Warehouse, TrendingUp, PieChart, Hammer, Truck, BookOpen, Clipboard } from 'lucide-react';
+import { BarChart3, DollarSign, FileSpreadsheet, Receipt, Users, ShoppingCart, Warehouse, TrendingUp, PieChart, Hammer, Truck, BookOpen, Clipboard } from 'lucide-
+react';
+import { AnalyticsDashboard } from './AnalyticsDashboard';
 
 interface ReportCard {
   id: string;

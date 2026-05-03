@@ -101,10 +101,6 @@ export function UsersModule() {
 
 
 
-
-
-
-
 const openEdit = (u: AppUser) => {
   // Ensure permissions is an array (safety check)
   let permissions = u.permissions;
@@ -171,18 +167,36 @@ const openEdit = (u: AppUser) => {
           permissions: parsePermissions(updated.permissions)
         };
         setUsers(users.map(u => u.id === parsedUpdated.id ? parsedUpdated : u));
-        
-        // If updating current user, also update authUser in store
-        if (editing.id === authUser?.id) {
-          // This will trigger sidebar to re-render with new permissions
-          const { setAuthUser } = useAppStore.getState();
-          setAuthUser({
-            ...authUser,
-            name: form.name,
-            role: form.role,
-            permissions: form.permissions
-          });
-        }
+
+
+
+
+
+// If updating current user, also update authUser in store AND localStorage
+if (editing.id === authUser?.id) {
+  const { setAuthUser } = useAppStore.getState();
+  const updatedAuthUser = {
+    ...authUser,
+    name: form.name,
+    role: form.role,
+    permissions: form.permissions,
+    isSuperAdmin: authUser.isSuperAdmin || false
+  };
+  setAuthUser(updatedAuthUser);
+  // IMPORTANT: Also update localStorage so it persists after page refresh
+  localStorage.setItem('authUser', JSON.stringify(updatedAuthUser));
+  console.log('✅ Updated current user permissions in localStorage');
+}
+
+
+
+
+
+
+
+
+
+
       } else {
         // Create new user
         const newUser = await api.createUser({
