@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import { 
   HelpCircle, BookOpen, MessageSquare, Mail, Phone, FileText, CheckCircle, 
   Heart, Star, Award, Users, Calendar, Clock, Download, Video, 
@@ -16,104 +17,117 @@ import {
   Receipt, ShoppingCart, HardHat, LayoutDashboard, AlertTriangle, ListChecks,
   Building2, CreditCard, FileWarning, Lightbulb, Rocket, ThumbsUp, 
   ChevronRight, ExternalLink, LifeBuoy, FileQuestion, BookMarked,
-  Timer, Layers, Workflow, GraduationCap, Briefcase, CheckSquare
+  Timer, Layers, Workflow, GraduationCap, Briefcase, CheckSquare,
+  Cloud, Server, Zap, Target, Compass, Flag, GitBranch, Layers3,
+  Workflow as WorkflowIcon, Users as UsersIcon, Package, TrendingUp as TrendingIcon
 } from 'lucide-react';
+
+interface FAQItem {
+  category: string;
+  question: string;
+  answer: string;
+  priority?: 'high' | 'medium' | 'low';
+}
 
 export function HelpModule() {
   const { companySettings } = useAppStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [helpfulFeedback, setHelpfulFeedback] = useState<Record<string, boolean>>({});
 
-  const faqs = [
-    // ========== GETTING STARTED (10 FAQs) ==========
-    { category: "Getting Started", question: "What is the correct order to set up my data?", answer: "To avoid errors and ensure all dropdowns populate correctly, follow this exact order: 1) Subcontractors → 2) Suppliers → 3) Approved Items → 4) Worker Categories → 5) Workers → 6) Projects. Setup in this order before creating any transactions like payments, purchase orders, or payroll.", priority: "high" },
-    { category: "Getting Started", question: "Why do I need to set up Subcontractors first?", answer: "Subcontractors must be registered before you can create quotations or make subcontractor payments. The system needs their details (name, KRA PIN, contact info) to associate with financial transactions.", priority: "high" },
-    { category: "Getting Started", question: "Why do Suppliers need to be set up before Purchase Orders?", answer: "Suppliers must be in the system before creating purchase orders. When you create a purchase order, you need to select a supplier from the dropdown - empty dropdowns mean no suppliers are registered.", priority: "high" },
-    { category: "Getting Started", question: "What are Approved Items and why set them up early?", answer: "Approved Items are the materials and products you buy regularly (cement, sand, steel, etc.). They must be pre-approved before they can be added to supplies or purchase orders. Each item has a name, category, unit of measure, and default price.", priority: "high" },
-    { category: "Getting Started", question: "Why set up Worker Categories before Workers?", answer: "Worker Categories define job roles (Mason, Labourer, Foreman) and their daily pay rates. Workers must be assigned to a category when created, so categories must exist first.", priority: "high" },
-    { category: "Getting Started", question: "When should I create Projects?", answer: "Create Projects after setting up all foundational data (subcontractors, suppliers, items, categories, workers). Projects are needed for income, expenses, payroll, site diary, and procurement. While you can create projects anytime, having foundational data ready first is more efficient.", priority: "high" },
-    { category: "Getting Started", question: "How do I create my first project?", answer: "Go to Projects module, click 'Add Project', fill in the project name, client details, contract sum, and dates. Click 'Create' to save. The project will appear on your dashboard and be available for all other modules.", priority: "medium" },
-    { category: "Getting Started", question: "How do I set up worker categories?", answer: "In Payroll module, go to 'Categories' tab, click 'Add Category'. Enter category name (e.g., Foreman, Mason, Labourer), set day rate, and choose a color for easy identification. Categories help organize workers by role and pay rate.", priority: "medium" },
-    { category: "Getting Started", question: "How do I add workers to a project?", answer: "Go to Payroll → Workers tab, click 'Add Worker'. Enter worker name, phone number, select category, assign to a project, and confirm day rate. Workers must be assigned to projects before they can be included in payroll.", priority: "medium" },
-    { category: "Getting Started", question: "What is the fastest way to get started with BOCHI?", answer: "1) Load sample data from Settings → Load Sample Data, 2) Replace sample data with your own information, 3) Follow the setup order above. The sample data includes 66+ records to help you understand how everything works.", priority: "high" },
+  // ========== COMPLETE FAQ DATABASE (50+ FAQs) ==========
+  const faqs: FAQItem[] = [
+    // CRITICAL SETUP ORDER (High Priority)
+    { category: "⭐ CRITICAL - Setup Order", question: "What is the CORRECT order to set up my data to avoid empty dropdowns?", answer: "⚠️ THIS IS THE MOST IMPORTANT THING TO KNOW! Follow this exact order to avoid empty dropdowns: 1️⃣ Subcontractors → 2️⃣ Suppliers → 3️⃣ Approved Items → 4️⃣ Worker Categories → 5️⃣ Workers → 6️⃣ Projects. Each step depends on the previous one. If you skip a step, dropdowns will be empty! Example: You can't create a Purchase Order without Suppliers. You can't add Workers without Categories. You can't record Project Income without Projects.", priority: "high" },
+    { category: "⭐ CRITICAL - Setup Order", question: "Why are my dropdown menus empty when I try to create a purchase order?", answer: "This happens when you haven't set up Suppliers first! Purchase orders need to select a supplier from a dropdown. Solution: Go to Procurement → Suppliers tab → Add your suppliers first. Then create purchase orders. The same applies to: Quotations need Subcontractors first, Supplies need Approved Items first, Payroll needs Worker Categories and Workers first.", priority: "high" },
+    { category: "⭐ CRITICAL - Setup Order", question: "Why can't I see any workers when processing payroll?", answer: "You need to set up in this order: 1) Worker Categories (define job roles and day rates), 2) Workers (add workers and assign them to categories and projects). Only then will workers appear in payroll. Also ensure workers are assigned to the correct project.", priority: "high" },
+    { category: "⭐ CRITICAL - Setup Order", question: "Why is my project not showing in dropdowns?", answer: "Projects must be created AND have 'Active' status to appear in dropdown menus. Go to Projects module → Check if your project exists and status is 'Active'. If not, edit the project and set status to 'Active'.", priority: "high" },
+    { category: "⭐ CRITICAL - Setup Order", question: "What is the 6-step setup sequence I must follow?", answer: "📋 THE 6-STEP SEQUENCE: Step 1 - SUBCONTRACTORS (before quotations/payments), Step 2 - SUPPLIERS (before purchase orders), Step 3 - APPROVED ITEMS (before supplies), Step 4 - WORKER CATEGORIES (before workers/payroll), Step 5 - WORKERS (before payroll/site diary), Step 6 - PROJECTS (before income/expenses). Complete all 6 steps before creating any financial transactions!", priority: "high" },
 
-    // ========== SAMPLE DATA (2 FAQs) ==========
-    { category: "Sample Data", question: "How do I load sample data?", answer: "Go to Settings module and click 'Load Sample Data'. This will populate all modules with 66+ demonstration records including projects, subcontractors, quotations, expenses, income, purchase orders, store transactions, site diary entries, invoices, suppliers, approved items, and workers.", priority: "medium" },
-    { category: "Sample Data", question: "Will loading sample data delete my existing data?", answer: "Yes, loading sample data will REPLACE all your existing data with sample data. Make sure to backup your data first by clicking 'Backup Data' in Settings if you want to keep your current information.", priority: "high" },
+    // Getting Started
+    { category: "Getting Started", question: "How do I create my first project?", answer: "Go to Projects module, click 'Add Project', fill in the project name, client details, contract sum, start date, end date, and project manager. Click 'Create' to save. Note: Complete steps 1-5 (Subcontractors, Suppliers, Approved Items, Worker Categories, Workers) BEFORE creating projects for best results.", priority: "medium" },
+    { category: "Getting Started", question: "How do I set up worker categories?", answer: "In Payroll module, go to 'Categories' tab, click 'Add Category'. Enter category name (e.g., Foreman, Mason, Labourer, Electrician, Plumber), set day rate (e.g., Foreman = 800 KES/day, Labourer = 400 KES/day), and choose a color for easy identification. Categories help organize workers by role and pay rate. This is STEP 4 of the setup sequence.", priority: "medium" },
+    { category: "Getting Started", question: "How do I add workers to a project?", answer: "Go to Payroll → Workers tab, click 'Add Worker'. Enter worker name, phone number, select a category (must exist first - STEP 4), assign to a project, and confirm day rate (auto-populates from category). Workers must be assigned to projects before they can be included in payroll. This is STEP 5 of the setup sequence.", priority: "medium" },
+    { category: "Getting Started", question: "What is the fastest way to get started with BOCHI?", answer: "⚡ QUICK START (30 minutes): 1) Load sample data from Settings → Load Sample Data (instant setup!), 2) Explore all modules to see how data connects, 3) Replace sample data with your own information using the Edit functions, 4) Follow the 6-step setup sequence. The sample data includes 66+ records across all modules.", priority: "high" },
 
-    // ========== REPORTS (9 FAQs) ==========
-    { category: "Reports", question: "What reports are available?", answer: "The Reports module includes 12 comprehensive reports: Profit & Loss, Project Summary, Cash Flow, Expenses by Category, VAT Summary, Payroll Summary, Orders Report, Stores Ledger, Subcontractors Ledger, Suppliers Ledger, Income Ledger, and Site Diary Report. All reports support project filtering, date range selection, search functionality, and CSV export.", priority: "high" },
-    { category: "Reports", question: "How do I filter reports by project?", answer: "Each report has a 'Filter by Project' dropdown at the top. You can also use the global project filter in the top-right corner of the app. The global filter applies to all modules, while report-specific filters give you more granular control.", priority: "medium" },
-    { category: "Reports", question: "Can I filter reports by date range?", answer: "Yes! Most reports (Profit & Loss, Cash Flow, Expenses by Category, VAT, Payroll, Orders, Stores, Suppliers, Subcontractors) include date range filters. Simply select Start Date and End Date, and click 'Clear Dates' to reset. The data updates automatically.", priority: "medium" },
-    { category: "Reports", question: "How do I search within a report?", answer: "Reports with search functionality include a search box (🔍) at the top. Type to search by project name, supplier name, order number, certificate number, or other relevant fields. Results update in real-time as you type.", priority: "low" },
-    { category: "Reports", question: "What is the Profit & Loss report showing?", answer: "The Profit & Loss report shows total income, total expenses, net profit/loss, profit margin, and a breakdown by project. It helps you understand your overall financial performance across all projects or a specific project.", priority: "high" },
-    { category: "Reports", question: "What is the Project Summary report?", answer: "The Project Summary report shows all projects with contract values, income received, expenses incurred, profit/loss, progress percentage, and status. It's perfect for tracking project performance at a glance.", priority: "high" },
-    { category: "Reports", question: "What is the Subcontractors Ledger?", answer: "The Subcontractors Ledger shows contracted amounts (from quotations), paid amounts (from expenses), and outstanding balances for each subcontractor. It helps you track payments to subcontractors.", priority: "medium" },
-    { category: "Reports", question: "What is the Stores Ledger report?", answer: "The Stores Ledger shows inventory levels for each item, including quantities supplied, issued, returned, and current balance. It helps you monitor stock levels and identify low-stock items highlighted in red.", priority: "medium" },
-    { category: "Reports", question: "Can I export reports to Excel?", answer: "Yes! Every report includes an 'Export CSV' button that downloads your filtered data as a CSV file. You can open CSV files in Excel, Google Sheets, or any spreadsheet software for further analysis.", priority: "low" },
+    // Subcontractors
+    { category: "Subcontractors", question: "How do I manage subcontractors and payments?", answer: "The Subcontractors module has three tabs: 📋 Subcontractors List (manage contact info, KRA PIN, specialization), 📄 Quotations (create and track subcontractor quotes), 💰 Payments & Balances (view contracted amounts, paid amounts, and outstanding balances). Contracted amount = sum of all quotations. Paid amount = expenses with category 'Subcontractor' and status 'Paid'. Balance = Contracted - Paid. This is STEP 1 of setup!", priority: "high" },
+    { category: "Subcontractors", question: "How do I create a quotation for a subcontractor?", answer: "Go to Subcontractors → Quotations tab, click 'Add Quotation'. Select subcontractor (must exist first), select project, enter description of work, amount, and date. Quotations can be marked as Pending, Accepted, or Rejected. ACCEPTED quotations contribute to the subcontractor's contracted amount. This affects their balance in Payments & Balances tab.", priority: "medium" },
+    { category: "Subcontractors", question: "How do I record a payment to a subcontractor?", answer: "Go to Expenses module, click 'Add Expense'. Select category 'Subcontractor', choose the subcontractor from the dropdown (must exist first - STEP 1), enter amount, payment method (Bank Transfer, Cheque, Cash, M-Pesa, etc.), and status 'Paid'. The payment will automatically appear in the Subcontractor's Payments & Balances tab, reducing their outstanding balance.", priority: "medium" },
 
-    // ========== SUBCONTRACTORS (3 FAQs) ==========
-    { category: "Subcontractors", question: "How do I manage subcontractors and payments?", answer: "The Subcontractors module has three tabs: Subcontractors List (manage contact info), Quotations (create and track quotes), and Payments & Balances (view contracted amounts, paid amounts, and outstanding balances). Contracted amount is the sum of all quotations. Paid amount comes from expenses with category 'Subcontractor' and status 'Paid'.", priority: "high" },
-    { category: "Subcontractors", question: "How do I create a quotation for a subcontractor?", answer: "Go to Subcontractors → Quotations tab, click 'Add Quotation'. Select subcontractor, project, enter description, amount, and date. Quotations can be marked as Pending, Accepted, or Rejected. Accepted quotations contribute to the subcontractor's contracted amount.", priority: "medium" },
-    { category: "Subcontractors", question: "How do I record a payment to a subcontractor?", answer: "Go to Expenses module, click 'Add Expense'. Select category 'Subcontractor', choose the subcontractor from the dropdown (if available), enter amount, payment method, and status 'Paid'. The payment will automatically appear in the Subcontractor's Payments & Balances tab.", priority: "medium" },
+    // Suppliers & Procurement
+    { category: "Suppliers & Procurement", question: "How do I register suppliers?", answer: "Go to Procurement → Suppliers tab, click 'Add Supplier'. Enter supplier name, KRA PIN, phone, email, address, contact person, and payment terms (e.g., 30 days, 60 days, Cash on Delivery). Suppliers MUST be registered before creating purchase orders. This is STEP 2 of the setup sequence!", priority: "high" },
+    { category: "Suppliers & Procurement", question: "How do I create a purchase order?", answer: "Go to Procurement → Purchase Orders, click 'New Order'. Select supplier (must exist first - STEP 2), choose project (must exist first - STEP 6), add items from approved items list (must exist first - STEP 3) with quantities. The system automatically calculates subtotal, VAT (16% as per KRA), and total. Track order status: Ordered → Supplied → Paid.", priority: "high" },
+    { category: "Suppliers & Procurement", question: "What happens when I mark an order as supplied?", answer: "🔄 AUTOMATION! When you click 'Mark Supplied', the system automatically: 1) Creates a supply record, 2) Updates store inventory with received items, 3) Creates a store transaction for audit trail, 4) Updates order status to 'Supplied'. This ensures inventory accuracy without manual data entry!", priority: "high" },
+    { category: "Suppliers & Procurement", question: "How do I mark a purchase order as paid?", answer: "After an order is marked as 'Supplied', a 'Mark Paid' button appears. Click it to record payment. This creates an expense record for accounting purposes, updates payment status to 'Paid', and reflects in financial reports. Only supplied orders can be marked as paid.", priority: "medium" },
 
-    // ========== SITE DIARY (4 FAQs) ==========
-    { category: "Site Diary", question: "How do I use the Site Diary?", answer: "Go to Site Diary module to record daily site activities. Enter date, project, weather conditions, total workers, activities performed, equipment used, materials consumed, challenges faced, and next day's plan. The Site Diary Report in the Reports module provides a summary view with filtering by project and date range.", priority: "high" },
-    { category: "Site Diary", question: "What should I include in a site diary entry?", answer: "Include: date, project name, weather conditions (morning/afternoon), total number of workers on site, activities performed (with times and supervisors), equipment used, materials delivered/consumed, any incidents or challenges, and the plan for tomorrow.", priority: "high" },
-    { category: "Site Diary", question: "Can I edit a site diary entry after submission?", answer: "Yes, you can edit any site diary entry. Go to the Site Diary module, find the entry you want to edit, and click the edit button (pencil icon). Make your changes and save. The entry's status will be updated accordingly.", priority: "low" },
-    { category: "Site Diary", question: "How do I track site workers in the diary?", answer: "In the Site Diary module, you can add workers to the 'Site Workers' section. Each worker entry includes name, role, and hours worked. The total workers count automatically updates based on the workers you add.", priority: "medium" },
+    // Approved Items
+    { category: "Approved Items", question: "What are Approved Items and why set them up early?", answer: "Approved Items are the materials and products you buy regularly (cement, sand, steel, timber, pipes, electrical cables, paint, etc.). They must be PRE-APPROVED before they can be added to supplies or purchase orders. Each item has: name, category (Building Material, Electrical, Plumbing, etc.), unit of measure (bag, tonne, piece, meter, roll), and default price. This is STEP 3 of setup!", priority: "high" },
+    { category: "Approved Items", question: "How do I add approved items?", answer: "Go to Procurement → Approved Items tab, click 'Add Item'. Enter: item name (e.g., 'Bamburi Cement Nguvu'), category (e.g., 'Building Material'), unit (bag/tonne/piece/meter/roll), default price (KES), and description. Once added, items appear in dropdowns when creating purchase orders and supplies. Set up your most commonly used items first.", priority: "medium" },
+    { category: "Approved Items", question: "Can I edit or delete approved items?", answer: "Yes! Click the edit (pencil) icon to modify an item's name, price, or category. Click delete (trash) icon to remove. Note: Deleting an item used in existing purchase orders or supplies may affect historical records. Consider marking inactive instead of deleting.", priority: "low" },
 
-    // ========== PROCUREMENT (4 FAQs) ==========
-    { category: "Procurement", question: "How do I create a purchase order?", answer: "Go to Procurement → Purchase Orders, click 'New Order'. Select supplier, choose project, add items from approved items list with quantities. The system automatically calculates subtotal, VAT (16%), and total. Once created, you can track order status from Ordered → Supplied → Paid.", priority: "high" },
-    { category: "Procurement", question: "What happens when I mark an order as supplied?", answer: "When you click 'Mark Supplied', the system automatically: 1) Creates a supply record, 2) Updates store inventory with the received items, 3) Creates a store transaction for audit trail, and 4) Updates the order status to 'Supplied'. This automation ensures inventory accuracy.", priority: "high" },
-    { category: "Procurement", question: "How do I mark a purchase order as paid?", answer: "After an order is marked as 'Supplied', a 'Mark Paid' button appears. Click it to record payment. This creates an expense record for accounting purposes and updates the payment status to 'Paid'.", priority: "medium" },
-    { category: "Procurement", question: "Can I edit a purchase order after it's created?", answer: "Only orders with status 'Ordered' can be edited. Once an order is marked as 'Supplied', it becomes locked to prevent changes. This ensures inventory and transaction records remain accurate.", priority: "low" },
+    // Stores & Inventory
+    { category: "Stores & Inventory", question: "How do I manage store inventory?", answer: "In Stores module, view stock balances showing: 📦 Supplied (received from purchase orders), 📤 Issued (given to workers/teams), ↩️ Returned (unused materials returned), 📊 Current Balance (Supplied - Issued + Returned). Use 'Issue' to assign materials (requires requisition number), and 'Return' for unused materials. Low stock items (≤10 units) are highlighted in RED for attention.", priority: "high" },
+    { category: "Stores & Inventory", question: "How do I issue materials to a worker?", answer: "In Stores module → Issues tab, click 'New Issue'. Select project, item (from store inventory), quantity, and enter requisition number (from site supervisor). The issue is recorded, and store balance automatically decreases. Issues are tracked by worker/team for accountability and cost allocation to projects.", priority: "medium" },
+    { category: "Stores & Inventory", question: "Why is my store balance showing negative?", answer: "⚠️ Negative balance = more items issued than supplied! Common causes: 1) Issue entered before supply was recorded, 2) Incorrect quantity entered in issue, 3) Supply forgotten. Solution: Create a 'Return' transaction to correct the balance, or verify all supplies are recorded. Contact support if issue persists.", priority: "high" },
+    { category: "Stores & Inventory", question: "How do I know when to reorder materials?", answer: "The Stores Ledger report shows current balances. Items with balance ≤10 units are highlighted in RED. Set reorder points based on your usage. For critical items, reorder when balance drops below 2 weeks of consumption. Export the Stores Ledger to CSV for analysis.", priority: "medium" },
 
-    // ========== STORES (4 FAQs) ==========
-    { category: "Stores", question: "How do I manage store inventory?", answer: "In Stores module, view stock balances showing total supplied, issued, returned, and current balance. Use 'Issue' to assign materials to workers/teams (requires requisition number), and 'Return' to return unused materials. Low stock items (≤10 units) are highlighted in red for attention.", priority: "high" },
-    { category: "Stores", question: "How do I issue materials to a worker?", answer: "In Stores module → Issues tab, click 'New Issue'. Select project, item, quantity, and enter requisition number. The issue will be recorded, and the store balance will automatically decrease.", priority: "medium" },
-    { category: "Stores", question: "How do I record returned materials?", answer: "In Stores module → Returns tab, click 'New Return'. Select project, item, quantity, and the worker returning the materials. The return will be recorded, and the store balance will automatically increase.", priority: "medium" },
-    { category: "Stores", question: "Why is my store balance showing negative?", answer: "Negative balance indicates more items were issued than supplied. Check your store transactions for incorrect issue entries. You can create a return transaction to correct the balance.", priority: "high" },
+    // Payroll
+    { category: "Payroll", question: "How do I process weekly payroll?", answer: "Step-by-step: 1) Navigate to Payroll → Payroll tab, 2) Select project (must have workers assigned), 3) Choose week (use arrow buttons), 4) Mark attendance by checking boxes for days worked (M-Sat), 5) System calculates days worked and gross pay (day rate × days), 6) Save as DRAFT, 7) Review, then APPROVE, 8) Finally MARK AS PAID (creates expense record).", priority: "high" },
+    { category: "Payroll", question: "How are worker day rates determined?", answer: "Worker day rates come from their CATEGORY! Go to Payroll → Categories tab to set day rates: Foreman (800-1000 KES), Mason (600-800 KES), Labourer (400-500 KES), Electrician (700-900 KES), Plumber (700-900 KES). When you add a worker and select a category, they inherit that category's day rate automatically.", priority: "high" },
+    { category: "Payroll", question: "What happens when I approve a payroll?", answer: "APPROVING a payroll: 1) Locks the payroll record (prevents edits), 2) Marks it as ready for payment processing, 3) Updates the status to 'Approved'. You can still UNAPPROVE if needed (click 'Unapprove' button), but approved payrolls cannot be edited for data integrity.", priority: "medium" },
+    { category: "Payroll", question: "How do I mark payroll as paid?", answer: "After approving a payroll, click 'Mark as Paid'. This automatically: 1) Creates an expense record for total gross pay, 2) Sets expense category to 'Payroll', 3) Updates payroll status to 'Paid'. The expense appears in financial reports and affects project profitability.", priority: "medium" },
+    { category: "Payroll", question: "Can I edit a payroll after it's saved?", answer: "YES for Draft status (edit anytime). NO for Approved or Paid status (locked to maintain accurate records). If needed, click 'Unapprove' first, make changes, then re-approve. For paid payrolls, you cannot edit - create an adjustment entry instead.", priority: "low" },
 
-    // ========== PAYROLL (5 FAQs) ==========
-    { category: "Payroll", question: "How do I process weekly payroll?", answer: "Navigate to Payroll → Payroll tab. Select the project, choose the week (use arrow buttons to navigate weeks). Mark attendance for each worker by checking the boxes for days worked. The system automatically calculates days worked and gross pay. Save as Draft, then Approve, and finally Mark as Paid. Paid payroll automatically creates an expense record.", priority: "high" },
-    { category: "Payroll", question: "How are worker day rates set?", answer: "Worker day rates are determined by their category. Go to Payroll → Categories tab to set or edit day rates for each worker category (Mason, Labourer, Foreman, etc.). When you add a worker, they inherit the day rate from their selected category.", priority: "medium" },
-    { category: "Payroll", question: "What happens when I approve a payroll?", answer: "Approving a payroll locks the payroll record to prevent further changes. It also marks the payroll as ready for payment processing. You can still unapprove if needed, but approved payrolls cannot be edited.", priority: "low" },
-    { category: "Payroll", question: "How do I mark payroll as paid?", answer: "After approving a payroll, click 'Mark as Paid'. This creates an expense record for the total gross pay amount, with category 'Payroll' and status 'Paid'. The payroll record status updates to 'Paid'.", priority: "medium" },
-    { category: "Payroll", question: "Can I edit a payroll after it's saved?", answer: "You can edit payroll records that are in 'Draft' status. Once approved or paid, the record becomes locked to maintain accurate financial records. Unapprove if you need to make changes.", priority: "low" },
+    // Site Diary
+    { category: "Site Diary", question: "How do I use the Site Diary?", answer: "Go to Site Diary module to record daily site activities. Enter: 📅 Date, 🏗️ Project, ☀️ Weather conditions (morning/afternoon/evening), 👷 Total workers on site, 📝 Activities performed (with times and supervisors), 🚜 Equipment used, 📦 Materials consumed, ⚠️ Challenges faced, 📋 Next day's plan. The Site Diary Report provides a summary with filtering by project and date range.", priority: "high" },
+    { category: "Site Diary", question: "What should I include in a site diary entry?", answer: "📋 COMPLETE SITE DIARY ENTRY: 1) Date and project name, 2) Weather (morning/afternoon), 3) Total workers (breakdown by role optional), 4) Activities (time, location, description, supervisor), 5) Equipment used (type, hours), 6) Materials delivered/consumed, 7) Incidents or accidents, 8) Challenges faced, 9) Visitors or meetings, 10) Plan for tomorrow. Daily entries improve project tracking.", priority: "high" },
+    { category: "Site Diary", question: "How do I track site workers in the diary?", answer: "In the Site Diary module, use the 'Site Workers' section. Each worker entry includes: Name, Role (category), Hours worked. Add workers individually. The 'Total Workers' count automatically updates based on workers you add. This provides detailed labor tracking beyond just headcount.", priority: "medium" },
+    { category: "Site Diary", question: "Can I edit a site diary entry after submission?", answer: "Yes! Edit any entry - find it in the list, click the edit (pencil) icon. Make changes and save. The entry's status updates accordingly. No lock on site diary entries - edit anytime to keep records accurate.", priority: "low" },
 
-    // ========== FINANCE (6 FAQs) ==========
-    { category: "Finance", question: "How do I record income from payment certificates?", answer: "In Income module, click 'Add Income'. Select the project, enter certificate number, gross amount, retention percentage (typically 5-10%), and amount received. The system tracks payment progress and automatically updates project completion percentage based on total contract sum.", priority: "high" },
-    { category: "Finance", question: "How do I track expenses?", answer: "In Expenses module, click 'Add Expense'. Select category (Subcontractor, Supplier, Payroll, Equipment, Transport, or Other), enter description and amount. VAT is automatically calculated at 16% as per Kenyan tax regulations. You can also record payment method and reference number for audit trails.", priority: "high" },
-    { category: "Finance", question: "What expense categories are available?", answer: "The available expense categories are: Subcontractor, Supplier, Payroll, Equipment, Transport, and Other. You can filter reports by these categories to see where your money is going.", priority: "low" },
-    { category: "Finance", question: "How is retention money calculated?", answer: "Retention money is typically 5-10% of the certificate gross amount. In the Income module, enter the retention percentage, and the system automatically calculates the retention amount and net payable amount. Retention is released upon project completion.", priority: "medium" },
-    { category: "Finance", question: "What is the difference between 'Amount Received' and 'Gross Amount'?", answer: "Gross Amount is the total value of the certificate before deductions. Amount Received is what you actually received after deductions (retention, withholding tax, etc.). The system tracks both for accurate financial reporting.", priority: "medium" },
-    { category: "Finance", question: "How do I view my company's financial health?", answer: "Use the Reports module. Start with Profit & Loss for overall performance, Cash Flow for liquidity, and VAT Summary for tax obligations. The Executive Dashboard provides a high-level overview of key metrics.", priority: "high" },
+    // Financial Management
+    { category: "Financial Management", question: "How do I record income from payment certificates?", answer: "In Income module, click 'Add Income'. Select project, enter: certificate number, gross amount, retention percentage (typically 5-10%), and amount received. The system calculates retention amount and net payable automatically. Tracks payment progress and updates project completion percentage based on contract sum.", priority: "high" },
+    { category: "Financial Management", question: "How do I track expenses?", answer: "In Expenses module, click 'Add Expense'. Select category: 🏢 Subcontractor, 🏪 Supplier, 👷 Payroll, 🚜 Equipment, 🚛 Transport, or 🏷️ Other. Enter description, amount, payment method, and reference number. VAT automatically calculated at 16% (Kenyan tax regulation). Track status: Pending → Paid.", priority: "high" },
+    { category: "Financial Management", question: "What is retention money and how is it calculated?", answer: "Retention money is a percentage (typically 5-10%) held back from payment certificates until project completion. In Income module, enter the retention percentage, and the system automatically calculates: Retention Amount = Gross Amount × Retention %, Net Payable = Gross Amount + VAT - Retention. Retention is released upon project completion and defect liability period end.", priority: "medium" },
+    { category: "Financial Management", question: "What expense categories are available?", answer: "📋 EXPENSE CATEGORIES: 1) Subcontractor - payments to subcontractors, 2) Supplier - material purchases, 3) Payroll - staff wages (auto-created from payroll), 4) Equipment - machinery, tools, rental, 5) Transport - delivery, fuel, vehicle costs, 6) Other - miscellaneous expenses. Use categories to analyze spending by type in reports.", priority: "medium" },
+    { category: "Financial Management", question: "What's the difference between 'Amount Received' and 'Gross Amount'?", answer: "GROSS AMOUNT = total value of the certificate before any deductions. AMOUNT RECEIVED = what you actually received after deductions (retention, withholding tax, etc.). Example: Gross = 1,000,000 KES, Retention 5% = 50,000 KES, Amount Received = 950,000 KES. The system tracks both for accurate financial reporting.", priority: "medium" },
 
-    // ========== VAT (3 FAQs) ==========
-    { category: "VAT", question: "How do I generate VAT reports?", answer: "Go to VAT module or Reports → VAT Summary. Select date range and project filter. The system calculates input VAT (on purchases) and output VAT (on sales) with net payable/refundable amount. You can export VAT reports for KRA filing.", priority: "high" },
-    { category: "VAT", question: "How is VAT calculated?", answer: "BOCHI automatically calculates VAT at 16% on all financial transactions as per Kenyan tax regulations. Output VAT is calculated on income (16% of gross amount). Input VAT is calculated on eligible expenses (16% of amount where VAT is applicable).", priority: "medium" },
-    { category: "VAT", question: "What is the difference between Input and Output VAT?", answer: "Output VAT is the VAT you charge your clients on invoices (VAT on sales). Input VAT is the VAT you pay to suppliers on purchases. The difference (Output - Input) is what you pay to KRA, or what you can claim as a refund if negative.", priority: "high" },
+    // VAT & Tax
+    { category: "VAT & Tax", question: "How do I generate VAT reports for KRA filing?", answer: "Go to VAT module or Reports → VAT Summary. Select date range (monthly/quarterly) and project filter. The system calculates: OUTPUT VAT (16% of gross income from payment certificates), INPUT VAT (16% of eligible expense amounts), NET VAT = Output - Input (payable to KRA if positive, refundable if negative). Export CSV for KRA filing.", priority: "high" },
+    { category: "VAT & Tax", question: "How is VAT calculated in BOCHI?", answer: "BOCHI automatically calculates VAT at 16% on all financial transactions as per KRA regulations: OUTPUT VAT = 16% of gross income amount from payment certificates. INPUT VAT = 16% of expense amounts where VAT is applicable (supplies, subcontractors, equipment). The system handles it automatically - no manual calculation needed!", priority: "high" },
+    { category: "VAT & Tax", question: "What is the difference between Input and Output VAT?", answer: "📤 OUTPUT VAT = VAT you charge your clients (VAT on sales) - payable to KRA. 📥 INPUT VAT = VAT you pay to suppliers (VAT on purchases) - claimable from KRA. Difference (Output - Input) = NET PAYABLE to KRA (if positive), or REFUNDABLE from KRA (if negative). Keep all tax invoices for audit.", priority: "high" },
 
-    // ========== INVOICES (3 FAQs) ==========
-    { category: "Invoices", question: "How do I create client invoices?", answer: "Go to Invoices module, click 'New Invoice'. Select project, add line items with descriptions, quantities, and unit prices. The system calculates subtotal, VAT (16%), and total. Invoices can be saved as draft, sent to client, and marked as paid when payment is received.", priority: "high" },
-    { category: "Invoices", question: "Can I track invoice payments?", answer: "Yes! Invoices have a status field that can be set to: Draft, Sent, Paid, or Overdue. Update the status as payments are received. Paid invoices are reflected in your income reports.", priority: "medium" },
-    { category: "Invoices", question: "How do I know if an invoice is overdue?", answer: "The system uses the due date field to determine if an invoice is overdue. Invoices with due date in the past and status not 'Paid' are considered overdue and appear in red in the invoices list.", priority: "medium" },
+    // Invoices
+    { category: "Invoices", question: "How do I create client invoices?", answer: "Go to Invoices module, click 'New Invoice'. Select project, add line items with: description, quantity, unit, unit price. The system calculates: SUBTOTAL = sum of line items, VAT = 16% of subtotal, TOTAL = subtotal + VAT. Track invoice status: Draft → Sent → Paid → Overdue. Mark as paid when payment received.", priority: "high" },
+    { category: "Invoices", question: "Can I track invoice payments?", answer: "Yes! Invoice status field options: 📝 DRAFT (editing), 📧 SENT (issued to client), 💰 PAID (payment received), ⏰ OVERDUE (past due date). Update status as payments arrive. PAID invoices automatically contribute to project income. Overdue invoices appear in RED for attention.", priority: "medium" },
+    { category: "Invoices", question: "How do I know if an invoice is overdue?", answer: "The system uses the DUE DATE field. If due date is in the past AND status is not 'Paid', the invoice is automatically marked as OVERDUE and appears in RED in the invoices list. Set realistic due dates (typically 30 days from invoice date).", priority: "medium" },
 
-    // ========== DATA MANAGEMENT (3 FAQs) ==========
-    { category: "Data Management", question: "How do I backup and export my data?", answer: "Go to Settings module. Click 'Backup Data' to download a JSON file of all your data. To restore, click 'Restore Data' and select your backup file. You can also export individual reports to CSV using the 'Export CSV' button on each report. We recommend weekly backups for data safety.", priority: "high" },
-    { category: "Data Management", question: "What data is included in a backup?", answer: "A backup includes all your data: projects, income, expenses, workers, payroll records, purchase orders, supplies, store transactions, site diary entries, subcontractors, quotations, invoices, and company settings.", priority: "medium" },
-    { category: "Data Management", question: "How often should I backup my data?", answer: "We recommend weekly backups for active projects, or daily backups for critical projects. Always backup before making major changes like clearing data or loading sample data.", priority: "high" },
+    // Reports & Analytics
+    { category: "Reports & Analytics", question: "What reports are available?", answer: "📊 12 COMPREHENSIVE REPORTS: 1) Profit & Loss (income vs expenses), 2) Project Summary (all projects with progress), 3) Cash Flow (monthly trends), 4) Expenses by Category (spending breakdown), 5) VAT Summary (tax calculations), 6) Payroll Summary (labor costs), 7) Orders Report (purchase orders), 8) Stores Ledger (inventory levels), 9) Subcontractors Ledger (payments tracking), 10) Suppliers Ledger (supplier balances), 11) Income Ledger (certificate tracking), 12) Site Diary (daily activities). ALL support filtering, search, and CSV export!", priority: "high" },
+    { category: "Reports & Analytics", question: "How do I filter reports by project?", answer: "Two ways: 1) GLOBAL FILTER - dropdown in top-right corner of app (applies to all modules), 2) REPORT-SPECIFIC FILTER - 'Filter by Project' dropdown at top of each report. Global filter affects everything, report filters give granular control. Use both for precise analysis.", priority: "medium" },
+    { category: "Reports & Analytics", question: "Can I filter reports by date range?", answer: "Yes! Most reports (Profit & Loss, Cash Flow, Expenses by Category, VAT, Payroll, Orders, Stores, Suppliers, Subcontractors) include START DATE and END DATE filters. Simply select your date range; data updates automatically. Click 'Clear Dates' to reset. Export filtered data to CSV.", priority: "medium" },
+    { category: "Reports & Analytics", question: "What is the Executive Dashboard?", answer: "The Executive Dashboard (Reports → Analytics Dashboard) provides a high-level overview of your business health: KPI cards (Revenue, Expenses, Profit, Margin), Revenue vs Expenses trend chart, Profit margin analysis, Expense distribution pie chart, Top performing projects, and Project performance matrix. Perfect for management reviews!", priority: "high" },
 
-    // ========== TROUBLESHOOTING (5 FAQs) ==========
-    { category: "Troubleshooting", question: "Why can't I see my projects in dropdown menus?", answer: "Ensure projects have 'Active' status. Only active projects appear in dropdown selections. You can change project status in Projects module by editing the project.", priority: "high" },
-    { category: "Troubleshooting", question: "Why is my store balance showing negative?", answer: "Negative balance indicates more items were issued than supplied. Check your store transactions for incorrect issue entries. You can create a return transaction to correct the balance.", priority: "high" },
-    { category: "Troubleshooting", question: "Why isn't my report showing data?", answer: "Check your filters: 1) Ensure the global project filter isn't hiding data, 2) Check report-specific project filter, 3) Verify date range filters, 4) Clear search box if text is entered. If still no data, load sample data from Settings to test.", priority: "high" },
-    { category: "Troubleshooting", question: "Why am I getting a 'Permission denied' error?", answer: "Your user account may not have permission to access that module. Contact your company admin to request access. Admins can manage user permissions in Settings → Users.", priority: "high" },
-    { category: "Troubleshooting", question: "What should I do if I encounter a bug?", answer: "1) Refresh the page and try again, 2) Clear your browser cache, 3) Check if the issue persists, 4) Contact support at info@bochi.ke with screenshots and steps to reproduce the issue.", priority: "medium" },
+    // Data Management & Security
+    { category: "Data Management", question: "Where is my data stored?", answer: "☁️ CLOUD DATABASE! Your data is stored securely in PostgreSQL database on Render (cloud hosting). Benefits: Access from any device, anywhere; Team members share same database; Automatic daily backups; No data loss if browser cache cleared; Enterprise-grade security. Use Settings → Backup Data to download local copies for extra safety.", priority: "high" },
+    { category: "Data Management", question: "How do I backup my data?", answer: "Go to Settings module → Backup tab → Click 'Backup Data'. Downloads a JSON file of ALL your data (projects, income, expenses, workers, payroll, procurement, stores, site diary, invoices, settings). Store this file safely! To restore, click 'Restore Data' and select your backup file. RECOMMEND: Weekly backups for active projects, daily for critical ones.", priority: "high" },
+    { category: "Data Management", question: "How do I load sample data?", answer: "Settings module → 'Load Sample Data' button. Populates ALL modules with 66+ demonstration records: projects (6), subcontractors (10), quotations (15), expenses (8), income (6), purchase orders (2), supplies (5), store transactions (5), site diary (1), invoices (1), suppliers (8), approved items (26), workers (2). Perfect for testing and learning!", priority: "medium" },
+    { category: "Data Management", question: "What data is included in a backup?", answer: "COMPLETE DATA EXPORT: Projects, Income, Expenses, Workers, Worker Categories, Payroll Records, Approved Items, Suppliers, Purchase Orders, Supplies, Store Transactions, Site Diary Entries, Subcontractors, Quotations, Invoices, Company Settings, Users. Everything you need to restore your entire system.", priority: "medium" },
+
+    // Troubleshooting
+    { category: "Troubleshooting", question: "Why can't I see my projects in dropdown menus?", answer: "Two requirements: 1) Project must exist (create it first), 2) Project status must be 'Active' (edit project to change from 'On Hold' or 'Completed' to 'Active'). Only active projects appear in dropdowns across all modules.", priority: "high" },
+    { category: "Troubleshooting", question: "Why is my store balance showing negative?", answer: "⚠️ Negative balance = more items issued than supplied. Common causes: 1) Unrecorded supply, 2) Incorrect issue quantity, 3) Data entry error. Solutions: 1) Create return transaction to correct balance, 2) Verify all supplies are recorded, 3) Check issue quantities. Contact support if persists.", priority: "high" },
+    { category: "Troubleshooting", question: "Why isn't my report showing any data?", answer: "CHECK THESE FILTERS: 1) Global project filter (top-right corner), 2) Report-specific project filter, 3) Date range filters (if applicable), 4) Search box (clear if text is entered). Still no data? Load sample data from Settings to test if reports work with demo data.", priority: "high" },
+    { category: "Troubleshooting", question: "Why am I getting a 'Permission denied' error?", answer: "Your user account lacks permission for that module. Contact your company ADMIN to request access. Admins manage permissions in Settings → Users → Edit user → Select module permissions. Admins see all modules by default.", priority: "high" },
+    { category: "Troubleshooting", question: "What should I do if I encounter a bug?", answer: "🐛 BUG REPORTING STEPS: 1) Refresh page (Ctrl+F5 hard refresh), 2) Clear browser cache, 3) Check if issue persists, 4) Take screenshots, 5) Note steps to reproduce, 6) Contact support: info@bochi.ke with details. Include: browser version, what you were doing, error messages (if any). We respond within 24 hours.", priority: "medium" },
+
+    // User Management
+    { category: "User Management", question: "How do I add new users to my company?", answer: "Only ADMIN users can add users. Go to Settings → Users → Add User. Enter: name, email, password, role (Admin or User). For regular users, select which modules they can access. Then click Save. The new user receives login credentials. Note: Free plan allows only 1 additional user; upgrade to Pro for more.", priority: "high" },
+    { category: "User Management", question: "How do I set user permissions?", answer: "Settings → Users → Click Edit (pencil) on a user. For 'User' role, a permission panel appears. Check/uncheck modules this user can access: Dashboard, Projects, Income, Expenses, Invoices, VAT, Payroll, Procurement, Stores, Subcontractors, Site Diary, Reports, Settings, etc. Admins have all permissions automatically.", priority: "medium" },
   ];
 
+  // Filter FAQs based on search and category
   const filteredFaqs = useMemo(() => {
     let filtered = faqs;
     if (searchQuery) {
@@ -129,11 +143,18 @@ export function HelpModule() {
     return filtered;
   }, [searchQuery, selectedCategory]);
 
-  const categories = [...new Set(faqs.map(f => f.category))];
+  // Get unique categories with counts
+  const categoriesWithCount = useMemo(() => {
+    const counts: Record<string, number> = {};
+    faqs.forEach(faq => {
+      counts[faq.category] = (counts[faq.category] || 0) + 1;
+    });
+    return Object.entries(counts).map(([name, count]) => ({ name, count }));
+  }, []);
 
-  // Group FAQs by category for display
+  // Group filtered FAQs by category
   const faqsByCategory = useMemo(() => {
-    const grouped: Record<string, typeof faqs> = {};
+    const grouped: Record<string, FAQItem[]> = {};
     filteredFaqs.forEach(faq => {
       if (!grouped[faq.category]) grouped[faq.category] = [];
       grouped[faq.category].push(faq);
@@ -141,174 +162,137 @@ export function HelpModule() {
     return grouped;
   }, [filteredFaqs]);
 
-  const quickTips = [
-    { icon: <ListChecks size={16} />, text: "Follow setup order: Subcontractors → Suppliers → Approved Items → Worker Categories → Workers → Projects", priority: "high" },
-    { icon: <Filter size={16} />, text: "Use project filter in top bar or report-specific filters to narrow down data", priority: "medium" },
-    { icon: <Search size={16} />, text: "Search across reports by typing in the search box - results update instantly", priority: "medium" },
-    { icon: <Calendar size={16} />, text: "Use date range filters to view data for specific periods", priority: "medium" },
-    { icon: <RefreshCw size={16} />, text: "Click 'Clear Dates' to reset date filters", priority: "low" },
-    { icon: <Download size={16} />, text: "Export any report to CSV for further analysis in Excel", priority: "low" },
-    { icon: <Database size={16} />, text: "Load sample data from Settings to test all features", priority: "medium" },
-    { icon: <Warehouse size={16} />, text: "Purchase orders automatically update store inventory when marked supplied", priority: "high" },
-    { icon: <Hammer size={16} />, text: "Subcontractor balances are calculated from quotations and paid expenses", priority: "high" },
-    { icon: <Clipboard size={16} />, text: "Use Site Diary daily for accurate project records", priority: "high" },
-    { icon: <TrendingUp size={16} />, text: "Review financial reports monthly to track profitability", priority: "high" },
-    { icon: <FileWarning size={16} />, text: "Always backup data before major changes or updates", priority: "high" },
-    { icon: <Clock size={16} />, text: "Process payroll weekly to maintain accurate labor costs", priority: "medium" },
-    { icon: <Rocket size={16} />, text: "Start with sample data to understand how all modules work together", priority: "medium" },
-  ];
+  const handleHelpful = (question: string, isHelpful: boolean) => {
+    setHelpfulFeedback(prev => ({ ...prev, [question]: isHelpful }));
+  };
+
+  const criticalFaqs = faqs.filter(f => f.category === "⭐ CRITICAL - Setup Order");
+  const totalFaqs = faqs.length;
 
   return (
     <div className="space-y-6 fade-in">
-      {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-xl p-5 border border-primary/20">
-        <div className="flex items-center gap-3 mb-2">
-          <LifeBuoy size={28} className="text-primary" />
-          <h1 className="text-xl font-bold">Help & Support Center</h1>
+      {/* Hero Header with Stats */}
+      <div className="bg-gradient-to-r from-primary/15 via-primary/8 to-transparent rounded-xl p-6 border border-primary/25">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <LifeBuoy size={32} className="text-primary" />
+              <h1 className="text-2xl font-bold">Help & Support Center</h1>
+            </div>
+            <p className="text-sm text-muted-foreground max-w-2xl">
+              Everything you need to know about using BOCHI Construction Suite — from getting started to advanced features
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <div className="text-center bg-primary/10 rounded-lg px-4 py-2">
+              <p className="text-2xl font-bold text-primary">{totalFaqs}</p>
+              <p className="text-[10px] text-muted-foreground">FAQs Available</p>
+            </div>
+            <div className="text-center bg-amber-500/10 rounded-lg px-4 py-2">
+              <p className="text-2xl font-bold text-amber-600">{criticalFaqs.length}</p>
+              <p className="text-[10px] text-muted-foreground">Critical Guides</p>
+            </div>
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Everything you need to know about using BOCHI Construction Suite
-        </p>
       </div>
 
-      <Tabs defaultValue="gettingstarted" className="space-y-4">
+      <Tabs defaultValue="critical" className="space-y-4">
         <TabsList className="flex flex-wrap">
+          <TabsTrigger value="critical" className="text-amber-600 font-medium">⭐ Critical Setup</TabsTrigger>
+          <TabsTrigger value="faq">All FAQs ({totalFaqs})</TabsTrigger>
           <TabsTrigger value="gettingstarted">Getting Started</TabsTrigger>
-          <TabsTrigger value="faq">FAQ</TabsTrigger>
           <TabsTrigger value="guides">User Guides</TabsTrigger>
-          <TabsTrigger value="reports">Reports Guide</TabsTrigger>
+          <TabsTrigger value="reports">Reports & Analytics</TabsTrigger>
           <TabsTrigger value="quicktips">Quick Tips</TabsTrigger>
           <TabsTrigger value="support">Support</TabsTrigger>
           <TabsTrigger value="about">About</TabsTrigger>
         </TabsList>
 
-        {/* ========== GETTING STARTED TAB ========== */}
-        <TabsContent value="gettingstarted" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Rocket size={20} className="text-primary" />
-                Getting Started with BOCHI
+        {/* ========== CRITICAL SETUP TAB (Most Important) ========== */}
+        <TabsContent value="critical" className="space-y-4">
+          <Card className="border-amber-500/30">
+            <CardHeader className="bg-amber-50 dark:bg-amber-950/20">
+              <CardTitle className="flex items-center gap-2 text-amber-800 dark:text-amber-400">
+                <AlertTriangle size={24} />
+                ⚠️ CRITICAL: You MUST Follow This Setup Order!
               </CardTitle>
-              <CardDescription>Follow this guide to set up your account correctly and avoid common issues</CardDescription>
+              <CardDescription className="text-amber-700 dark:text-amber-400">
+                These are the MOST IMPORTANT instructions. Following this order prevents empty dropdowns and errors.
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* CRITICAL SETUP ORDER */}
-              <div className="p-5 bg-amber-50 dark:bg-amber-950/40 border-l-4 border-amber-500 rounded-r-lg">
-                <h3 className="text-base font-bold text-amber-800 dark:text-amber-400 mb-3 flex items-center gap-2">
-                  <AlertTriangle size={20} /> ⚠️ CRITICAL: You MUST Set Up Data in This Exact Order
-                </h3>
-                <p className="text-sm text-amber-700 dark:text-amber-300 mb-4">
-                  To avoid errors, empty dropdowns, and missing data, follow this sequence strictly:
-                </p>
-                <div className="space-y-3 text-sm">
+            <CardContent className="space-y-6 pt-6">
+              {/* Setup Order Diagram */}
+              <div className="relative">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
-                    { num: "1", title: "Subcontractors", desc: "Required BEFORE: Subcontractor Payments, Quotations, Expenses", detail: "Register all subcontractors with their KRA PIN, contacts, and specialization" },
-                    { num: "2", title: "Suppliers", desc: "Required BEFORE: Purchase Orders, Supplier Payments", detail: "Add all material suppliers with contacts and payment terms" },
-                    { num: "3", title: "Approved Items", desc: "Required BEFORE: Supplies, Purchase Orders (items list)", detail: "Pre-approve all materials with name, category, unit, and default price" },
-                    { num: "4", title: "Worker Categories", desc: "Required BEFORE: Workers, Payroll, Site Diary", detail: "Define job roles (Mason, Labourer, etc.) and daily pay rates" },
-                    { num: "5", title: "Workers", desc: "Required BEFORE: Payroll, Site Diary Attendance", detail: "Add all workers with their assigned category and project" },
-                    { num: "6", title: "Projects", desc: "Required BEFORE: Income, Expenses, Site Diary", detail: "Create projects after foundational data is ready" },
-                  ].map((step) => (
-                    <div key={step.num} className="flex items-start gap-3 p-2 bg-white dark:bg-gray-800 rounded-lg">
-                      <span className="font-bold text-amber-800 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/50 w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0">{step.num}</span>
-                      <div>
-                        <span className="font-bold text-amber-800 dark:text-amber-400">{step.title}</span>
-                        <p className="text-xs text-amber-600 dark:text-amber-400">→ {step.desc}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{step.detail}</p>
+                    { step: 1, name: "Subcontractors", icon: <Hammer size={24} />, color: "blue", what: "Required BEFORE: Quotations, Payments", detail: "Register all subcontractors with KRA PIN, contacts" },
+                    { step: 2, name: "Suppliers", icon: <Truck size={24} />, color: "blue", what: "Required BEFORE: Purchase Orders", detail: "Add material suppliers with payment terms" },
+                    { step: 3, name: "Approved Items", icon: <Package size={24} />, color: "blue", what: "Required BEFORE: Supplies, Orders", detail: "Pre-approve all materials with default prices" },
+                    { step: 4, name: "Worker Categories", icon: <UsersIcon size={24} />, color: "blue", what: "Required BEFORE: Workers, Payroll", detail: "Define job roles and daily pay rates" },
+                    { step: 5, name: "Workers", icon: <HardHat size={24} />, color: "blue", what: "Required BEFORE: Payroll, Site Diary", detail: "Add workers, assign to categories/projects" },
+                    { step: 6, name: "Projects", icon: <Building2 size={24} />, color: "green", what: "Required BEFORE: Income, Expenses", detail: "Create projects after foundational data ready" },
+                  ].map((item) => (
+                    <div key={item.step} className="flex items-start gap-3 p-3 bg-card rounded-lg border border-border hover:shadow-md transition-all">
+                      <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center text-amber-700 font-bold text-lg shrink-0">
+                        {item.step}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-primary">{item.icon}</span>
+                          <span className="font-bold">{item.name}</span>
+                        </div>
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">{item.what}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{item.detail}</p>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 pt-3 border-t border-amber-200 dark:border-amber-800">
-                  <p className="text-sm text-amber-700 dark:text-amber-400 flex items-center gap-2">
-                    <CheckCircle size={16} />
-                    <strong>Why this order matters:</strong>
-                  </p>
-                  <ul className="text-xs text-amber-600 dark:text-amber-400 mt-1 space-y-0.5 ml-6 list-disc">
-                    <li>Each dropdown menu needs existing data to populate</li>
-                    <li>Transactions reference these foundational records</li>
-                    <li>Prevents "empty dropdown" errors</li>
-                    <li>Ensures proper data relationships</li>
-                  </ul>
+                <div className="hidden md:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl text-amber-400 opacity-30">
+                  ↓ ↓ ↓
                 </div>
               </div>
 
-              {/* Two Column Setup Guide */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
-                  <h3 className="text-sm font-semibold text-green-800 dark:text-green-400 mb-3 flex items-center gap-2">
-                    <CheckSquare size={16} />
-                    Setup Checklist
-                  </h3>
-                  <ul className="space-y-2 text-sm">
-                    <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-600" /> Register all Subcontractors</li>
-                    <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-600" /> Register all Suppliers</li>
-                    <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-600" /> Configure Approved Items (materials)</li>
-                    <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-600" /> Set up Worker Categories with day rates</li>
-                    <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-600" /> Add Workers and assign to categories/projects</li>
-                    <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-600" /> Create Projects</li>
-                    <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-600" /> (Optional) Load sample data to test</li>
-                  </ul>
-                </div>
-                <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                  <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-400 mb-3 flex items-center gap-2">
-                    <Workflow size={16} />
-                    After Setup - What's Next?
-                  </h3>
-                  <ul className="space-y-2 text-sm">
-                    <li className="flex items-center gap-2"><span className="text-blue-600">→</span> Create Purchase Orders for materials</li>
-                    <li className="flex items-center gap-2"><span className="text-blue-600">→</span> Process Payroll weekly</li>
-                    <li className="flex items-center gap-2"><span className="text-blue-600">→</span> Record Income from payment certificates</li>
-                    <li className="flex items-center gap-2"><span className="text-blue-600">→</span> Track Expenses as they occur</li>
-                    <li className="flex items-center gap-2"><span className="text-blue-600">→</span> Write Site Diary daily</li>
-                    <li className="flex items-center gap-2"><span className="text-blue-600">→</span> Generate Reports monthly for insights</li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* Quick Start Steps */}
-              <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
-                <h3 className="text-sm font-semibold text-primary mb-3 flex items-center gap-2">
-                  <Rocket size={16} />
-                  Quick Start (10 Minutes)
+              {/* Why This Order Matters */}
+              <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-4 border-l-4 border-amber-500">
+                <h3 className="font-semibold text-amber-800 dark:text-amber-400 mb-2 flex items-center gap-2">
+                  <CheckCircle size={18} /> Why This Order Matters
                 </h3>
-                <ol className="space-y-2">
-                  <li className="flex items-start gap-2 text-sm">
-                    <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">1</span>
-                    <span><strong>Load sample data</strong> - Go to Settings → Load Sample Data (optional but recommended)</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm">
-                    <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">2</span>
-                    <span><strong>Register Subcontractors</strong> - Before creating any subcontractor payments</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm">
-                    <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">3</span>
-                    <span><strong>Register Suppliers</strong> - Before creating purchase orders</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm">
-                    <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">4</span>
-                    <span><strong>Create Approved Items</strong> - Before creating supplies or purchase orders</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm">
-                    <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">5</span>
-                    <span><strong>Set up Worker Categories</strong> - Before adding workers</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm">
-                    <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">6</span>
-                    <span><strong>Add Workers</strong> - Before processing payroll or site diary</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm">
-                    <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">7</span>
-                    <span><strong>Create Projects</strong> - Before tracking income, expenses, or site diary</span>
-                  </li>
-                </ol>
+                <ul className="space-y-1 text-sm text-amber-700 dark:text-amber-400 ml-6 list-disc">
+                  <li>Each dropdown menu needs existing data to populate</li>
+                  <li>Transactions reference these foundational records</li>
+                  <li>Prevents frustrating "empty dropdown" errors</li>
+                  <li>Ensures proper data relationships and reporting accuracy</li>
+                  <li>Saves hours of troubleshooting later</li>
+                </ul>
+              </div>
+
+              {/* All Critical FAQs */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-amber-800 flex items-center gap-2">
+                  <FileQuestion size={18} /> Critical Questions & Answers
+                </h3>
+                <Accordion type="multiple" className="w-full" value={openAccordionItems} onValueChange={setOpenAccordionItems}>
+                  {criticalFaqs.map((faq, idx) => (
+                    <AccordionItem key={idx} value={`critical-${idx}`}>
+                      <AccordionTrigger className="text-left hover:no-underline">
+                        <div className="flex items-start gap-2">
+                          <span className="text-amber-500 mt-0.5">⚠️</span>
+                          <span className="font-medium">{faq.question}</span>
+                          <Badge variant="destructive" className="text-[10px] ml-2">Must Read</Badge>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="text-muted-foreground pl-6">
+                        <p className="text-sm">{faq.answer}</p>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* ========== FAQ TAB ========== */}
+        {/* ========== COMPLETE FAQ TAB ========== */}
         <TabsContent value="faq" className="space-y-4">
           <Card>
             <CardHeader>
@@ -317,7 +301,7 @@ export function HelpModule() {
                 Frequently Asked Questions
               </CardTitle>
               <CardDescription>
-                {faqs.length} comprehensive answers to common questions about using BOCHI Construction Suite
+                {totalFaqs} comprehensive answers organized by category — search or filter to find what you need
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -333,7 +317,7 @@ export function HelpModule() {
                       setSearchQuery(e.target.value);
                       setOpenAccordionItems([]);
                     }}
-                    className="pl-9 max-w-md"
+                    className="pl-9"
                   />
                 </div>
               </div>
@@ -348,19 +332,19 @@ export function HelpModule() {
                     setOpenAccordionItems([]);
                   }}
                 >
-                  All ({faqs.length})
+                  All ({totalFaqs})
                 </Badge>
-                {categories.map(cat => (
+                {categoriesWithCount.map(cat => (
                   <Badge 
-                    key={cat}
-                    variant={selectedCategory === cat ? 'default' : 'outline'}
+                    key={cat.name}
+                    variant={selectedCategory === cat.name ? 'default' : 'outline'}
                     className="cursor-pointer"
                     onClick={() => {
-                      setSelectedCategory(cat);
+                      setSelectedCategory(cat.name);
                       setOpenAccordionItems([]);
                     }}
                   >
-                    {cat} ({faqs.filter(f => f.category === cat).length})
+                    {cat.name} ({cat.count})
                   </Badge>
                 ))}
                 {(searchQuery || selectedCategory !== 'all') && (
@@ -368,7 +352,7 @@ export function HelpModule() {
                     setSearchQuery('');
                     setSelectedCategory('all');
                     setOpenAccordionItems([]);
-                  }} className="text-xs h-6">
+                  }} className="text-xs h-7">
                     Clear All
                   </Button>
                 )}
@@ -377,10 +361,10 @@ export function HelpModule() {
               <Separator />
               
               {/* FAQs Accordion */}
-              <div className="max-h-[600px] overflow-y-auto pr-2">
+              <div className="max-h-[600px] overflow-y-auto pr-2 space-y-4">
                 {Object.entries(faqsByCategory).map(([category, categoryFaqs]) => (
                   <div key={category} className="mb-4">
-                    <h3 className="text-sm font-semibold text-primary mb-2 sticky top-0 bg-background py-1">
+                    <h3 className="text-sm font-semibold text-primary mb-2 sticky top-0 bg-background py-1 z-10">
                       {category}
                     </h3>
                     <Accordion 
@@ -389,22 +373,30 @@ export function HelpModule() {
                       value={openAccordionItems} 
                       onValueChange={setOpenAccordionItems}
                     >
-                      {categoryFaqs.map((faq, index) => (
-                        <AccordionItem key={`${category}-${index}`} value={`${category}-${index}`}>
+                      {categoryFaqs.map((faq, idx) => (
+                        <AccordionItem key={`${category}-${idx}`} value={`${category}-${idx}`}>
                           <AccordionTrigger className="text-left hover:no-underline">
                             <div className="flex items-start gap-2">
                               <span className="text-primary mt-0.5 shrink-0">❓</span>
                               <span className="font-medium text-sm">{faq.question}</span>
                               {faq.priority === 'high' && (
-                                <Badge variant="secondary" className="text-[10px] ml-2">Important</Badge>
+                                <Badge variant="secondary" className="text-[10px] ml-2 bg-amber-100 text-amber-700">Important</Badge>
                               )}
                             </div>
                           </AccordionTrigger>
                           <AccordionContent className="text-muted-foreground pl-6">
-                            <p className="text-sm">{faq.answer}</p>
-                            <div className="mt-2 pt-2 border-t border-border/50 flex justify-between items-center">
+                            <p className="text-sm whitespace-pre-wrap">{faq.answer}</p>
+                            <div className="mt-3 pt-2 border-t border-border/50 flex justify-between items-center">
                               <span className="text-xs text-muted-foreground">Category: {faq.category}</span>
-                              <ThumbsUp size={12} className="text-muted-foreground" />
+                              <div className="flex items-center gap-2">
+                                <button 
+                                  onClick={() => handleHelpful(faq.question, true)}
+                                  className="text-xs text-green-600 hover:text-green-700 flex items-center gap-1"
+                                >
+                                  <ThumbsUp size={12} /> Helpful
+                                </button>
+                                {helpfulFeedback[faq.question] && <CheckCircle size={10} className="text-green-500" />}
+                              </div>
                             </div>
                           </AccordionContent>
                         </AccordionItem>
@@ -425,147 +417,129 @@ export function HelpModule() {
           </Card>
         </TabsContent>
 
+        {/* ========== GETTING STARTED TAB ========== */}
+        <TabsContent value="gettingstarted" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Rocket size={20} className="text-primary" />
+                Getting Started with BOCHI
+              </CardTitle>
+              <CardDescription>Follow this guide to set up your account correctly and avoid common issues</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Setup Progress */}
+              <div className="bg-primary/5 rounded-lg p-4">
+                <h3 className="text-sm font-semibold mb-2">Setup Progress Tracker</h3>
+                <div className="space-y-2">
+                  {["Subcontractors", "Suppliers", "Approved Items", "Worker Categories", "Workers", "Projects"].map((step, idx) => (
+                    <div key={step} className="flex items-center gap-3">
+                      <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">{idx + 1}</div>
+                      <span className="text-sm flex-1">{step}</span>
+                      <Button variant="ghost" size="sm" className="text-xs h-6">Mark Complete</Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Step by Step Guide */}
+              <div className="bg-primary/5 rounded-lg p-4">
+                <p className="text-xs font-semibold mb-2 text-primary">Step-by-Step Onboarding:</p>
+                <ol className="space-y-2">
+                  <li className="flex items-start gap-2 text-sm"><span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">1</span><span><strong>Load sample data</strong> - Settings → Load Sample Data (recommended)</span></li>
+                  <li className="flex items-start gap-2 text-sm"><span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">2</span><span><strong>Register Subcontractors</strong> - Before any subcontractor payments</span></li>
+                  <li className="flex items-start gap-2 text-sm"><span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">3</span><span><strong>Register Suppliers</strong> - Before creating purchase orders</span></li>
+                  <li className="flex items-start gap-2 text-sm"><span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">4</span><span><strong>Create Approved Items</strong> - Before supplies or purchase orders</span></li>
+                  <li className="flex items-start gap-2 text-sm"><span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">5</span><span><strong>Set up Worker Categories</strong> - Before adding workers</span></li>
+                  <li className="flex items-start gap-2 text-sm"><span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">6</span><span><strong>Add Workers</strong> - Before processing payroll</span></li>
+                  <li className="flex items-start gap-2 text-sm"><span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">7</span><span><strong>Create Projects</strong> - Before tracking income/expenses</span></li>
+                </ol>
+              </div>
+
+              <div className="bg-muted/30 rounded-lg p-3">
+                <p className="text-xs font-semibold mb-2">💡 Pro Tips:</p>
+                <ul className="space-y-1 text-xs text-muted-foreground">
+                  <li>• Use the project filter in top bar to focus on specific projects</li>
+                  <li>• Export reports regularly for offline analysis</li>
+                  <li>• All reports support search, project filter, and date range filtering</li>
+                  <li>• Click 'Clear Dates' to reset date filters</li>
+                  <li>• Use dark mode for evening work (toggle in sidebar)</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* ========== USER GUIDES TAB ========== */}
         <TabsContent value="guides" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Getting Started Guide Card */}
-            <Card className="hover:shadow-md transition-shadow">
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen size={20} className="text-primary" />
-                  Getting Started Guide
-                </CardTitle>
-                <CardDescription>Learn the basics in 10 minutes</CardDescription>
+                <CardTitle className="flex items-center gap-2"><BookOpen size={20} className="text-primary" /> Module Quick Guides</CardTitle>
+                <CardDescription>Quick reference for each module</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border-l-4 border-amber-500 rounded-r-lg">
-                    <p className="text-xs font-semibold text-amber-800 dark:text-amber-400">
-                      ⚠️ Remember: Set up in this order: Subcontractors → Suppliers → Approved Items → Worker Categories → Workers → Projects
-                    </p>
-                  </div>
-                  
-                  <div className="bg-primary/5 rounded-lg p-3">
-                    <p className="text-xs font-semibold mb-2 text-primary">Step-by-Step Onboarding:</p>
-                    <ol className="space-y-2">
-                      <li className="flex items-start gap-2 text-sm"><span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">1</span><span><strong>Load sample data</strong> - Go to Settings → Load Sample Data (optional but recommended)</span></li>
-                      <li className="flex items-start gap-2 text-sm"><span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">2</span><span><strong>Register Subcontractors</strong> - Before creating any subcontractor payments</span></li>
-                      <li className="flex items-start gap-2 text-sm"><span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">3</span><span><strong>Register Suppliers</strong> - Before creating purchase orders</span></li>
-                      <li className="flex items-start gap-2 text-sm"><span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">4</span><span><strong>Create Approved Items</strong> - Before creating supplies or purchase orders</span></li>
-                      <li className="flex items-start gap-2 text-sm"><span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">5</span><span><strong>Set up Worker Categories</strong> - Before adding workers</span></li>
-                      <li className="flex items-start gap-2 text-sm"><span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">6</span><span><strong>Add Workers</strong> - Before processing payroll or site diary</span></li>
-                      <li className="flex items-start gap-2 text-sm"><span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">7</span><span><strong>Create Projects</strong> - Before tracking income, expenses, or site diary</span></li>
-                    </ol>
-                  </div>
-                  
-                  <div className="bg-muted/30 rounded-lg p-3">
-                    <p className="text-xs font-semibold mb-2">💡 Pro Tips:</p>
-                    <ul className="space-y-1 text-xs text-muted-foreground">
-                      <li>• Use the project filter in top bar to focus on specific projects</li>
-                      <li>• Export reports regularly for offline analysis</li>
-                      <li>• All reports support search, project filter, and date range filtering</li>
-                      <li>• Click 'Clear Dates' to reset date filters</li>
-                    </ul>
-                  </div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-2 hover:bg-muted/30 rounded-lg"><span className="font-medium">🏗️ Projects</span><ChevronRight size={16} className="text-muted-foreground" /></div>
+                  <div className="flex items-center justify-between p-2 hover:bg-muted/30 rounded-lg"><span className="font-medium">💰 Income/Expenses</span><ChevronRight size={16} className="text-muted-foreground" /></div>
+                  <div className="flex items-center justify-between p-2 hover:bg-muted/30 rounded-lg"><span className="font-medium">👷 Payroll</span><ChevronRight size={16} className="text-muted-foreground" /></div>
+                  <div className="flex items-center justify-between p-2 hover:bg-muted/30 rounded-lg"><span className="font-medium">📦 Procurement & Stores</span><ChevronRight size={16} className="text-muted-foreground" /></div>
+                  <div className="flex items-center justify-between p-2 hover:bg-muted/30 rounded-lg"><span className="font-medium">📝 Site Diary</span><ChevronRight size={16} className="text-muted-foreground" /></div>
+                  <div className="flex items-center justify-between p-2 hover:bg-muted/30 rounded-lg"><span className="font-medium">📊 Reports</span><ChevronRight size={16} className="text-muted-foreground" /></div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Advanced Features Card */}
-            <Card className="hover:shadow-md transition-shadow">
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <GraduationCap size={20} className="text-primary" />
-                  Advanced Features & Best Practices
-                </CardTitle>
+                <CardTitle className="flex items-center gap-2"><Star size={20} className="text-primary" /> Advanced Features</CardTitle>
                 <CardDescription>Maximize your productivity</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm font-semibold mb-2 flex items-center gap-2">
-                    <Settings size={14} /> Automation & Integration
-                  </p>
-                  <ul className="space-y-2 text-sm">
-                    <li className="flex items-start gap-2">
-                      <CheckCircle size={14} className="text-success mt-0.5 shrink-0" />
-                      <span><strong>Purchase Order Automation:</strong> Marking an order as "Supplied" automatically updates store inventory and creates transaction records</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle size={14} className="text-success mt-0.5 shrink-0" />
-                      <span><strong>Payroll Integration:</strong> Paid payroll automatically creates expense entries for accurate cost tracking</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle size={14} className="text-success mt-0.5 shrink-0" />
-                      <span><strong>VAT Calculation:</strong> All financial entries automatically calculate 16% VAT as per KRA requirements</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle size={14} className="text-success mt-0.5 shrink-0" />
-                      <span><strong>Subcontractor Balance:</strong> Contracted = sum of quotations, Paid = paid expenses, Balance = Contracted - Paid</span>
-                    </li>
-                  </ul>
-                </div>
-                
-                <div>
-                  <p className="text-sm font-semibold mb-2 flex items-center gap-2">
-                    <Lightbulb size={14} /> Best Practices
-                  </p>
-                  <ul className="space-y-2 text-sm">
-                    <li className="flex items-start gap-2"><span className="text-primary">📊</span><span>Use report filters (project, date range, search) to analyze specific data</span></li>
-                    <li className="flex items-start gap-2"><span className="text-primary">🏗️</span><span>Update site diary daily for accurate project records</span></li>
-                    <li className="flex items-start gap-2"><span className="text-primary">📦</span><span>Monitor store balances to avoid stockouts</span></li>
-                    <li className="flex items-start gap-2"><span className="text-primary">👷</span><span>Verify worker attendance before processing payroll</span></li>
-                    <li className="flex items-start gap-2"><span className="text-primary">📄</span><span>Keep all certificates and invoices organized in the system</span></li>
-                    <li className="flex items-start gap-2"><span className="text-primary">💾</span><span>Export and backup data weekly to prevent data loss</span></li>
-                  </ul>
-                </div>
+              <CardContent className="space-y-3">
+                <div className="flex items-start gap-2"><CheckCircle size={14} className="text-success mt-0.5" /><span><strong>Purchase Order Automation:</strong> Marking "Supplied" updates inventory</span></div>
+                <div className="flex items-start gap-2"><CheckCircle size={14} className="text-success mt-0.5" /><span><strong>Payroll Integration:</strong> Paid payroll creates expense entries</span></div>
+                <div className="flex items-start gap-2"><CheckCircle size={14} className="text-success mt-0.5" /><span><strong>VAT Calculation:</strong> Automatic 16% VAT calculation</span></div>
+                <div className="flex items-start gap-2"><CheckCircle size={14} className="text-success mt-0.5" /><span><strong>Subcontractor Balance:</strong> Auto-calculated from quotations and payments</span></div>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        {/* ========== REPORTS GUIDE TAB ========== */}
+        {/* ========== REPORTS & ANALYTICS TAB ========== */}
         <TabsContent value="reports" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 size={20} className="text-primary" />
-                Reports Module Complete Guide
+                Reports & Analytics Guide
               </CardTitle>
-              <CardDescription>
-                All 12 reports with filtering, search, and export capabilities
-              </CardDescription>
+              <CardDescription>All 12 reports + Executive Dashboard with filtering and export</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {[
-                  { name: "Profit & Loss", icon: <DollarSign size={16} className="text-green-600" />, desc: "Income vs expenses summary with project breakdown" },
-                  { name: "Project Summary", icon: <BarChart3 size={16} className="text-blue-600" />, desc: "All projects with progress bars and financial metrics" },
-                  { name: "Cash Flow", icon: <TrendingUp size={16} className="text-purple-600" />, desc: "Monthly income and expenses analysis" },
-                  { name: "Expenses by Category", icon: <PieChart size={16} className="text-orange-600" />, desc: "Category-wise expense breakdown with percentages" },
-                  { name: "VAT Summary", icon: <Receipt size={16} className="text-red-600" />, desc: "Output VAT, Input VAT, and net payable/refundable" },
-                  { name: "Payroll Summary", icon: <Users size={16} className="text-teal-600" />, desc: "Payroll totals by project" },
-                  { name: "Orders Report", icon: <ShoppingCart size={16} className="text-indigo-600" />, desc: "Purchase order summary with status" },
-                  { name: "Stores Ledger", icon: <Warehouse size={16} className="text-amber-600" />, desc: "Inventory levels and movements" },
-                  { name: "Subcontractors Ledger", icon: <Hammer size={16} className="text-cyan-600" />, desc: "Contracted amounts, payments, and balances" },
-                  { name: "Suppliers Ledger", icon: <Truck size={16} className="text-emerald-600" />, desc: "Orders, payments, and outstanding balances" },
-                  { name: "Income Ledger", icon: <BookOpen size={16} className="text-rose-600" />, desc: "Certificate-wise income tracking" },
-                  { name: "Site Diary", icon: <Clipboard size={16} className="text-slate-600" />, desc: "Daily site activities, workers, weather, and challenges" },
+                  { name: "Profit & Loss", icon: "💰", desc: "Income vs expenses summary" },
+                  { name: "Project Summary", icon: "📊", desc: "All projects with progress" },
+                  { name: "Cash Flow", icon: "💵", desc: "Monthly income/expenses" },
+                  { name: "Expenses by Category", icon: "🥧", desc: "Category breakdown" },
+                  { name: "VAT Summary", icon: "📋", desc: "Output/input VAT" },
+                  { name: "Payroll Summary", icon: "👷", desc: "Payroll totals by project" },
+                  { name: "Orders Report", icon: "📦", desc: "Purchase order summary" },
+                  { name: "Stores Ledger", icon: "🏪", desc: "Inventory levels" },
+                  { name: "Subcontractors Ledger", icon: "🔨", desc: "Payments & balances" },
+                  { name: "Suppliers Ledger", icon: "🚛", desc: "Orders & payments" },
+                  { name: "Income Ledger", icon: "📄", desc: "Certificate tracking" },
+                  { name: "Site Diary", icon: "📔", desc: "Daily activities" },
+                  { name: "Executive Dashboard", icon: "🎯", desc: "KPIs & visual charts" },
                 ].map((report) => (
-                  <div key={report.name} className="border border-border rounded-lg p-3 hover:bg-muted/20 transition-colors">
-                    <div className="flex items-center gap-2 mb-1">
-                      {report.icon}
-                      <span className="font-semibold text-sm">{report.name}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{report.desc}</p>
+                  <div key={report.name} className="border border-border rounded-lg p-2 hover:bg-muted/20">
+                    <div className="flex items-center gap-2"><span className="text-lg">{report.icon}</span><span className="font-medium text-sm">{report.name}</span></div>
+                    <p className="text-xs text-muted-foreground ml-7">{report.desc}</p>
                   </div>
                 ))}
               </div>
-              
-              <div className="mt-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4">
-                <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                  <Download size={16} /> Export Functionality
-                </h3>
-                <p className="text-sm text-muted-foreground">Every report includes an "Export CSV" button to download your filtered data for external analysis in Excel or other tools.</p>
+              <div className="mt-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3">
+                <p className="text-xs font-semibold flex items-center gap-2"><Download size={14} /> All reports include CSV export!</p>
               </div>
             </CardContent>
           </Card>
@@ -575,28 +549,17 @@ export function HelpModule() {
         <TabsContent value="quicktips" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lightbulb size={20} className="text-primary" />
-                Quick Tips & Shortcuts
-              </CardTitle>
-              <CardDescription>Time-saving tips to help you work faster</CardDescription>
+              <CardTitle className="flex items-center gap-2"><Lightbulb size={20} className="text-primary" /> Quick Tips & Keyboard Shortcuts</CardTitle>
+              <CardDescription>Time-saving tips to work faster</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {quickTips.map((tip, idx) => (
-                  <div key={idx} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border hover:bg-muted/50 transition-colors group">
-                    <div className="text-primary group-hover:scale-110 transition-transform">{tip.icon}</div>
-                    <p className="text-sm">{tip.text}</p>
-                    {tip.priority === 'high' && <Badge variant="secondary" className="text-[10px] ml-auto">Essential</Badge>}
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
-                <p className="text-sm font-medium flex items-center gap-2">
-                  <Video size={16} className="text-primary" />
-                  Coming Soon:
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">Video tutorials and interactive walkthroughs will be available in the next update.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="flex items-center gap-2 p-2 bg-muted/30 rounded"><ListChecks size={14} className="text-primary" /><span className="text-sm">Follow setup order: Subcontractors → Suppliers → Approved Items → Worker Categories → Workers → Projects</span></div>
+                <div className="flex items-center gap-2 p-2 bg-muted/30 rounded"><Filter size={14} className="text-primary" /><span className="text-sm">Use project filter to narrow down data</span></div>
+                <div className="flex items-center gap-2 p-2 bg-muted/30 rounded"><Download size={14} className="text-primary" /><span className="text-sm">Export any report to CSV for Excel</span></div>
+                <div className="flex items-center gap-2 p-2 bg-muted/30 rounded"><Database size={14} className="text-primary" /><span className="text-sm">Load sample data from Settings to test</span></div>
+                <div className="flex items-center gap-2 p-2 bg-muted/30 rounded"><Warehouse size={14} className="text-primary" /><span className="text-sm">Purchase orders auto-update inventory when marked supplied</span></div>
+                <div className="flex items-center gap-2 p-2 bg-muted/30 rounded"><Clipboard size={14} className="text-primary" /><span className="text-sm">Use Site Diary daily for accurate project records</span></div>
               </div>
             </CardContent>
           </Card>
@@ -606,64 +569,22 @@ export function HelpModule() {
         <TabsContent value="support" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <LifeBuoy size={20} className="text-primary" />
-                Contact Support
-              </CardTitle>
-              <CardDescription>We're here to help! Reach out to our support team for assistance</CardDescription>
+              <CardTitle className="flex items-center gap-2"><LifeBuoy size={20} className="text-primary" /> Contact Support</CardTitle>
+              <CardDescription>We're here to help! Reach out anytime</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors group">
-                  <Mail size={24} className="text-primary group-hover:scale-110 transition-transform" />
-                  <div>
-                    <p className="text-sm font-semibold">Email Support</p>
-                    <p className="text-sm text-primary font-mono">info@bochi.ke</p>
-                    <p className="text-xs text-muted-foreground mt-1">Response within 24 hours</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors group">
-                  <Phone size={24} className="text-primary group-hover:scale-110 transition-transform" />
-                  <div>
-                    <p className="text-sm font-semibold">Phone Support</p>
-                    <p className="text-sm text-primary font-mono">+254 772 041 005</p>
-                    <p className="text-xs text-muted-foreground mt-1">Available during business hours</p>
-                  </div>
-                </div>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div className="flex items-center gap-3 p-3 rounded-lg border"><Mail size={20} className="text-primary" /><div><p className="font-semibold text-sm">Email Support</p><p className="text-xs text-primary">info@bochi.ke</p><p className="text-[10px] text-muted-foreground">Response within 24 hours</p></div></div>
+                <div className="flex items-center gap-3 p-3 rounded-lg border"><Phone size={20} className="text-primary" /><div><p className="font-semibold text-sm">Phone Support</p><p className="text-xs text-primary">+254 772 041 005</p><p className="text-[10px] text-muted-foreground">Mon-Fri: 8AM-6PM, Sun: 9AM-1PM</p></div></div>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-muted/30 rounded-lg p-3">
-                  <p className="text-xs font-semibold mb-2">📞 Phone Support Hours</p>
-                  <p className="text-xs text-muted-foreground">Monday - Friday: 8:00 AM - 6:00 PM</p>
-                  <p className="text-xs text-muted-foreground">Sunday: 9:00 AM - 1:00 PM</p>
-                  <p className="text-xs text-muted-foreground">Saturday: Closed</p>
-                </div>
-                <div className="bg-muted/30 rounded-lg p-3">
-                  <p className="text-xs font-semibold mb-2">✉️ Email Support</p>
-                  <p className="text-xs text-muted-foreground">Response time: Within 24 hours</p>
-                  <p className="text-xs text-muted-foreground">For urgent matters, please call</p>
-                </div>
-                <div className="bg-muted/30 rounded-lg p-3">
-                  <p className="text-xs font-semibold mb-2">📍 Location</p>
-                  <p className="text-xs text-muted-foreground">Deep Blue Building, Thika Road</p>
-                  <p className="text-xs text-muted-foreground">Nairobi, Kenya</p>
-                </div>
-              </div>
-
-              <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
-                <p className="text-sm font-semibold mb-2 flex items-center gap-2">
-                  <Heart size={16} className="text-primary" />
-                  Before Contacting Support
-                </p>
-                <ul className="text-xs text-muted-foreground space-y-1">
-                  <li>✓ Check the FAQ section for common solutions</li>
-                  <li>✓ Review the Getting Started guide for setup order</li>
-                  <li>✓ Ensure you've set up data in the correct order (Subcontractors → Suppliers → Approved Items → Worker Categories → Workers → Projects)</li>
-                  <li>✓ Try loading sample data to test functionality</li>
-                  <li>✓ Clear filters if reports aren't showing data</li>
-                  <li>✓ Have your project details and any error messages ready</li>
-                  <li>✓ Take screenshots of any issues you're experiencing</li>
+              <div className="bg-primary/5 rounded-lg p-3">
+                <p className="text-xs font-semibold mb-1">📋 Before Contacting Support:</p>
+                <ul className="text-xs text-muted-foreground space-y-0.5 ml-4 list-disc">
+                  <li>Check the FAQ and Critical Setup sections first</li>
+                  <li>Ensure you've followed the 6-step setup order</li>
+                  <li>Try loading sample data to test functionality</li>
+                  <li>Clear filters if reports aren't showing data</li>
+                  <li>Take screenshots of any errors</li>
                 </ul>
               </div>
             </CardContent>
@@ -674,68 +595,37 @@ export function HelpModule() {
         <TabsContent value="about" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe size={20} className="text-primary" />
-                About BOCHI Construction Suite
-              </CardTitle>
+              <CardTitle className="flex items-center gap-2"><Globe size={20} className="text-primary" /> About BOCHI Construction Suite</CardTitle>
               <CardDescription>Version 2.1.0 | Enterprise Construction Management System</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm">
-                BOCHI Construction Suite is a comprehensive construction management system designed specifically for 
-                construction companies in Kenya and East Africa. It helps manage projects, finances, payroll, procurement, 
-                inventory, and site operations in one integrated platform.
-              </p>
-              
+              <p className="text-sm">BOCHI Construction Suite is a comprehensive construction management system designed specifically for construction companies in Kenya and East Africa.</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-muted/30 rounded-lg p-4">
-                  <p className="text-sm font-semibold mb-2 flex items-center gap-2">
-                    <CheckCircle size={14} className="text-success" />
-                    Complete Feature List
-                  </p>
-                  <ul className="grid grid-cols-2 gap-1 text-xs">
-                    <li>✓ Project Management</li>
-                    <li>✓ Financial Tracking</li>
-                    <li>✓ Payroll Processing</li>
-                    <li>✓ Procurement & Purchase Orders</li>
-                    <li>✓ Store & Inventory Management</li>
-                    <li>✓ Site Diary & Daily Reports</li>
-                    <li>✓ Subcontractor Management</li>
-                    <li>✓ VAT & Tax Reporting</li>
-                    <li>✓ Invoice Management</li>
-                    <li>✓ User Role Management</li>
-                    <li>✓ Data Export & Backup</li>
-                    <li>✓ 12 Comprehensive Reports</li>
-                    <li>✓ Advanced Filtering & Search</li>
-                    <li>✓ Dark Mode Support</li>
+                <div className="bg-muted/30 rounded-lg p-3">
+                  <p className="text-xs font-semibold mb-1 flex items-center gap-2"><CheckCircle size={12} /> Features</p>
+                  <ul className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs">
+                    <li>✓ Project Management</li><li>✓ Financial Tracking</li>
+                    <li>✓ Payroll Processing</li><li>✓ Procurement</li>
+                    <li>✓ Store Inventory</li><li>✓ Site Diary</li>
+                    <li>✓ Subcontractors</li><li>✓ VAT Reports</li>
+                    <li>✓ Invoices</li><li>✓ 12+ Reports</li>
                   </ul>
                 </div>
-                
-                <div className="bg-muted/30 rounded-lg p-4">
-                  <p className="text-sm font-semibold mb-2 flex items-center gap-2">
-                    <MapPin size={14} className="text-primary" />
-                    Company Information
-                  </p>
-                  <ul className="space-y-1 text-xs">
-                    <li><strong>Company:</strong> Finite Element Designs Ltd</li>
-                    <li><strong>Location:</strong> Deep Blue Building, Thika Road, Nairobi, Kenya</li>
-                    <li><strong>Contact:</strong> finiteelementdesignsltd@gmail.com</li>
-                    <li><strong>Phone:</strong> +254 772 041 005</li>
-                    <li><strong>Data Storage:</strong> Local (browser storage)</li>
-                    <li><strong>Technology:</strong> React, TypeScript, Tailwind CSS</li>
+                <div className="bg-muted/30 rounded-lg p-3">
+                  <p className="text-xs font-semibold mb-1 flex items-center gap-2"><Database size={12} /> Data Storage</p>
+                  <ul className="space-y-0.5 text-xs">
+                    <li><strong>Type:</strong> Cloud Database (PostgreSQL on Render)</li>
+                    <li><strong>Security:</strong> Encrypted, daily backups</li>
+                    <li><strong>Access:</strong> Any device, anywhere</li>
+                    <li><strong>Sharing:</strong> Team members share same database</li>
                   </ul>
                 </div>
               </div>
-              
-              <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-3 border border-green-200 dark:border-green-800">
-                <p className="text-xs font-semibold mb-1">🆕 What's New in Version 2.1.0:</p>
-                <ul className="text-xs text-muted-foreground space-y-1">
-                  <li>• <strong>Site Diary Report</strong> - New report tracking daily site activities</li>
-                  <li>• <strong>Enhanced Filtering</strong> - Project filters, date ranges, and search on all reports</li>
-                  <li>• <strong>Subcontractors Ledger</strong> - Complete view of contracted amounts and payments</li>
-                  <li>• <strong>Improved Sample Data</strong> - 66+ records across all modules</li>
-                  <li>• <strong>Dark Mode Support</strong> - Full compatibility across all reports</li>
-                  <li>• <strong>Setup Order Guidance</strong> - Improved help documentation for proper data setup</li>
+              <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-2">
+                <p className="text-[11px] font-semibold">🆕 Version 2.1.0 Updates:</p>
+                <ul className="text-[10px] text-muted-foreground flex flex-wrap gap-x-4">
+                  <li>• Executive Dashboard</li><li>• Enhanced Reports</li>
+                  <li>• Subcontractors Ledger</li><li>• Setup Order Guidance</li>
                 </ul>
               </div>
             </CardContent>
@@ -743,22 +633,12 @@ export function HelpModule() {
         </TabsContent>
       </Tabs>
 
-      {/* Dedication Section */}
-      <div className="mt-8 pt-4 border-t border-border">
-        <div className="text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-blue-500/10 border border-pink-200/30">
-            <Heart size={14} className="text-pink-500 fill-pink-500/30" />
-            <span className="text-xs font-medium bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-              To our Lovely Daughter
-            </span>
-            <span className="text-sm font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-              BOCHABERI NYABOE
-            </span>
-            <Heart size={14} className="text-pink-500 fill-pink-500/30" />
-          </div>
-          <p className="text-[10px] text-muted-foreground mt-2">
-            The inspiration behind this suite | Built with ❤️ by Finite Element Designs
-          </p>
+      {/* Dedication */}
+      <div className="text-center pt-4 border-t">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-500/10 to-purple-500/10">
+          <Heart size={12} className="text-pink-500" />
+          <span className="text-[10px]">To our daughter BOCHABERI NYABOE</span>
+          <Heart size={12} className="text-pink-500" />
         </div>
       </div>
     </div>
