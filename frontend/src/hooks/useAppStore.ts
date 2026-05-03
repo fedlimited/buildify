@@ -256,13 +256,56 @@ authUser: (() => {
 login: async (email, password, subdomain) => {
   try {
     const response = await api.login(email, password, subdomain);
-    // response contains { token, user }
     
     console.log('🔐 Login response:', response.user);
     
     // Parse permissions if they're a string
     let permissions = response.user.permissions;
     console.log('📋 Raw permissions from backend:', permissions);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // If permissions is undefined or null, get from the users list
+    if (!permissions) {
+      console.log('⚠️ No permissions in login response, fetching from users list...');
+      try {
+        // Use a direct fetch with the token we just received
+        const token = response.token;
+        const usersResponse = await fetch(`${API_BASE_URL}/users`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (usersResponse.ok) {
+          const users = await usersResponse.json();
+          const currentUser = users.find(u => u.email === email);
+          if (currentUser && currentUser.permissions) {
+            permissions = currentUser.permissions;
+            console.log('✅ Found permissions from users list:', permissions);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch users:', err);
+      }
+    }
+
+
+
+
+
+
     
     if (typeof permissions === 'string') {
       try {
@@ -294,6 +337,16 @@ login: async (email, password, subdomain) => {
     
     set({ authUser });
     localStorage.setItem('authUser', JSON.stringify(authUser));
+    
+
+
+
+
+
+
+
+
+
     
     await Promise.all([
       get().fetchProjects(),
