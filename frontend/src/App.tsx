@@ -33,24 +33,43 @@ const App = () => {
     const token = localStorage.getItem('token');
     const authUser = JSON.parse(localStorage.getItem('authUser') || 'null');
     
-    if (token && authUser && !authUser.permissions) {
+    // Check if permissions are missing OR empty
+    const hasNoPermissions = !authUser?.permissions || 
+                             (Array.isArray(authUser.permissions) && authUser.permissions.length === 0);
+    
+    if (token && authUser && hasNoPermissions) {
       console.log('🔧 Global fix: Fetching permissions from /me');
       fetch('https://buildify-backend-kye8.onrender.com/api/auth/me', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       .then(r => r.json())
       .then(data => {
-        if (data.permissions) {
-          authUser.permissions = data.permissions;
-          localStorage.setItem('authUser', JSON.stringify(authUser));
-          console.log('✅ Global fix: Permissions added successfully');
+        if (data.permissions && data.permissions.length > 0) {
+          const updatedAuthUser = {
+            ...authUser,
+            permissions: data.permissions
+          };
+          localStorage.setItem('authUser', JSON.stringify(updatedAuthUser));
+          console.log('✅ Global fix: Permissions added successfully', data.permissions);
+          // Only reload if permissions were actually missing
+          if (!authUser.permissions || authUser.permissions.length === 0) {
+            window.location.reload();
+          }
+        } else if (data.permissions && data.permissions.length === 0) {
+          console.log('⚠️ Global fix: User has no permissions assigned');
+          // Set default dashboard permission
+          const updatedAuthUser = {
+            ...authUser,
+            permissions: ['dashboard']
+          };
+          localStorage.setItem('authUser', JSON.stringify(updatedAuthUser));
+          console.log('✅ Global fix: Set default dashboard permission');
           window.location.reload();
         }
       })
       .catch(err => console.error('Global fix failed:', err));
     }
   }, []);
-  // ========== END GLOBAL FIX ==========
 
   return (
     <QueryClientProvider client={queryClient}>
