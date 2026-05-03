@@ -27,6 +27,7 @@ const reportCards: ReportCard[] = [
   { id: 'suppliers-ledger', title: 'Suppliers Ledger', description: 'Orders, payments & balances', icon: <Truck size={24} /> },
   { id: 'income-ledger', title: 'Income Ledger', description: 'Certificate-wise income tracking', icon: <BookOpen size={24} /> },
   { id: 'site-diary', title: 'Site Diary', description: 'Daily site activities & workers', icon: <Clipboard size={24} /> },
+  { id: 'analytics', title: 'Analytics Dashboard', description: 'KPIs, charts, and business insights', icon: <BarChart3 size={24} /> },
 
 ];
 
@@ -57,6 +58,7 @@ const renderReport = () => {
     case 'suppliers-ledger': return <SuppliersLedgerReport />;
     case 'income-ledger': return <IncomeLedgerReport />;
     case 'site-diary': return <SiteDiaryReport />;
+    case 'analytics': return <AnalyticsDashboard />;
     default: return null;
   }
 };
@@ -2261,3 +2263,348 @@ function IncomeLedgerReport() {
     React.createElement(Button, { variant: "outline", size: "sm", onClick: () => exportToCSV(filteredData, 'income_ledger') }, "Export CSV")
   );
 }
+
+// ========== ANALYTICS DASHBOARD COMPONENT ==========
+function AnalyticsDashboard() {
+  const { selectedProjectId } = useAppStore();
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState({
+    revenue: [],
+    projects: [],
+    categories: [],
+    kpis: {
+      totalRevenue: 0,
+      totalExpenses: 0,
+      profit: 0,
+      profitMargin: 0,
+      activeProjects: 0,
+      completionRate: 0,
+      avgProjectValue: 0,
+      topPerformingProject: null
+    }
+  });
+  const [filterProject, setFilterProject] = useState('all');
+  const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [projects, setProjects] = useState([]);
+
+  useEffect(() => {
+    async function loadProjects() {
+      try {
+        const token = localStorage.getItem('token');
+        const projectsRes = await fetch(`${API_BASE_URL}/projects`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const projectsData = await projectsRes.json();
+        setProjects(projectsData.filter(p => p.status === 'Active'));
+      } catch (err) {
+        console.error('Error loading projects:', err);
+      }
+    }
+    loadProjects();
+  }, []);
+
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        
+        let income = await fetch(`${API_BASE_URL}/income`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }).then(res => res.json());
+        
+        let expenses = await fetch(`${API_BASE_URL}/expenses`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }).then(res => res.json());
+        
+        let projectsData = await fetch(`${API_BASE_URL}/projects`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }).then(res => res.json());
+        
+        // Apply filters
+        if (selectedProjectId && selectedProjectId !== 'all') {
+          const projectIdNum = parseInt(selectedProjectId);
+          income = income.filter(i => i.project_id === projectIdNum);
+          expenses = expenses.filter(e => e.project_id === projectIdNum);
+          projectsData = projectsData.filter(p => p.id === projectIdNum);
+        }
+        
+        if (filterProject !== 'all') {
+          const projectIdNum = parseInt(filterProject);
+          income = income.filter(i => i.project_id === projectIdNum);
+          expenses = expenses.filter(e => e.project_id === projectIdNum);
+          projectsData = projectsData.filter(p => p.id === projectIdNum);
+        }
+        
+        if (dateRange.start) {
+          income = income.filter(i => i.date >= dateRange.start);
+          expenses = expenses.filter(e => e.date >= dateRange.start);
+        }
+        if (dateRange.end) {
+          income = income.filter(i => i.date <= dateRange.end);
+          expenses = expenses.filter(e => e.date <= dateRange.end);
+        }
+        
+        const totalRevenue = income.reduce((sum, i) => sum + (i.amount_received || i.gross_amount || 0), 0);
+        const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+        const profit = totalRevenue - totalExpenses;
+        const profitMargin = totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0;
+        
+        // Monthly data
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthMap = new Map();
+        
+        [...income, ...expenses].forEach(trans => {
+          if (trans.date) {
+            const date = new Date(trans.date);
+            const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
+            if (!monthMap.has(monthKey)) {
+              monthMap.set(monthKey, { month: months[date.getMonth()], year: date.getFullYear() });
+            }
+          }
+        });
+        
+        const sortedMonths = Array.from(monthMap.keys()).sort();
+        const monthlyData = sortedMonths.map(key => {
+          const m = monthMap.get(key);
+          const monthIncome = income.filter(i => new Date(i.date).toISOString().slice(0, 7) === key).reduce((sum, i) => sum + (i.amount_received || i.gross_amount || 0), 0);
+          const monthExpenses = expenses.filter(e => new Date(e.date).toISOString().slice(0, 7) === key).reduce((sum, e) => sum + (e.amount || 0), 0);
+          return { month: `${m.month} ${m.year}`, revenue: monthIncome, expenses: monthExpenses };
+        });
+        
+        // Project performance
+        const projectPerformance = projectsData.map(p => {
+          const pIncome = income.filter(i => i.project_id === p.id).reduce((sum, i) => sum + (i.amount_received || i.gross_amount || 0), 0);
+          const pExpenses = expenses.filter(e => e.project_id === p.id).reduce((sum, e) => sum + (e.amount || 0), 0);
+          const pProfit = pIncome - pExpenses;
+          const pMargin = pIncome > 0 ? (pProfit / pIncome) * 100 : 0;
+          const progress = p.contract_sum > 0 ? (pIncome / p.contract_sum) * 100 : 0;
+          return {
+            name: p.name,
+            revenue: pIncome,
+            expenses: pExpenses,
+            profit: pProfit,
+            margin: pMargin,
+            progress: Math.min(100, progress),
+            contract: p.contract_sum
+          };
+        }).filter(p => p.revenue > 0 || p.expenses > 0).sort((a, b) => b.revenue - a.revenue);
+        
+        const topProject = projectPerformance[0] || null;
+        
+        // Expense categories
+        const categoryMap = new Map();
+        expenses.forEach(e => {
+          const cat = e.category || 'Uncategorized';
+          categoryMap.set(cat, (categoryMap.get(cat) || 0) + (e.amount || 0));
+        });
+        const categoryData = Array.from(categoryMap.entries())
+          .map(([name, value]) => ({ name, value, percentage: totalExpenses > 0 ? (value / totalExpenses) * 100 : 0 }))
+          .sort((a, b) => b.value - a.value);
+        
+        const activeProjects = projectsData.filter(p => p.status === 'Active').length;
+        const completionRate = projectsData.length > 0 ? (projectsData.filter(p => p.status === 'Completed').length / projectsData.length) * 100 : 0;
+        const avgProjectValue = projectsData.length > 0 ? projectsData.reduce((sum, p) => sum + (p.contract_sum || 0), 0) / projectsData.length : 0;
+        
+        setData({
+          revenue: monthlyData,
+          projects: projectPerformance,
+          categories: categoryData,
+          kpis: {
+            totalRevenue,
+            totalExpenses,
+            profit,
+            profitMargin: profitMargin.toFixed(1),
+            activeProjects,
+            completionRate: completionRate.toFixed(1),
+            avgProjectValue,
+            topPerformingProject: topProject
+          }
+        });
+        setLoading(false);
+      } catch (err) {
+        console.error('Error loading analytics data:', err);
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [selectedProjectId, filterProject, dateRange.start, dateRange.end]);
+
+  if (loading) {
+    return React.createElement('div', { className: "text-center py-8" }, "Loading analytics dashboard...");
+  }
+
+  const maxRevenue = Math.max(...data.revenue.map(m => m.revenue), 1);
+  const maxExpense = Math.max(...data.revenue.map(m => m.expenses), 1);
+
+  return React.createElement('div', { className: "space-y-6" },
+    React.createElement('div', { className: "flex flex-wrap gap-4 justify-between items-center" },
+      React.createElement('div', { className: "flex gap-2 flex-wrap" },
+        React.createElement('select', {
+          className: "px-3 py-1.5 text-sm border border-border rounded-md bg-background",
+          value: filterProject,
+          onChange: (e) => setFilterProject(e.target.value)
+        },
+          React.createElement('option', { value: "all" }, "All Projects"),
+          projects.map(p => React.createElement('option', { key: p.id, value: p.id }, p.name))
+        ),
+        React.createElement('input', {
+          type: "date",
+          placeholder: "Start Date",
+          className: "px-3 py-1.5 text-sm border border-border rounded-md bg-background",
+          value: dateRange.start,
+          onChange: (e) => setDateRange({ ...dateRange, start: e.target.value })
+        }),
+        React.createElement('input', {
+          type: "date",
+          placeholder: "End Date",
+          className: "px-3 py-1.5 text-sm border border-border rounded-md bg-background",
+          value: dateRange.end,
+          onChange: (e) => setDateRange({ ...dateRange, end: e.target.value })
+        }),
+        (dateRange.start || dateRange.end) && React.createElement('button', {
+          className: "px-3 py-1.5 text-sm text-red-500 hover:text-red-700",
+          onClick: () => setDateRange({ start: '', end: '' })
+        }, "Clear Dates")
+      )
+    ),
+    
+    React.createElement('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-4" },
+      React.createElement('div', { className: "bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white shadow-lg" },
+        React.createElement('p', { className: "text-xs opacity-80" }, "Total Revenue"),
+        React.createElement('p', { className: "text-2xl font-bold" }, formatCurrency(data.kpis.totalRevenue))
+      ),
+      React.createElement('div', { className: "bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-4 text-white shadow-lg" },
+        React.createElement('p', { className: "text-xs opacity-80" }, "Total Expenses"),
+        React.createElement('p', { className: "text-2xl font-bold" }, formatCurrency(data.kpis.totalExpenses))
+      ),
+      React.createElement('div', { className: `bg-gradient-to-br ${data.kpis.profit >= 0 ? 'from-green-500 to-green-600' : 'from-orange-500 to-orange-600'} rounded-xl p-4 text-white shadow-lg` },
+        React.createElement('p', { className: "text-xs opacity-80" }, "Net Profit"),
+        React.createElement('p', { className: "text-2xl font-bold" }, formatCurrency(Math.abs(data.kpis.profit)))
+      ),
+      React.createElement('div', { className: "bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white shadow-lg" },
+        React.createElement('p', { className: "text-xs opacity-80" }, "Profit Margin"),
+        React.createElement('p', { className: "text-2xl font-bold" }, data.kpis.profitMargin, "%")
+      )
+    ),
+    
+    React.createElement('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-4" },
+      React.createElement('div', { className: "bg-cyan-50 dark:bg-cyan-950/30 rounded-lg p-3 text-center" },
+        React.createElement('p', { className: "text-xs text-cyan-600" }, "Active Projects"),
+        React.createElement('p', { className: "text-xl font-bold text-cyan-700" }, data.kpis.activeProjects)
+      ),
+      React.createElement('div', { className: "bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3 text-center" },
+        React.createElement('p', { className: "text-xs text-emerald-600" }, "Completion Rate"),
+        React.createElement('p', { className: "text-xl font-bold text-emerald-700" }, data.kpis.completionRate, "%")
+      ),
+      React.createElement('div', { className: "bg-amber-50 dark:bg-amber-950/30 rounded-lg p-3 text-center" },
+        React.createElement('p', { className: "text-xs text-amber-600" }, "Avg Project Value"),
+        React.createElement('p', { className: "text-xl font-bold text-amber-700" }, formatCurrency(data.kpis.avgProjectValue))
+      ),
+      React.createElement('div', { className: "bg-indigo-50 dark:bg-indigo-950/30 rounded-lg p-3 text-center" },
+        React.createElement('p', { className: "text-xs text-indigo-600" }, "Total Projects"),
+        React.createElement('p', { className: "text-xl font-bold text-indigo-700" }, projects.length)
+      )
+    ),
+    
+    React.createElement('div', { className: "bg-card rounded-xl border border-border p-4" },
+      React.createElement('h3', { className: "text-sm font-semibold mb-4 flex items-center gap-2" },
+        React.createElement(TrendingUp, { size: 16, className: "text-primary" }),
+        "Revenue vs Expenses Trend"
+      ),
+      data.revenue.length > 0 ? data.revenue.map((m, idx) => {
+        const revPercent = (m.revenue / maxRevenue) * 100;
+        const expPercent = (m.expenses / maxExpense) * 100;
+        return React.createElement('div', { key: idx, className: "mb-3" },
+          React.createElement('div', { className: "flex items-center gap-2 text-sm mb-1" },
+            React.createElement('div', { className: "flex-1 text-left font-medium" }, m.month),
+            React.createElement('div', { className: "w-24 text-right" }, formatCurrency(m.revenue)),
+            React.createElement('div', { className: "w-24 text-right" }, formatCurrency(m.expenses))
+          ),
+          React.createElement('div', { className: "flex gap-1" },
+            React.createElement('div', { className: "flex-1 bg-green-100 dark:bg-green-900/30 rounded-full h-6 overflow-hidden" },
+              React.createElement('div', { className: "bg-green-500 h-full rounded-full", style: { width: `${revPercent}%` } })
+            ),
+            React.createElement('div', { className: "flex-1 bg-red-100 dark:bg-red-900/30 rounded-full h-6 overflow-hidden" },
+              React.createElement('div', { className: "bg-red-500 h-full rounded-full", style: { width: `${expPercent}%` } })
+            )
+          )
+        );
+      }) : React.createElement('div', { className: "text-center py-8 text-muted-foreground" }, "No data available")
+    ),
+    
+    React.createElement('div', { className: "bg-card rounded-xl border border-border p-4" },
+      React.createElement('h3', { className: "text-sm font-semibold mb-4 flex-items-center gap-2" },
+        React.createElement(BarChart3, { size: 16, className: "text-primary" }),
+        "Project Performance"
+      ),
+      React.createElement('div', { className: "overflow-x-auto" },
+        React.createElement('table', { className: "w-full text-sm" },
+          React.createElement('thead', null,
+            React.createElement('tr', { className: "border-b border-border" },
+              React.createElement('th', { className: "px-3 py-2 text-left text-xs" }, "Project"),
+              React.createElement('th', { className: "px-3 py-2 text-right text-xs" }, "Revenue"),
+              React.createElement('th', { className: "px-3 py-2 text-right text-xs" }, "Expenses"),
+              React.createElement('th', { className: "px-3 py-2 text-right text-xs" }, "Profit"),
+              React.createElement('th', { className: "px-3 py-2 text-right text-xs" }, "Margin"),
+              React.createElement('th', { className: "px-3 py-2 text-center text-xs" }, "Progress")
+            )
+          ),
+          React.createElement('tbody', { className: "divide-y divide-border" },
+            data.projects.map(p => 
+              React.createElement('tr', { key: p.name },
+                React.createElement('td', { className: "px-3 py-2 font-medium" }, p.name),
+                React.createElement('td', { className: "px-3 py-2 text-right font-mono text-success" }, formatCurrency(p.revenue)),
+                React.createElement('td', { className: "px-3 py-2 text-right font-mono text-destructive" }, formatCurrency(p.expenses)),
+                React.createElement('td', { className: `px-3 py-2 text-right font-mono font-bold ${p.profit >= 0 ? 'text-success' : 'text-destructive'}` }, formatCurrency(p.profit)),
+                React.createElement('td', { className: `px-3 py-2 text-right ${p.margin >= 0 ? 'text-success' : 'text-destructive'}` }, p.margin.toFixed(1), "%"),
+                React.createElement('td', { className: "px-3 py-2" },
+                  React.createElement('div', { className: "flex items-center gap-2" },
+                    React.createElement('div', { className: "flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2" },
+                      React.createElement('div', { className: "bg-accent h-2 rounded-full", style: { width: `${p.progress}%` } })
+                    ),
+                    React.createElement('span', { className: "text-xs" }, p.progress.toFixed(0), "%")
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    ),
+    
+    data.kpis.topPerformingProject && React.createElement('div', { className: "bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/30 rounded-xl border border-amber-200 p-4" },
+      React.createElement('div', { className: "flex items-center gap-3" },
+        React.createElement('span', { className: "text-2xl" }, "🏆"),
+        React.createElement('div', null,
+          React.createElement('p', { className: "text-xs text-amber-600" }, "Top Performing Project"),
+          React.createElement('p', { className: "font-semibold text-amber-800" }, data.kpis.topPerformingProject.name),
+          React.createElement('p', { className: "text-xs text-amber-600 mt-1" }, 
+            `Revenue: ${formatCurrency(data.kpis.topPerformingProject.revenue)} | Margin: ${data.kpis.topPerformingProject.margin.toFixed(1)}%`
+          )
+        )
+      )
+    ),
+    
+    React.createElement('div', { className: "bg-card rounded-xl border border-border p-4" },
+      React.createElement('h3', { className: "text-sm font-semibold mb-4 flex items-center gap-2" },
+        React.createElement(PieChart, { size: 16, className: "text-primary" }),
+        "Expense Distribution by Category"
+      ),
+      data.categories.map(cat => 
+        React.createElement('div', { key: cat.name, className: "flex items-center gap-2 mb-2" },
+          React.createElement('div', { className: "w-24 text-sm truncate" }, cat.name),
+          React.createElement('div', { className: "flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden" },
+            React.createElement('div', { className: "bg-primary h-full rounded-full", style: { width: `${cat.percentage}%` } })
+          ),
+          React.createElement('div', { className: "w-20 text-right text-sm font-mono" }, formatCurrency(cat.value)),
+          React.createElement('div', { className: "w-12 text-right text-xs text-muted-foreground" }, cat.percentage.toFixed(0), "%")
+        )
+      )
+    ),
+    
+    React.createElement(Button, { variant: "outline", size: "sm", onClick: () => exportToCSV(data.projects, 'analytics_dashboard') }, "Export Analytics CSV")
+  );
+}
+
+// ========== END OF ANALYTICS DASHBOARD ==========
