@@ -30,15 +30,32 @@ async function login(req, res) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
+    // ========== FIX: Properly parse permissions ==========
+    let userPermissions = [];
+    try {
+      if (user.permissions) {
+        if (typeof user.permissions === 'string') {
+          userPermissions = JSON.parse(user.permissions);
+        } else if (Array.isArray(user.permissions)) {
+          userPermissions = user.permissions;
+        }
+      }
+    } catch(e) {
+      console.error('Failed to parse permissions:', e);
+      userPermissions = [];
+    }
+    
+    console.log('User permissions parsed:', userPermissions);
+
     const token = jwt.sign(
       { 
         id: user.id, 
         email: user.email, 
         role: user.role, 
-        permissions: JSON.parse(user.permissions || '[]'),
+        permissions: userPermissions,
         companyId: company.id,
         subdomain: company.subdomain,
-        isSuperAdmin: user.is_super_admin || false  // ADD TO JWT
+        isSuperAdmin: user.is_super_admin || false
       },
       JWT_SECRET,
       { expiresIn: '7d' }
@@ -51,8 +68,8 @@ async function login(req, res) {
         name: user.name,
         email: user.email,
         role: user.role,
-        permissions: JSON.parse(user.permissions || '[]'),
-        isSuperAdmin: user.is_super_admin || false,  // ← ADD THIS LINE
+        permissions: userPermissions,
+        isSuperAdmin: user.is_super_admin || false,
         company: {
           id: company.id,
           name: company.name,
@@ -79,13 +96,28 @@ async function getCurrentUser(req, res) {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // Parse permissions for /me endpoint too
+    let userPermissions = [];
+    try {
+      if (user.permissions) {
+        if (typeof user.permissions === 'string') {
+          userPermissions = JSON.parse(user.permissions);
+        } else if (Array.isArray(user.permissions)) {
+          userPermissions = user.permissions;
+        }
+      }
+    } catch(e) {
+      console.error('Failed to parse permissions in /me:', e);
+      userPermissions = [];
+    }
+
     res.json({
       id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
-      permissions: JSON.parse(user.permissions || '[]'),
-      isSuperAdmin: user.is_super_admin || false,  // ← ADD THIS LINE
+      permissions: userPermissions,
+      isSuperAdmin: user.is_super_admin || false,
       company: {
         id: user.company_id,
         name: user.company_name,
@@ -98,5 +130,4 @@ async function getCurrentUser(req, res) {
   }
 }
 
-module.exports = { login, getCurrentUser };"// Redeploy trigger - $(date)" 
-"// Redeploy trigger: 03/05/2026  8:15:14.24" 
+module.exports = { login, getCurrentUser };
