@@ -11,7 +11,8 @@ import {
   Heart, Star, Award, Users, Calendar, Clock, Download, Video, 
   Globe, Shield, Settings, TrendingUp, DollarSign, Warehouse, Truck, MapPin,
   Filter, Search, Database, RefreshCw, Clipboard, Hammer, BarChart3, PieChart,
-  Receipt, ShoppingCart, HardHat, LayoutDashboard
+  Receipt, ShoppingCart, HardHat, LayoutDashboard, AlertTriangle, ListChecks,
+  Building2, CreditCard, FileWarning
 } from 'lucide-react';
 
 export function HelpModule() {
@@ -19,6 +20,36 @@ export function HelpModule() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const faqs = [
+    {
+      category: "Getting Started",
+      question: "What is the correct order to set up my data?",
+      answer: "To avoid errors and ensure all dropdowns populate correctly, follow this exact order: 1) Subcontractors → 2) Suppliers → 3) Approved Items → 4) Worker Categories → 5) Workers → 6) Projects. Setup in this order before creating any transactions like payments, purchase orders, or payroll."
+    },
+    {
+      category: "Getting Started",
+      question: "Why do I need to set up Subcontractors first?",
+      answer: "Subcontractors must be registered before you can create quotations or make subcontractor payments. The system needs their details (name, KRA PIN, contact info) to associate with financial transactions."
+    },
+    {
+      category: "Getting Started",
+      question: "Why do Suppliers need to be set up before Purchase Orders?",
+      answer: "Suppliers must be in the system before creating purchase orders. When you create a purchase order, you need to select a supplier from the dropdown - empty dropdowns mean no suppliers are registered."
+    },
+    {
+      category: "Getting Started",
+      question: "What are Approved Items and why set them up early?",
+      answer: "Approved Items are the materials and products you buy regularly (cement, sand, steel, etc.). They must be pre-approved before they can be added to supplies or purchase orders. Each item has a name, category, unit of measure, and default price."
+    },
+    {
+      category: "Getting Started",
+      question: "Why set up Worker Categories before Workers?",
+      answer: "Worker Categories define job roles (Mason, Labourer, Foreman) and their daily pay rates. Workers must be assigned to a category when created, so categories must exist first."
+    },
+    {
+      category: "Getting Started",
+      question: "When should I create Projects?",
+      answer: "Create Projects after setting up all foundational data (subcontractors, suppliers, items, categories, workers). Projects are needed for income, expenses, payroll, site diary, and procurement. While you can create projects anytime, having foundational data ready first is more efficient."
+    },
     {
       category: "Getting Started",
       question: "How do I create my first project?",
@@ -140,6 +171,7 @@ export function HelpModule() {
   const categories = [...new Set(faqs.map(f => f.category))];
 
   const quickTips = [
+    { icon: <ListChecks size={16} />, text: "Follow setup order: Subcontractors → Suppliers → Approved Items → Worker Categories → Workers → Projects" },
     { icon: <Filter size={16} />, text: "Use project filter in top bar or report-specific filters to narrow down data" },
     { icon: <Search size={16} />, text: "Search across reports by typing in the search box - results update instantly" },
     { icon: <Calendar size={16} />, text: "Use date range filters to view data for specific periods" },
@@ -150,12 +182,14 @@ export function HelpModule() {
     { icon: <Hammer size={16} />, text: "Subcontractor balances are calculated from quotations and paid expenses" },
     { icon: <Clipboard size={16} />, text: "Use Site Diary daily for accurate project records" },
     { icon: <TrendingUp size={16} />, text: "Review financial reports monthly to track profitability" },
+    { icon: <FileWarning size={16} />, text: "Always backup data before major changes or updates" },
   ];
 
   return (
     <div className="space-y-6 fade-in">
-      <Tabs defaultValue="faq" className="space-y-4">
+      <Tabs defaultValue="gettingstarted" className="space-y-4">
         <TabsList className="flex flex-wrap">
+          <TabsTrigger value="gettingstarted">Getting Started</TabsTrigger>
           <TabsTrigger value="faq">FAQ</TabsTrigger>
           <TabsTrigger value="guides">User Guides</TabsTrigger>
           <TabsTrigger value="reports">Reports Guide</TabsTrigger>
@@ -164,7 +198,129 @@ export function HelpModule() {
           <TabsTrigger value="about">About</TabsTrigger>
         </TabsList>
 
-        {/* FAQ Tab */}
+        {/* Getting Started Tab - NEW with emphasis on setup order */}
+        <TabsContent value="gettingstarted" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ListChecks size={20} className="text-primary" />
+                Getting Started with BOCHI
+              </CardTitle>
+              <CardDescription>
+                Follow this guide to set up your account correctly and avoid common issues
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* CRITICAL SETUP ORDER - EMPHASIS */}
+              <div className="p-5 bg-amber-50 dark:bg-amber-950/40 border-l-4 border-amber-500 rounded-r-lg">
+                <h3 className="text-base font-bold text-amber-800 dark:text-amber-400 mb-3 flex items-center gap-2">
+                  <AlertTriangle size={20} />
+                  ⚠️ CRITICAL: You MUST Set Up Data in This Exact Order
+                </h3>
+                <p className="text-sm text-amber-700 dark:text-amber-300 mb-4">
+                  To avoid errors, empty dropdowns, and missing data, follow this sequence strictly:
+                </p>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-start gap-3 p-2 bg-white dark:bg-gray-800 rounded-lg">
+                    <span className="font-bold text-amber-800 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/50 w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0">1</span>
+                    <div>
+                      <span className="font-bold text-amber-800 dark:text-amber-400">Subcontractors</span>
+                      <p className="text-xs text-amber-600 dark:text-amber-400">→ Required BEFORE: Subcontractor Payments, Quotations, Expenses</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Register all subcontractors with their KRA PIN, contacts, and specialization</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-2 bg-white dark:bg-gray-800 rounded-lg">
+                    <span className="font-bold text-amber-800 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/50 w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0">2</span>
+                    <div>
+                      <span className="font-bold text-amber-800 dark:text-amber-400">Suppliers</span>
+                      <p className="text-xs text-amber-600 dark:text-amber-400">→ Required BEFORE: Purchase Orders, Supplier Payments</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Add all material suppliers with contacts and payment terms</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-2 bg-white dark:bg-gray-800 rounded-lg">
+                    <span className="font-bold text-amber-800 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/50 w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0">3</span>
+                    <div>
+                      <span className="font-bold text-amber-800 dark:text-amber-400">Approved Items</span>
+                      <p className="text-xs text-amber-600 dark:text-amber-400">→ Required BEFORE: Supplies, Purchase Orders (items list)</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Pre-approve all materials with name, category, unit, and default price</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-2 bg-white dark:bg-gray-800 rounded-lg">
+                    <span className="font-bold text-amber-800 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/50 w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0">4</span>
+                    <div>
+                      <span className="font-bold text-amber-800 dark:text-amber-400">Worker Categories</span>
+                      <p className="text-xs text-amber-600 dark:text-amber-400">→ Required BEFORE: Workers, Payroll, Site Diary</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Define job roles (Mason, Labourer, etc.) and daily pay rates</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-2 bg-white dark:bg-gray-800 rounded-lg">
+                    <span className="font-bold text-amber-800 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/50 w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0">5</span>
+                    <div>
+                      <span className="font-bold text-amber-800 dark:text-amber-400">Workers</span>
+                      <p className="text-xs text-amber-600 dark:text-amber-400">→ Required BEFORE: Payroll, Site Diary Attendance</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Add all workers with their assigned category and project</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-2 bg-white dark:bg-gray-800 rounded-lg">
+                    <span className="font-bold text-amber-800 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/50 w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0">6</span>
+                    <div>
+                      <span className="font-bold text-amber-800 dark:text-amber-400">Projects</span>
+                      <p className="text-xs text-amber-600 dark:text-amber-400">→ Required BEFORE: Income, Expenses, Site Diary (all financial activities)</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Create projects after foundational data is ready</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 pt-3 border-t border-amber-200 dark:border-amber-800">
+                  <p className="text-sm text-amber-700 dark:text-amber-400 flex items-center gap-2">
+                    <CheckCircle size={16} />
+                    <strong>Why this order matters:</strong>
+                  </p>
+                  <ul className="text-xs text-amber-600 dark:text-amber-400 mt-1 space-y-0.5 ml-6 list-disc">
+                    <li>Each dropdown menu needs existing data to populate</li>
+                    <li>Transactions reference these foundational records</li>
+                    <li>Prevents "empty dropdown" errors</li>
+                    <li>Ensures proper data relationships</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Quick Setup Checklist */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                  <h3 className="text-sm font-semibold text-green-800 dark:text-green-400 mb-2 flex items-center gap-2">
+                    <CheckCircle size={16} />
+                    Setup Checklist
+                  </h3>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-600" /> Register all Subcontractors</li>
+                    <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-600" /> Register all Suppliers</li>
+                    <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-600" /> Configure Approved Items (materials)</li>
+                    <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-600" /> Set up Worker Categories with day rates</li>
+                    <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-600" /> Add Workers and assign to categories/projects</li>
+                    <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-600" /> Create Projects</li>
+                    <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-600" /> (Optional) Load sample data to test</li>
+                  </ul>
+                </div>
+                <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                  <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-400 mb-2 flex items-center gap-2">
+                    <BookOpen size={16} />
+                    After Setup
+                  </h3>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-center gap-2"><span className="text-blue-600">→</span> Create Purchase Orders</li>
+                    <li className="flex items-center gap-2"><span className="text-blue-600">→</span> Process Payroll</li>
+                    <li className="flex items-center gap-2"><span className="text-blue-600">→</span> Record Income (certificates)</li>
+                    <li className="flex items-center gap-2"><span className="text-blue-600">→</span> Track Expenses</li>
+                    <li className="flex items-center gap-2"><span className="text-blue-600">→</span> Write Site Diary daily</li>
+                    <li className="flex items-center gap-2"><span className="text-blue-600">→</span> Generate Reports for insights</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* FAQ Tab - same as before but with new FAQs */}
         <TabsContent value="faq" className="space-y-4">
           <Card>
             <CardHeader>
@@ -173,7 +329,7 @@ export function HelpModule() {
                 Frequently Asked Questions
               </CardTitle>
               <CardDescription>
-                Comprehensive answers to common questions about using bochi Construction Suite
+                Comprehensive answers to common questions about using BOCHI Construction Suite
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -231,113 +387,71 @@ export function HelpModule() {
           </Card>
         </TabsContent>
 
-        {/* User Guides Tab */}
+        {/* User Guides Tab - Updated */}
         <TabsContent value="guides" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-
-
-
-<Card className="hover:shadow-md transition-shadow">
-  <CardHeader>
-    <CardTitle className="flex items-center gap-2">
-      <BookOpen size={20} className="text-primary" />
-      Getting Started Guide
-    </CardTitle>
-    <CardDescription>Learn the basics in 10 minutes</CardDescription>
-  </CardHeader>
-  <CardContent>
-    <div className="space-y-4">
-      {/* IMPORTANT SETUP ORDER - NEW SECTION */}
-      <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border-l-4 border-amber-500 rounded-r-lg">
-        <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-400 mb-2 flex items-center gap-2">
-          <span className="text-lg">⚠️</span> CRITICAL: Setup Order Required
-        </h3>
-        <p className="text-xs text-amber-700 dark:text-amber-300 mb-3">
-          To avoid errors and ensure all dropdowns populate correctly, you MUST set up your data in this exact order:
-        </p>
-        <div className="space-y-2 text-sm">
-          <div className="flex items-start gap-2">
-            <span className="font-bold text-amber-800 dark:text-amber-400 min-w-[130px]">1. Subcontractors</span>
-            <span className="text-xs text-amber-700 dark:text-amber-300">→ Required BEFORE: Subcontractor Payments, Quotations</span>
-          </div>
-          <div className="flex items-start gap-2">
-            <span className="font-bold text-amber-800 dark:text-amber-400 min-w-[130px]">2. Suppliers</span>
-            <span className="text-xs text-amber-700 dark:text-amber-300">→ Required BEFORE: Purchase Orders, Supplier Payments</span>
-          </div>
-          <div className="flex items-start gap-2">
-            <span className="font-bold text-amber-800 dark:text-amber-400 min-w-[130px]">3. Approved Items</span>
-            <span className="text-xs text-amber-700 dark:text-amber-300">→ Required BEFORE: Supplies, Purchase Orders (all items must be pre-approved)</span>
-          </div>
-          <div className="flex items-start gap-2">
-            <span className="font-bold text-amber-800 dark:text-amber-400 min-w-[130px]">4. Worker Categories</span>
-            <span className="text-xs text-amber-700 dark:text-amber-300">→ Required BEFORE: Workers, Payroll, Site Diary (categories define pay rates)</span>
-          </div>
-          <div className="flex items-start gap-2">
-            <span className="font-bold text-amber-800 dark:text-amber-400 min-w-[130px]">5. Workers</span>
-            <span className="text-xs text-amber-700 dark:text-amber-300">→ Required BEFORE: Payroll, Site Diary Attendance</span>
-          </div>
-          <div className="flex items-start gap-2">
-            <span className="font-bold text-amber-800 dark:text-amber-400 min-w-[130px]">6. Projects</span>
-            <span className="text-xs text-amber-700 dark:text-amber-300">→ Required BEFORE: Income, Expenses, Site Diary (all transactions need a project)</span>
-          </div>
-        </div>
-        <div className="mt-3 pt-2 border-t border-amber-200 dark:border-amber-800">
-          <p className="text-xs text-amber-600 dark:text-amber-400">
-            💡 <strong>Pro Tip:</strong> Setup in this order ensures all dropdown menus (suppliers, items, workers, projects) populate correctly!
-          </p>
-        </div>
-      </div>
-      
-      <div className="bg-primary/5 rounded-lg p-3">
-        <p className="text-xs font-semibold mb-2 text-primary">Step-by-Step Onboarding:</p>
-        <ol className="space-y-2">
-          <li className="flex items-start gap-2 text-sm">
-            <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">1</span>
-            <span><strong>Load sample data</strong> - Go to Settings → Load Sample Data</span>
-          </li>
-          <li className="flex items-start gap-2 text-sm">
-            <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">2</span>
-            <span><strong>Explore reports</strong> - Check out all 12 reports with filtering and search</span>
-          </li>
-          <li className="flex items-start gap-2 text-sm">
-            <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">3</span>
-            <span><strong>Manage subcontractors</strong> - Add subcontractors, create quotations, track payments</span>
-          </li>
-          <li className="flex items-start gap-2 text-sm">
-            <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">4</span>
-            <span><strong>Process payroll</strong> - Mark attendance and generate payroll</span>
-          </li>
-          <li className="flex items-start gap-2 text-sm">
-            <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">5</span>
-            <span><strong>Record site diary</strong> - Log daily activities, workers, and challenges</span>
-          </li>
-          <li className="flex items-start gap-2 text-sm">
-            <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">6</span>
-            <span><strong>Track finances</strong> - Record income and expenses, generate VAT reports</span>
-          </li>
-        </ol>
-      </div>
-      <div className="bg-muted/30 rounded-lg p-3">
-        <p className="text-xs font-semibold mb-2">💡 Pro Tips:</p>
-        <ul className="space-y-1 text-xs text-muted-foreground">
-          <li>• Use the project filter in top bar to focus on specific projects</li>
-          <li>• Export reports regularly for offline analysis</li>
-          <li>• All reports support search, project filter, and date range filtering</li>
-          <li>• Click 'Clear Dates' to reset date filters</li>
-        </ul>
-      </div>
-    </div>
-  </CardContent>
-</Card>
-
-
-
-
-
-
-
-
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen size={20} className="text-primary" />
+                  Getting Started Guide
+                </CardTitle>
+                <CardDescription>Learn the basics in 10 minutes</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Setup reminder within Getting Started */}
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border-l-4 border-amber-500 rounded-r-lg">
+                    <p className="text-xs font-semibold text-amber-800 dark:text-amber-400">
+                      ⚠️ Remember: Set up in this order: Subcontractors → Suppliers → Approved Items → Worker Categories → Workers → Projects
+                    </p>
+                  </div>
+                  
+                  <div className="bg-primary/5 rounded-lg p-3">
+                    <p className="text-xs font-semibold mb-2 text-primary">Step-by-Step Onboarding:</p>
+                    <ol className="space-y-2">
+                      <li className="flex items-start gap-2 text-sm">
+                        <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">1</span>
+                        <span><strong>Load sample data</strong> - Go to Settings → Load Sample Data (optional but recommended)</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">2</span>
+                        <span><strong>Register Subcontractors</strong> - Before creating any subcontractor payments</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">3</span>
+                        <span><strong>Register Suppliers</strong> - Before creating purchase orders</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">4</span>
+                        <span><strong>Create Approved Items</strong> - Before creating supplies or purchase orders</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">5</span>
+                        <span><strong>Set up Worker Categories</strong> - Before adding workers</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">6</span>
+                        <span><strong>Add Workers</strong> - Before processing payroll or site diary</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 mt-0.5">7</span>
+                        <span><strong>Create Projects</strong> - Before tracking income, expenses, or site diary</span>
+                      </li>
+                    </ol>
+                  </div>
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <p className="text-xs font-semibold mb-2">💡 Pro Tips:</p>
+                    <ul className="space-y-1 text-xs text-muted-foreground">
+                      <li>• Use the project filter in top bar to focus on specific projects</li>
+                      <li>• Export reports regularly for offline analysis</li>
+                      <li>• All reports support search, project filter, and date range filtering</li>
+                      <li>• Click 'Clear Dates' to reset date filters</li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader>
@@ -408,7 +522,7 @@ export function HelpModule() {
           </div>
         </TabsContent>
 
-        {/* Reports Guide Tab - NEW */}
+        {/* Reports Guide Tab */}
         <TabsContent value="reports" className="space-y-4">
           <Card>
             <CardHeader>
@@ -552,7 +666,7 @@ export function HelpModule() {
           </Card>
         </TabsContent>
 
-        {/* Support Tab - Updated Hours */}
+        {/* Support Tab */}
         <TabsContent value="support" className="space-y-4">
           <Card>
             <CardHeader>
@@ -610,8 +724,8 @@ export function HelpModule() {
                 </p>
                 <ul className="text-xs text-muted-foreground space-y-1">
                   <li>✓ Check the FAQ section for common solutions</li>
-                  <li>✓ Review the User Guides for step-by-step instructions</li>
-                  <li>✓ Ensure you're logged in with the correct account</li>
+                  <li>✓ Review the Getting Started guide for setup order</li>
+                  <li>✓ Ensure you've set up data in the correct order (Subcontractors → Suppliers → Approved Items → Worker Categories → Workers → Projects)</li>
                   <li>✓ Try loading sample data to test functionality</li>
                   <li>✓ Clear filters if reports aren't showing data</li>
                   <li>✓ Have your project details and any error messages ready</li>
@@ -628,7 +742,7 @@ export function HelpModule() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Globe size={20} className="text-primary" />
-                About bochi Construction Suite
+                About BOCHI Construction Suite
               </CardTitle>
               <CardDescription>
                 Version 2.1.0 | Enterprise Construction Management System
@@ -636,7 +750,7 @@ export function HelpModule() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm">
-                bochi Construction Suite is a comprehensive construction management system designed specifically for 
+                BOCHI Construction Suite is a comprehensive construction management system designed specifically for 
                 construction companies in Kenya and East Africa. It helps manage projects, finances, payroll, procurement, 
                 inventory, and site operations in one integrated platform.
               </p>
@@ -689,6 +803,7 @@ export function HelpModule() {
                   <li>• <strong>Subcontractors Ledger</strong> - Complete view of contracted amounts and payments</li>
                   <li>• <strong>Improved Sample Data</strong> - 66+ records across all modules</li>
                   <li>• <strong>Dark Mode Support</strong> - Full compatibility across all reports</li>
+                  <li>• <strong>Setup Order Guidance</strong> - Improved help documentation for proper data setup</li>
                 </ul>
               </div>
             </CardContent>
