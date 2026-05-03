@@ -277,8 +277,6 @@ login: async (email, password, subdomain) => {
 
 
 
-
-
     // If permissions is undefined or null, get from the users list
     if (!permissions) {
       console.log('⚠️ No permissions in login response, fetching from users list...');
@@ -294,38 +292,29 @@ login: async (email, password, subdomain) => {
           if (currentUser && currentUser.permissions) {
             permissions = currentUser.permissions;
             console.log('✅ Found permissions from users list:', permissions);
+            console.log('✅ Permissions type:', typeof permissions);
+            console.log('✅ Is array?', Array.isArray(permissions));
+          } else {
+            console.log('❌ User not found in /users response or no permissions');
           }
+        } else {
+          console.log('❌ Failed to fetch /users:', usersResponse.status);
         }
       } catch (err) {
         console.error('Failed to fetch users:', err);
       }
     }
-
-
-
-
-
-
     
-    if (typeof permissions === 'string') {
-      try {
-        permissions = JSON.parse(permissions);
-        console.log('✅ Parsed string permissions:', permissions);
-      } catch (e) {
-        console.error('Failed to parse permissions string:', e);
-        permissions = [];
-      }
-    }
-    if (!Array.isArray(permissions)) {
-      console.log('⚠️ Permissions not an array, defaulting to empty array');
-      permissions = [];
-    }
-    
-    // If user has no permissions but is not admin, give them basic permissions
-    if (permissions.length === 0 && response.user.role !== 'admin') {
-      console.log('📌 No permissions found, giving basic dashboard access');
+    // Ensure permissions is an array
+    if (!permissions || !Array.isArray(permissions)) {
+      console.log('⚠️ Still no valid permissions, defaulting to dashboard');
       permissions = ['dashboard'];
     }
+
+
+
+
+
     
     const authUser = {
       ...response.user,
