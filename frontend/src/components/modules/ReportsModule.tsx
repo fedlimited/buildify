@@ -27,7 +27,7 @@ const reportCards: ReportCard[] = [
   { id: 'suppliers-ledger', title: 'Suppliers Ledger', description: 'Orders, payments & balances', icon: <Truck size={24} /> },
   { id: 'income-ledger', title: 'Income Ledger', description: 'Certificate-wise income tracking', icon: <BookOpen size={24} /> },
   { id: 'site-diary', title: 'Site Diary', description: 'Daily site activities & workers', icon: <Clipboard size={24} /> },
-  { id: 'analytics', title: 'Analytics Dashboard', description: 'KPIs, charts, and business insights', icon: <BarChart3 size={24} /> },
+
 
 ];
 
