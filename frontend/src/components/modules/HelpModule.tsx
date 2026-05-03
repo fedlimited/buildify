@@ -18,6 +18,7 @@ import {
 export function HelpModule() {
   const { companySettings } = useAppStore();
   const [searchQuery, setSearchQuery] = useState('');
+  const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
 
   const faqs = [
     {
@@ -338,28 +339,44 @@ export function HelpModule() {
                 <Input 
                   placeholder="Search by question, answer, or category..." 
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+
+
+
+
+
+
+                 onChange={(e) => {
+  setSearchQuery(e.target.value);
+  setOpenAccordionItems([]);
+}}
+
+
+
+
+
                   className="max-w-md mt-1"
                 />
               </div>
+
+
+
+onClick={() => {
+  setSearchQuery(cat);
+  setOpenAccordionItems([]);
+}}
+
+
+
               
-              {!searchQuery && (
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {categories.map(cat => (
-                    <Button 
-                      key={cat} 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setSearchQuery(cat)}
-                      className="text-xs"
-                    >
-                      {cat}
-                    </Button>
-                  ))}
-                </div>
-              )}
-              
-              <Accordion type="single" collapsible className="w-full">
+           <Accordion 
+  type="multiple" 
+  className="w-full"
+  value={openAccordionItems}
+  onValueChange={setOpenAccordionItems}
+>
+
+
+
                 {filteredFaqs.map((faq, index) => (
                   <AccordionItem key={index} value={`item-${index}`}>
                     <AccordionTrigger className="text-left hover:no-underline">
