@@ -2471,25 +2471,34 @@ function AnalyticsDashboard() {
         }, "Clear Dates")
       )
     ),
-    
-    React.createElement('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-4" },
-      React.createElement('div', { className: "bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white shadow-lg" },
-        React.createElement('p', { className: "text-xs opacity-80" }, "Total Revenue"),
-        React.createElement('p', { className: "text-2xl font-bold" }, formatCurrency(data.kpis.totalRevenue))
-      ),
-      React.createElement('div', { className: "bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-4 text-white shadow-lg" },
-        React.createElement('p', { className: "text-xs opacity-80" }, "Total Expenses"),
-        React.createElement('p', { className: "text-2xl font-bold" }, formatCurrency(data.kpis.totalExpenses))
-      ),
-      React.createElement('div', { className: `bg-gradient-to-br ${data.kpis.profit >= 0 ? 'from-green-500 to-green-600' : 'from-orange-500 to-orange-600'} rounded-xl p-4 text-white shadow-lg` },
-        React.createElement('p', { className: "text-xs opacity-80" }, "Net Profit"),
-        React.createElement('p', { className: "text-2xl font-bold" }, formatCurrency(Math.abs(data.kpis.profit)))
-      ),
-      React.createElement('div', { className: "bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white shadow-lg" },
-        React.createElement('p', { className: "text-xs opacity-80" }, "Profit Margin"),
-        React.createElement('p', { className: "text-2xl font-bold" }, data.kpis.profitMargin, "%")
-      )
-    ),
+
+
+
+
+
+
+React.createElement('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-4" },
+  React.createElement('div', { className: "bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 text-center border border-blue-200 dark:border-blue-800" },
+    React.createElement('p', { className: "text-xs text-blue-600 dark:text-blue-400" }, "Total Revenue"),
+    React.createElement('p', { className: "text-2xl font-bold text-blue-700 dark:text-blue-300" }, formatCurrency(data.kpis.totalRevenue))
+  ),
+  React.createElement('div', { className: "bg-red-50 dark:bg-red-950/30 rounded-lg p-4 text-center border border-red-200 dark:border-red-800" },
+    React.createElement('p', { className: "text-xs text-red-600 dark:text-red-400" }, "Total Expenses"),
+    React.createElement('p', { className: "text-2xl font-bold text-red-700 dark:text-red-300" }, formatCurrency(data.kpis.totalExpenses))
+  ),
+  React.createElement('div', { className: `rounded-lg p-4 text-center border ${data.kpis.profit >= 0 ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' : 'bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800'}` },
+    React.createElement('p', { className: `text-xs ${data.kpis.profit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}` }, "Net Profit"),
+    React.createElement('p', { className: `text-2xl font-bold ${data.kpis.profit >= 0 ? 'text-green-700 dark:text-green-300' : 'text-orange-700 dark:text-orange-300'}` }, formatCurrency(Math.abs(data.kpis.profit)))
+  ),
+  React.createElement('div', { className: "bg-purple-50 dark:bg-purple-950/30 rounded-lg p-4 text-center border border-purple-200 dark:border-purple-800" },
+    React.createElement('p', { className: "text-xs text-purple-600 dark:text-purple-400" }, "Profit Margin"),
+    React.createElement('p', { className: "text-2xl font-bold text-purple-700 dark:text-purple-300" }, data.kpis.profitMargin, "%")
+  )
+),
+
+
+
+
     
     React.createElement('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-4" },
       React.createElement('div', { className: "bg-cyan-50 dark:bg-cyan-950/30 rounded-lg p-3 text-center" },
