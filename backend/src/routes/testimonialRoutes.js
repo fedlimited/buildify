@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
+const { getDb } = require('../config/database');
 
 // ============ PUBLIC ROUTES ============
 
@@ -18,16 +18,17 @@ router.get('/approved', async (req, res) => {
   }
   
   try {
-    const [rows] = await db.query(
+    const db = getDb();
+    const testimonials = await db.all(
       `SELECT id, name, role, company, 
               COALESCE(edited_text, text) as text, 
               rating, display_location
        FROM testimonials 
-       WHERE is_approved = true ${locationFilter}
+       WHERE is_approved = 1 ${locationFilter}
        ORDER BY display_order ASC, created_at DESC 
        LIMIT 10`
     );
-    res.json({ success: true, testimonials: rows });
+    res.json({ success: true, testimonials });
   } catch (error) {
     console.error('Get testimonials error:', error);
     res.status(500).json({ error: error.message });
@@ -39,10 +40,11 @@ router.get('/approved', async (req, res) => {
 // Get all testimonials (admin only)
 router.get('/admin/all', async (req, res) => {
   try {
-    const [rows] = await db.query(
+    const db = getDb();
+    const testimonials = await db.all(
       `SELECT * FROM testimonials ORDER BY is_approved DESC, created_at DESC`
     );
-    res.json({ success: true, testimonials: rows });
+    res.json({ success: true, testimonials });
   } catch (error) {
     console.error('Get all testimonials error:', error);
     res.status(500).json({ error: error.message });
@@ -58,12 +60,13 @@ router.post('/admin', async (req, res) => {
   }
   
   try {
-    const [result] = await db.query(
+    const db = getDb();
+    const result = await db.run(
       `INSERT INTO testimonials (name, role, company, text, edited_text, rating, display_order, is_approved, display_location) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
-      [name, role || '', company || '', text, edited_text || null, rating || 5, display_order || 0, is_approved || false, display_location || 'both']
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [name, role || '', company || '', text, edited_text || null, rating || 5, display_order || 0, is_approved ? 1 : 0, display_location || 'both']
     );
-    res.json({ success: true, id: result[0].id });
+    res.json({ success: true, id: result.lastID });
   } catch (error) {
     console.error('Add testimonial error:', error);
     res.status(500).json({ error: error.message });
@@ -75,14 +78,15 @@ router.put('/admin/:id', async (req, res) => {
   const { name, role, company, text, edited_text, rating, display_order, is_approved, display_location } = req.body;
   
   try {
-    await db.query(
+    const db = getDb();
+    await db.run(
       `UPDATE testimonials 
-       SET name = $1, role = $2, company = $3, text = $4, 
-           edited_text = $5, rating = $6, display_order = $7, 
-           is_approved = $8, display_location = $9
-       WHERE id = $10`,
+       SET name = ?, role = ?, company = ?, text = ?, 
+           edited_text = ?, rating = ?, display_order = ?, 
+           is_approved = ?, display_location = ?
+       WHERE id = ?`,
       [name, role || '', company || '', text, edited_text || null, 
-       rating, display_order || 0, is_approved, display_location || 'both', req.params.id]
+       rating, display_order || 0, is_approved ? 1 : 0, display_location || 'both', req.params.id]
     );
     res.json({ success: true });
   } catch (error) {
@@ -95,9 +99,10 @@ router.put('/admin/:id', async (req, res) => {
 router.put('/admin/:id/approve', async (req, res) => {
   const { is_approved } = req.body;
   try {
-    await db.query(
-      'UPDATE testimonials SET is_approved = $1 WHERE id = $2',
-      [is_approved, req.params.id]
+    const db = getDb();
+    await db.run(
+      'UPDATE testimonials SET is_approved = ? WHERE id = ?',
+      [is_approved ? 1 : 0, req.params.id]
     );
     res.json({ success: true });
   } catch (error) {
@@ -109,7 +114,8 @@ router.put('/admin/:id/approve', async (req, res) => {
 // Delete testimonial (admin only)
 router.delete('/admin/:id', async (req, res) => {
   try {
-    await db.query('DELETE FROM testimonials WHERE id = $1', [req.params.id]);
+    const db = getDb();
+    await db.run('DELETE FROM testimonials WHERE id = ?', [req.params.id]);
     res.json({ success: true });
   } catch (error) {
     console.error('Delete testimonial error:', error);
