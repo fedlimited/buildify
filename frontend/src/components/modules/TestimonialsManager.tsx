@@ -6,7 +6,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle2, XCircle, Edit, Trash2, Plus, Eye, Star, Save, EyeOff } from 'lucide-react';
+import { CheckCircle2, XCircle, Edit, Trash2, Plus, Star, Save } from 'lucide-react';
+
+// Backend API URL
+const API_URL = 'https://buildify-backend-kye8.onrender.com';
 
 interface Testimonial {
   id: number;
@@ -43,10 +46,12 @@ export function TestimonialsManager() {
   const fetchTestimonials = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/testimonials/admin/all', {
+      console.log('Fetching testimonials from:', `${API_URL}/api/testimonials/admin/all`);
+      const res = await fetch(`${API_URL}/api/testimonials/admin/all`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
+      console.log('Response:', data);
       if (data.success) setTestimonials(data.testimonials);
     } catch (error) {
       console.error('Error fetching testimonials:', error);
@@ -64,8 +69,8 @@ export function TestimonialsManager() {
     try {
       const token = localStorage.getItem('token');
       const url = editing 
-        ? `/api/testimonials/admin/${editing.id}` 
-        : '/api/testimonials/admin';
+        ? `${API_URL}/api/testimonials/admin/${editing.id}` 
+        : `${API_URL}/api/testimonials/admin`;
       const method = editing ? 'PUT' : 'POST';
       
       const res = await fetch(url, {
@@ -105,7 +110,7 @@ export function TestimonialsManager() {
   const handleApprove = async (id: number, is_approved: boolean) => {
     try {
       const token = localStorage.getItem('token');
-      await fetch(`/api/testimonials/admin/${id}/approve`, {
+      await fetch(`${API_URL}/api/testimonials/admin/${id}/approve`, {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -123,7 +128,7 @@ export function TestimonialsManager() {
     if (confirm('Are you sure you want to delete this testimonial? This action cannot be undone.')) {
       try {
         const token = localStorage.getItem('token');
-        await fetch(`/api/testimonials/admin/${id}`, {
+        await fetch(`${API_URL}/api/testimonials/admin/${id}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -152,16 +157,11 @@ export function TestimonialsManager() {
 
   const getLocationBadge = (location: string) => {
     switch(location) {
-      case 'both':
-        return <Badge className="bg-purple-500">🌐 Both Pages</Badge>;
-      case 'landing':
-        return <Badge className="bg-blue-500">🏠 Landing Only</Badge>;
-      case 'login':
-        return <Badge className="bg-amber-500">🔐 Login Only</Badge>;
-      case 'hidden':
-        return <Badge variant="secondary">🙈 Hidden</Badge>;
-      default:
-        return <Badge variant="outline">{location}</Badge>;
+      case 'both': return <Badge className="bg-purple-500">🌐 Both Pages</Badge>;
+      case 'landing': return <Badge className="bg-blue-500">🏠 Landing Only</Badge>;
+      case 'login': return <Badge className="bg-amber-500">🔐 Login Only</Badge>;
+      case 'hidden': return <Badge variant="secondary">🙈 Hidden</Badge>;
+      default: return <Badge variant="outline">{location}</Badge>;
     }
   };
 
@@ -169,7 +169,6 @@ export function TestimonialsManager() {
     if (activeTab === 'all') return true;
     if (activeTab === 'approved') return t.is_approved;
     if (activeTab === 'pending') return !t.is_approved;
-    if (activeTab === 'location') return t.display_location === 'both';
     return true;
   });
 
@@ -371,11 +370,10 @@ export function TestimonialsManager() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="all">All ({testimonials.length})</TabsTrigger>
           <TabsTrigger value="approved">Approved ({testimonials.filter(t => t.is_approved).length})</TabsTrigger>
           <TabsTrigger value="pending">Pending ({testimonials.filter(t => !t.is_approved).length})</TabsTrigger>
-          <TabsTrigger value="location">Both Pages ({testimonials.filter(t => t.display_location === 'both').length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-4">
