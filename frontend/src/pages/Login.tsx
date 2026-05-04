@@ -153,15 +153,6 @@ const Login: React.FC = () => {
       {/* LEFT SIDE - OTP Login */}
       <div className="w-full lg:w-2/5 bg-black flex flex-col relative overflow-hidden min-h-screen">
 
-{/* Top Left Branding */}
-<div className="absolute top-6 left-6 z-20">
-  <div className="text-left">
-    <p className="text-white text-sm font-semibold tracking-wide">BOCHI</p>
-    <p className="text-amber-400 text-[10px] tracking-wider">CONSTRUCTION SUITE</p>
-  </div>
-</div>
-
-
         <div className="absolute inset-0 opacity-5">
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
             <defs>
@@ -353,7 +344,6 @@ const Login: React.FC = () => {
           </p>
         </div>
       </div>
-
 
 
 
