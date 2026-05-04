@@ -361,6 +361,45 @@ useEffect(() => {
   const addDelivery = async () => {
     if (newDelivery.itemName && (newDelivery.supplier || (showNewSupplier && newSupplierName))) {
       const finalSupplier = showNewSupplier ? newSupplierName : newDelivery.supplier;
+
+// TEMPORARY ALERT
+    alert(`Adding delivery: ${newDelivery.itemName} from ${finalSupplier}`);
+    
+    console.log('=== ADDING DELIVERY ===');
+    console.log('Current deliveries before add:', deliveries);
+    console.log('New delivery being added:', { 
+      ...newDelivery, 
+      id: Date.now().toString(), 
+      time: new Date().toLocaleTimeString(),
+      supplier: finalSupplier 
+    });
+    
+    setDeliveries([...deliveries, { 
+      ...newDelivery, 
+      id: Date.now().toString(), 
+      time: new Date().toLocaleTimeString(),
+      supplier: finalSupplier
+    }]);
+    
+    alert(`Delivery added! Total deliveries now: ${deliveries.length + 1}`);
+    
+    // Reset form
+    setNewDelivery({ itemName: '', quantity: 1, unit: 'pieces', supplier: '', receivedBy: '' });
+    setShowNewSupplier(false);
+    setNewSupplierName('');
+  } else {
+    alert('Please enter item name and select/enter supplier');
+  }
+};
+
+
+
+
+
+
+
+
+
       
       // If this is a new supplier, optionally save to suppliers list
       if (showNewSupplier && newSupplierName) {

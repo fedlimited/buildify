@@ -21,17 +21,23 @@ interface KpiCardProps {
   suffix?: string;
 }
 
+
+
+
+
+
+
 function KpiCard({ title, value, change, icon, color, prefix = '', suffix = '' }: KpiCardProps) {
   const isPositive = change && change > 0;
   const colorClasses = {
-    emerald: 'border-l-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20',
-    rose: 'border-l-rose-500 bg-rose-50/50 dark:bg-rose-950/20',
-    blue: 'border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20',
-    purple: 'border-l-purple-500 bg-purple-50/50 dark:bg-purple-950/20',
-    amber: 'border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/20',
-    cyan: 'border-l-cyan-500 bg-cyan-50/50 dark:bg-cyan-950/20',
+    emerald: 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800',
+    rose: 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-800',
+    blue: 'bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800',
+    purple: 'bg-purple-50/50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800',
+    amber: 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800',
+    cyan: 'bg-cyan-50/50 dark:bg-cyan-950/20 border-cyan-200 dark:border-cyan-800',
   };
-  const iconColors = {
+  const textColors = {
     emerald: 'text-emerald-600 dark:text-emerald-400',
     rose: 'text-rose-600 dark:text-rose-400',
     blue: 'text-blue-600 dark:text-blue-400',
@@ -41,7 +47,7 @@ function KpiCard({ title, value, change, icon, color, prefix = '', suffix = '' }
   };
 
   return (
-    <Card className={`border-l-4 ${colorClasses[color as keyof typeof colorClasses]} hover:shadow-md transition-all`}>
+    <Card className={`${colorClasses[color as keyof typeof colorClasses]} border hover:shadow-md transition-all`}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between">
           <div>
@@ -56,7 +62,7 @@ function KpiCard({ title, value, change, icon, color, prefix = '', suffix = '' }
               </div>
             )}
           </div>
-          <div className={`p-2 rounded-lg ${colorClasses[color as keyof typeof colorClasses]} ${iconColors[color as keyof typeof iconColors]}`}>
+          <div className={`p-2 rounded-lg bg-white/50 dark:bg-gray-800/50 ${textColors[color as keyof typeof textColors]}`}>
             {icon}
           </div>
         </div>
@@ -64,6 +70,11 @@ function KpiCard({ title, value, change, icon, color, prefix = '', suffix = '' }
     </Card>
   );
 }
+
+
+
+
+
 
 // Simple but elegant bar chart using CSS
 function RevenueExpensesChart({ data }: { data: any[] }) {
