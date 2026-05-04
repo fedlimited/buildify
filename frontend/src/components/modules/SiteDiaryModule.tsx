@@ -282,6 +282,20 @@ useEffect(() => {
     if (selectedSubcontractor) {
       const sub = subcontractors.find(s => s.id.toString() === selectedSubcontractor);
       if (sub) {
+
+      console.log('=== ADDING SUBCONTRACTOR ===');
+      console.log('Current subs before add:', siteSubcontractors);
+      console.log('New sub being added:', {
+        id: Date.now().toString(),
+        name: sub.name,
+        company: sub.name,
+        workersCount: subcontractorWorkers,
+        task: subcontractorTask,
+        checkIn: subcontractorCheckIn,
+        checkOut: subcontractorCheckOut,
+        contactPerson: sub.contactPerson || ''
+      });
+
         setSiteSubcontractors([...siteSubcontractors, {
           id: Date.now().toString(),
           name: sub.name,
@@ -362,6 +376,17 @@ useEffect(() => {
           console.error('Failed to add supplier:', error);
         }
       }
+
+
+    console.log('=== ADDING DELIVERY ===');
+    console.log('Current deliveries before add:', deliveries);
+    console.log('New delivery being added:', { 
+      ...newDelivery, 
+      id: Date.now().toString(), 
+      time: new Date().toLocaleTimeString(),
+      supplier: finalSupplier 
+    });
+
       
       setDeliveries([...deliveries, { 
         ...newDelivery, 
@@ -369,6 +394,21 @@ useEffect(() => {
         time: new Date().toLocaleTimeString(),
         supplier: finalSupplier
       }]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       
       // Reset form
       setNewDelivery({ itemName: '', quantity: 1, unit: 'pieces', supplier: '', receivedBy: '' });
@@ -505,12 +545,24 @@ useEffect(() => {
 
 
 
-
-
 const handleSave = async () => {
+  // ===== DEBUG: Check what's being saved =====
+  console.log('=== SAVING SITE DIARY ===');
+  console.log('deliveries length:', deliveries.length);
+  console.log('deliveries data:', JSON.stringify(deliveries, null, 2));
+  console.log('siteSubcontractors length:', siteSubcontractors.length);
+  console.log('siteSubcontractors data:', JSON.stringify(siteSubcontractors, null, 2));
+  console.log('activities length:', activities.length);
+  console.log('siteWorkers length:', siteWorkers.length);
+  // ===== END DEBUG =====
+  
   setLoading(true);
   try {
     const entryData = {
+
+
+
+
       date: date,
       project_id: projectId,
       project_name: getProjectName(),
@@ -525,6 +577,14 @@ const handleSave = async () => {
       status: 'Submitted'
     };
     
+
+
+
+
+
+
+
+
     // ===== DEBUG CODE =====
     console.log('=== DEBUG SAVE ===');
     console.log('siteWorkers array:', siteWorkers);
