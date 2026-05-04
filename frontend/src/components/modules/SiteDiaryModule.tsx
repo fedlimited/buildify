@@ -157,7 +157,8 @@ export function SiteDiaryModule() {
     workerCategories, 
     subcontractors,
     suppliers,
-    fetchSuppliers
+    fetchSuppliers,
+    companySettings
   } = useAppStore();
   
   const [open, setOpen] = useState(false);
@@ -408,123 +409,223 @@ export function SiteDiaryModule() {
     setIsSyncing(false);
   };
 
-  // Print function
-  const printSiteDiary = (entry: any) => {
-    const printWindow = window.open('', '_blank');
-    const weather = weatherOptions.find(w => w.value === entry.weather?.condition) || weatherOptions[0];
-    
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Site Diary - ${formatDate(entry.date)}</title>
-        <style>
-          body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; margin: 0; color: #1a1a2e; }
-          .header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #1a56db; }
-          .logo { font-size: 24px; font-weight: bold; color: #1a56db; }
-          .title { font-size: 20px; font-weight: bold; margin-top: 5px; color: #374151; }
-          .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; padding: 15px; background: #f3f4f6; border-radius: 8px; }
-          .info-label { font-size: 11px; font-weight: bold; color: #6b7280; margin-bottom: 5px; text-transform: uppercase; }
-          .info-value { font-size: 14px; font-weight: 500; }
-          .section { margin-bottom: 25px; }
-          .section-title { font-size: 16px; font-weight: bold; color: #1a56db; margin-bottom: 12px; padding-bottom: 5px; border-bottom: 1px solid #e5e7eb; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-          th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
-          th { background: #f9fafb; font-weight: 600; }
-          .footer { margin-top: 30px; padding-top: 20px; text-align: center; font-size: 11px; color: #9ca3af; border-top: 1px solid #e5e7eb; }
-          @media print { body { padding: 20px; } }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div class="logo">BOCHABERI Construction Suite</div>
-          <div class="title">SITE DIARY REPORT</div>
-        </div>
 
-        <div class="info-grid">
-          <div class="info-item"><div class="info-label">PROJECT</div><div class="info-value">${entry.projectName}</div></div>
-          <div class="info-item"><div class="info-label">DATE</div><div class="info-value">${formatDate(entry.date)}</div></div>
-          <div class="info-item"><div class="info-label">WEATHER</div><div class="info-value">${weather.label} • ${entry.weather?.temp || 28}°C</div></div>
-        </div>
 
-        <div class="section">
-          <div class="section-title">👥 WORKERS ON SITE</div>
-          <table>
-            <thead>
-              <tr><th>Name</th><th>Role</th><th>Check In</th><th>Check Out</th></tr>
-            </thead>
-            <tbody>
-              ${entry.siteWorkers?.map((w: any) => `<tr><td>${w.name}</td><td>${w.role}</td><td>${w.checkIn}</td><td>${w.checkOut}</td></tr>`).join('') || '<tr><td colspan="4" style="text-align: center;">No workers recorded</td></tr>'}
-            </tbody>
-          </table>
-        </div>
 
-        <div class="section">
-          <div class="section-title">🏗️ SUBCONTRACTORS ON SITE</div>
-          <table>
-            <thead>
-              <tr><th>Company</th><th>Task</th><th>Workers</th><th>Check In</th><th>Check Out</th></tr>
-            </thead>
-            <tbody>
-              ${entry.siteSubcontractors?.map((s: any) => `<tr><td>${s.name}</td><td>${s.task}</td><td>${s.workersCount}</td><td>${s.checkIn}</td><td>${s.checkOut}</td></tr>`).join('') || '<tr><td colspan="5" style="text-align: center;">No subcontractors recorded</td></tr>'}
-            </tbody>
-          </table>
-        </div>
-
-        <div class="section">
-          <div class="section-title">📋 ACTIVITIES</div>
-          <table>
-            <thead>
-              <tr><th>Time</th><th>Location</th><th>Activity</th><th>Supervisor</th><th>Workers</th></tr>
-            </thead>
-            <tbody>
-              ${entry.activities?.map((a: any) => `<tr><td>${a.startTime}-${a.endTime}</td><td>${a.location}</td><td>${a.description}</td><td>${a.supervisor || '-'}</td><td>${a.workersCount}</td></tr>`).join('') || '<tr><td colspan="5" style="text-align: center;">No activities recorded</td></tr>'}
-            </tbody>
-          </table>
-        </div>
-
-        <div class="section">
-          <div class="section-title">🚚 DELIVERIES</div>
-          <table>
-            <thead>
-              <tr><th>Item</th><th>Quantity</th><th>Supplier</th><th>Received By</th></tr>
-            </thead>
-            <tbody>
-              ${entry.deliveries?.map((d: any) => `<tr><td>${d.itemName}</td><td>${d.quantity} ${d.unit}</td><td>${d.supplier}</td><td>${d.receivedBy}</td></tr>`).join('') || '<tr><td colspan="4" style="text-align: center;">No deliveries recorded</td></tr>'}
-            </tbody>
-          </table>
-        </div>
-
-        <div class="section">
-          <div class="section-title">⚠️ INCIDENTS</div>
-          <table>
-            <thead>
-              <tr><th>Type</th><th>Description</th><th>Action Taken</th></tr>
-            </thead>
-            <tbody>
-              ${entry.incidents?.map((i: any) => `<tr><td>${i.type}</td><td>${i.description}</td><td>${i.action || '-'}</td></tr>`).join('') || '<tr><td colspan="3" style="text-align: center;">No incidents recorded</td></tr>'}
-            </tbody>
-          </table>
-        </div>
-
-        <div class="section">
-          <div class="section-title">📝 DAILY SUMMARY</div>
-          <div style="margin-bottom: 10px;"><strong>Work Done:</strong> ${entry.summary?.workDone || 'N/A'}</div>
-          <div style="margin-bottom: 10px;"><strong>Tomorrow's Plan:</strong> ${entry.summary?.plansTomorrow || 'N/A'}</div>
-          <div><strong>Challenges:</strong> ${entry.summary?.challenges || 'N/A'}</div>
-        </div>
-
-        <div class="footer">
-          Generated on ${new Date().toLocaleString()} | BOCHABERI Construction Suite
-        </div>
-      </body>
-      </html>
-    `;
-    
-    printWindow?.document.write(html);
-    printWindow?.document.close();
-    printWindow?.print();
+// Print function
+const printSiteDiary = (entry: any) => {
+  const printWindow = window.open('', '_blank');
+  const weather = weatherOptions.find(w => w.value === entry.weather?.condition) || weatherOptions[0];
+  
+  // Get company settings from the store
+  const companyName = companySettings?.name || 'Construction Company';
+  const companyLogo = companySettings?.logoUrl || '';
+  const companyAddress = companySettings?.address || '';
+  const companyKraPin = companySettings?.kraPin || '';
+  
+  // Helper function to escape HTML
+  const escapeHtml = (str: string) => {
+    if (!str) return '';
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   };
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Site Diary - ${formatDate(entry.date)}</title>
+      <style>
+        body { 
+          font-family: 'Segoe UI', Arial, sans-serif; 
+          padding: 40px; 
+          margin: 0; 
+          color: #1a1a2e;
+          background: white;
+        }
+        .header { 
+          text-align: center; 
+          margin-bottom: 30px; 
+          padding-bottom: 20px; 
+          border-bottom: 2px solid #1a56db;
+        }
+        .logo-container {
+          margin-bottom: 10px;
+        }
+        .logo { 
+          max-width: 150px; 
+          max-height: 80px; 
+          object-fit: contain;
+        }
+        .company-name { 
+          font-size: 24px; 
+          font-weight: bold; 
+          color: #1a56db;
+          margin-top: 5px;
+        }
+        .company-details {
+          font-size: 11px;
+          color: #6b7280;
+          margin-top: 5px;
+        }
+        .title { 
+          font-size: 20px; 
+          font-weight: bold; 
+          margin-top: 5px; 
+          color: #374151;
+        }
+        .info-grid { 
+          display: grid; 
+          grid-template-columns: repeat(3, 1fr); 
+          gap: 15px; 
+          margin-bottom: 25px; 
+          padding: 15px; 
+          background: #f3f4f6; 
+          border-radius: 8px; 
+        }
+        .info-label { 
+          font-size: 11px; 
+          font-weight: bold; 
+          color: #6b7280; 
+          margin-bottom: 5px; 
+          text-transform: uppercase; 
+        }
+        .info-value { 
+          font-size: 14px; 
+          font-weight: 500; 
+        }
+        .section { 
+          margin-bottom: 25px; 
+        }
+        .section-title { 
+          font-size: 16px; 
+          font-weight: bold; 
+          color: #1a56db; 
+          margin-bottom: 12px; 
+          padding-bottom: 5px; 
+          border-bottom: 1px solid #e5e7eb; 
+        }
+        table { 
+          width: 100%; 
+          border-collapse: collapse; 
+          margin-bottom: 15px; 
+        }
+        th, td { 
+          padding: 10px; 
+          text-align: left; 
+          border-bottom: 1px solid #e5e7eb; 
+          font-size: 13px; 
+        }
+        th { 
+          background: #f9fafb; 
+          font-weight: 600; 
+        }
+        .footer { 
+          margin-top: 30px; 
+          padding-top: 20px; 
+          text-align: center; 
+          font-size: 11px; 
+          color: #9ca3af; 
+          border-top: 1px solid #e5e7eb; 
+        }
+        @media print { 
+          body { 
+            padding: 20px; 
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        ${companyLogo ? `<div class="logo-container"><img src="${companyLogo}" alt="Company Logo" class="logo" /></div>` : ''}
+        <div class="company-name">${escapeHtml(companyName)}</div>
+        ${companyAddress ? `<div class="company-details">${escapeHtml(companyAddress)}</div>` : ''}
+        ${companyKraPin ? `<div class="company-details">KRA PIN: ${escapeHtml(companyKraPin)}</div>` : ''}
+        <div class="title">SITE DIARY REPORT</div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-item"><div class="info-label">PROJECT</div><div class="info-value">${escapeHtml(entry.projectName)}</div></div>
+        <div class="info-item"><div class="info-label">DATE</div><div class="info-value">${formatDate(entry.date)}</div></div>
+        <div class="info-item"><div class="info-label">WEATHER</div><div class="info-value">${weather.label} • ${entry.weather?.temp || 28}°C</div></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">👥 WORKERS ON SITE</div>
+        <table>
+          <thead><tr><th>Name</th><th>Role</th><th>Check In</th><th>Check Out</th></tr></thead>
+          <tbody>
+            ${entry.siteWorkers?.map((w: any) => `<tr><td>${escapeHtml(w.name)}</td><td>${escapeHtml(w.role)}</td><td>${escapeHtml(w.checkIn)}</td><td>${escapeHtml(w.checkOut)}</td></tr>`).join('') || '<tr><td colspan="4" style="text-align: center;">No workers recorded</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <div class="section-title">🏗️ SUBCONTRACTORS ON SITE</div>
+        <table>
+          <thead><tr><th>Company</th><th>Task</th><th>Workers</th><th>Check In</th><th>Check Out</th></tr></thead>
+          <tbody>
+            ${entry.siteSubcontractors?.map((s: any) => `<tr><td>${escapeHtml(s.name)}</td><td>${escapeHtml(s.task)}</td><td>${s.workersCount}</td><td>${escapeHtml(s.checkIn)}</td><td>${escapeHtml(s.checkOut)}</td></tr>`).join('') || '<tr><td colspan="5" style="text-align: center;">No subcontractors recorded</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <div class="section-title">📋 ACTIVITIES</div>
+        <table>
+          <thead><tr><th>Time</th><th>Location</th><th>Activity</th><th>Supervisor</th><th>Workers</th></tr></thead>
+          <tbody>
+            ${entry.activities?.map((a: any) => `<tr><td>${escapeHtml(a.startTime)}-${escapeHtml(a.endTime)}</td><td>${escapeHtml(a.location)}</td><td>${escapeHtml(a.description)}</td><td>${escapeHtml(a.supervisor || '-')}</td><td>${a.workersCount}</td></tr>`).join('') || '<tr><td colspan="5" style="text-align: center;">No activities recorded</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <div class="section-title">🚚 DELIVERIES</div>
+        <table>
+          <thead><tr><th>Item</th><th>Quantity</th><th>Supplier</th><th>Received By</th></tr></thead>
+          <tbody>
+            ${entry.deliveries?.map((d: any) => `<tr><td>${escapeHtml(d.itemName)}</td><td>${d.quantity} ${escapeHtml(d.unit)}</td><td>${escapeHtml(d.supplier)}</td><td>${escapeHtml(d.receivedBy)}</td></tr>`).join('') || '<tr><td colspan="4" style="text-align: center;">No deliveries recorded</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <div class="section-title">⚠️ INCIDENTS</div>
+        <table>
+          <thead><tr><th>Type</th><th>Description</th><th>Action Taken</th></tr></thead>
+          <tbody>
+            ${entry.incidents?.map((i: any) => `<tr><td>${escapeHtml(i.type)}</td><td>${escapeHtml(i.description)}</td><td>${escapeHtml(i.action || '-')}</td></tr>`).join('') || '<tr><td colspan="3" style="text-align: center;">No incidents recorded</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <div class="section-title">📝 DAILY SUMMARY</div>
+        <div><strong>Work Done:</strong> ${escapeHtml(entry.summary?.workDone || 'N/A')}</div>
+        <div><strong>Tomorrow's Plan:</strong> ${escapeHtml(entry.summary?.plansTomorrow || 'N/A')}</div>
+        <div><strong>Challenges:</strong> ${escapeHtml(entry.summary?.challenges || 'N/A')}</div>
+      </div>
+
+      <div class="footer">
+        Generated on ${new Date().toLocaleString()} | BOCHI Construction Suite
+      </div>
+    </body>
+    </html>
+  `;
+  
+  printWindow?.document.write(html);
+  printWindow?.document.close();
+  printWindow?.print();
+};
+
+
+
+
 
   const handleSave = async () => {
     console.log('=== SAVING SITE DIARY ===');
