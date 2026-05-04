@@ -1,157 +1,119 @@
 const express = require('express');
 const router = express.Router();
-const { getDb } = require('../config/database');
+const db = require('../db');
 
 // ============ PUBLIC ROUTES ============
 
-// Submit a testimonial (public)
-router.post('/submit', async (req, res) => {
-  try {
-    const db = getDb();
-    const { name, role, company, text, rating } = req.body;
-    
-    if (!name || !text) {
-      return res.status(400).json({ error: 'Name and testimonial text are required' });
-    }
-    
-    const result = await db.run(
-      `INSERT INTO testimonials (name, role, company, text, rating, is_approved) 
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [name, role || '', company || '', text, rating || 5, 0]
-    );
-    
-    res.status(201).json({ 
-      success: true, 
-      message: 'Thank you! Your testimonial has been submitted for review.',
-      id: result.lastID 
-    });
-  } catch (error) {
-    console.error('Submit testimonial error:', error);
-    res.status(500).json({ error: 'Failed to submit testimonial' });
-  }
-});
-
-// Get approved testimonials (public) - with optional location filter
+// Get approved testimonials (public) - with location filter
 router.get('/approved', async (req, res) => {
+  const { location } = req.query;
+  let locationFilter = '';
+  
+  if (location === 'landing') {
+    locationFilter = "AND display_location IN ('landing', 'both')";
+  } else if (location === 'login') {
+    locationFilter = "AND display_location IN ('login', 'both')";
+  } else {
+    locationFilter = "AND display_location IN ('landing', 'login', 'both')";
+  }
+  
   try {
-    const db = getDb();
-    const { location } = req.query; // 'landing', 'login'
-    
-    let locationFilter = '';
-    if (location === 'landing') {
-      locationFilter = "AND display_location IN ('landing', 'both')";
-    } else if (location === 'login') {
-      locationFilter = "AND display_location IN ('login', 'both')";
-    } else {
-      locationFilter = "AND display_location IN ('landing', 'login', 'both')";
-    }
-    
-    const testimonials = await db.all(
+    const [rows] = await db.query(
       `SELECT id, name, role, company, 
               COALESCE(edited_text, text) as text, 
               rating, display_location
        FROM testimonials 
-       WHERE is_approved = 1 ${locationFilter}
+       WHERE is_approved = true ${locationFilter}
        ORDER BY display_order ASC, created_at DESC 
        LIMIT 10`
     );
-    res.json({ success: true, testimonials });
+    res.json({ success: true, testimonials: rows });
   } catch (error) {
     console.error('Get testimonials error:', error);
-    res.status(500).json({ error: 'Failed to load testimonials' });
+    res.status(500).json({ error: error.message });
   }
 });
 
 // ============ SUPER ADMIN ROUTES ============
 
-// Get all testimonials (including pending)
+// Get all testimonials (admin only)
 router.get('/admin/all', async (req, res) => {
   try {
-    const db = getDb();
-    const testimonials = await db.all(
-      `SELECT t.*, 
-              CASE WHEN t.edited_text IS NOT NULL THEN t.edited_text ELSE t.text END as display_text
-       FROM testimonials t 
-       ORDER BY t.is_approved DESC, t.created_at DESC`
+    const [rows] = await db.query(
+      `SELECT * FROM testimonials ORDER BY is_approved DESC, created_at DESC`
     );
-    res.json({ success: true, testimonials });
+    res.json({ success: true, testimonials: rows });
   } catch (error) {
     console.error('Get all testimonials error:', error);
-    res.status(500).json({ error: 'Failed to load testimonials' });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Add testimonial manually (super admin)
+// Add testimonial (admin only)
 router.post('/admin', async (req, res) => {
-  const db = getDb();
   const { name, role, company, text, edited_text, rating, display_order, display_location, is_approved } = req.body;
   
   if (!name || !text) {
-    return res.status(400).json({ error: 'Name and testimonial text are required' });
+    return res.status(400).json({ error: 'Name and comment are required' });
   }
   
   try {
-    const result = await db.run(
+    const [result] = await db.query(
       `INSERT INTO testimonials (name, role, company, text, edited_text, rating, display_order, is_approved, display_location) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [name, role || '', company || '', text, edited_text || null, rating || 5, display_order || 0, is_approved ? 1 : 0, display_location || 'both']
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+      [name, role || '', company || '', text, edited_text || null, rating || 5, display_order || 0, is_approved || false, display_location || 'both']
     );
-    res.json({ success: true, id: result.lastID });
+    res.json({ success: true, id: result[0].id });
   } catch (error) {
     console.error('Add testimonial error:', error);
-    res.status(500).json({ error: 'Failed to add testimonial' });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Update testimonial (super admin)
+// Update testimonial (admin only)
 router.put('/admin/:id', async (req, res) => {
-  const db = getDb();
   const { name, role, company, text, edited_text, rating, display_order, is_approved, display_location } = req.body;
   
   try {
-    await db.run(
+    await db.query(
       `UPDATE testimonials 
-       SET name = ?, role = ?, company = ?, text = ?, 
-           edited_text = ?, rating = ?, display_order = ?, 
-           is_approved = ?, display_location = ?
-       WHERE id = ?`,
+       SET name = $1, role = $2, company = $3, text = $4, 
+           edited_text = $5, rating = $6, display_order = $7, 
+           is_approved = $8, display_location = $9
+       WHERE id = $10`,
       [name, role || '', company || '', text, edited_text || null, 
-       rating, display_order || 0, is_approved ? 1 : 0, display_location || 'both', req.params.id]
+       rating, display_order || 0, is_approved, display_location || 'both', req.params.id]
     );
     res.json({ success: true });
   } catch (error) {
     console.error('Update testimonial error:', error);
-    res.status(500).json({ error: 'Failed to update testimonial' });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Quick approve/reject testimonial (super admin)
+// Approve/reject testimonial (admin only)
 router.put('/admin/:id/approve', async (req, res) => {
-  const db = getDb();
-  const { id } = req.params;
   const { is_approved } = req.body;
-  
   try {
-    await db.run(
-      'UPDATE testimonials SET is_approved = ? WHERE id = ?',
-      [is_approved ? 1 : 0, id]
+    await db.query(
+      'UPDATE testimonials SET is_approved = $1 WHERE id = $2',
+      [is_approved, req.params.id]
     );
     res.json({ success: true });
   } catch (error) {
     console.error('Approve testimonial error:', error);
-    res.status(500).json({ error: 'Failed to update testimonial' });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Delete testimonial (super admin)
+// Delete testimonial (admin only)
 router.delete('/admin/:id', async (req, res) => {
-  const db = getDb();
   try {
-    await db.run('DELETE FROM testimonials WHERE id = ?', [req.params.id]);
+    await db.query('DELETE FROM testimonials WHERE id = $1', [req.params.id]);
     res.json({ success: true });
   } catch (error) {
     console.error('Delete testimonial error:', error);
-    res.status(500).json({ error: 'Failed to delete testimonial' });
+    res.status(500).json({ error: error.message });
   }
 });
 
