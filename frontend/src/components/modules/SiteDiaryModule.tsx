@@ -19,11 +19,6 @@ import {
   Droplets, Thermometer, CloudSun, CloudLightning, CloudFog, Snowflake
 } from 'lucide-react';
 
-
-
-
-
-
 // Weather options
 const weatherOptions = [
   { 
@@ -99,12 +94,6 @@ const weatherOptions = [
     borderColor: 'border-gray-200 dark:border-gray-700'
   }
 ];
-
-
-
-
-
-
 
 interface Activity {
   id: string;
@@ -220,20 +209,16 @@ export function SiteDiaryModule() {
     fetchSiteDiaryEntries();
   }, [fetchSiteDiaryEntries, selectedProjectId]);
 
-
-
   // Debug log
   useEffect(() => {
     console.log('Site Diary - Entries updated:', siteDiaryEntries.length);
     console.log('Entries:', siteDiaryEntries);
   }, [siteDiaryEntries]);
 
-// ✅ ADD THIS - Reset selected worker when project changes
-useEffect(() => {
-  setSelectedWorker('');
-}, [projectId]);
-
-
+  // Reset selected worker when project changes
+  useEffect(() => {
+    setSelectedWorker('');
+  }, [projectId]);
 
   const getProjectName = () => {
     const project = projects.find(p => p.id === projectId);
@@ -282,19 +267,18 @@ useEffect(() => {
     if (selectedSubcontractor) {
       const sub = subcontractors.find(s => s.id.toString() === selectedSubcontractor);
       if (sub) {
-
-      console.log('=== ADDING SUBCONTRACTOR ===');
-      console.log('Current subs before add:', siteSubcontractors);
-      console.log('New sub being added:', {
-        id: Date.now().toString(),
-        name: sub.name,
-        company: sub.name,
-        workersCount: subcontractorWorkers,
-        task: subcontractorTask,
-        checkIn: subcontractorCheckIn,
-        checkOut: subcontractorCheckOut,
-        contactPerson: sub.contactPerson || ''
-      });
+        console.log('=== ADDING SUBCONTRACTOR ===');
+        console.log('Current subs before add:', siteSubcontractors);
+        console.log('New sub being added:', {
+          id: Date.now().toString(),
+          name: sub.name,
+          company: sub.name,
+          workersCount: subcontractorWorkers,
+          task: subcontractorTask,
+          checkIn: subcontractorCheckIn,
+          checkOut: subcontractorCheckOut,
+          contactPerson: sub.contactPerson || ''
+        });
 
         setSiteSubcontractors([...siteSubcontractors, {
           id: Date.now().toString(),
@@ -306,6 +290,7 @@ useEffect(() => {
           checkOut: subcontractorCheckOut,
           contactPerson: sub.contactPerson || ''
         }]);
+        
         setSelectedSubcontractor('');
         setSubcontractorWorkers(1);
         setSubcontractorTask('');
@@ -341,6 +326,7 @@ useEffect(() => {
       setNewActivity({ description: '', location: '', startTime: '08:00', endTime: '17:00', workersCount: 1, supervisor: '' });
     }
   };
+  
   const removeActivity = (id: string) => setActivities(activities.filter(a => a.id !== id));
 
   // Delivery functions
@@ -362,49 +348,20 @@ useEffect(() => {
     if (newDelivery.itemName && (newDelivery.supplier || (showNewSupplier && newSupplierName))) {
       const finalSupplier = showNewSupplier ? newSupplierName : newDelivery.supplier;
 
-// TEMPORARY ALERT
-    alert(`Adding delivery: ${newDelivery.itemName} from ${finalSupplier}`);
-    
-    console.log('=== ADDING DELIVERY ===');
-    console.log('Current deliveries before add:', deliveries);
-    console.log('New delivery being added:', { 
-      ...newDelivery, 
-      id: Date.now().toString(), 
-      time: new Date().toLocaleTimeString(),
-      supplier: finalSupplier 
-    });
-    
-    setDeliveries([...deliveries, { 
-      ...newDelivery, 
-      id: Date.now().toString(), 
-      time: new Date().toLocaleTimeString(),
-      supplier: finalSupplier
-    }]);
-    
-    alert(`Delivery added! Total deliveries now: ${deliveries.length + 1}`);
-    
-    // Reset form
-    setNewDelivery({ itemName: '', quantity: 1, unit: 'pieces', supplier: '', receivedBy: '' });
-    setShowNewSupplier(false);
-    setNewSupplierName('');
-  } else {
-    alert('Please enter item name and select/enter supplier');
-  }
-};
-
-
-
-
-
-
-
-
-
+      alert(`Adding delivery: ${newDelivery.itemName} from ${finalSupplier}`);
+      
+      console.log('=== ADDING DELIVERY ===');
+      console.log('Current deliveries before add:', deliveries);
+      console.log('New delivery being added:', { 
+        ...newDelivery, 
+        id: Date.now().toString(), 
+        time: new Date().toLocaleTimeString(),
+        supplier: finalSupplier 
+      });
       
       // If this is a new supplier, optionally save to suppliers list
       if (showNewSupplier && newSupplierName) {
         try {
-          // Check if supplier already exists
           const existingSupplier = suppliers.find(s => s.name?.toLowerCase() === newSupplierName.toLowerCase());
           if (!existingSupplier) {
             const newSupplier = await api.createSupplier({ name: newSupplierName, is_active: 1 });
@@ -415,17 +372,6 @@ useEffect(() => {
           console.error('Failed to add supplier:', error);
         }
       }
-
-
-    console.log('=== ADDING DELIVERY ===');
-    console.log('Current deliveries before add:', deliveries);
-    console.log('New delivery being added:', { 
-      ...newDelivery, 
-      id: Date.now().toString(), 
-      time: new Date().toLocaleTimeString(),
-      supplier: finalSupplier 
-    });
-
       
       setDeliveries([...deliveries, { 
         ...newDelivery, 
@@ -433,21 +379,8 @@ useEffect(() => {
         time: new Date().toLocaleTimeString(),
         supplier: finalSupplier
       }]);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+      
+      alert(`Delivery added! Total deliveries now: ${deliveries.length + 1}`);
       
       // Reset form
       setNewDelivery({ itemName: '', quantity: 1, unit: 'pieces', supplier: '', receivedBy: '' });
@@ -465,6 +398,7 @@ useEffect(() => {
       setNewIncident({ type: 'near-miss', description: '', severity: 'medium', action: '' });
     }
   };
+  
   const removeIncident = (id: string) => setIncidents(incidents.filter(i => i.id !== id));
 
   // Sync data from server
@@ -516,7 +450,9 @@ useEffect(() => {
         <div class="section">
           <div class="section-title">👥 WORKERS ON SITE</div>
           <table>
-            <thead><tr><th>Name</th><th>Role</th><th>Check In</th><th>Check Out</th></tr></thead>
+            <thead>
+              <tr><th>Name</th><th>Role</th><th>Check In</th><th>Check Out</th></tr>
+            </thead>
             <tbody>
               ${entry.siteWorkers?.map((w: any) => `<tr><td>${w.name}</td><td>${w.role}</td><td>${w.checkIn}</td><td>${w.checkOut}</td></tr>`).join('') || '<tr><td colspan="4" style="text-align: center;">No workers recorded</td></tr>'}
             </tbody>
@@ -526,7 +462,9 @@ useEffect(() => {
         <div class="section">
           <div class="section-title">🏗️ SUBCONTRACTORS ON SITE</div>
           <table>
-            <thead><tr><th>Company</th><th>Task</th><th>Workers</th><th>Check In</th><th>Check Out</th></tr></thead>
+            <thead>
+              <tr><th>Company</th><th>Task</th><th>Workers</th><th>Check In</th><th>Check Out</th></tr>
+            </thead>
             <tbody>
               ${entry.siteSubcontractors?.map((s: any) => `<tr><td>${s.name}</td><td>${s.task}</td><td>${s.workersCount}</td><td>${s.checkIn}</td><td>${s.checkOut}</td></tr>`).join('') || '<tr><td colspan="5" style="text-align: center;">No subcontractors recorded</td></tr>'}
             </tbody>
@@ -536,7 +474,9 @@ useEffect(() => {
         <div class="section">
           <div class="section-title">📋 ACTIVITIES</div>
           <table>
-            <thead><tr><th>Time</th><th>Location</th><th>Activity</th><th>Supervisor</th><th>Workers</th></tr></thead>
+            <thead>
+              <tr><th>Time</th><th>Location</th><th>Activity</th><th>Supervisor</th><th>Workers</th></tr>
+            </thead>
             <tbody>
               ${entry.activities?.map((a: any) => `<tr><td>${a.startTime}-${a.endTime}</td><td>${a.location}</td><td>${a.description}</td><td>${a.supervisor || '-'}</td><td>${a.workersCount}</td></tr>`).join('') || '<tr><td colspan="5" style="text-align: center;">No activities recorded</td></tr>'}
             </tbody>
@@ -546,7 +486,9 @@ useEffect(() => {
         <div class="section">
           <div class="section-title">🚚 DELIVERIES</div>
           <table>
-            <thead><tr><th>Item</th><th>Quantity</th><th>Supplier</th><th>Received By</th></tr></thead>
+            <thead>
+              <tr><th>Item</th><th>Quantity</th><th>Supplier</th><th>Received By</th></tr>
+            </thead>
             <tbody>
               ${entry.deliveries?.map((d: any) => `<tr><td>${d.itemName}</td><td>${d.quantity} ${d.unit}</td><td>${d.supplier}</td><td>${d.receivedBy}</td></tr>`).join('') || '<tr><td colspan="4" style="text-align: center;">No deliveries recorded</td></tr>'}
             </tbody>
@@ -556,7 +498,9 @@ useEffect(() => {
         <div class="section">
           <div class="section-title">⚠️ INCIDENTS</div>
           <table>
-            <thead><tr><th>Type</th><th>Description</th><th>Action Taken</th></tr></thead>
+            <thead>
+              <tr><th>Type</th><th>Description</th><th>Action Taken</th></tr>
+            </thead>
             <tbody>
               ${entry.incidents?.map((i: any) => `<tr><td>${i.type}</td><td>${i.description}</td><td>${i.action || '-'}</td></tr>`).join('') || '<tr><td colspan="3" style="text-align: center;">No incidents recorded</td></tr>'}
             </tbody>
@@ -582,175 +526,131 @@ useEffect(() => {
     printWindow?.print();
   };
 
-
-
-const handleSave = async () => {
-  // ===== DEBUG: Check what's being saved =====
-  console.log('=== SAVING SITE DIARY ===');
-  console.log('deliveries length:', deliveries.length);
-  console.log('deliveries data:', JSON.stringify(deliveries, null, 2));
-  console.log('siteSubcontractors length:', siteSubcontractors.length);
-  console.log('siteSubcontractors data:', JSON.stringify(siteSubcontractors, null, 2));
-  console.log('activities length:', activities.length);
-  console.log('siteWorkers length:', siteWorkers.length);
-  // ===== END DEBUG =====
-  
-  setLoading(true);
-  try {
-    const entryData = {
-
-
-
-
-      date: date,
-      project_id: projectId,
-      project_name: getProjectName(),
-      weather: { condition: weatherCondition, temp: temperature },
-      activities: activities,
-      deliveries: deliveries,
-      incidents: incidents,
-      site_workers: siteWorkers,
-      site_subcontractors: siteSubcontractors,
-      total_workers: totalWorkers,
-      summary: { workDone, plansTomorrow, challenges },
-      status: 'Submitted'
-    };
+  const handleSave = async () => {
+    console.log('=== SAVING SITE DIARY ===');
+    console.log('deliveries length:', deliveries.length);
+    console.log('deliveries data:', JSON.stringify(deliveries, null, 2));
+    console.log('siteSubcontractors length:', siteSubcontractors.length);
+    console.log('siteSubcontractors data:', JSON.stringify(siteSubcontractors, null, 2));
+    console.log('activities length:', activities.length);
+    console.log('siteWorkers length:', siteWorkers.length);
     
-
-
-
-
-
-
-
-
-    // ===== DEBUG CODE =====
-    console.log('=== DEBUG SAVE ===');
-    console.log('siteWorkers array:', siteWorkers);
-    console.log('siteWorkers count:', siteWorkers.length);
-    console.log('activities array:', activities);
-    console.log('activity workers total:', activities.reduce((sum, a) => sum + a.workersCount, 0));
-    console.log('siteSubcontractors array:', siteSubcontractors);
-    console.log('subcontractor workers total:', siteSubcontractors.reduce((sum, s) => sum + s.workersCount, 0));
-    console.log('FINAL totalWorkers:', totalWorkers);
-    console.log('entryData being sent:', entryData);
-    // ===== END DEBUG CODE =====
-    
-    if (editing) {
-      await updateSiteDiaryEntry(editing.id, entryData);
-      await fetchSiteDiaryEntries();
-      alert('Entry updated successfully!');
-    } else {
-      await addSiteDiaryEntry(entryData);
-      await fetchSiteDiaryEntries();
-      alert('Entry saved successfully!');
+    setLoading(true);
+    try {
+      const entryData = {
+        date: date,
+        project_id: projectId,
+        project_name: getProjectName(),
+        weather: { condition: weatherCondition, temp: temperature },
+        activities: activities,
+        deliveries: deliveries,
+        incidents: incidents,
+        site_workers: siteWorkers,
+        site_subcontractors: siteSubcontractors,
+        total_workers: totalWorkers,
+        summary: { workDone, plansTomorrow, challenges },
+        status: 'Submitted'
+      };
+      
+      console.log('=== DEBUG SAVE ===');
+      console.log('siteWorkers array:', siteWorkers);
+      console.log('siteWorkers count:', siteWorkers.length);
+      console.log('activities array:', activities);
+      console.log('activity workers total:', activities.reduce((sum, a) => sum + a.workersCount, 0));
+      console.log('siteSubcontractors array:', siteSubcontractors);
+      console.log('subcontractor workers total:', siteSubcontractors.reduce((sum, s) => sum + s.workersCount, 0));
+      console.log('FINAL totalWorkers:', totalWorkers);
+      console.log('entryData being sent:', entryData);
+      
+      if (editing) {
+        await updateSiteDiaryEntry(editing.id, entryData);
+        await fetchSiteDiaryEntries();
+        alert('Entry updated successfully!');
+      } else {
+        await addSiteDiaryEntry(entryData);
+        await fetchSiteDiaryEntries();
+        alert('Entry saved successfully!');
+      }
+      
+      setOpen(false);
+      setEditing(null);
+      
+      setDate(new Date().toISOString().split('T')[0]);
+      setProjectId(selectedProjectId || 0);
+      setWeatherCondition('sunny');
+      setTemperature(28);
+      setActivities([]);
+      setDeliveries([]);
+      setIncidents([]);
+      setSiteWorkers([]);
+      setSiteSubcontractors([]);
+      setWorkDone('');
+      setPlansTomorrow('');
+      setChallenges('');
+      setNewActivity({ description: '', location: '', startTime: '08:00', endTime: '17:00', workersCount: 1, supervisor: '' });
+      setNewDelivery({ itemName: '', quantity: 1, unit: 'pieces', supplier: '', receivedBy: '' });
+      setNewIncident({ type: 'near-miss', description: '', severity: 'medium', action: '' });
+      setSelectedWorker('');
+      setCustomWorkerName('');
+      setShowCustomWorker(false);
+      setSelectedSubcontractor('');
+      setCustomSubcontractorName('');
+      setSubcontractorWorkers(1);
+      setSubcontractorTask('');
+      setShowCustomSubcontractor(false);
+      setShowNewSupplier(false);
+      setNewSupplierName('');
+      
+    } catch (error) {
+      console.error('Failed to save:', error);
+      alert('Failed to save. Please try again.');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const openEdit = (entry: any) => {
+    console.log('=== EDITING ENTRY ===');
+    console.log('Entry data:', entry);
     
-    // Close the dialog
-    setOpen(false);
+    setEditing(entry);
+    setDate(entry.date || new Date().toISOString().split('T')[0]);
+    setProjectId(entry.projectId || entry.project_id || 0);
+    setWeatherCondition(entry.weather?.condition || 'sunny');
+    setTemperature(entry.weather?.temp || 28);
     
-    // Reset editing state
-    setEditing(null);
+    setActivities(Array.isArray(entry.activities) ? entry.activities : []);
+    setDeliveries(Array.isArray(entry.deliveries) ? entry.deliveries : []);
+    setIncidents(Array.isArray(entry.incidents) ? entry.incidents : []);
     
-    // Reset all form fields
-    setDate(new Date().toISOString().split('T')[0]);
-    setProjectId(selectedProjectId || 0);
-    setWeatherCondition('sunny');
-    setTemperature(28);
-    setActivities([]);
-    setDeliveries([]);
-    setIncidents([]);
-    setSiteWorkers([]);
-    setSiteSubcontractors([]);
-    setWorkDone('');
-    setPlansTomorrow('');
-    setChallenges('');
+    const workersData = Array.isArray(entry.siteWorkers) ? entry.siteWorkers : [];
+    setSiteWorkers(workersData.map((w: any, index: number) => ({
+      id: w.id || `worker-${index}`,
+      name: w.name || '',
+      role: w.role || 'Worker',
+      checkIn: w.checkIn || w.check_in || '08:00',
+      checkOut: w.checkOut || w.check_out || '17:00',
+      isFromPayroll: w.isFromPayroll || false
+    })));
     
-    // Reset temporary states
-    setNewActivity({ description: '', location: '', startTime: '08:00', endTime: '17:00', workersCount: 1, supervisor: '' });
-    setNewDelivery({ itemName: '', quantity: 1, unit: 'pieces', supplier: '', receivedBy: '' });
-    setNewIncident({ type: 'near-miss', description: '', severity: 'medium', action: '' });
-    setSelectedWorker('');
-    setCustomWorkerName('');
-    setShowCustomWorker(false);
-    setSelectedSubcontractor('');
-    setCustomSubcontractorName('');
-    setSubcontractorWorkers(1);
-    setSubcontractorTask('');
-    setShowCustomSubcontractor(false);
-    setShowNewSupplier(false);
-    setNewSupplierName('');
+    const subsData = Array.isArray(entry.siteSubcontractors) ? entry.siteSubcontractors : [];
+    setSiteSubcontractors(subsData.map((s: any, index: number) => ({
+      id: s.id || `sub-${index}`,
+      name: s.name || s.company || '',
+      company: s.company || s.name || '',
+      workersCount: s.workersCount || s.workers_count || 1,
+      task: s.task || '',
+      checkIn: s.checkIn || s.check_in || '08:00',
+      checkOut: s.checkOut || s.check_out || '17:00',
+      contactPerson: s.contactPerson || s.contact_person || ''
+    })));
     
-  } catch (error) {
-    console.error('Failed to save:', error);
-    alert('Failed to save. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-
-
-
-
-const openEdit = (entry: any) => {
-  console.log('=== EDITING ENTRY ===');
-  console.log('Entry data:', entry);
-  
-  setEditing(entry);
-  setDate(entry.date || new Date().toISOString().split('T')[0]);
-  setProjectId(entry.projectId || entry.project_id || 0);
-  setWeatherCondition(entry.weather?.condition || 'sunny');
-  setTemperature(entry.weather?.temp || 28);
-  
-  // Handle activities - ensure it's an array
-  setActivities(Array.isArray(entry.activities) ? entry.activities : []);
-  
-  // Handle deliveries - ensure it's an array
-  setDeliveries(Array.isArray(entry.deliveries) ? entry.deliveries : []);
-  
-  // Handle incidents - ensure it's an array
-  setIncidents(Array.isArray(entry.incidents) ? entry.incidents : []);
-  
-  // Handle site workers - map fields if needed
-  const workersData = Array.isArray(entry.siteWorkers) ? entry.siteWorkers : [];
-  setSiteWorkers(workersData.map((w: any, index: number) => ({
-    id: w.id || `worker-${index}`,
-    name: w.name || '',
-    role: w.role || 'Worker',
-    checkIn: w.checkIn || w.check_in || '08:00',
-    checkOut: w.checkOut || w.check_out || '17:00',
-    isFromPayroll: w.isFromPayroll || false
-  })));
-  
-  // Handle site subcontractors - map fields if needed
-  const subsData = Array.isArray(entry.siteSubcontractors) ? entry.siteSubcontractors : [];
-  setSiteSubcontractors(subsData.map((s: any, index: number) => ({
-    id: s.id || `sub-${index}`,
-    name: s.name || s.company || '',
-    company: s.company || s.name || '',
-    workersCount: s.workersCount || s.workers_count || 1,
-    task: s.task || '',
-    checkIn: s.checkIn || s.check_in || '08:00',
-    checkOut: s.checkOut || s.check_out || '17:00',
-    contactPerson: s.contactPerson || s.contact_person || ''
-  })));
-  
-  // Handle summary - try different field names
-  setWorkDone(entry.summary?.workDone || entry.summary?.work_done || '');
-  setPlansTomorrow(entry.summary?.plansTomorrow || entry.summary?.plans_tomorrow || '');
-  setChallenges(entry.summary?.challenges || '');
-  
-  setOpen(true);
-};
-
-
-
-
-
-
-
+    setWorkDone(entry.summary?.workDone || entry.summary?.work_done || '');
+    setPlansTomorrow(entry.summary?.plansTomorrow || entry.summary?.plans_tomorrow || '');
+    setChallenges(entry.summary?.challenges || '');
+    
+    setOpen(true);
+  };
 
   const handleDelete = async (id: number) => {
     if (confirm('Delete this diary entry? This cannot be undone.')) {
@@ -769,18 +669,13 @@ const openEdit = (entry: any) => {
     return <Sun size={20} className="text-amber-500" />;
   };
 
-
-
-
-const getWeatherButtonClass = (weatherValue: string) => {
-  const weather = weatherOptions.find(w => w.value === weatherValue);
-  if (weatherCondition === weatherValue) {
-    return `${weather?.bgColor} border-2 ${weather?.borderColor} shadow-sm`;
-  }
-  return 'bg-gray-50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800/50';
-};
-
-
+  const getWeatherButtonClass = (weatherValue: string) => {
+    const weather = weatherOptions.find(w => w.value === weatherValue);
+    if (weatherCondition === weatherValue) {
+      return `${weather?.bgColor} border-2 ${weather?.borderColor} shadow-sm`;
+    }
+    return 'bg-gray-50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800/50';
+  };
 
   return (
     <TooltipProvider>
@@ -796,28 +691,22 @@ const getWeatherButtonClass = (weatherValue: string) => {
               <RefreshCw size={14} className={`mr-1 ${isSyncing ? 'animate-spin' : ''}`} />
               {isSyncing ? 'Syncing...' : 'Sync'}
             </Button>
-
-
-
-           <Button onClick={() => { 
-  setDate(new Date().toISOString().split('T')[0]);
-  setProjectId(selectedProjectId || 0);
-  setWeatherCondition('sunny');
-  setTemperature(28);
-  setActivities([]);
-  setDeliveries([]);
-  setIncidents([]);
-  setSiteWorkers([]);
-  setSiteSubcontractors([]);
-  setWorkDone('');
-  setPlansTomorrow('');
-  setChallenges('');
-  setEditing(null);
-  setOpen(true);
-}} size="sm">
-
-
-
+            <Button onClick={() => { 
+              setDate(new Date().toISOString().split('T')[0]);
+              setProjectId(selectedProjectId || 0);
+              setWeatherCondition('sunny');
+              setTemperature(28);
+              setActivities([]);
+              setDeliveries([]);
+              setIncidents([]);
+              setSiteWorkers([]);
+              setSiteSubcontractors([]);
+              setWorkDone('');
+              setPlansTomorrow('');
+              setChallenges('');
+              setEditing(null);
+              setOpen(true);
+            }} size="sm">
               <Plus size={14} className="mr-1" /> New Entry
             </Button>
           </div>
@@ -874,18 +763,10 @@ const getWeatherButtonClass = (weatherValue: string) => {
                     </div>
                   </div>
                   <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="sm" onClick={() => printSiteDiary(entry)} title="Print">
-                      <Printer size={14} />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => { setViewEntry(entry); }} title="View">
-                      <Eye size={14} />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => openEdit(entry)} title="Edit">
-                      <Edit size={14} />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(entry.id)} title="Delete">
-                      <Trash2 size={14} />
-                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => printSiteDiary(entry)} title="Print"><Printer size={14} /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setViewEntry(entry); }} title="View"><Eye size={14} /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(entry)} title="Edit"><Edit size={14} /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(entry.id)} title="Delete"><Trash2 size={14} /></Button>
                   </div>
                 </div>
               </div>
@@ -987,56 +868,39 @@ const getWeatherButtonClass = (weatherValue: string) => {
                   ))}
                 </div>
 
-
-
-
-<div className="border border-border rounded-lg p-3 space-y-2 bg-card">
-  <p className="text-xs font-medium">Add Payroll Worker</p>
-  
-  {/* ===== DEBUG INFO - Remove after testing ===== */}
-  <div className="text-xs p-2 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mb-2">
-    <div><strong>Debug Info:</strong></div>
-    <div>Current Project ID: <span className="font-mono font-bold">{projectId}</span></div>
-    <div>Total Workers in DB: <span className="font-mono">{workers.length}</span></div>
-    <div>Workers for this project: <span className="font-mono">{workers.filter(w => w.projectId === projectId).length}</span></div>
-    {workers.length > 0 && (
-      <div className="mt-1 text-xs text-muted-foreground">
-        Sample worker: {workers[0]?.name} → projectId: {workers[0]?.projectId}
-      </div>
-    )}
-  </div>
-  {/* ===== END DEBUG INFO ===== */}
-  
-  <div className="flex gap-2">
-    <Select value={selectedWorker} onValueChange={setSelectedWorker}>
-
-
-
-
-  <SelectTrigger className="h-8 text-sm flex-1">
-    <SelectValue placeholder="Select worker" />
-  </SelectTrigger>
-  <SelectContent>
-    {workers
-      .filter(worker => worker.projectId === projectId) // ← Only show workers for selected project
-      .map(worker => (
-        <SelectItem key={worker.id} value={worker.id.toString()}>
-          {worker.name}
-        </SelectItem>
-      ))}
-    {workers.filter(worker => worker.projectId === projectId).length === 0 && (
-      <div className="px-2 py-1.5 text-sm text-muted-foreground">
-        No workers assigned to this project
-      </div>
-    )}
-  </SelectContent>
-</Select>
-
-
-
-
-
-
+                <div className="border border-border rounded-lg p-3 space-y-2 bg-card">
+                  <p className="text-xs font-medium">Add Payroll Worker</p>
+                  
+                  <div className="text-xs p-2 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mb-2">
+                    <div><strong>Debug Info:</strong></div>
+                    <div>Current Project ID: <span className="font-mono font-bold">{projectId}</span></div>
+                    <div>Total Workers in DB: <span className="font-mono">{workers.length}</span></div>
+                    <div>Workers for this project: <span className="font-mono">{workers.filter(w => w.projectId === projectId).length}</span></div>
+                    {workers.length > 0 && (
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        Sample worker: {workers[0]?.name} → projectId: {workers[0]?.projectId}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Select value={selectedWorker} onValueChange={setSelectedWorker}>
+                      <SelectTrigger className="h-8 text-sm flex-1">
+                        <SelectValue placeholder="Select worker" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {workers.filter(worker => worker.projectId === projectId).map(worker => (
+                          <SelectItem key={worker.id} value={worker.id.toString()}>
+                            {worker.name}
+                          </SelectItem>
+                        ))}
+                        {workers.filter(worker => worker.projectId === projectId).length === 0 && (
+                          <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                            No workers assigned to this project
+                          </div>
+                        )}
+                      </SelectContent>
+                    </Select>
                     <Input type="time" value={workerCheckIn} onChange={e => setWorkerCheckIn(e.target.value)} className="w-20 h-8 text-sm" />
                     <Input type="time" value={workerCheckOut} onChange={e => setWorkerCheckOut(e.target.value)} className="w-20 h-8 text-sm" />
                     <Button onClick={addPayrollWorker} size="sm" className="h-8 px-3">Add</Button>
@@ -1175,7 +1039,6 @@ const getWeatherButtonClass = (weatherValue: string) => {
                 <div className="border border-border rounded-lg p-3 space-y-2 bg-card">
                   <p className="text-xs font-medium">Add Delivery</p>
                   
-                  {/* Item Name and Supplier row */}
                   <div className="grid grid-cols-2 gap-2">
                     <Input 
                       placeholder="Item name" 
@@ -1184,7 +1047,6 @@ const getWeatherButtonClass = (weatherValue: string) => {
                       className="h-8 text-sm" 
                     />
                     
-                    {/* Supplier Dropdown with Add New option */}
                     <div className="flex gap-1">
                       <Select value={newDelivery.supplier} onValueChange={setNewDeliverySupplier}>
                         <SelectTrigger className="h-8 text-sm flex-1">
@@ -1202,7 +1064,6 @@ const getWeatherButtonClass = (weatherValue: string) => {
                         </SelectContent>
                       </Select>
                       
-                      {/* Show new supplier input when selected */}
                       {showNewSupplier && (
                         <Input 
                           placeholder="New supplier name" 
@@ -1215,7 +1076,6 @@ const getWeatherButtonClass = (weatherValue: string) => {
                     </div>
                   </div>
                   
-                  {/* Quantity, Unit, Received By row */}
                   <div className="grid grid-cols-3 gap-2">
                     <Input 
                       type="number" 
@@ -1238,7 +1098,6 @@ const getWeatherButtonClass = (weatherValue: string) => {
                     />
                   </div>
                   
-                  {/* Add Delivery button */}
                   <Button onClick={addDelivery} size="sm" className="h-8 w-full">Add Delivery</Button>
                 </div>
               </TabsContent>
