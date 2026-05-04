@@ -36,26 +36,62 @@ const Login: React.FC = () => {
     "Generate instant reports →"
   ];
 
-  const testimonials = [
-    { quote: "Saved us 20+ hours weekly on reporting", author: "John Doe", company: "Heights Construction" },
-    { quote: "Most intuitive financial tool we've used", author: "Sarah Wanjiku", company: "Kenya Builders Ltd" },
-    { quote: "Transformed our project cost visibility", author: "Michael Otieno", company: "Ace Developers" }
-  ];
 
-  useEffect(() => {
-    const phraseInterval = setInterval(() => {
-      setCurrentPhrase((prev) => (prev + 1) % rotatingPhrases.length);
-    }, 2800);
 
-    const testimonialInterval = setInterval(() => {
-      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
-    }, 5000);
 
-    return () => {
-      clearInterval(phraseInterval);
-      clearInterval(testimonialInterval);
-    };
-  }, []);
+
+
+
+
+const [testimonials, setTestimonials] = useState([
+  { quote: "Saved us 20+ hours weekly on reporting", author: "John Doe", company: "Heights Construction" },
+  { quote: "Most intuitive financial tool we've used", author: "Sarah Wanjiku", company: "Kenya Builders Ltd" },
+  { quote: "Transformed our project cost visibility", author: "Michael Otieno", company: "Ace Developers" }
+]);
+
+// Fetch testimonials from API
+useEffect(() => {
+  const fetchTestimonials = async () => {
+    try {
+      const response = await fetch('https://buildify-backend-kye8.onrender.com/api/testimonials/approved?location=login');
+      const data = await response.json();
+      if (data.success && data.testimonials && data.testimonials.length > 0) {
+        const mappedTestimonials = data.testimonials.map(t => ({
+          quote: t.text,
+          author: t.name,
+          company: t.company || '',
+          role: t.role || ''
+        }));
+        setTestimonials(mappedTestimonials);
+      }
+    } catch (error) {
+      console.error('Error fetching testimonials:', error);
+    }
+  };
+  
+  fetchTestimonials();
+}, []);
+
+
+
+
+useEffect(() => {
+  const phraseInterval = setInterval(() => {
+    setCurrentPhrase((prev) => (prev + 1) % rotatingPhrases.length);
+  }, 2800);
+
+  const testimonialInterval = setInterval(() => {
+    setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+  }, 5000);
+
+  return () => {
+    clearInterval(phraseInterval);
+    clearInterval(testimonialInterval);
+  };
+}, [testimonials.length]);  // ← Added dependency
+
+
+
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();

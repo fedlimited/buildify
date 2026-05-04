@@ -163,6 +163,7 @@ export function AdminDashboard() {
                 { label: 'Companies', icon: Building2, path: '/admin/companies' },
                 { label: 'Users', icon: Users, path: '/admin/users' },
                 { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
+                { label: 'Testimonials', icon: Star, path: '/admin/testimonials' },  // ← Add this line
                 { label: 'Testimonials', icon: Star, path: '/admin/testimonials' },
                 { label: 'Payments', icon: DollarSign, path: '/admin/payments' },
                 { label: 'Subscriptions', icon: CreditCard, path: '/admin/subscriptions' },
