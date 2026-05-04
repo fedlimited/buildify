@@ -1,4 +1,5 @@
 // This file CANNOT be tree-shaken because it's imported with side effects
+import TestimonialsAdminPage from '@/pages/admin/TestimonialsAdminPage';
 import { Route } from 'react-router-dom';
 import { AdminDashboard, AdminCompanies, AdminUsers, AdminSubscriptions, AdminPayments } from '@/components/modules/admin-exports';
 import { AdminLayout } from '@/components/AdminLayout';
@@ -22,5 +23,6 @@ export const adminRoutes = (
     <Route path="/admin/users" element={<SuperAdminRoute><AdminLayout><AdminUsers /></AdminLayout></SuperAdminRoute>} />
     <Route path="/admin/subscriptions" element={<SuperAdminRoute><AdminLayout><AdminSubscriptions /></AdminLayout></SuperAdminRoute>} />
     <Route path="/admin/payments" element={<SuperAdminRoute><AdminLayout><AdminPayments /></AdminLayout></SuperAdminRoute>} />
+    <Route path="/admin/testimonials" element={<SuperAdminRoute><AdminLayout><TestimonialsAdminPage /></AdminLayout></SuperAdminRoute>} />
   </>
 );
