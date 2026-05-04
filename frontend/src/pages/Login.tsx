@@ -348,8 +348,24 @@ const Login: React.FC = () => {
         </div>
       </div>
 
+
+
+
+
       {/* RIGHT SIDE - Hero Section */}
+
       <div className="hidden lg:flex lg:w-3/5 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative overflow-hidden min-h-screen">
+{/* Top Right Branding */}
+<div className="absolute top-6 right-6 z-20">
+  <div className="text-right">
+    <p className="text-white text-sm font-semibold tracking-wide">BOCHI</p>
+    <p className="text-amber-400 text-[10px] tracking-wider">CONSTRUCTION SUITE</p>
+  </div>
+</div>
+
+
+
+
         <div className="absolute inset-0">
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
             <defs>
