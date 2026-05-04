@@ -187,18 +187,17 @@ const Login: React.FC = () => {
 
 
 <div className="text-center mb-6">
-  <div className="flex justify-center mb-3">
+  <div className="flex items-center justify-center mb-3">
     <img 
       src="/Bochi_logo_transparent.png" 
       alt="BOCHI Logo" 
-      className="h-14 w-auto"
+      className="h-12 w-auto"
     />
   </div>
   <div className="mb-4">
-    <h2 className="text-2xl font-bold text-white">BOCHI</h2>
-    <p className="text-xs text-amber-400 tracking-wide">CONSTRUCTION SUITE</p>
+    <p className="text-lg font-semibold text-white">BOCHI</p>
+    <p className="text-xs text-amber-400">Construction Suite</p>
   </div>
-  <div className="h-px w-12 bg-amber-500/50 mx-auto mb-4"></div>
   <h1 className="text-3xl font-bold text-white mb-1">Welcome back</h1>
   <p className="text-gray-400 text-sm">Please enter your details to sign in</p>
 </div>
