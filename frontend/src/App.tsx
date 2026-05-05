@@ -1,3 +1,5 @@
+import { TermsOfService } from '@/pages/TermsOfService';
+import { PrivacyPolicy } from '@/pages/PrivacyPolicy';
 import { useEffect } from 'react';
 import LandingPage from './components/LandingPage';
 import Login from '@/pages/Login';
@@ -84,6 +86,14 @@ const App = () => {
             {/* Auth pages */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+
+            
+            {/* Legal Pages */}
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+
+            {/* Protected app routes - require authentication */}
+            <Route path="/dashboard" element={...} />
 
             {/* Protected app routes - require authentication */}
             <Route path="/dashboard" element={
