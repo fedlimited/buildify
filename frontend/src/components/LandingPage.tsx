@@ -198,17 +198,32 @@ const LandingPage: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const loadTestimonials = async () => {
-    try {
-      const response = await fetch('https://buildify-backend-kye8.onrender.com/api/testimonials/approved');
-      const data = await response.json();
-      if (data && data.length > 0) {
-        setApprovedTestimonials(data);
-      }
-    } catch (err) {
-      console.error('Failed to load testimonials:', err);
+
+
+const loadTestimonials = async () => {
+  try {
+    const response = await fetch('https://buildify-backend-kye8.onrender.com/api/testimonials/approved?location=landing');
+    const data = await response.json();
+    // Fix: API returns { success: true, testimonials: [...] }
+    if (data.success && data.testimonials && data.testimonials.length > 0) {
+      const mappedTestimonials = data.testimonials.map(t => ({
+        name: t.name,
+        role: t.role || '',
+        company: t.company || '',
+        text: t.text,
+        rating: t.rating || 5,
+        image: '👤' // Default icon
+      }));
+      setApprovedTestimonials(mappedTestimonials);
     }
-  };
+  } catch (err) {
+    console.error('Failed to load testimonials:', err);
+  }
+};
+
+
+
+
 
   // Moving text animation words
   const heroMovingWords = [
