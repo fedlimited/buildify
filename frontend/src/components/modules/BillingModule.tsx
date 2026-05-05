@@ -42,6 +42,12 @@ export const BillingModule = () => {
   const [phone, setPhone] = useState('');
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
+  
+  // Installment payment states
+  const [installmentPlan, setInstallmentPlan] = useState<any>(null);
+  const [showInstallmentModal, setShowInstallmentModal] = useState(false);
+  const [currentInstallment, setCurrentInstallment] = useState<any>(null);
+  const [installmentPaymentStatus, setInstallmentPaymentStatus] = useState('idle');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -83,6 +89,88 @@ export const BillingModule = () => {
     setStatus('idle');
     setError('');
     setPhone('');
+    setInstallmentPlan(null);
+  };
+
+  // Create installment plan for large payments
+  const createInstallmentPlan = async () => {
+    setInstallmentPaymentStatus('processing');
+    try {
+      const res = await api.request('/subscription/create-installment-plan', {
+        method: 'POST',
+        body: JSON.stringify({
+          planId: selectedPlan?.id,
+          billingCycle: selectedCycle
+        })
+      });
+      if (res.success && res.requiresSplit) {
+        setInstallmentPlan(res);
+        setShowInstallmentModal(true);
+        setShowModal(false);
+        setInstallmentPaymentStatus('idle');
+      } else {
+        setInstallmentPaymentStatus('error');
+        setError(res.error || 'Could not create installment plan');
+      }
+    } catch (err: any) {
+      setInstallmentPaymentStatus('error');
+      setError(err.message);
+    }
+  };
+
+  // Pay a specific installment
+  const payInstallment = async (installmentId: number, amount: number) => {
+    let formattedPhone = phone;
+    if (formattedPhone.startsWith('0')) {
+      formattedPhone = '254' + formattedPhone.substring(1);
+    } else if (!formattedPhone.startsWith('254') && formattedPhone.length >= 9) {
+      formattedPhone = '254' + formattedPhone;
+    }
+    
+    if (!phone || phone.length < 9) {
+      setError('Enter valid M-Pesa number (e.g., 0712345678 or 712345678)');
+      return;
+    }
+    
+    setInstallmentPaymentStatus('processing');
+    setError('');
+    
+    try {
+      const res = await api.request('/subscription/pay-installment', {
+        method: 'POST',
+        body: JSON.stringify({
+          installmentId: installmentId,
+          phoneNumber: formattedPhone
+        })
+      });
+      
+      if (res.success) {
+        setInstallmentPaymentStatus('sent');
+        // Poll for payment status
+        const interval = setInterval(async () => {
+          const statusRes = await api.request(`/subscription/payment-status/${res.paymentId}`);
+          if (statusRes.status === 'completed') {
+            clearInterval(interval);
+            setInstallmentPaymentStatus('completed');
+            setTimeout(() => {
+              setShowInstallmentModal(false);
+              setShowModal(false);
+              window.location.reload();
+            }, 2000);
+          } else if (statusRes.status === 'failed') {
+            clearInterval(interval);
+            setInstallmentPaymentStatus('error');
+            setError('Installment payment failed. Please try again.');
+          }
+        }, 3000);
+      } else {
+        setInstallmentPaymentStatus('error');
+        setError(res.error || 'Payment initiation failed');
+      }
+    } catch (err: any) {
+      setInstallmentPaymentStatus('error');
+      setError(err.message);
+    }
   };
 
   const handlePay = async () => {
@@ -109,6 +197,20 @@ export const BillingModule = () => {
             billingCycle: selectedCycle
           })
         });
+        
+        // Check if response requires split payment
+        if (res.requiresSplit) {
+          setStatus('idle');
+          // Show split payment dialog
+          const confirmSplit = window.confirm(
+            `${res.error || res.message}\n\nWould you like to pay in ${res.numberOfInstallments || 3} installments of KES ${(res.installmentAmount || res.firstPayment || Math.ceil(res.totalAmount / 3)).toLocaleString()} each?`
+          );
+          if (confirmSplit) {
+            await createInstallmentPlan();
+          }
+          return;
+        }
+        
         if (res.success) {
           setStatus('sent');
           const interval = setInterval(async () => {
@@ -160,7 +262,6 @@ export const BillingModule = () => {
     if (paymentMethod === 'mpesa') {
       return 'w-full py-2.5 rounded-lg bg-gradient-to-r from-[#4CAF50] to-[#2E7D32] text-white text-sm font-medium hover:from-[#45a049] hover:to-[#1b5e20] transition-all shadow-sm';
     }
-    // Card payment button - using yellow/amber theme
     return 'w-full py-2.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 text-white text-sm font-medium hover:from-amber-600 hover:to-amber-700 transition-all shadow-sm';
   };
 
@@ -303,15 +404,6 @@ export const BillingModule = () => {
         })}
       </div>
 
-
-
-
-
-
-
-
-
- 
       {/* Detailed Plans Comparison Table */}
       <div className="mt-8">
         <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Compare All Features</h3>
@@ -340,7 +432,7 @@ export const BillingModule = () => {
         </div>
       </div>
 
-      {/* Payment Modal */}
+      {/* Regular Payment Modal */}
       {showModal && selectedPlan && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-md w-full mx-4">
@@ -402,11 +494,6 @@ export const BillingModule = () => {
                           if (error) setError('');
                         }}
                       />
-                    </div>
-                    <div className="flex flex-col gap-1 mt-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Enter your M-Pesa number (e.g., <strong>0712345678</strong>)
-                      </p>
                     </div>
                   </div>
                   {error && (
@@ -481,6 +568,112 @@ export const BillingModule = () => {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Installment Payment Modal */}
+      {showInstallmentModal && installmentPlan && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-5">
+                <div className="flex items-center gap-2">
+                  <Smartphone size={20} className="text-amber-500" />
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Installment Payment Plan
+                  </h3>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowInstallmentModal(false);
+                    setShowModal(true);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="bg-amber-50 dark:bg-amber-950/20 rounded-lg p-4 mb-5 border border-amber-200 dark:border-amber-800">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Amount</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  KES {formatPriceWithCommas(installmentPlan.totalAmount)}
+                </p>
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                  💡 Split into {installmentPlan.numberOfInstallments} installments due to M-Pesa limit
+                </p>
+              </div>
+
+              <div className="mb-5 space-y-3">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Installments:</p>
+                {installmentPlan.installments?.map((inst: any, idx: number) => (
+                  <div key={inst.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">Installment {idx + 1} of {installmentPlan.numberOfInstallments}</p>
+                      <p className="text-xs text-gray-500">Due: {inst.dueDate}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-gray-900 dark:text-white">KES {formatPriceWithCommas(inst.amount)}</p>
+                      {inst.status === 'paid' ? (
+                        <span className="text-xs text-green-600">✓ Paid</span>
+                      ) : (
+                        <button
+                          onClick={() => payInstallment(inst.id, inst.amount)}
+                          disabled={installmentPaymentStatus !== 'idle'}
+                          className="text-xs bg-amber-500 text-white px-3 py-1 rounded hover:bg-amber-600 transition-colors"
+                        >
+                          Pay Now
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {installmentPaymentStatus === 'processing' && (
+                <div className="text-center py-4">
+                  <Loader2 className="animate-spin h-8 w-8 text-amber-500 mx-auto mb-2" />
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Processing payment...</p>
+                </div>
+              )}
+
+              {installmentPaymentStatus === 'sent' && (
+                <div className="text-center py-4">
+                  <Smartphone size={40} className="text-[#4CAF50] mx-auto mb-2" />
+                  <p className="font-medium text-gray-900 dark:text-white">Check your phone</p>
+                  <p className="text-xs text-gray-500">Enter your M-Pesa PIN to complete this installment</p>
+                </div>
+              )}
+
+              {installmentPaymentStatus === 'completed' && (
+                <div className="text-center py-4">
+                  <div className="w-12 h-12 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <Check size={24} className="text-green-600 dark:text-green-400" />
+                  </div>
+                  <p className="font-semibold text-green-600 dark:text-green-400">Installment Paid!</p>
+                  <p className="text-xs text-gray-500 mt-1">Refreshing...</p>
+                </div>
+              )}
+
+              {installmentPaymentStatus === 'error' && (
+                <div className="text-center py-4">
+                  <p className="text-red-600 text-sm">{error}</p>
+                  <button
+                    onClick={() => setInstallmentPaymentStatus('idle')}
+                    className="mt-2 text-sm text-amber-500 hover:underline"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              )}
+
+              <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-800">
+                <p className="text-xs text-gray-500 text-center">
+                  Your subscription will be activated after all installments are paid
+                </p>
+              </div>
             </div>
           </div>
         </div>
