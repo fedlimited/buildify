@@ -47,16 +47,14 @@ app.use(cors({
     'https://buildify-frontend-rnwia68nf-fedlimiteds-projects.vercel.app',
     'https://www.bochi.ke',
     'https://bochi.ke',
+    'http://www.bochi.ke',      // Add this
+    'http://bochi.ke',          // Add this
     'https://bochi-buildify.netlify.app'
   ],
-
-
-
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-
 app.use(express.json());
 app.use(morgan('dev'));
 
