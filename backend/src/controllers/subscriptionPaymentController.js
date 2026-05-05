@@ -123,22 +123,24 @@ async initiatePayment(req, res) {
       );
     }
 
-    // Determine if current subscription is a TRIAL
-    const isTrial = currentSub && currentSub.status === 'trial';
-    
-    // Calculate amount to charge
-    let amount = billingCycle === 'yearly' ? plan.price_yearly_kes : plan.price_monthly_kes;
-    
-    if (currentSub && currentSub.plan_id !== planId) {
-      // Get current plan details
-      let currentPlan;
+    // Get current plan details if subscription exists
+    let currentPlan = null;
+    if (currentSub) {
       if (process.env.NODE_ENV === 'production') {
         const result = await db.query('SELECT * FROM subscription_plans WHERE id = $1', [currentSub.plan_id]);
         currentPlan = result.rows[0];
       } else {
         currentPlan = await db.get('SELECT * FROM subscription_plans WHERE id = ?', [currentSub.plan_id]);
       }
+    }
 
+    // Determine if current subscription is a TRIAL
+    const isTrial = currentSub && currentSub.status === 'trial';
+    
+    // Calculate amount to charge
+    let amount = billingCycle === 'yearly' ? plan.price_yearly_kes : plan.price_monthly_kes;
+    
+    if (currentSub && currentSub.plan_id !== planId && currentPlan) {
       console.log(`📊 Current plan: ${currentPlan.name} (status: ${currentSub.status})`);
       console.log(`🎯 Target plan: ${plan.name} (KES ${amount})`);
 
@@ -153,25 +155,25 @@ async initiatePayment(req, res) {
         // amount stays as full price
       }
       // If upgrading to higher plan (price difference positive)
-      else if (amount > (billingCycle === 'yearly' ? currentPlan.price_yearly_kes : currentPlan.price_monthly_kes)) {
+      else {
         const currentAmount = billingCycle === 'yearly' ? currentPlan.price_yearly_kes : currentPlan.price_monthly_kes;
-        amount = amount - currentAmount;
-        console.log(`⬆️ Upgrading - prorated amount: KES ${amount} (${plan.price_monthly_kes} - ${currentAmount})`);
+        if (amount > currentAmount) {
+          amount = amount - currentAmount;
+          console.log(`⬆️ Upgrading - prorated amount: KES ${amount} (${plan.price_monthly_kes} - ${currentAmount})`);
+        } else {
+          // Downgrading - charge full amount of new plan
+          console.log(`⬇️ Downgrading - charging full new plan amount: KES ${amount}`);
+        }
         
         if (amount <= 0) {
           return res.status(400).json({ 
-            error: 'Cannot process downgrade. Please contact support.' 
+            error: 'Invalid amount. Please contact support.' 
           });
         }
       }
-      // If downgrading or same plan (should not happen, but handle it)
-      else {
-        console.log(`⚠️ Downgrade or invalid - charging full amount: KES ${amount}`);
-        // amount stays as full price
-      }
     } else if (currentSub && currentSub.plan_id === planId) {
       // Already on this plan - charge full amount (renewal)
-      console.log(`🔄 Renewing existing plan - charging full amount: KES ${amount}`);
+      console.log(`🔄 Renewing existing ${currentPlan?.name || 'plan'} - charging full amount: KES ${amount}`);
     } else {
       // No current subscription
       console.log(`🆕 New subscription - charging full amount: KES ${amount}`);
@@ -215,7 +217,7 @@ async initiatePayment(req, res) {
         checkoutRequestId: mpesaResponse.CheckoutRequestID,
         paymentId: process.env.NODE_ENV === 'production' ? result.rows[0].id : result.lastID,
         amount: amount,
-        isProrated: !isTrial && currentSub && currentSub.plan_id !== planId && currentPlan?.name !== 'free'
+        isProrated: !isTrial && currentSub && currentSub.plan_id !== planId && currentPlan?.name !== 'free' && amount < (billingCycle === 'yearly' ? plan.price_yearly_kes : plan.price_monthly_kes)
       });
     } else {
       res.status(400).json({ error: mpesaResponse.ResponseDescription || 'Payment initiation failed' });
@@ -225,8 +227,6 @@ async initiatePayment(req, res) {
     res.status(500).json({ error: error.message });
   }
 }
-
-
 
 
 
