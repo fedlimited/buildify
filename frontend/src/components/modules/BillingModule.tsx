@@ -798,3 +798,6 @@ const payInstallment = async (installmentId, amount) => {
     </div>
   </div>
 )}
+    </div>
+  );
+};
