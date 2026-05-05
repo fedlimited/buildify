@@ -134,32 +134,24 @@ class SubscriptionPaymentController {
 
 
 
-
-// ✅ M-Pesa limit check - User-friendly message (not an error)
+// ✅ M-Pesa limit check - Frontend-compatible response
 const MPESA_LIMIT = 250000;
 
 if (amount > MPESA_LIMIT) {
   const numberOfInstallments = Math.ceil(amount / MPESA_LIMIT);
   const installmentAmount = Math.ceil(amount / numberOfInstallments);
   
+  // This format matches what the frontend expects
   return res.status(200).json({
     success: false,
+    error: `M-Pesa limit is KES ${MPESA_LIMIT.toLocaleString()} per transaction. Your total of KES ${amount.toLocaleString()} exceeds this limit. Would you like to pay in ${numberOfInstallments} installments of KES ${installmentAmount.toLocaleString()}?`,
     requiresSplit: true,
     totalAmount: amount,
-    mpesaLimit: MPESA_LIMIT,
     numberOfInstallments: numberOfInstallments,
     installmentAmount: installmentAmount,
-    firstPayment: installmentAmount,
-    remainingInstallments: numberOfInstallments - 1,
-    title: "💡 M-Pesa Transaction Notice",
-    message: `Your payment of KES ${amount.toLocaleString()} exceeds the M-Pesa limit of KES ${MPESA_LIMIT.toLocaleString()} per transaction.`,
-    solution: `We'll split your payment into ${numberOfInstallments} installments of KES ${installmentAmount.toLocaleString()} each.`,
-    action: `Pay first installment of KES ${installmentAmount.toLocaleString()} now.`,
-    alternative: `Or switch to monthly billing: KES ${plan.price_monthly_kes.toLocaleString()} (within M-Pesa limit)`,
-    cta: `Pay KES ${installmentAmount.toLocaleString()} (Installment 1 of ${numberOfInstallments})`
+    firstPayment: installmentAmount
   });
 }
-
 
 
 
