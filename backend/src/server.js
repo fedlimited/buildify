@@ -159,6 +159,10 @@ app.get('/api/subscription/check-limit', authenticateToken, SubscriptionControll
 app.post('/api/subscription/pay', authenticateToken, subscriptionPaymentController.initiatePayment);
 app.get('/api/subscription/payment-status/:paymentId', authenticateToken, subscriptionPaymentController.checkPaymentStatus);
 
+// ========== INSTALLMENT ROUTES ==========
+app.post('/api/subscription/create-installment-plan', authenticateToken, subscriptionPaymentController.createInstallmentPlan);
+app.post('/api/subscription/pay-installment', authenticateToken, subscriptionPaymentController.payInstallment);
+
 // Company routes
 app.get('/api/company', companyController.getCompanyInfo);
 app.put('/api/company', requireAdmin, companyController.updateCompanyInfo);
