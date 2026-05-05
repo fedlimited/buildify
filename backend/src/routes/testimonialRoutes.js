@@ -4,7 +4,7 @@ const { getDb } = require('../config/database');
 
 // ============ PUBLIC ROUTES ============
 
-// Submit a testimonial (PUBLIC - no auth required)
+// Submit a testimonial (PUBLIC)
 router.post('/submit', async (req, res) => {
   try {
     const db = getDb();
@@ -16,10 +16,11 @@ router.post('/submit', async (req, res) => {
       return res.status(400).json({ error: 'Name and testimonial text are required' });
     }
     
+    // PostgreSQL compatible INSERT (no CURRENT_TIMESTAMP in VALUES)
     const result = await db.run(
-      `INSERT INTO testimonials (name, role, company, text, rating, is_approved, created_at) 
-       VALUES (?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)`,
-      [name, role || '', company || '', text, rating || 5]
+      `INSERT INTO testimonials (name, role, company, text, rating, is_approved) 
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [name, role || '', company || '', text, rating || 5, 0]
     );
     
     console.log('✅ Testimonial saved with ID:', result.lastID);
@@ -31,32 +32,18 @@ router.post('/submit', async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Submit testimonial error:', error);
-    res.status(500).json({ error: 'Failed to submit testimonial. Please try again.' });
+    res.status(500).json({ error: 'Failed to submit testimonial: ' + error.message });
   }
 });
 
-// Get approved testimonials (public) - with location filter
+// Get approved testimonials (public)
 router.get('/approved', async (req, res) => {
-  const { location } = req.query;
-  let locationFilter = '';
-  
-  if (location === 'landing') {
-    locationFilter = "AND display_location IN ('landing', 'both')";
-  } else if (location === 'login') {
-    locationFilter = "AND display_location IN ('login', 'both')";
-  } else {
-    locationFilter = "AND display_location IN ('landing', 'login', 'both')";
-  }
-  
   try {
     const db = getDb();
     const testimonials = await db.all(
-      `SELECT id, name, role, company, 
-              COALESCE(edited_text, text) as text, 
-              rating, display_location
-       FROM testimonials 
-       WHERE is_approved = 1 ${locationFilter}
-       ORDER BY display_order ASC, created_at DESC 
+      `SELECT id, name, role, company, text, rating FROM testimonials 
+       WHERE is_approved = 1 
+       ORDER BY created_at DESC 
        LIMIT 10`
     );
     res.json({ success: true, testimonials });
@@ -94,7 +81,7 @@ router.post('/admin', async (req, res) => {
     const db = getDb();
     const result = await db.run(
       `INSERT INTO testimonials (name, role, company, text, edited_text, rating, display_order, is_approved, display_location) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
       [name, role || '', company || '', text, edited_text || null, rating || 5, display_order || 0, is_approved ? 1 : 0, display_location || 'both']
     );
     res.json({ success: true, id: result.lastID });
@@ -112,10 +99,10 @@ router.put('/admin/:id', async (req, res) => {
     const db = getDb();
     await db.run(
       `UPDATE testimonials 
-       SET name = ?, role = ?, company = ?, text = ?, 
-           edited_text = ?, rating = ?, display_order = ?, 
-           is_approved = ?, display_location = ?
-       WHERE id = ?`,
+       SET name = $1, role = $2, company = $3, text = $4, 
+           edited_text = $5, rating = $6, display_order = $7, 
+           is_approved = $8, display_location = $9
+       WHERE id = $10`,
       [name, role || '', company || '', text, edited_text || null, 
        rating, display_order || 0, is_approved ? 1 : 0, display_location || 'both', req.params.id]
     );
@@ -132,7 +119,7 @@ router.put('/admin/:id/approve', async (req, res) => {
   try {
     const db = getDb();
     await db.run(
-      'UPDATE testimonials SET is_approved = ? WHERE id = ?',
+      'UPDATE testimonials SET is_approved = $1 WHERE id = $2',
       [is_approved ? 1 : 0, req.params.id]
     );
     res.json({ success: true });
@@ -146,7 +133,7 @@ router.put('/admin/:id/approve', async (req, res) => {
 router.delete('/admin/:id', async (req, res) => {
   try {
     const db = getDb();
-    await db.run('DELETE FROM testimonials WHERE id = ?', [req.params.id]);
+    await db.run('DELETE FROM testimonials WHERE id = $1', [req.params.id]);
     res.json({ success: true });
   } catch (error) {
     console.error('Delete testimonial error:', error);
