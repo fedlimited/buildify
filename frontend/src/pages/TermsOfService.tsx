@@ -11,131 +11,182 @@ export const TermsOfService = () => {
 
           <div className="space-y-6">
             <section>
-              <h2 className="text-lg font-semibold mb-3">1. Acceptance of Terms</h2>
+              <h2 className="text-lg font-semibold mb-3">1. Introduction</h2>
               <p className="text-gray-600 dark:text-gray-400">
-                By accessing or using BOCHI Construction Suite ("the Service"), you agree to be bound by these Terms of Service. 
-                If you do not agree to these terms, please do not use the Service.
+                Welcome to BOCHI Construction Suite ("BOCHI", "we", "our", or "us"). These Terms of Service ("Terms") govern your access to and use of BOCHI's construction financial management software, website, and related services (collectively, the "Service").
+              </p>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
+                By registering for or using the Service, you agree to be bound by these Terms. If you are using the Service on behalf of a company or organization, you represent that you have authority to bind that entity to these Terms.
               </p>
             </section>
 
             <section>
               <h2 className="text-lg font-semibold mb-3">2. Description of Service</h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                BOCHI provides construction financial management software including, but not limited to:
-              </p>
+              <p className="text-gray-600 dark:text-gray-400">BOCHI provides a comprehensive construction financial management platform including:</p>
               <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 mt-2 space-y-1">
-                <li>Project tracking and management</li>
-                <li>Expense and income tracking</li>
-                <li>Payroll management</li>
-                <li>Procurement and purchase orders</li>
-                <li>Stores and inventory management</li>
-                <li>Site diary and daily reporting</li>
-                <li>Subcontractor management</li>
-                <li>Financial reporting and analytics</li>
+                <li><strong>Project Management:</strong> Track project progress, budgets, and milestones</li>
+                <li><strong>Financial Management:</strong> Income, expense, and cash flow tracking</li>
+                <li><strong>Payroll Management:</strong> Worker timesheets, payments, and payroll reports</li>
+                <li><strong>Procurement:</strong> Purchase orders, suppliers, and inventory management</li>
+                <li><strong>Stores Ledger:</strong> Material tracking, stock levels, and store transactions</li>
+                <li><strong>Site Diary:</strong> Daily site activities, workers, deliveries, and incidents</li>
+                <li><strong>Subcontractor Management:</strong> Contracts, payments, and performance tracking</li>
+                <li><strong>Reporting & Analytics:</strong> Profit & Loss, cash flow, VAT, and custom reports</li>
+                <li><strong>M-Pesa Integration:</strong> Secure payment processing via Safaricom M-Pesa</li>
               </ul>
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold mb-3">3. User Accounts</h2>
+              <h2 className="text-lg font-semibold mb-3">3. Account Registration and Security</h2>
               <p className="text-gray-600 dark:text-gray-400">
-                You are responsible for maintaining the confidentiality of your account credentials. 
-                Notify us immediately of any unauthorized use of your account. 
-                You are responsible for all activities that occur under your account.
+                To use the Service, you must register for an account. You agree to:
               </p>
+              <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 mt-2 space-y-1">
+                <li>Provide accurate and complete registration information</li>
+                <li>Maintain the security and confidentiality of your login credentials</li>
+                <li>Notify us immediately of any unauthorized access to your account</li>
+                <li>Accept responsibility for all activities that occur under your account</li>
+                <li>Not share your account credentials with any third party</li>
+              </ul>
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold mb-3">4. Subscription and Billing</h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                Subscription fees are billed in advance on a monthly or yearly basis. 
-                All payments are processed securely via M-Pesa or credit card. 
-                Fees are non-refundable except as required by applicable law.
-              </p>
+              <h2 className="text-lg font-semibold mb-3">4. Subscription Plans and Pricing</h2>
+              <p className="text-gray-600 dark:text-gray-400">We offer the following subscription plans:</p>
+              <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 mt-2 space-y-1">
+                <li><strong>Free Plan:</strong> Limited features for solo contractors (1 project, 10 workers, 1 user)</li>
+                <li><strong>Basic Plan:</strong> For small businesses (3 projects, 30 workers, 5 users)</li>
+                <li><strong>Pro Plan:</strong> For growing companies (10 projects, 150 workers, 15 users)</li>
+                <li><strong>Premier Plan:</strong> For large enterprises (unlimited projects, workers, and users)</li>
+              </ul>
               <p className="text-gray-600 dark:text-gray-400 mt-2">
-                We reserve the right to change our subscription fees upon notice. 
-                Any price changes will apply to future billing cycles.
+                All fees are billed in advance on a monthly or yearly basis. Fees are non-refundable except as required by law. We reserve the right to change our fees upon 30 days' notice.
               </p>
             </section>
 
             <section>
               <h2 className="text-lg font-semibold mb-3">5. Free Trial</h2>
               <p className="text-gray-600 dark:text-gray-400">
-                We offer a 14-day free trial for new users. 
-                After the trial period, you will be automatically converted to a paid subscription unless you cancel.
-                You may cancel your subscription at any time during the trial period without charge.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-semibold mb-3">6. Acceptable Use</h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                You agree not to:
+                We offer a 14-day free trial of the Pro plan. During the trial period:
               </p>
               <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 mt-2 space-y-1">
-                <li>Use the Service for any illegal purpose</li>
-                <li>Attempt to gain unauthorized access to the Service</li>
-                <li>Interfere with or disrupt the Service or servers</li>
-                <li>Reverse engineer or copy any part of the Service</li>
-                <li>Share your account credentials with others</li>
+                <li>You have access to all Pro plan features</li>
+                <li>You may cancel at any time without charge</li>
+                <li>After the trial, your account will convert to a paid subscription unless canceled</li>
+                <li>M-Pesa payments are required to continue using paid features after trial</li>
               </ul>
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold mb-3">7. Data Ownership and Privacy</h2>
+              <h2 className="text-lg font-semibold mb-3">6. M-Pesa Payments</h2>
               <p className="text-gray-600 dark:text-gray-400">
-                You retain ownership of all data you submit to the Service. 
-                We do not sell your personal data. Our use of your data is governed by our Privacy Policy.
+                When making payments via M-Pesa, you acknowledge and agree:
+              </p>
+              <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 mt-2 space-y-1">
+                <li>Payments are processed through Safaricom's secure M-Pesa API</li>
+                <li>M-Pesa has per-transaction limits of KES 250,000 and daily limits of KES 500,000 per phone number</li>
+                <li>Large payments exceeding limits will be split into automatic installments</li>
+                <li>You may use different phone numbers for different installments</li>
+                <li>Subscription is activated only after all installments are paid in full</li>
+                <li>We are not responsible for M-Pesa service interruptions or delays</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-semibold mb-3">7. Data Ownership and Usage</h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                You retain full ownership of all data you submit to the Service. By using BOCHI, you grant us a limited license to:
+              </p>
+              <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 mt-2 space-y-1">
+                <li>Host, store, and display your data to provide the Service</li>
+                <li>Use aggregated, anonymized data for analytics and service improvement</li>
+                <li>Back up your data for disaster recovery purposes</li>
+              </ul>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
+                We will never sell your data to third parties. Upon account termination, you may export your data. We will delete your data within 30 days after account closure.
               </p>
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold mb-3">8. Limitation of Liability</h2>
+              <h2 className="text-lg font-semibold mb-3">8. Acceptable Use Policy</h2>
+              <p className="text-gray-600 dark:text-gray-400">You agree NOT to:</p>
+              <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 mt-2 space-y-1">
+                <li>Use the Service for any illegal purpose or in violation of Kenyan law</li>
+                <li>Attempt to gain unauthorized access to the Service or its systems</li>
+                <li>Interfere with or disrupt the Service or its infrastructure</li>
+                <li>Reverse engineer, decompile, or disassemble any part of the Service</li>
+                <li>Share your account credentials or resell access to the Service</li>
+                <li>Upload malicious code, viruses, or harmful content</li>
+                <li>Use automated scripts or bots to access the Service</li>
+                <li>Submit false or misleading information</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-semibold mb-3">9. Service Availability and Support</h2>
               <p className="text-gray-600 dark:text-gray-400">
-                To the maximum extent permitted by law, BOCHI is not liable for any indirect, incidental, 
-                special, consequential, or punitive damages arising from your use of the Service.
+                We strive to maintain 99.9% uptime for the Service. However, we do not guarantee uninterrupted access. Scheduled maintenance will be communicated in advance. Support is provided via email at support@bochi.ke with response times:
+              </p>
+              <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 mt-2 space-y-1">
+                <li>Free plan: Best-effort support</li>
+                <li>Basic/Pro plans: Within 48 hours</li>
+                <li>Premier plan: Within 24 hours, priority support</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-semibold mb-3">10. Limitation of Liability</h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                To the maximum extent permitted by law, BOCHI and its affiliates shall not be liable for:
+              </p>
+              <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 mt-2 space-y-1">
+                <li>Any indirect, incidental, special, consequential, or punitive damages</li>
+                <li>Loss of profits, revenue, data, or business opportunities</li>
+                <li>Damages arising from your use of or inability to use the Service</li>
+                <li>Third-party service interruptions (M-Pesa, hosting providers, etc.)</li>
+              </ul>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
+                Our total liability shall not exceed the amount you paid us in the 12 months preceding the claim.
               </p>
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold mb-3">9. Disclaimer of Warranties</h2>
+              <h2 className="text-lg font-semibold mb-3">11. Termination</h2>
               <p className="text-gray-600 dark:text-gray-400">
-                The Service is provided "as is" without warranties of any kind. 
-                We do not guarantee that the Service will be uninterrupted or error-free.
+                Either party may terminate your account at any time. Upon termination:
+              </p>
+              <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 mt-2 space-y-1">
+                <li>You may export your data within 30 days</li>
+                <li>We will delete your data after 30 days</li>
+                <li>No refunds will be provided for prepaid subscription fees</li>
+                <li>You remain liable for any outstanding payments</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-semibold mb-3">12. Governing Law</h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                These Terms shall be governed by and construed in accordance with the laws of the Republic of Kenya. Any disputes arising from these Terms shall be resolved exclusively in the courts of Nairobi, Kenya.
               </p>
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold mb-3">10. Termination</h2>
+              <h2 className="text-lg font-semibold mb-3">13. Changes to Terms</h2>
               <p className="text-gray-600 dark:text-gray-400">
-                We may terminate or suspend your account immediately, without prior notice, 
-                for conduct that violates these terms. You may cancel your account at any time.
+                We may modify these Terms at any time. We will notify you of material changes via email or through the Service. Your continued use of the Service after such notice constitutes acceptance of the modified Terms.
               </p>
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold mb-3">11. Governing Law</h2>
+              <h2 className="text-lg font-semibold mb-3">14. Contact Information</h2>
               <p className="text-gray-600 dark:text-gray-400">
-                These terms shall be governed by the laws of the Republic of Kenya. 
-                Any disputes shall be resolved in the courts of Kenya.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-semibold mb-3">12. Changes to Terms</h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                We may modify these terms at any time. Continued use of the Service constitutes acceptance of the modified terms.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-semibold mb-3">13. Contact Information</h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                For questions about these Terms, contact us at:
+                For questions about these Terms, please contact us at:
               </p>
               <p className="text-gray-600 dark:text-gray-400 mt-2">
-                📧 Email: <a href="mailto:support@bochi.ke" className="text-amber-600 hover:underline">support@bochi.ke</a><br />
-                📞 Phone: +254 722 886 353<br />
-                📍 Address: Nairobi, Kenya
+                📧 <strong>Email:</strong> <a href="mailto:support@bochi.ke" className="text-amber-600 hover:underline">support@bochi.ke</a><br />
+                📞 <strong>Phone:</strong> +254 772 041 005<br />
+                📍 <strong>Address:</strong> Nairobi, Kenya<br />
+                🌐 <strong>Website:</strong> <a href="https://www.bochi.ke" className="text-amber-600 hover:underline">www.bochi.ke</a>
               </p>
             </section>
           </div>
