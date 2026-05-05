@@ -332,15 +332,31 @@ export function Register({ onBackToLogin }: RegisterProps) {
               <a href="/terms" className="text-primary hover:underline">Terms of Service</a> and{' '}
               <a href="/privacy" className="text-primary hover:underline">Privacy Policy</a>
             </p>
-            <p className="text-xs text-muted-foreground mt-2">
-              Already have an account?{' '}
-              <button
-                onClick={onBackToLogin}
-                className="text-primary hover:underline font-medium"
-              >
-                Sign in
-              </button>
-            </p>
+
+
+
+
+<p className="text-xs text-muted-foreground mt-2">
+  Already have an account?{' '}
+  <button
+    onClick={() => {
+      console.log('🔍 Sign in clicked - onBackToLogin exists:', !!onBackToLogin);
+      if (onBackToLogin) {
+        console.log('✅ Using onBackToLogin from props');
+        onBackToLogin();
+      } else {
+        console.log('🔄 Using navigate fallback to /login');
+        navigate('/login');
+      }
+    }}
+    className="text-primary hover:underline font-medium"
+  >
+    Sign in
+  </button>
+</p>
+
+
+
           </div>
         </CardContent>
       </Card>
