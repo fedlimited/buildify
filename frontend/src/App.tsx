@@ -87,13 +87,9 @@ const App = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            
             {/* Legal Pages */}
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
-
-            {/* Protected app routes - require authentication */}
-            <Route path="/dashboard" element={...} />
 
             {/* Protected app routes - require authentication */}
             <Route path="/dashboard" element={
