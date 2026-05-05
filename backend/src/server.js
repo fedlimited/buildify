@@ -162,6 +162,7 @@ app.get('/api/subscription/payment-status/:paymentId', authenticateToken, subscr
 // ========== INSTALLMENT ROUTES ==========
 app.post('/api/subscription/create-installment-plan', authenticateToken, subscriptionPaymentController.createInstallmentPlan);
 app.post('/api/subscription/pay-installment', authenticateToken, subscriptionPaymentController.payInstallment);
+app.get('/api/subscription/installment-progress', authenticateToken, subscriptionPaymentController.getInstallmentProgress);
 
 // Company routes
 app.get('/api/company', companyController.getCompanyInfo);

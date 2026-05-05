@@ -41,27 +41,47 @@ export const BillingModule = () => {
   const [showModal, setShowModal] = useState(false);
   const [phone, setPhone] = useState('');
   const [status, setStatus] = useState('idle');
+
+
+
   const [error, setError] = useState('');
   
   // Installment payment states
+  const [installmentProgress, setInstallmentProgress] = useState<any>(null);
   const [installmentPlan, setInstallmentPlan] = useState<any>(null);
   const [showInstallmentModal, setShowInstallmentModal] = useState(false);
   const [currentInstallment, setCurrentInstallment] = useState<any>(null);
   const [installmentPaymentStatus, setInstallmentPaymentStatus] = useState('idle');
 
-  useEffect(() => {
-    const fetchData = async () => {
+
+
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const plansData = await api.request('/subscription/plans');
+      setPlans(plansData);
+      const subData = await api.request('/subscription/current');
+      setCurrentPlan(subData);
+      
+      // Fetch installment progress
       try {
-        const plansData = await api.request('/subscription/plans');
-        setPlans(plansData);
-        const subData = await api.request('/subscription/current');
-        setCurrentPlan(subData);
+        const progressData = await api.request('/subscription/installment-progress');
+        if (progressData.hasInstallmentPlan && !progressData.isComplete) {
+          setInstallmentProgress(progressData);
+        }
       } catch (err) {
-        console.error(err);
+        console.error('Error fetching installment progress:', err);
       }
-    };
-    fetchData();
-  }, []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  fetchData();
+}, []);
+
+
+
+
 
   const getPrice = (plan: Plan) => {
     if (paymentMethod === 'mpesa') {
@@ -70,6 +90,8 @@ export const BillingModule = () => {
       return selectedCycle === 'monthly' ? plan.price_monthly_usd : plan.price_yearly_usd;
     }
   };
+
+
 
   const getCurrencySymbol = () => {
     return paymentMethod === 'mpesa' ? 'KES' : 'USD';
@@ -118,8 +140,12 @@ export const BillingModule = () => {
     }
   };
 
+
+
+
+
   // Pay a specific installment
-  const payInstallment = async (installmentId: number, amount: number) => {
+const payInstallment = async (installmentId, amount) => {
     let formattedPhone = phone;
     if (formattedPhone.startsWith('0')) {
       formattedPhone = '254' + formattedPhone.substring(1);
@@ -152,11 +178,26 @@ export const BillingModule = () => {
           if (statusRes.status === 'completed') {
             clearInterval(interval);
             setInstallmentPaymentStatus('completed');
-            setTimeout(() => {
-              setShowInstallmentModal(false);
-              setShowModal(false);
-              window.location.reload();
-            }, 2000);
+            // Refresh installment progress
+            const progressData = await api.request('/subscription/installment-progress');
+            if (progressData.hasInstallmentPlan && !progressData.isComplete) {
+              setInstallmentProgress(progressData);
+              setCurrentInstallment(progressData.nextInstallment);
+            } else if (progressData.isComplete) {
+              setInstallmentProgress(null);
+              setCurrentInstallment(null);
+              setTimeout(() => {
+                setShowInstallmentModal(false);
+                setShowModal(false);
+                window.location.reload();
+              }, 2000);
+            } else {
+              setTimeout(() => {
+                setShowInstallmentModal(false);
+                setShowModal(false);
+                window.location.reload();
+              }, 2000);
+            }
           } else if (statusRes.status === 'failed') {
             clearInterval(interval);
             setInstallmentPaymentStatus('error');
@@ -173,7 +214,23 @@ export const BillingModule = () => {
     }
   };
 
+
+
+
+
+
+
+
   const handlePay = async () => {
+
+    // Check if this is an installment payment
+    if (currentInstallment) {
+      await payInstallment(currentInstallment.id, currentInstallment.amount);
+      return;
+    }
+
+
+
     if (paymentMethod === 'mpesa') {
       let formattedPhone = phone;
       if (formattedPhone.startsWith('0')) {
@@ -431,6 +488,48 @@ export const BillingModule = () => {
           </div>
         </div>
       </div>
+
+
+
+      {/* Installment Progress Banner */}
+      {installmentProgress && installmentProgress.hasInstallmentPlan && !installmentProgress.isComplete && (
+        <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
+          <div className="flex justify-between items-center mb-2">
+            <h4 className="font-semibold text-amber-800 dark:text-amber-400">💡 Installment Plan Active</h4>
+            <span className="text-sm font-medium text-amber-700">
+              {installmentProgress.paidInstallments} of {installmentProgress.numberOfInstallments} paid
+            </span>
+          </div>
+          <div className="w-full bg-amber-200 dark:bg-amber-800 rounded-full h-2 mb-3">
+            <div 
+              className="bg-amber-500 h-2 rounded-full transition-all"
+              style={{ width: `${(installmentProgress.paidInstallments / installmentProgress.numberOfInstallments) * 100}%` }}
+            />
+          </div>
+          <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
+            Remaining: KES {installmentProgress.remainingAmount.toLocaleString()}
+          </p>
+          {installmentProgress.nextInstallment && (
+            <button
+              onClick={() => {
+                setSelectedPlan(plans.find(p => p.display_name === installmentProgress.plan_name));
+                setCurrentInstallment(installmentProgress.nextInstallment);
+                setShowModal(true);
+                setStatus('idle');
+                setPhone('');
+                setError('');
+              }}
+              className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm hover:bg-amber-600 transition-colors"
+            >
+              Pay Next Installment: KES {installmentProgress.nextInstallment.amount.toLocaleString()}
+            </button>
+          )}
+        </div>
+      )}
+
+
+
+
 
       {/* Regular Payment Modal */}
       {showModal && selectedPlan && (

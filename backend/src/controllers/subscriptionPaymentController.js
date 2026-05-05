@@ -559,6 +559,21 @@ if (amount > MPESA_LIMIT) {
     }
   }
 
+
+  // Helper: Format phone number for M-Pesa
+  formatPhoneNumber(phoneNumber) {
+    let formatted = phoneNumber.toString().replace(/\s/g, '');
+    if (formatted.startsWith('0')) {
+      formatted = '254' + formatted.substring(1);
+    } else if (formatted.startsWith('+')) {
+      formatted = formatted.substring(1);
+    } else if (!formatted.startsWith('254') && formatted.length >= 9) {
+      formatted = '254' + formatted;
+    }
+    return formatted;
+  }
+
+
   // Pay an installment
   async payInstallment(req, res) {
     try {
@@ -756,6 +771,94 @@ if (amount > MPESA_LIMIT) {
       console.error('Update installment error:', error);
     }
   }
-}
+
+
+
+  // Get installment progress for current company
+  async getInstallmentProgress(req, res) {
+    try {
+      const db = await getDb();
+      const company_id = req.user.companyId;
+
+      let installmentPlan;
+      if (process.env.NODE_ENV === 'production') {
+        const result = await db.query(`
+          SELECT ip.*, sp.display_name as plan_name
+          FROM installment_plans ip
+          JOIN subscription_plans sp ON sp.id = (
+            SELECT plan_id FROM company_subscriptions WHERE company_id = $1 ORDER BY id DESC LIMIT 1
+          )
+          WHERE ip.company_id = $1 AND ip.status IN ('active', 'pending')
+          ORDER BY ip.id DESC LIMIT 1
+        `, [company_id]);
+        installmentPlan = result.rows[0];
+      } else {
+        installmentPlan = await db.get(`
+          SELECT ip.*, sp.display_name as plan_name
+          FROM installment_plans ip
+          JOIN subscription_plans sp ON sp.id = (
+            SELECT plan_id FROM company_subscriptions WHERE company_id = ? ORDER BY id DESC LIMIT 1
+          )
+          WHERE ip.company_id = ? AND ip.status IN ('active', 'pending')
+          ORDER BY ip.id DESC LIMIT 1
+        `, [company_id, company_id]);
+      }
+
+      if (!installmentPlan) {
+        return res.json({ hasInstallmentPlan: false });
+      }
+
+      // Get all installments for this plan
+      let installments;
+      if (process.env.NODE_ENV === 'production') {
+        const result = await db.query(`
+          SELECT * FROM installments WHERE installment_plan_id = $1 ORDER BY due_date ASC
+        `, [installmentPlan.id]);
+        installments = result.rows;
+      } else {
+        installments = await db.all(`
+          SELECT * FROM installments WHERE installment_plan_id = ? ORDER BY due_date ASC
+        `, [installmentPlan.id]);
+      }
+
+      const paidCount = installments.filter(i => i.status === 'paid').length;
+      const totalPaid = installments.filter(i => i.status === 'paid').reduce((sum, i) => sum + i.amount, 0);
+      const remainingAmount = installmentPlan.total_amount - totalPaid;
+      const nextInstallment = installments.find(i => i.status === 'pending');
+
+      res.json({
+        hasInstallmentPlan: true,
+        installmentPlanId: installmentPlan.id,
+        totalAmount: installmentPlan.total_amount,
+        paidAmount: totalPaid,
+        remainingAmount: remainingAmount,
+        numberOfInstallments: installmentPlan.number_of_installments,
+        paidInstallments: paidCount,
+        remainingInstallments: installmentPlan.number_of_installments - paidCount,
+        nextInstallment: nextInstallment ? {
+          id: nextInstallment.id,
+          amount: nextInstallment.amount,
+          dueDate: nextInstallment.due_date
+        } : null,
+        installments: installments.map(i => ({
+          id: i.id,
+          amount: i.amount,
+          dueDate: i.due_date,
+          status: i.status,
+          paidDate: i.paid_date
+        })),
+        isComplete: paidCount === installmentPlan.number_of_installments,
+        message: paidCount === installmentPlan.number_of_installments 
+          ? 'All installments paid! Your subscription is active.' 
+          : `${paidCount} of ${installmentPlan.number_of_installments} installments paid. Remaining: KES ${remainingAmount.toLocaleString()}`
+      });
+    } catch (error) {
+      console.error('Get installment progress error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+
+
 
 module.exports = new SubscriptionPaymentController();
