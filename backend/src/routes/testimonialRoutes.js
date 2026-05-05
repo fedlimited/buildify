@@ -4,6 +4,37 @@ const { getDb } = require('../config/database');
 
 // ============ PUBLIC ROUTES ============
 
+// Submit a testimonial (PUBLIC - no auth required)
+router.post('/submit', async (req, res) => {
+  try {
+    const db = getDb();
+    const { name, role, company, text, rating } = req.body;
+    
+    console.log('📝 Testimonial submission received:', { name, role, company });
+    
+    if (!name || !text) {
+      return res.status(400).json({ error: 'Name and testimonial text are required' });
+    }
+    
+    const result = await db.run(
+      `INSERT INTO testimonials (name, role, company, text, rating, is_approved, created_at) 
+       VALUES (?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)`,
+      [name, role || '', company || '', text, rating || 5]
+    );
+    
+    console.log('✅ Testimonial saved with ID:', result.lastID);
+    
+    res.status(201).json({ 
+      success: true, 
+      message: 'Thank you! Your testimonial has been submitted for review.',
+      id: result.lastID 
+    });
+  } catch (error) {
+    console.error('❌ Submit testimonial error:', error);
+    res.status(500).json({ error: 'Failed to submit testimonial. Please try again.' });
+  }
+});
+
 // Get approved testimonials (public) - with location filter
 router.get('/approved', async (req, res) => {
   const { location } = req.query;
