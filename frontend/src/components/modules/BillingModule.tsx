@@ -500,24 +500,31 @@ const payInstallment = async (installmentId, amount) => {
 
 
 
-      {/* Installment Progress Banner */}
-      {installmentProgress && installmentProgress.hasInstallmentPlan && !installmentProgress.isComplete && (
-        <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
-          <div className="flex justify-between items-center mb-2">
-            <h4 className="font-semibold text-amber-800 dark:text-amber-400">💡 Installment Plan Active</h4>
-            <span className="text-sm font-medium text-amber-700">
-              {installmentProgress.paidInstallments} of {installmentProgress.numberOfInstallments} paid
-            </span>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      {/* Installment Progress Banner - Ultra Compact */}
+      {paymentMethod === 'mpesa' && installmentProgress && installmentProgress.hasInstallmentPlan && !installmentProgress.isComplete && (
+        <div className="mb-3 flex items-center justify-between flex-wrap gap-2 p-2 bg-[#E8F5E9] dark:bg-[#1B5E20]/30 rounded border border-[#4CAF50]/30">
+          <div className="flex items-center gap-2 text-xs">
+            <Smartphone size={12} className="text-[#2E7D32]" />
+            <span className="text-[#2E7D32] font-medium">{installmentProgress.paidInstallments}/{installmentProgress.numberOfInstallments}</span>
+            <div className="w-16 bg-gray-200 rounded-full h-1">
+              <div className="bg-[#4CAF50] h-1 rounded-full" style={{ width: `${(installmentProgress.paidInstallments / installmentProgress.numberOfInstallments) * 100}%` }} />
+            </div>
+            <span className="text-[#2E7D32]">KES {installmentProgress.remainingAmount.toLocaleString()}</span>
           </div>
-          <div className="w-full bg-amber-200 dark:bg-amber-800 rounded-full h-2 mb-3">
-            <div 
-              className="bg-amber-500 h-2 rounded-full transition-all"
-              style={{ width: `${(installmentProgress.paidInstallments / installmentProgress.numberOfInstallments) * 100}%` }}
-            />
-          </div>
-          <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
-            Remaining: KES {installmentProgress.remainingAmount.toLocaleString()}
-          </p>
           {installmentProgress.nextInstallment && (
             <button
               onClick={() => {
@@ -528,13 +535,16 @@ const payInstallment = async (installmentId, amount) => {
                 setPhone('');
                 setError('');
               }}
-              className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm hover:bg-amber-600 transition-colors"
+              className="px-2 py-1 bg-[#4CAF50] hover:bg-[#2E7D32] text-white rounded text-xs"
             >
-              Pay Next Installment: KES {installmentProgress.nextInstallment.amount.toLocaleString()}
+              Pay
             </button>
           )}
         </div>
       )}
+
+
+
 
 
 
