@@ -131,23 +131,37 @@ class SubscriptionPaymentController {
       // Calculate amount to charge
       let amount = billingCycle === 'yearly' ? plan.price_yearly_kes : plan.price_monthly_kes;
 
-// ✅ M-Pesa limit check (250,000 KES maximum per transaction)
+
+
+
+
+// ✅ M-Pesa limit check - User-friendly message (not an error)
 const MPESA_LIMIT = 250000;
 
 if (amount > MPESA_LIMIT) {
-  // Calculate split payment suggestion
   const numberOfInstallments = Math.ceil(amount / MPESA_LIMIT);
   const installmentAmount = Math.ceil(amount / numberOfInstallments);
   
-  return res.status(400).json({
-    error: `Amount KES ${amount.toLocaleString()} exceeds M-Pesa transaction limit of KES ${MPESA_LIMIT.toLocaleString()}`,
+  return res.status(200).json({
+    success: false,
     requiresSplit: true,
     totalAmount: amount,
-    suggestedInstallments: numberOfInstallments,
+    mpesaLimit: MPESA_LIMIT,
+    numberOfInstallments: numberOfInstallments,
     installmentAmount: installmentAmount,
-    message: `Please use split payment: ${numberOfInstallments} installments of KES ${installmentAmount.toLocaleString()} each`
+    firstPayment: installmentAmount,
+    remainingInstallments: numberOfInstallments - 1,
+    title: "💡 M-Pesa Transaction Notice",
+    message: `Your payment of KES ${amount.toLocaleString()} exceeds the M-Pesa limit of KES ${MPESA_LIMIT.toLocaleString()} per transaction.`,
+    solution: `We'll split your payment into ${numberOfInstallments} installments of KES ${installmentAmount.toLocaleString()} each.`,
+    action: `Pay first installment of KES ${installmentAmount.toLocaleString()} now.`,
+    alternative: `Or switch to monthly billing: KES ${plan.price_monthly_kes.toLocaleString()} (within M-Pesa limit)`,
+    cta: `Pay KES ${installmentAmount.toLocaleString()} (Installment 1 of ${numberOfInstallments})`
   });
 }
+
+
+
 
       
       if (currentSub && currentSub.plan_id !== planId && currentPlan) {
