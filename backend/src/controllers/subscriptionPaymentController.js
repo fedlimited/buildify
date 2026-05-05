@@ -79,121 +79,159 @@ class SubscriptionPaymentController {
     }
   }
 
-  async initiatePayment(req, res) {
-    try {
-      const db = await getDb();
-      const { planId, phoneNumber, billingCycle } = req.body;
-      const company_id = req.user.companyId;
 
-      // Get the target plan
-      let plan;
+
+
+
+
+
+
+
+
+
+async initiatePayment(req, res) {
+  try {
+    const db = await getDb();
+    const { planId, phoneNumber, billingCycle } = req.body;
+    const company_id = req.user.companyId;
+
+    // Get the target plan
+    let plan;
+    if (process.env.NODE_ENV === 'production') {
+      const result = await db.query('SELECT * FROM subscription_plans WHERE id = $1', [planId]);
+      plan = result.rows[0];
+    } else {
+      plan = await db.get('SELECT * FROM subscription_plans WHERE id = ?', [planId]);
+    }
+
+    if (!plan) {
+      return res.status(404).json({ error: 'Plan not found' });
+    }
+
+    // Get current subscription (including trial status)
+    let currentSub;
+    if (process.env.NODE_ENV === 'production') {
+      const result = await db.query(
+        "SELECT * FROM company_subscriptions WHERE company_id = $1 AND status IN ('active', 'trial') ORDER BY id DESC LIMIT 1",
+        [company_id]
+      );
+      currentSub = result.rows[0];
+    } else {
+      currentSub = await db.get(
+        "SELECT * FROM company_subscriptions WHERE company_id = ? AND status IN ('active', 'trial') ORDER BY id DESC LIMIT 1",
+        [company_id]
+      );
+    }
+
+    // Determine if current subscription is a TRIAL
+    const isTrial = currentSub && currentSub.status === 'trial';
+    
+    // Calculate amount to charge
+    let amount = billingCycle === 'yearly' ? plan.price_yearly_kes : plan.price_monthly_kes;
+    
+    if (currentSub && currentSub.plan_id !== planId) {
+      // Get current plan details
+      let currentPlan;
       if (process.env.NODE_ENV === 'production') {
-        const result = await db.query('SELECT * FROM subscription_plans WHERE id = $1', [planId]);
-        plan = result.rows[0];
+        const result = await db.query('SELECT * FROM subscription_plans WHERE id = $1', [currentSub.plan_id]);
+        currentPlan = result.rows[0];
       } else {
-        plan = await db.get('SELECT * FROM subscription_plans WHERE id = ?', [planId]);
+        currentPlan = await db.get('SELECT * FROM subscription_plans WHERE id = ?', [currentSub.plan_id]);
       }
 
-      if (!plan) {
-        return res.status(404).json({ error: 'Plan not found' });
+      console.log(`📊 Current plan: ${currentPlan.name} (status: ${currentSub.status})`);
+      console.log(`🎯 Target plan: ${plan.name} (KES ${amount})`);
+
+      // 🔥 FIX: If TRIAL, charge FULL amount (no proration)
+      if (isTrial) {
+        console.log(`🎁 Current subscription is a TRIAL - charging FULL amount: KES ${amount}`);
+        // amount stays as full price
+      } 
+      // If current plan is FREE, charge FULL amount
+      else if (currentPlan.name === 'free') {
+        console.log(`🆓 Current plan is FREE - charging full amount: KES ${amount}`);
+        // amount stays as full price
       }
-
-      // Start with full amount of the new plan
-      let amount = billingCycle === 'yearly' ? plan.price_yearly_kes : plan.price_monthly_kes;
-      
-      if (!amount || amount <= 0) {
-        return res.status(400).json({ error: 'Invalid plan amount' });
-      }
-
-      // Get current subscription
-      let currentSub;
-      if (process.env.NODE_ENV === 'production') {
-        const result = await db.query(
-          "SELECT * FROM company_subscriptions WHERE company_id = $1 AND status IN ('active', 'trial') ORDER BY id DESC LIMIT 1",
-          [company_id]
-        );
-        currentSub = result.rows[0];
-      } else {
-        currentSub = await db.get(
-          "SELECT * FROM company_subscriptions WHERE company_id = ? AND status IN ('active', 'trial') ORDER BY id DESC LIMIT 1",
-          [company_id]
-        );
-      }
-
-      // Only prorate if current plan is PAID (not free)
-      if (currentSub && currentSub.plan_id !== planId) {
-        // Get current plan details
-        let currentPlan;
-        if (process.env.NODE_ENV === 'production') {
-          const result = await db.query('SELECT * FROM subscription_plans WHERE id = $1', [currentSub.plan_id]);
-          currentPlan = result.rows[0];
-        } else {
-          currentPlan = await db.get('SELECT * FROM subscription_plans WHERE id = ?', [currentSub.plan_id]);
-        }
-
-        console.log(`📊 Current plan: ${currentPlan.name} (KES ${currentPlan.price_monthly_kes})`);
-        console.log(`🎯 Target plan: ${plan.name} (KES ${plan.price_monthly_kes})`);
-
-        // ONLY subtract if current plan is NOT free
-        if (currentPlan.name !== 'free') {
-          const currentAmount = billingCycle === 'yearly' ? currentPlan.price_yearly_kes : currentPlan.price_monthly_kes;
-          amount = amount - currentAmount;
-          console.log(`💰 Prorated amount: ${amount} (${plan.price_monthly_kes} - ${currentAmount})`);
-        } else {
-          console.log(`🆓 Current plan is FREE - charging full amount: ${amount}`);
-        }
-
-        // Prevent negative amounts (downgrade)
+      // If upgrading to higher plan (price difference positive)
+      else if (amount > (billingCycle === 'yearly' ? currentPlan.price_yearly_kes : currentPlan.price_monthly_kes)) {
+        const currentAmount = billingCycle === 'yearly' ? currentPlan.price_yearly_kes : currentPlan.price_monthly_kes;
+        amount = amount - currentAmount;
+        console.log(`⬆️ Upgrading - prorated amount: KES ${amount} (${plan.price_monthly_kes} - ${currentAmount})`);
+        
         if (amount <= 0) {
           return res.status(400).json({ 
             error: 'Cannot process downgrade. Please contact support.' 
           });
         }
       }
-
-      console.log(`💳 Final charge amount: KES ${amount}`);
-
-      const accountReference = `SUB-${company_id}-${Date.now()}`;
-      const mpesaResponse = await mpesaService.initiatePayment(
-        phoneNumber, 
-        amount, 
-        accountReference, 
-        `Subscription: ${plan.display_name} (${billingCycle})`
-      );
-
-      if (mpesaResponse.ResponseCode === '0') {
-        let result;
-        if (process.env.NODE_ENV === 'production') {
-          result = await db.query(`
-            INSERT INTO subscription_payments 
-            (company_id, plan_id, amount_kes, payment_method, mpesa_transaction_id, status, created_at) 
-            VALUES ($1, $2, $3, 'mpesa', $4, 'pending', CURRENT_TIMESTAMP)
-            RETURNING id
-          `, [company_id, planId, amount, mpesaResponse.CheckoutRequestID]);
-        } else {
-          result = await db.run(`
-            INSERT INTO subscription_payments 
-            (company_id, plan_id, amount_kes, payment_method, mpesa_transaction_id, status, created_at) 
-            VALUES (?, ?, ?, 'mpesa', ?, 'pending', CURRENT_TIMESTAMP)
-          `, [company_id, planId, amount, mpesaResponse.CheckoutRequestID]);
-        }
-
-        res.json({
-          success: true,
-          message: 'Payment prompt sent to your phone',
-          checkoutRequestId: mpesaResponse.CheckoutRequestID,
-          paymentId: process.env.NODE_ENV === 'production' ? result.rows[0].id : result.lastID,
-          amount: amount,
-          isProrated: currentSub && currentSub.plan_id !== planId
-        });
-      } else {
-        res.status(400).json({ error: mpesaResponse.ResponseDescription || 'Payment initiation failed' });
+      // If downgrading or same plan (should not happen, but handle it)
+      else {
+        console.log(`⚠️ Downgrade or invalid - charging full amount: KES ${amount}`);
+        // amount stays as full price
       }
-    } catch (error) {
-      console.error('Initiate payment error:', error);
-      res.status(500).json({ error: error.message });
+    } else if (currentSub && currentSub.plan_id === planId) {
+      // Already on this plan - charge full amount (renewal)
+      console.log(`🔄 Renewing existing plan - charging full amount: KES ${amount}`);
+    } else {
+      // No current subscription
+      console.log(`🆕 New subscription - charging full amount: KES ${amount}`);
     }
+
+    console.log(`💰 Final charge amount: KES ${amount}`);
+
+    // Validate amount
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Invalid payment amount' });
+    }
+
+    const accountReference = `SUB-${company_id}-${Date.now()}`;
+    const mpesaResponse = await mpesaService.initiatePayment(
+      phoneNumber, 
+      amount, 
+      accountReference, 
+      `Subscription: ${plan.display_name} (${billingCycle})`
+    );
+
+    if (mpesaResponse.ResponseCode === '0') {
+      let result;
+      if (process.env.NODE_ENV === 'production') {
+        result = await db.query(`
+          INSERT INTO subscription_payments 
+          (company_id, plan_id, amount_kes, payment_method, mpesa_transaction_id, status, created_at) 
+          VALUES ($1, $2, $3, 'mpesa', $4, 'pending', CURRENT_TIMESTAMP)
+          RETURNING id
+        `, [company_id, planId, amount, mpesaResponse.CheckoutRequestID]);
+      } else {
+        result = await db.run(`
+          INSERT INTO subscription_payments 
+          (company_id, plan_id, amount_kes, payment_method, mpesa_transaction_id, status, created_at) 
+          VALUES (?, ?, ?, 'mpesa', ?, 'pending', CURRENT_TIMESTAMP)
+        `, [company_id, planId, amount, mpesaResponse.CheckoutRequestID]);
+      }
+
+      res.json({
+        success: true,
+        message: 'Payment prompt sent to your phone',
+        checkoutRequestId: mpesaResponse.CheckoutRequestID,
+        paymentId: process.env.NODE_ENV === 'production' ? result.rows[0].id : result.lastID,
+        amount: amount,
+        isProrated: !isTrial && currentSub && currentSub.plan_id !== planId && currentPlan?.name !== 'free'
+      });
+    } else {
+      res.status(400).json({ error: mpesaResponse.ResponseDescription || 'Payment initiation failed' });
+    }
+  } catch (error) {
+    console.error('Initiate payment error:', error);
+    res.status(500).json({ error: error.message });
   }
+}
+
+
+
+
+
+
+
 
   // M-Pesa Callback (webhook)
   async handleCallback(req, res) {
