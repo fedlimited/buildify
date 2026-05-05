@@ -390,37 +390,27 @@ const payInstallment = async (installmentId, amount) => {
 
 
 
-
-
-
-{/* M-Pesa Payment Information */}
+{/* M-Pesa Payment Information - Minimal */}
 {paymentMethod === 'mpesa' ? (
-  <div className="mb-5 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
-    <div className="flex items-start gap-2">
-      <Smartphone size={16} className="text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-      <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-        <p className="font-medium">📱 M-Pesa Payment Information</p>
-        <p>• M-Pesa has a <strong>KES 250,000</strong> limit per transaction</p>
-        <p>• If your total exceeds this limit, we'll automatically split it into <strong>installments</strong></p>
-        <p>• You can also use <strong>different phone numbers</strong> for different installments</p>
-        <p>• Daily limit per phone number is <strong>KES 500,000</strong></p>
-        <p className="text-blue-600 dark:text-blue-400 mt-1">💡 Tip: For large yearly payments, installments will be created automatically</p>
+  <div className="mb-3 flex items-center justify-end gap-1">
+    <div className="relative group">
+      <button className="text-blue-500 hover:text-blue-600">
+        <Smartphone size={14} />
+      </button>
+      <div className="absolute right-0 bottom-full mb-2 hidden group-hover:block z-50 w-72 p-3 bg-gray-900 text-white text-xs rounded shadow-lg">
+        <p className="font-medium mb-2">📱 M-Pesa Payment Info</p>
+        <p className="mb-1">• Limit: <strong>KES 250,000</strong> per transaction</p>
+        <p className="mb-1">• Daily limit: <strong>KES 500,000</strong> per phone</p>
+        <p className="mb-1">• Large payments → auto installments</p>
+        <p>• Use different phones for installments</p>
       </div>
     </div>
   </div>
 ) : (
-  <div className="mb-5 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-    <div className="flex items-start gap-2">
-      <CreditCard size={16} className="text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-      <div className="text-xs text-amber-700 dark:text-amber-300">
-        <p className="font-medium">💳 Card Payments</p>
-        <p>International payments via Visa/Mastercard coming soon!</p>
-      </div>
-    </div>
+  <div className="mb-3 flex items-center justify-end gap-1">
+    <CreditCard size={14} className="text-amber-500" />
   </div>
 )}
-
-
 
 
 
