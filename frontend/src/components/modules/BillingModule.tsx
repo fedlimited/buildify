@@ -41,9 +41,6 @@ export const BillingModule = () => {
   const [showModal, setShowModal] = useState(false);
   const [phone, setPhone] = useState('');
   const [status, setStatus] = useState('idle');
-
-
-
   const [error, setError] = useState('');
   
   // Installment payment states
@@ -53,35 +50,29 @@ export const BillingModule = () => {
   const [currentInstallment, setCurrentInstallment] = useState<any>(null);
   const [installmentPaymentStatus, setInstallmentPaymentStatus] = useState('idle');
 
-
-
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const plansData = await api.request('/subscription/plans');
-      setPlans(plansData);
-      const subData = await api.request('/subscription/current');
-      setCurrentPlan(subData);
-      
-      // Fetch installment progress
+  useEffect(() => {
+    const fetchData = async () => {
       try {
-        const progressData = await api.request('/subscription/installment-progress');
-        if (progressData.hasInstallmentPlan && !progressData.isComplete) {
-          setInstallmentProgress(progressData);
+        const plansData = await api.request('/subscription/plans');
+        setPlans(plansData);
+        const subData = await api.request('/subscription/current');
+        setCurrentPlan(subData);
+        
+        // Fetch installment progress
+        try {
+          const progressData = await api.request('/subscription/installment-progress');
+          if (progressData.hasInstallmentPlan && !progressData.isComplete) {
+            setInstallmentProgress(progressData);
+          }
+        } catch (err) {
+          console.error('Error fetching installment progress:', err);
         }
       } catch (err) {
-        console.error('Error fetching installment progress:', err);
+        console.error(err);
       }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-  fetchData();
-}, []);
-
-
-
-
+    };
+    fetchData();
+  }, []);
 
   const getPrice = (plan: Plan) => {
     if (paymentMethod === 'mpesa') {
@@ -90,8 +81,6 @@ useEffect(() => {
       return selectedCycle === 'monthly' ? plan.price_monthly_usd : plan.price_yearly_usd;
     }
   };
-
-
 
   const getCurrencySymbol = () => {
     return paymentMethod === 'mpesa' ? 'KES' : 'USD';
@@ -140,11 +129,8 @@ useEffect(() => {
     }
   };
 
-
-
-
   // Pay a specific installment
-const payInstallment = async (installmentId, amount) => {
+  const payInstallment = async (installmentId: number, amount: number) => {
     let formattedPhone = phone;
     if (formattedPhone.startsWith('0')) {
       formattedPhone = '254' + formattedPhone.substring(1);
@@ -213,22 +199,12 @@ const payInstallment = async (installmentId, amount) => {
     }
   };
 
-
-
-
-
-
-
-
   const handlePay = async () => {
-
     // Check if this is an installment payment
     if (currentInstallment) {
       await payInstallment(currentInstallment.id, currentInstallment.amount);
       return;
     }
-
-
 
     if (paymentMethod === 'mpesa') {
       let formattedPhone = phone;
@@ -387,34 +363,30 @@ const payInstallment = async (installmentId, amount) => {
         </div>
       </div>
 
-
-
-{/* M-Pesa Payment Information - Compact */}
-{paymentMethod === 'mpesa' ? (
-  <div className="mb-3 flex items-center justify-start gap-2">
-    <div className="relative group">
-      <div className="cursor-help">
-        <Smartphone size={14} className="text-blue-500" />
-        <span className="ml-1 text-xs text-gray-500">i</span>
-      </div>
-      <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-lg">
-        <p className="font-medium mb-1">M-Pesa Limits</p>
-        <p>• Max per transaction: <strong>KES 250,000</strong></p>
-        <p>• Max daily per phone: <strong>KES 500,000</strong></p>
-        <p>• Large payments split into installments</p>
-        <p>• Use different phones for installments</p>
-      </div>
-    </div>
-    <span className="text-xs text-gray-500">M-Pesa limits: KES 250k/transaction, 500k/day</span>
-  </div>
-) : (
-  <div className="mb-3 flex items-center justify-start gap-2">
-    <CreditCard size={14} className="text-amber-500" />
-    <span className="text-xs text-gray-500">Card payments coming soon</span>
-  </div>
-)}
-
-
+      {/* M-Pesa Payment Information - Compact */}
+      {paymentMethod === 'mpesa' ? (
+        <div className="mb-3 flex items-center justify-start gap-2">
+          <div className="relative group">
+            <div className="cursor-help">
+              <Smartphone size={14} className="text-blue-500" />
+              <span className="ml-1 text-xs text-gray-500">i</span>
+            </div>
+            <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-lg">
+              <p className="font-medium mb-1">M-Pesa Limits</p>
+              <p>• Max per transaction: <strong>KES 250,000</strong></p>
+              <p>• Max daily per phone: <strong>KES 500,000</strong></p>
+              <p>• Large payments split into installments</p>
+              <p>• Use different phones for installments</p>
+            </div>
+          </div>
+          <span className="text-xs text-gray-500">M-Pesa limits: KES 250k/transaction, 500k/day</span>
+        </div>
+      ) : (
+        <div className="mb-3 flex items-center justify-start gap-2">
+          <CreditCard size={14} className="text-amber-500" />
+          <span className="text-xs text-gray-500">Card payments coming soon</span>
+        </div>
+      )}
 
       {/* Pricing Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -470,6 +442,37 @@ const payInstallment = async (installmentId, amount) => {
         })}
       </div>
 
+      {/* Installment Progress Banner - Compact Green */}
+      {paymentMethod === 'mpesa' && installmentProgress && installmentProgress.hasInstallmentPlan && !installmentProgress.isComplete && (
+        <div className="mb-4 p-3 bg-[#E8F5E9] dark:bg-[#1B5E20]/30 rounded-lg border border-[#4CAF50]/30">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2 text-xs">
+              <Smartphone size={14} className="text-[#2E7D32]" />
+              <span className="text-[#2E7D32] font-medium">{installmentProgress.paidInstallments}/{installmentProgress.numberOfInstallments} paid</span>
+              <div className="w-24 bg-gray-200 rounded-full h-1.5">
+                <div className="bg-[#4CAF50] h-1.5 rounded-full" style={{ width: `${(installmentProgress.paidInstallments / installmentProgress.numberOfInstallments) * 100}%` }} />
+              </div>
+              <span className="text-[#2E7D32]">KES {installmentProgress.remainingAmount.toLocaleString()} left</span>
+            </div>
+            {installmentProgress.nextInstallment && (
+              <button
+                onClick={() => {
+                  setSelectedPlan(plans.find(p => p.display_name === installmentProgress.plan_name));
+                  setCurrentInstallment(installmentProgress.nextInstallment);
+                  setShowModal(true);
+                  setStatus('idle');
+                  setPhone('');
+                  setError('');
+                }}
+                className="px-3 py-1.5 bg-[#4CAF50] hover:bg-[#2E7D32] text-white rounded text-xs transition-colors"
+              >
+                Pay KES {installmentProgress.nextInstallment.amount.toLocaleString()}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Detailed Plans Comparison Table */}
       <div className="mt-8">
         <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Compare All Features</h3>
@@ -497,58 +500,6 @@ const payInstallment = async (installmentId, amount) => {
           </div>
         </div>
       </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-      {/* Installment Progress Banner - Ultra Compact */}
-      {paymentMethod === 'mpesa' && installmentProgress && installmentProgress.hasInstallmentPlan && !installmentProgress.isComplete && (
-        <div className="mb-3 flex items-center justify-between flex-wrap gap-2 p-2 bg-[#E8F5E9] dark:bg-[#1B5E20]/30 rounded border border-[#4CAF50]/30">
-          <div className="flex items-center gap-2 text-xs">
-            <Smartphone size={12} className="text-[#2E7D32]" />
-            <span className="text-[#2E7D32] font-medium">{installmentProgress.paidInstallments}/{installmentProgress.numberOfInstallments}</span>
-            <div className="w-16 bg-gray-200 rounded-full h-1">
-              <div className="bg-[#4CAF50] h-1 rounded-full" style={{ width: `${(installmentProgress.paidInstallments / installmentProgress.numberOfInstallments) * 100}%` }} />
-            </div>
-            <span className="text-[#2E7D32]">KES {installmentProgress.remainingAmount.toLocaleString()}</span>
-          </div>
-          {installmentProgress.nextInstallment && (
-            <button
-              onClick={() => {
-                setSelectedPlan(plans.find(p => p.display_name === installmentProgress.plan_name));
-                setCurrentInstallment(installmentProgress.nextInstallment);
-                setShowModal(true);
-                setStatus('idle');
-                setPhone('');
-                setError('');
-              }}
-              className="px-2 py-1 bg-[#4CAF50] hover:bg-[#2E7D32] text-white rounded text-xs"
-            >
-              Pay
-            </button>
-          )}
-        </div>
-      )}
-
-
-
-
-
-
-
 
       {/* Regular Payment Modal */}
       {showModal && selectedPlan && (
@@ -691,114 +642,111 @@ const payInstallment = async (installmentId, amount) => {
         </div>
       )}
 
-
-
       {/* Installment Payment Modal */}
-
-{showInstallmentModal && installmentPlan && (
-  <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-md w-full mx-4">
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-5">
-          <div className="flex items-center gap-2">
-            <Smartphone size={20} className="text-[#4CAF50]" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Installment Payment Plan
-            </h3>
-          </div>
-          <button
-            onClick={() => {
-              setShowInstallmentModal(false);
-              setShowModal(true);
-            }}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="bg-[#E8F5E9] dark:bg-[#1B5E20]/30 rounded-lg p-4 mb-5 border border-[#4CAF50]/30 dark:border-[#4CAF50]/20">
-          <p className="text-sm text-gray-600 dark:text-gray-400">Total Amount</p>
-          <p className="text-2xl font-bold text-[#2E7D32] dark:text-[#4CAF50]">
-            KES {formatPriceWithCommas(installmentPlan.totalAmount)}
-          </p>
-          <p className="text-xs text-[#2E7D32] dark:text-[#4CAF50] mt-2 flex items-center gap-1">
-            <Smartphone size={12} /> Split into {installmentPlan.numberOfInstallments} installments due to M-Pesa limit
-          </p>
-        </div>
-
-        <div className="mb-5 space-y-3">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Installments:</p>
-          {installmentPlan.installments?.map((inst: any, idx: number) => (
-            <div key={inst.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-              <div>
-                <p className="font-medium text-gray-900 dark:text-white">Installment {idx + 1} of {installmentPlan.numberOfInstallments}</p>
-                <p className="text-xs text-gray-500">Due: {inst.dueDate}</p>
+      {showInstallmentModal && installmentPlan && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-5">
+                <div className="flex items-center gap-2">
+                  <Smartphone size={20} className="text-[#4CAF50]" />
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Installment Payment Plan
+                  </h3>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowInstallmentModal(false);
+                    setShowModal(true);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  ✕
+                </button>
               </div>
-              <div className="text-right">
-                <p className="font-bold text-gray-900 dark:text-white">KES {formatPriceWithCommas(inst.amount)}</p>
-                {inst.status === 'paid' ? (
-                  <span className="text-xs text-green-600">✓ Paid</span>
-                ) : (
+
+              <div className="bg-[#E8F5E9] dark:bg-[#1B5E20]/30 rounded-lg p-4 mb-5 border border-[#4CAF50]/30 dark:border-[#4CAF50]/20">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Amount</p>
+                <p className="text-2xl font-bold text-[#2E7D32] dark:text-[#4CAF50]">
+                  KES {formatPriceWithCommas(installmentPlan.totalAmount)}
+                </p>
+                <p className="text-xs text-[#2E7D32] dark:text-[#4CAF50] mt-2 flex items-center gap-1">
+                  <Smartphone size={12} /> Split into {installmentPlan.numberOfInstallments} installments due to M-Pesa limit
+                </p>
+              </div>
+
+              <div className="mb-5 space-y-3">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Installments:</p>
+                {installmentPlan.installments?.map((inst: any, idx: number) => (
+                  <div key={inst.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">Installment {idx + 1} of {installmentPlan.numberOfInstallments}</p>
+                      <p className="text-xs text-gray-500">Due: {inst.dueDate}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-gray-900 dark:text-white">KES {formatPriceWithCommas(inst.amount)}</p>
+                      {inst.status === 'paid' ? (
+                        <span className="text-xs text-green-600">✓ Paid</span>
+                      ) : (
+                        <button
+                          onClick={() => payInstallment(inst.id, inst.amount)}
+                          disabled={installmentPaymentStatus !== 'idle'}
+                          className="text-xs bg-[#4CAF50] hover:bg-[#2E7D32] text-white px-3 py-1 rounded transition-colors"
+                        >
+                          Pay Now
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {installmentPaymentStatus === 'processing' && (
+                <div className="text-center py-4">
+                  <Loader2 className="animate-spin h-8 w-8 text-[#4CAF50] mx-auto mb-2" />
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Processing payment...</p>
+                </div>
+              )}
+
+              {installmentPaymentStatus === 'sent' && (
+                <div className="text-center py-4">
+                  <Smartphone size={40} className="text-[#4CAF50] mx-auto mb-2" />
+                  <p className="font-medium text-gray-900 dark:text-white">Check your phone</p>
+                  <p className="text-xs text-gray-500">Enter your M-Pesa PIN to complete this installment</p>
+                </div>
+              )}
+
+              {installmentPaymentStatus === 'completed' && (
+                <div className="text-center py-4">
+                  <div className="w-12 h-12 bg-[#E8F5E9] dark:bg-[#1B5E20]/50 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <Check size={24} className="text-[#2E7D32] dark:text-[#4CAF50]" />
+                  </div>
+                  <p className="font-semibold text-green-600 dark:text-green-400">Installment Paid!</p>
+                  <p className="text-xs text-gray-500 mt-1">Refreshing...</p>
+                </div>
+              )}
+
+              {installmentPaymentStatus === 'error' && (
+                <div className="text-center py-4">
+                  <p className="text-red-600 text-sm">{error}</p>
                   <button
-                    onClick={() => payInstallment(inst.id, inst.amount)}
-                    disabled={installmentPaymentStatus !== 'idle'}
-                    className="text-xs bg-[#4CAF50] hover:bg-[#2E7D32] text-white px-3 py-1 rounded transition-colors"
+                    onClick={() => setInstallmentPaymentStatus('idle')}
+                    className="mt-2 text-sm text-[#4CAF50] hover:underline"
                   >
-                    Pay Now
+                    Try Again
                   </button>
-                )}
+                </div>
+              )}
+
+              <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-800">
+                <p className="text-xs text-gray-500 text-center flex items-center justify-center gap-1">
+                  <Smartphone size={10} /> Your subscription will be activated after all installments are paid
+                </p>
               </div>
             </div>
-          ))}
+          </div>
         </div>
-
-        {installmentPaymentStatus === 'processing' && (
-          <div className="text-center py-4">
-            <Loader2 className="animate-spin h-8 w-8 text-[#4CAF50] mx-auto mb-2" />
-            <p className="text-sm text-gray-600 dark:text-gray-400">Processing payment...</p>
-          </div>
-        )}
-
-        {installmentPaymentStatus === 'sent' && (
-          <div className="text-center py-4">
-            <Smartphone size={40} className="text-[#4CAF50] mx-auto mb-2" />
-            <p className="font-medium text-gray-900 dark:text-white">Check your phone</p>
-            <p className="text-xs text-gray-500">Enter your M-Pesa PIN to complete this installment</p>
-          </div>
-        )}
-
-        {installmentPaymentStatus === 'completed' && (
-          <div className="text-center py-4">
-            <div className="w-12 h-12 bg-[#E8F5E9] dark:bg-[#1B5E20]/50 rounded-full flex items-center justify-center mx-auto mb-2">
-              <Check size={24} className="text-[#2E7D32] dark:text-[#4CAF50]" />
-            </div>
-            <p className="font-semibold text-green-600 dark:text-green-400">Installment Paid!</p>
-            <p className="text-xs text-gray-500 mt-1">Refreshing...</p>
-          </div>
-        )}
-
-        {installmentPaymentStatus === 'error' && (
-          <div className="text-center py-4">
-            <p className="text-red-600 text-sm">{error}</p>
-            <button
-              onClick={() => setInstallmentPaymentStatus('idle')}
-              className="mt-2 text-sm text-[#4CAF50] hover:underline"
-            >
-              Try Again
-            </button>
-          </div>
-        )}
-
-        <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-800">
-          <p className="text-xs text-gray-500 text-center flex items-center justify-center gap-1">
-            <Smartphone size={10} /> Your subscription will be activated after all installments are paid
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
     </div>
   );
 };
