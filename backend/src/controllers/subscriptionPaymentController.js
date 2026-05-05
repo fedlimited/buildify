@@ -126,9 +126,29 @@ class SubscriptionPaymentController {
 
       // Determine if current subscription is a TRIAL
       const isTrial = currentSub && currentSub.status === 'trial';
+
       
       // Calculate amount to charge
       let amount = billingCycle === 'yearly' ? plan.price_yearly_kes : plan.price_monthly_kes;
+
+// ✅ M-Pesa limit check (250,000 KES maximum per transaction)
+const MPESA_LIMIT = 250000;
+
+if (amount > MPESA_LIMIT) {
+  // Calculate split payment suggestion
+  const numberOfInstallments = Math.ceil(amount / MPESA_LIMIT);
+  const installmentAmount = Math.ceil(amount / numberOfInstallments);
+  
+  return res.status(400).json({
+    error: `Amount KES ${amount.toLocaleString()} exceeds M-Pesa transaction limit of KES ${MPESA_LIMIT.toLocaleString()}`,
+    requiresSplit: true,
+    totalAmount: amount,
+    suggestedInstallments: numberOfInstallments,
+    installmentAmount: installmentAmount,
+    message: `Please use split payment: ${numberOfInstallments} installments of KES ${installmentAmount.toLocaleString()} each`
+  });
+}
+
       
       if (currentSub && currentSub.plan_id !== planId && currentPlan) {
         console.log(`📊 Current plan: ${currentPlan.name} (status: ${currentSub.status})`);
