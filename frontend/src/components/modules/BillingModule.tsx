@@ -389,29 +389,30 @@ const payInstallment = async (installmentId, amount) => {
 
 
 
-
-{/* M-Pesa Payment Information - Minimal */}
+{/* M-Pesa Payment Information - Compact */}
 {paymentMethod === 'mpesa' ? (
-  <div className="mb-3 flex items-center justify-end gap-1">
+  <div className="mb-3 flex items-center justify-start gap-2">
     <div className="relative group">
-      <button className="text-blue-500 hover:text-blue-600">
-        <Smartphone size={14} />
-      </button>
-      <div className="absolute right-0 bottom-full mb-2 hidden group-hover:block z-50 w-72 p-3 bg-gray-900 text-white text-xs rounded shadow-lg">
-        <p className="font-medium mb-2">📱 M-Pesa Payment Info</p>
-        <p className="mb-1">• Limit: <strong>KES 250,000</strong> per transaction</p>
-        <p className="mb-1">• Daily limit: <strong>KES 500,000</strong> per phone</p>
-        <p className="mb-1">• Large payments → auto installments</p>
+      <div className="cursor-help">
+        <Smartphone size={14} className="text-blue-500" />
+        <span className="ml-1 text-xs text-gray-500">i</span>
+      </div>
+      <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-lg">
+        <p className="font-medium mb-1">M-Pesa Limits</p>
+        <p>• Max per transaction: <strong>KES 250,000</strong></p>
+        <p>• Max daily per phone: <strong>KES 500,000</strong></p>
+        <p>• Large payments split into installments</p>
         <p>• Use different phones for installments</p>
       </div>
     </div>
+    <span className="text-xs text-gray-500">M-Pesa limits: KES 250k/transaction, 500k/day</span>
   </div>
 ) : (
-  <div className="mb-3 flex items-center justify-end gap-1">
+  <div className="mb-3 flex items-center justify-start gap-2">
     <CreditCard size={14} className="text-amber-500" />
+    <span className="text-xs text-gray-500">Card payments coming soon</span>
   </div>
 )}
-
 
 
 
