@@ -2586,143 +2586,27 @@ updateCurrencySettings: async (settings) => {
 
 
 
-
-
-
-
-
-
-
 // ========== SETTINGS ==========
 fetchCompanySettings: async () => {
   try {
     console.log('Fetching company settings from API...');
-    storage.setCompanySettings(null);
     const settings = await api.getSettings();
     console.log('Settings from API:', settings);
-    
-    // Make sure ALL fields are preserved including banking fields
-    const mappedSettings: CompanySettings = {
-      name: settings.name || '',
-      address: settings.address || '',
-      phone: settings.phone || '',
-      email: settings.email || '',
-      website: settings.website || '',
-      kraPin: settings.kraPin || '',
-      vatRegistrationNumber: settings.vatRegistrationNumber || '',
-      currency: settings.currency || 'KES',
-      currencySymbol: settings.currencySymbol || 'KSh',
-      logoUrl: settings.logoUrl || '',
-      decimal_places: settings.decimal_places || 2,
-      thousand_separator: settings.thousand_separator || ',',
-      decimal_separator: settings.decimal_separator || '.',
-      // Banking fields - IMPORTANT: preserve these!
-      bank_name: settings.bank_name || '',
-      bank_account_number: settings.bank_account_number || '',
-      bank_branch: settings.bank_branch || '',
-      bank_swift_code: settings.bank_swift_code || '',
-      mpesa_paybill: settings.mpesa_paybill || '',
-      mpesa_account_number: settings.mpesa_account_number || '',
-      vat_rate: settings.vat_rate || 16,
-      fiscal_year_start: settings.fiscal_year_start || 'January',
-      facebook: settings.facebook || '',
-      twitter: settings.twitter || '',
-      linkedin: settings.linkedin || '',
-      instagram: settings.instagram || '',
-    };
-    
-    console.log('Mapped settings with banking fields:', mappedSettings);
-    set({ companySettings: mappedSettings });
-    storage.setCompanySettings(mappedSettings);
+    set({ companySettings: settings });
+    storage.setCompanySettings(settings);
   } catch (error) {
     console.error('Failed to fetch company settings:', error);
   }
 },
 
-
-
-
-
-
-
-
-
-
-
-
 updateCompanySettings: async (s) => {
   try {
     console.log('Updating company settings:', s);
-    
-    // Ensure all banking fields are included in the update
-    const payload = {
-      name: s.name,
-      address: s.address,
-      phone: s.phone,
-      email: s.email,
-      website: s.website,
-      kraPin: s.kraPin,
-      vatRegistrationNumber: s.vatRegistrationNumber,
-      currency: s.currency,
-      currencySymbol: s.currencySymbol,
-      logoUrl: s.logoUrl,
-      decimal_places: s.decimal_places,
-      thousand_separator: s.thousand_separator,
-      decimal_separator: s.decimal_separator,
-      // Banking fields - explicitly included
-      bank_name: s.bank_name,
-      bank_account_number: s.bank_account_number,
-      bank_branch: s.bank_branch,
-      bank_swift_code: s.bank_swift_code,
-      mpesa_paybill: s.mpesa_paybill,
-      mpesa_account_number: s.mpesa_account_number,
-      vat_rate: s.vat_rate,
-      fiscal_year_start: s.fiscal_year_start,
-      facebook: s.facebook,
-      twitter: s.twitter,
-      linkedin: s.linkedin,
-      instagram: s.instagram,
-    };
-    
-    console.log('Payload being sent to backend:', payload);
-    
-    const updated = await api.updateSettings(payload);
+    const updated = await api.updateSettings(s);
     console.log('Updated settings from API:', updated);
-    
-    // Map the response to preserve all fields
-    const mappedSettings: CompanySettings = {
-      name: updated.name || '',
-      address: updated.address || '',
-      phone: updated.phone || '',
-      email: updated.email || '',
-      website: updated.website || '',
-      kraPin: updated.kraPin || '',
-      vatRegistrationNumber: updated.vatRegistrationNumber || '',
-      currency: updated.currency || 'KES',
-      currencySymbol: updated.currencySymbol || 'KSh',
-      logoUrl: updated.logoUrl || '',
-      decimal_places: updated.decimal_places || 2,
-      thousand_separator: updated.thousand_separator || ',',
-      decimal_separator: updated.decimal_separator || '.',
-      // Banking fields
-      bank_name: updated.bank_name || '',
-      bank_account_number: updated.bank_account_number || '',
-      bank_branch: updated.bank_branch || '',
-      bank_swift_code: updated.bank_swift_code || '',
-      mpesa_paybill: updated.mpesa_paybill || '',
-      mpesa_account_number: updated.mpesa_account_number || '',
-      vat_rate: updated.vat_rate || 16,
-      fiscal_year_start: updated.fiscal_year_start || 'January',
-      facebook: updated.facebook || '',
-      twitter: updated.twitter || '',
-      linkedin: updated.linkedin || '',
-      instagram: updated.instagram || '',
-    };
-    
-    console.log('Mapped settings after update:', mappedSettings);
-    set({ companySettings: mappedSettings });
-    storage.setCompanySettings(mappedSettings);
-    return mappedSettings;
+    set({ companySettings: updated });
+    storage.setCompanySettings(updated);
+    return updated;
   } catch (error) {
     console.error('Failed to update company settings:', error);
     throw error;
