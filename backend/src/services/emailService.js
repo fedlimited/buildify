@@ -2,20 +2,34 @@ const nodemailer = require('nodemailer');
 
 let transporter = null;
 
+
+
 function getTransporter() {
   if (!transporter) {
+    // Use environment variables with NovaHost cPanel defaults
+    const host = process.env.EMAIL_HOST || 'mail.bochi.ke';
+    const port = parseInt(process.env.EMAIL_PORT) || 465;
+    const secure = process.env.EMAIL_SECURE === 'true';
+    
+    console.log(`📧 SMTP Config: ${host}:${port} (secure: ${secure})`);
+    
     transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.EMAIL_PORT) || 587,
-      secure: false,
+      host: host,
+      port: port,
+      secure: secure,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD
+      },
+      tls: {
+        rejectUnauthorized: false  // Required for some cPanel servers
       }
     });
   }
   return transporter;
 }
+
+
 
 async function sendOTP(email, code, purpose = 'login') {
   const purposeText = purpose === 'login' ? 'log in to' : 'register for';
@@ -240,12 +254,14 @@ async function verifyTransporter() {
   try {
     const transporter = getTransporter();
     await transporter.verify();
-    console.log('✅ Email service is ready (Gmail)');
+    console.log('✅ Email service is ready!');
     console.log(`📧 Sending from: ${process.env.EMAIL_USER}`);
+    console.log(`🌐 SMTP Server: ${process.env.EMAIL_HOST || 'mail.bochi.ke'}:${process.env.EMAIL_PORT || 465}`);
     return true;
   } catch (error) {
     console.error('❌ Email service error:', error.message);
     console.log('📝 Continuing in fallback mode (OTP shown in console only)');
+    console.log('💡 Check EMAIL_HOST, EMAIL_PORT, EMAIL_SECURE in Render environment');
     return false;
   }
 }
