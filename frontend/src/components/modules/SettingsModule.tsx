@@ -15,45 +15,80 @@ import { UsersModule } from './UsersModule';
 export function SettingsModule() {
   const { companySettings, updateCompanySettings, loadSampleData, resetAllData, fetchCompanySettings } = useAppStore();
 
+  // Initialize form with companySettings or defaults
   const [form, setForm] = useState<CompanySettings>({
-    name: companySettings?.name || 'Finite Element Designs Limited',
-    address: companySettings?.address || '197-00618 Ruaraka, Nairobi, Kenya',
-    phone: companySettings?.phone || '+254 722 886 353',
-    email: companySettings?.email || 'info@bochi.ke',
-    website: companySettings?.website || 'https://bochi.ke',
-    kraPin: companySettings?.kraPin || 'P051927399I',
-    vatRegistrationNumber: companySettings?.vatRegistrationNumber || 'P051927399I',
-    currency: companySettings?.currency || 'KES',
-    currencySymbol: companySettings?.currencySymbol || 'KSh',
-    logoUrl: companySettings?.logoUrl || '',
-    decimal_places: companySettings?.decimal_places || 2,
-    thousand_separator: companySettings?.thousand_separator || ',',
-    decimal_separator: companySettings?.decimal_separator || '.',
-    bank_name: companySettings?.bank_name || 'Equity Bank Kenya Limited',
-    bank_account_number: companySettings?.bank_account_number || '1234567890',
-    bank_branch: companySettings?.bank_branch || 'Ruaraka, Nairobi',
-    bank_swift_code: companySettings?.bank_swift_code || 'EQBLKENA',
-    mpesa_paybill: companySettings?.mpesa_paybill || '123456',
-    mpesa_account_number: companySettings?.mpesa_account_number || 'INV',
-    vat_rate: companySettings?.vat_rate || 16,
-    fiscal_year_start: companySettings?.fiscal_year_start || 'January',
-    facebook: companySettings?.facebook || 'https://facebook.com/bochi',
-    twitter: companySettings?.twitter || 'https://twitter.com/bochi',
-    linkedin: companySettings?.linkedin || 'https://linkedin.com/company/bochi',
-    instagram: companySettings?.instagram || 'https://instagram.com/bochi',
+    name: '',
+    address: '',
+    phone: '',
+    email: '',
+    website: '',
+    kraPin: '',
+    vatRegistrationNumber: '',
+    currency: 'KES',
+    currencySymbol: 'KSh',
+    logoUrl: '',
+    decimal_places: 2,
+    thousand_separator: ',',
+    decimal_separator: '.',
+    bank_name: '',
+    bank_account_number: '',
+    bank_branch: '',
+    bank_swift_code: '',
+    mpesa_paybill: '',
+    mpesa_account_number: '',
+    vat_rate: 16,
+    fiscal_year_start: 'January',
+    facebook: '',
+    twitter: '',
+    linkedin: '',
+    instagram: '',
   });
 
-  const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState('general');
-  const fileRef = useRef<HTMLInputElement>(null);
-  const logoRef = useRef<HTMLInputElement>(null);
+  // IMPORTANT: Update form when companySettings changes (after save or refresh)
+  useEffect(() => {
+    if (companySettings) {
+      console.log('Company settings loaded from store:', companySettings);
+      setForm({
+        name: companySettings.name || '',
+        address: companySettings.address || '',
+        phone: companySettings.phone || '',
+        email: companySettings.email || '',
+        website: companySettings.website || '',
+        kraPin: companySettings.kraPin || '',
+        vatRegistrationNumber: companySettings.vatRegistrationNumber || '',
+        currency: companySettings.currency || 'KES',
+        currencySymbol: companySettings.currencySymbol || 'KSh',
+        logoUrl: companySettings.logoUrl || '',
+        decimal_places: companySettings.decimal_places || 2,
+        thousand_separator: companySettings.thousand_separator || ',',
+        decimal_separator: companySettings.decimal_separator || '.',
+        bank_name: companySettings.bank_name || '',
+        bank_account_number: companySettings.bank_account_number || '',
+        bank_branch: companySettings.bank_branch || '',
+        bank_swift_code: companySettings.bank_swift_code || '',
+        mpesa_paybill: companySettings.mpesa_paybill || '',
+        mpesa_account_number: companySettings.mpesa_account_number || '',
+        vat_rate: companySettings.vat_rate || 16,
+        fiscal_year_start: companySettings.fiscal_year_start || 'January',
+        facebook: companySettings.facebook || '',
+        twitter: companySettings.twitter || '',
+        linkedin: companySettings.linkedin || '',
+        instagram: companySettings.instagram || '',
+      });
+    }
+  }, [companySettings]); // This runs whenever companySettings changes
 
-  // Refresh company settings when component mounts
+  // Fetch settings when component mounts
   useEffect(() => {
     if (fetchCompanySettings) {
       fetchCompanySettings();
     }
   }, [fetchCompanySettings]);
+
+  const [saved, setSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState('general');
+  const fileRef = useRef<HTMLInputElement>(null);
+  const logoRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const savedTab = localStorage.getItem('settingsTab');
@@ -85,11 +120,10 @@ export function SettingsModule() {
       mpesa_paybill: form.mpesa_paybill,
       mpesa_account_number: form.mpesa_account_number
     });
-    console.log('Full form data:', form);
     
     await updateCompanySettings(form);
     
-    // Refresh settings to ensure UI is updated
+    // Refresh settings from server to ensure data is persisted
     if (fetchCompanySettings) {
       await fetchCompanySettings();
     }
@@ -243,30 +277,54 @@ export function SettingsModule() {
                 <div className="grid gap-3">
                   <div>
                     <Label className="text-xs">Company Name</Label>
-                    <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+                    <Input 
+                      value={form.name} 
+                      onChange={e => setForm({ ...form, name: e.target.value })} 
+                      placeholder="Your Company Name"
+                    />
                   </div>
                   <div>
                     <Label className="text-xs">Address</Label>
-                    <Input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
+                    <Input 
+                      value={form.address} 
+                      onChange={e => setForm({ ...form, address: e.target.value })} 
+                      placeholder="Your Business Address"
+                    />
                   </div>
 
                   {/* Phone, Email, Website, VAT Registration */}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs flex items-center gap-1"><Phone size={12} /> Phone Number</Label>
-                      <Input value={form.phone || ''} onChange={e => setForm({ ...form, phone: e.target.value })} />
+                      <Input 
+                        value={form.phone || ''} 
+                        onChange={e => setForm({ ...form, phone: e.target.value })} 
+                        placeholder="+254 XXX XXX XXX"
+                      />
                     </div>
                     <div>
                       <Label className="text-xs flex items-center gap-1"><Mail size={12} /> Email Address</Label>
-                      <Input value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} />
+                      <Input 
+                        value={form.email || ''} 
+                        onChange={e => setForm({ ...form, email: e.target.value })} 
+                        placeholder="info@yourcompany.com"
+                      />
                     </div>
                     <div>
                       <Label className="text-xs flex items-center gap-1"><Globe size={12} /> Website</Label>
-                      <Input value={form.website || ''} onChange={e => setForm({ ...form, website: e.target.value })} placeholder="https://bochi.ke" />
+                      <Input 
+                        value={form.website || ''} 
+                        onChange={e => setForm({ ...form, website: e.target.value })} 
+                        placeholder="https://yourcompany.com"
+                      />
                     </div>
                     <div>
                       <Label className="text-xs">VAT Registration Number</Label>
-                      <Input value={form.vatRegistrationNumber || ''} onChange={e => setForm({ ...form, vatRegistrationNumber: e.target.value })} />
+                      <Input 
+                        value={form.vatRegistrationNumber || ''} 
+                        onChange={e => setForm({ ...form, vatRegistrationNumber: e.target.value })} 
+                        placeholder="e.g., P051927399I"
+                      />
                     </div>
                   </div>
 
@@ -274,7 +332,11 @@ export function SettingsModule() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs">KRA PIN</Label>
-                      <Input value={form.kraPin} onChange={e => setForm({ ...form, kraPin: e.target.value })} />
+                      <Input 
+                        value={form.kraPin} 
+                        onChange={e => setForm({ ...form, kraPin: e.target.value })} 
+                        placeholder="e.g., P051927399I"
+                      />
                     </div>
                     <div className="col-span-2">
                       <div className="border border-border rounded-lg p-4 mt-2">
@@ -494,7 +556,7 @@ export function SettingsModule() {
           <div className="bg-card rounded-xl border border-destructive/30 p-6">
             <div className="flex items-center gap-2 mb-4">
               <Shield size={20} className="text-destructive" />
-              <h3 className="font-semibold text-destructive">Danger Zone</h3>
+              <h3 className="font-semibold text-card-foreground">Danger Zone</h3>
             </div>
             <p className="text-sm text-muted-foreground mb-4">
               These actions are irreversible. Please be careful.
