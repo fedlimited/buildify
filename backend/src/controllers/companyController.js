@@ -22,6 +22,13 @@ class CompanyController {
       
       const companyId = result.lastID;
       
+      // Create company_settings record with default values
+      await db.run(
+        `INSERT INTO company_settings (company_id, name, address, kra_pin, currency, currency_symbol)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [companyId, name, address, kra_pin, 'KES', 'KSh']
+      );
+      
       // Create admin user for this company
       const hashedPassword = await bcrypt.hash(admin_password, 10);
       await db.run(
@@ -66,11 +73,56 @@ class CompanyController {
   static async getCompanyInfo(req, res) {
     try {
       const db = getDb();
-      const company = await db.get(
-        'SELECT id, name, subdomain, email, phone, address, kra_pin, currency, currency_symbol, created_at FROM companies WHERE id = ?',
-        [req.user.companyId]
+      const companyId = req.user.companyId;
+      
+      // Join companies with company_settings to get ALL fields including banking
+      const result = await db.get(
+        `SELECT 
+          c.id, c.name, c.subdomain, c.email, c.phone, c.address as company_address,
+          cs.address, cs.kra_pin as "kraPin", 
+          cs.logo_url as "logoUrl",
+          cs.currency, cs.currency_symbol as "currencySymbol",
+          cs.bank_name, cs.bank_account_number, cs.bank_branch, 
+          cs.bank_swift_code, cs.mpesa_paybill, cs.mpesa_account_number,
+          cs.facebook, cs.twitter, cs.linkedin, cs.instagram,
+          cs.vat_registration_number as "vatRegistrationNumber",
+          cs.website, cs.vat_rate, cs.fiscal_year_start,
+          cs.decimal_places, cs.thousand_separator, cs.decimal_separator
+        FROM companies c
+        LEFT JOIN company_settings cs ON c.id = cs.company_id
+        WHERE c.id = ?`,
+        [companyId]
       );
-      res.json(company);
+      
+      // If no company_settings record exists, create one
+      if (!result?.address && result?.id) {
+        await db.run(
+          `INSERT INTO company_settings (company_id, name, address, kra_pin, currency, currency_symbol)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [companyId, result.name, result.company_address || '', result.kraPin || '', 'KES', 'KSh']
+        );
+        
+        // Fetch again after insert
+        const updatedResult = await db.get(
+          `SELECT 
+            c.id, c.name, c.subdomain, c.email, c.phone,
+            cs.address, cs.kra_pin as "kraPin", 
+            cs.logo_url as "logoUrl",
+            cs.currency, cs.currency_symbol as "currencySymbol",
+            cs.bank_name, cs.bank_account_number, cs.bank_branch, 
+            cs.bank_swift_code, cs.mpesa_paybill, cs.mpesa_account_number,
+            cs.facebook, cs.twitter, cs.linkedin, cs.instagram,
+            cs.vat_registration_number as "vatRegistrationNumber",
+            cs.website, cs.vat_rate, cs.fiscal_year_start
+          FROM companies c
+          LEFT JOIN company_settings cs ON c.id = cs.company_id
+          WHERE c.id = ?`,
+          [companyId]
+        );
+        return res.json(updatedResult);
+      }
+      
+      res.json(result);
     } catch (error) {
       console.error('Get company error:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -80,19 +132,92 @@ class CompanyController {
   static async updateCompanyInfo(req, res) {
     try {
       const db = getDb();
-      const { name, email, phone, address, kra_pin, currency, currency_symbol } = req.body;
+      const companyId = req.user.companyId;
       
+      const {
+        name, email, phone,
+        address, kraPin, logoUrl,
+        currency, currencySymbol,
+        website, vatRegistrationNumber,
+        bank_name, bank_account_number, bank_branch, bank_swift_code,
+        mpesa_paybill, mpesa_account_number,
+        facebook, twitter, linkedin, instagram,
+        vat_rate, fiscal_year_start,
+        decimal_places, thousand_separator, decimal_separator
+      } = req.body;
+      
+      // Update companies table
       await db.run(
-        `UPDATE companies SET name = ?, email = ?, phone = ?, address = ?, kra_pin = ?, currency = ?, currency_symbol = ?
-         WHERE id = ?`,
-        [name, email, phone, address, kra_pin, currency, currency_symbol, req.user.companyId]
+        `UPDATE companies SET name = ?, email = ?, phone = ? WHERE id = ?`,
+        [name, email, phone, companyId]
       );
       
-      const company = await db.get(
-        'SELECT id, name, subdomain, email, phone, address, kra_pin, currency, currency_symbol FROM companies WHERE id = ?',
-        [req.user.companyId]
+      // Update or insert into company_settings
+      const existingSettings = await db.get('SELECT id FROM company_settings WHERE company_id = ?', [companyId]);
+      
+      if (existingSettings) {
+        await db.run(
+          `UPDATE company_settings SET
+            address = ?, kra_pin = ?, logo_url = ?,
+            currency = ?, currency_symbol = ?,
+            website = ?, vat_registration_number = ?,
+            bank_name = ?, bank_account_number = ?, bank_branch = ?, bank_swift_code = ?,
+            mpesa_paybill = ?, mpesa_account_number = ?,
+            facebook = ?, twitter = ?, linkedin = ?, instagram = ?,
+            vat_rate = ?, fiscal_year_start = ?,
+            decimal_places = ?, thousand_separator = ?, decimal_separator = ?,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE company_id = ?`,
+          [address, kraPin, logoUrl, currency, currencySymbol,
+           website, vatRegistrationNumber,
+           bank_name, bank_account_number, bank_branch, bank_swift_code,
+           mpesa_paybill, mpesa_account_number,
+           facebook, twitter, linkedin, instagram,
+           vat_rate || 16, fiscal_year_start || 'January',
+           decimal_places || 2, thousand_separator || ',', decimal_separator || '.',
+           companyId]
+        );
+      } else {
+        await db.run(
+          `INSERT INTO company_settings (
+            company_id, address, kra_pin, logo_url, currency, currency_symbol,
+            website, vat_registration_number,
+            bank_name, bank_account_number, bank_branch, bank_swift_code,
+            mpesa_paybill, mpesa_account_number,
+            facebook, twitter, linkedin, instagram,
+            vat_rate, fiscal_year_start,
+            decimal_places, thousand_separator, decimal_separator
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [companyId, address, kraPin, logoUrl, currency, currencySymbol,
+           website, vatRegistrationNumber,
+           bank_name, bank_account_number, bank_branch, bank_swift_code,
+           mpesa_paybill, mpesa_account_number,
+           facebook, twitter, linkedin, instagram,
+           vat_rate || 16, fiscal_year_start || 'January',
+           decimal_places || 2, thousand_separator || ',', decimal_separator || '.']
+        );
+      }
+      
+      // Fetch and return updated company info
+      const updatedCompany = await db.get(
+        `SELECT 
+          c.id, c.name, c.subdomain, c.email, c.phone,
+          cs.address, cs.kra_pin as "kraPin", 
+          cs.logo_url as "logoUrl",
+          cs.currency, cs.currency_symbol as "currencySymbol",
+          cs.bank_name, cs.bank_account_number, cs.bank_branch, 
+          cs.bank_swift_code, cs.mpesa_paybill, cs.mpesa_account_number,
+          cs.facebook, cs.twitter, cs.linkedin, cs.instagram,
+          cs.vat_registration_number as "vatRegistrationNumber",
+          cs.website, cs.vat_rate, cs.fiscal_year_start,
+          cs.decimal_places, cs.thousand_separator, cs.decimal_separator
+        FROM companies c
+        LEFT JOIN company_settings cs ON c.id = cs.company_id
+        WHERE c.id = ?`,
+        [companyId]
       );
-      res.json(company);
+      
+      res.json(updatedCompany);
     } catch (error) {
       console.error('Update company error:', error);
       res.status(500).json({ error: 'Internal server error' });
