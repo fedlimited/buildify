@@ -13,40 +13,47 @@ import { BillingModule } from './BillingModule';
 import { UsersModule } from './UsersModule';
 
 export function SettingsModule() {
-  const { companySettings, updateCompanySettings, loadSampleData, resetAllData } = useAppStore();
+  const { companySettings, updateCompanySettings, loadSampleData, resetAllData, fetchCompanySettings } = useAppStore();
 
   const [form, setForm] = useState<CompanySettings>({
-    name: companySettings?.name || '',
-    address: companySettings?.address || '',
-    phone: companySettings?.phone || '',
-    email: companySettings?.email || '',
-    website: companySettings?.website || '',
-    kraPin: companySettings?.kraPin || '',
-    vatRegistrationNumber: companySettings?.vatRegistrationNumber || '',
+    name: companySettings?.name || 'Finite Element Designs Limited',
+    address: companySettings?.address || '197-00618 Ruaraka, Nairobi, Kenya',
+    phone: companySettings?.phone || '+254 722 886 353',
+    email: companySettings?.email || 'info@bochi.ke',
+    website: companySettings?.website || 'https://bochi.ke',
+    kraPin: companySettings?.kraPin || 'P051927399I',
+    vatRegistrationNumber: companySettings?.vatRegistrationNumber || 'P051927399I',
     currency: companySettings?.currency || 'KES',
     currencySymbol: companySettings?.currencySymbol || 'KSh',
     logoUrl: companySettings?.logoUrl || '',
     decimal_places: companySettings?.decimal_places || 2,
     thousand_separator: companySettings?.thousand_separator || ',',
     decimal_separator: companySettings?.decimal_separator || '.',
-    bank_name: companySettings?.bank_name || '',
-    bank_account_number: companySettings?.bank_account_number || '',
-    bank_branch: companySettings?.bank_branch || '',
-    bank_swift_code: companySettings?.bank_swift_code || '',
-    mpesa_paybill: companySettings?.mpesa_paybill || '',
-    mpesa_account_number: companySettings?.mpesa_account_number || '',
+    bank_name: companySettings?.bank_name || 'Equity Bank Kenya Limited',
+    bank_account_number: companySettings?.bank_account_number || '1234567890',
+    bank_branch: companySettings?.bank_branch || 'Ruaraka, Nairobi',
+    bank_swift_code: companySettings?.bank_swift_code || 'EQBLKENA',
+    mpesa_paybill: companySettings?.mpesa_paybill || '123456',
+    mpesa_account_number: companySettings?.mpesa_account_number || 'INV',
     vat_rate: companySettings?.vat_rate || 16,
     fiscal_year_start: companySettings?.fiscal_year_start || 'January',
-    facebook: companySettings?.facebook || '',
-    twitter: companySettings?.twitter || '',
-    linkedin: companySettings?.linkedin || '',
-    instagram: companySettings?.instagram || '',
+    facebook: companySettings?.facebook || 'https://facebook.com/bochi',
+    twitter: companySettings?.twitter || 'https://twitter.com/bochi',
+    linkedin: companySettings?.linkedin || 'https://linkedin.com/company/bochi',
+    instagram: companySettings?.instagram || 'https://instagram.com/bochi',
   });
 
   const [saved, setSaved] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
   const fileRef = useRef<HTMLInputElement>(null);
   const logoRef = useRef<HTMLInputElement>(null);
+
+  // Refresh company settings when component mounts
+  useEffect(() => {
+    if (fetchCompanySettings) {
+      fetchCompanySettings();
+    }
+  }, [fetchCompanySettings]);
 
   useEffect(() => {
     const savedTab = localStorage.getItem('settingsTab');
@@ -68,8 +75,25 @@ export function SettingsModule() {
     }
   }, [activeTab]);
 
-  const handleSave = () => {
-    updateCompanySettings(form);
+  const handleSave = async () => {
+    console.log('=== SAVING COMPANY SETTINGS ===');
+    console.log('Banking fields being saved:', {
+      bank_name: form.bank_name,
+      bank_account_number: form.bank_account_number,
+      bank_branch: form.bank_branch,
+      bank_swift_code: form.bank_swift_code,
+      mpesa_paybill: form.mpesa_paybill,
+      mpesa_account_number: form.mpesa_account_number
+    });
+    console.log('Full form data:', form);
+    
+    await updateCompanySettings(form);
+    
+    // Refresh settings to ensure UI is updated
+    if (fetchCompanySettings) {
+      await fetchCompanySettings();
+    }
+    
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -277,29 +301,56 @@ export function SettingsModule() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs">Bank Name</Label>
-                    <Input value={form.bank_name || ''} onChange={e => setForm({ ...form, bank_name: e.target.value })} />
+                    <Input 
+                      value={form.bank_name || ''} 
+                      onChange={e => setForm({ ...form, bank_name: e.target.value })}
+                      placeholder="e.g., Equity Bank Kenya Limited"
+                    />
                   </div>
                   <div>
                     <Label className="text-xs">Bank Account Number</Label>
-                    <Input value={form.bank_account_number || ''} onChange={e => setForm({ ...form, bank_account_number: e.target.value })} />
+                    <Input 
+                      value={form.bank_account_number || ''} 
+                      onChange={e => setForm({ ...form, bank_account_number: e.target.value })}
+                      placeholder="e.g., 1234567890"
+                    />
                   </div>
                   <div>
                     <Label className="text-xs">Bank Branch</Label>
-                    <Input value={form.bank_branch || ''} onChange={e => setForm({ ...form, bank_branch: e.target.value })} />
+                    <Input 
+                      value={form.bank_branch || ''} 
+                      onChange={e => setForm({ ...form, bank_branch: e.target.value })}
+                      placeholder="e.g., Ruaraka, Nairobi"
+                    />
                   </div>
                   <div>
                     <Label className="text-xs">Swift/BIC Code</Label>
-                    <Input value={form.bank_swift_code || ''} onChange={e => setForm({ ...form, bank_swift_code: e.target.value })} />
+                    <Input 
+                      value={form.bank_swift_code || ''} 
+                      onChange={e => setForm({ ...form, bank_swift_code: e.target.value })}
+                      placeholder="e.g., EQBLKENA"
+                    />
                   </div>
                   <div>
                     <Label className="text-xs flex items-center gap-1"><Smartphone size={12} /> M-Pesa Paybill</Label>
-                    <Input value={form.mpesa_paybill || ''} onChange={e => setForm({ ...form, mpesa_paybill: e.target.value })} />
+                    <Input 
+                      value={form.mpesa_paybill || ''} 
+                      onChange={e => setForm({ ...form, mpesa_paybill: e.target.value })}
+                      placeholder="e.g., 123456"
+                    />
                   </div>
                   <div>
                     <Label className="text-xs">M-Pesa Account Number</Label>
-                    <Input value={form.mpesa_account_number || ''} onChange={e => setForm({ ...form, mpesa_account_number: e.target.value })} />
+                    <Input 
+                      value={form.mpesa_account_number || ''} 
+                      onChange={e => setForm({ ...form, mpesa_account_number: e.target.value })}
+                      placeholder="Reference for payments"
+                    />
                   </div>
                 </div>
+                <p className="text-xs text-muted-foreground mt-4">
+                  These details will appear on your invoices for client payment reference.
+                </p>
               </div>
 
               {/* Social Media Links */}
@@ -311,19 +362,35 @@ export function SettingsModule() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs flex items-center gap-1"><Facebook size={12} /> Facebook</Label>
-                    <Input value={form.facebook || ''} onChange={e => setForm({ ...form, facebook: e.target.value })} placeholder="https://facebook.com/yourcompany" />
+                    <Input 
+                      value={form.facebook || ''} 
+                      onChange={e => setForm({ ...form, facebook: e.target.value })} 
+                      placeholder="https://facebook.com/yourcompany" 
+                    />
                   </div>
                   <div>
                     <Label className="text-xs flex items-center gap-1"><Twitter size={12} /> Twitter/X</Label>
-                    <Input value={form.twitter || ''} onChange={e => setForm({ ...form, twitter: e.target.value })} placeholder="https://twitter.com/yourcompany" />
+                    <Input 
+                      value={form.twitter || ''} 
+                      onChange={e => setForm({ ...form, twitter: e.target.value })} 
+                      placeholder="https://twitter.com/yourcompany" 
+                    />
                   </div>
                   <div>
                     <Label className="text-xs flex items-center gap-1"><Linkedin size={12} /> LinkedIn</Label>
-                    <Input value={form.linkedin || ''} onChange={e => setForm({ ...form, linkedin: e.target.value })} placeholder="https://linkedin.com/company/yourcompany" />
+                    <Input 
+                      value={form.linkedin || ''} 
+                      onChange={e => setForm({ ...form, linkedin: e.target.value })} 
+                      placeholder="https://linkedin.com/company/yourcompany" 
+                    />
                   </div>
                   <div>
                     <Label className="text-xs flex items-center gap-1"><Instagram size={12} /> Instagram</Label>
-                    <Input value={form.instagram || ''} onChange={e => setForm({ ...form, instagram: e.target.value })} placeholder="https://instagram.com/yourcompany" />
+                    <Input 
+                      value={form.instagram || ''} 
+                      onChange={e => setForm({ ...form, instagram: e.target.value })} 
+                      placeholder="https://instagram.com/yourcompany" 
+                    />
                   </div>
                 </div>
               </div>
