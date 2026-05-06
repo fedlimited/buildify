@@ -83,38 +83,185 @@ const handleSave = () => {
 
 
 
+const printInvoice = (inv: Invoice) => {
+  // Helper to escape HTML
+  function escapeHtml(str: string) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
+  }
+  
+  // Get company details from settings
+  const logoHtml = companySettings?.logoUrl 
+    ? `<img src="${companySettings.logoUrl}" style="max-height: 60px; max-width: 180px; object-fit: contain;" onerror="this.style.display='none'" />` 
+    : '';
+  
+  const companyName = companySettings?.name || 'Finite Element Designs Limited';
+  const companyAddress = companySettings?.address || '';
+  const companyPhone = companySettings?.phone || '';
+  const companyEmail = companySettings?.email || '';
+  const kraPin = companySettings?.kraPin || '';
+  const vatRegNo = companySettings?.vatRegistrationNumber || kraPin;
+  
+  // Banking details from settings (NEW)
+  const bankName = companySettings?.bank_name || '';
+  const bankAccount = companySettings?.bank_account_number || '';
+  const bankBranch = companySettings?.bank_branch || '';
+  const bankSwift = companySettings?.bank_swift_code || '';
+  const mpesaPaybill = companySettings?.mpesa_paybill || '';
+  const mpesaAccountNo = companySettings?.mpesa_account_number || inv.invoiceNumber;
+  
+  // Build payment instructions HTML (only if banking details exist)
+  const hasBankDetails = bankName || bankAccount || mpesaPaybill;
+  const paymentInstructionsHtml = hasBankDetails ? `
+    <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e2e8f0;">
+      <h3 style="font-size: 12px; margin: 0 0 8px 0; color: #1a365d;">🏦 PAYMENT INSTRUCTIONS</h3>
+      <div style="font-size: 10px; color: #4a5568;">
+        ${bankName ? `<div><strong>Bank:</strong> ${escapeHtml(bankName)}</div>` : ''}
+        ${bankAccount ? `<div><strong>Account Name:</strong> ${escapeHtml(companyName)}</div>
+        <div><strong>Account Number:</strong> ${escapeHtml(bankAccount)}</div>` : ''}
+        ${bankBranch ? `<div><strong>Branch:</strong> ${escapeHtml(bankBranch)}</div>` : ''}
+        ${bankSwift ? `<div><strong>Swift Code:</strong> ${escapeHtml(bankSwift)}</div>` : ''}
+        ${mpesaPaybill ? `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #cbd5e0;"><strong>M-Pesa Paybill:</strong> ${escapeHtml(mpesaPaybill)}</div>` : ''}
+        ${mpesaAccountNo ? `<div><strong>Account No:</strong> ${escapeHtml(mpesaAccountNo)}</div>` : ''}
+      </div>
+    </div>
+  ` : '';
+
+  const html = `<!DOCTYPE html>
+  <html>
+  <head>
+    <title>Invoice ${inv.invoiceNumber}</title>
+    <meta charset="UTF-8">
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        padding: 40px;
+        margin: 0;
+        color: #1a202c;
+        background: white;
+        font-size: 12pt;
+        line-height: 1.4;
+      }
+      .print-container { max-width: 1100px; margin: 0 auto; }
+      .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #1a365d; }
+      .company-section { flex: 1; }
+      .company-name { font-size: 18px; font-weight: bold; color: #1a365d; margin: 5px 0; }
+      .company-details { font-size: 10px; color: #4a5568; margin-top: 5px; }
+      .company-details div { margin-top: 3px; }
+      .invoice-title-section { text-align: right; }
+      .invoice-title { font-size: 24px; font-weight: bold; color: #1a365d; letter-spacing: 2px; }
+      .invoice-number { font-size: 12px; color: #4a5568; margin-top: 5px; font-family: monospace; }
+      .bill-to { margin-bottom: 20px; padding: 10px; background: #f7fafc; border-radius: 6px; }
+      .bill-to strong { font-size: 10px; color: #4a5568; text-transform: uppercase; }
+      .bill-to p { margin-top: 5px; }
+      table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+      th { background: #1a365d; color: white; text-align: left; padding: 10px 8px; font-size: 11px; font-weight: 600; }
+      td { padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; }
+      .text-right { text-align: right; }
+      .text-center { text-align: center; }
+      .totals { text-align: right; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0; width: 280px; margin-left: auto; }
+      .total-line { margin: 5px 0; font-size: 11px; display: flex; justify-content: space-between; gap: 20px; }
+      .grand-total { font-size: 13px; font-weight: bold; color: #1a365d; margin-top: 8px; padding-top: 8px; border-top: 2px solid #1a365d; }
+      .notes-section { margin-top: 20px; padding: 10px; background: #f7fafc; border-radius: 6px; font-size: 10px; }
+      .footer { margin-top: 30px; text-align: center; font-size: 8px; color: #a0aec0; border-top: 1px solid #e2e8f0; padding-top: 15px; }
+      @media print { body { padding: 20px; } }
+    </style>
+  </head>
+  <body>
+    <div class="print-container">
+      <div class="header">
+        <div class="company-section">
+          ${logoHtml}
+          <div class="company-name">${escapeHtml(companyName)}</div>
+          <div class="company-details">
+            ${companyAddress ? `<div>${escapeHtml(companyAddress)}</div>` : ''}
+            ${companyPhone ? `<div>Tel: ${escapeHtml(companyPhone)}</div>` : ''}
+            ${companyEmail ? `<div>Email: ${escapeHtml(companyEmail)}</div>` : ''}
+            ${kraPin ? `<div>KRA PIN: ${escapeHtml(kraPin)}</div>` : ''}
+            ${vatRegNo && vatRegNo !== kraPin ? `<div>VAT Reg No: ${escapeHtml(vatRegNo)}</div>` : ''}
+          </div>
+        </div>
+        <div class="invoice-title-section">
+          <div class="invoice-title">INVOICE</div>
+          <div class="invoice-number">${inv.invoiceNumber}</div>
+          <div class="company-details" style="margin-top: 10px;">
+            <div>Date: ${formatDate(inv.date)}</div>
+            <div>Due: ${formatDate(inv.dueDate)}</div>
+            <div>Status: ${inv.status}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bill-to">
+        <strong>BILL TO</strong>
+        <p>${escapeHtml(inv.clientName)}</p>
+        <p style="font-size: 10px; color: #4a5568;">Project: ${escapeHtml(inv.projectName)}</p>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th class="text-center" style="width: 60px;">Qty</th>
+            <th style="width: 60px;">Unit</th>
+            <th class="text-right" style="width: 100px;">Unit Price</th>
+            <th class="text-right" style="width: 110px;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${inv.items.map(it => `
+            <tr>
+              <td>${escapeHtml(it.description)}</td>
+              <td class="text-center">${it.quantity}</td>
+              <td>${escapeHtml(it.unit)}</td>
+              <td class="text-right">${formatCurrency(it.unitPrice)}</td>
+              <td class="text-right">${formatCurrency(it.amount)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      <div class="totals">
+        <div class="total-line"><span>Subtotal:</span><span>${formatCurrency(inv.subtotal)}</span></div>
+        <div class="total-line"><span>VAT (16%):</span><span>${formatCurrency(inv.vat)}</span></div>
+        <div class="grand-total"><span>TOTAL:</span><span>${formatCurrency(inv.total)}</span></div>
+      </div>
+
+      ${paymentInstructionsHtml}
+
+      ${inv.notes ? `<div class="notes-section"><strong>Notes:</strong> ${escapeHtml(inv.notes)}</div>` : ''}
+
+      <div class="footer">
+        <p>Thank you for your business! For any inquiries, please contact ${escapeHtml(companyEmail)}</p>
+        <p>Generated on ${new Date().toLocaleString()} | BOCHI Construction Suite</p>
+      </div>
+    </div>
+  </body>
+  </html>`;
+
+  const w = window.open('', '_blank');
+  if (w) { 
+    w.document.write(html); 
+    w.document.close(); 
+    w.print(); 
+  }
+};
 
 
 
-  const printInvoice = (inv: Invoice) => {
-    const logo = companySettings.logoUrl ? `<img src="${companySettings.logoUrl}" style="max-height:60px;max-width:180px;" />` : '';
-    const html = `<!DOCTYPE html><html><head><title>Invoice ${inv.invoiceNumber}</title>
-    <style>body{font-family:Arial,sans-serif;padding:40px;color:#222}
-    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:30px}
-    .company{font-size:12px;color:#555}
-    .inv-title{font-size:24px;font-weight:bold;color:#1a365d}
-    table{width:100%;border-collapse:collapse;margin:20px 0}
-    th{background:#f1f5f9;text-align:left;padding:8px 12px;font-size:12px;border-bottom:2px solid #e2e8f0}
-    td{padding:8px 12px;border-bottom:1px solid #e2e8f0;font-size:13px}
-    .total-row td{font-weight:bold;border-top:2px solid #1a365d}
-    .right{text-align:right}
-    @media print{body{padding:20px}}</style></head><body>
-    <div class="header"><div>${logo}<h2 style="margin:5px 0">${companySettings.name}</h2>
-    <div class="company">${companySettings.address}<br>${companySettings.phone} | ${companySettings.email}<br>KRA PIN: ${companySettings.kraPin}</div></div>
-    <div style="text-align:right"><div class="inv-title">${inv.invoiceNumber}</div>
-    <div class="company">Date: ${formatDate(inv.date)}<br>Due: ${formatDate(inv.dueDate)}<br>Status: ${inv.status}</div></div></div>
-    <div style="margin-bottom:20px"><strong>Bill To:</strong><br>${inv.clientName}<br><span class="company">Project: ${inv.projectName}</span></div>
-    <table><thead><tr><th>Description</th><th class="right">Qty</th><th>Unit</th><th class="right">Unit Price</th><th class="right">Amount</th></tr></thead>
-    <tbody>${inv.items.map(it => `<tr><td>${it.description}</td><td class="right">${it.quantity}</td><td>${it.unit}</td><td class="right">${formatCurrency(it.unitPrice)}</td><td class="right">${formatCurrency(it.amount)}</td></tr>`).join('')}
-    <tr><td colspan="4" class="right">Subtotal</td><td class="right">${formatCurrency(inv.subtotal)}</td></tr>
-    <tr><td colspan="4" class="right">VAT (16%)</td><td class="right">${formatCurrency(inv.vat)}</td></tr>
-    <tr class="total-row"><td colspan="4" class="right">TOTAL</td><td class="right">${formatCurrency(inv.total)}</td></tr>
-    </tbody></table>
-    ${inv.notes ? `<p style="color:#555;font-size:12px">Notes: ${inv.notes}</p>` : ''}
-    </body></html>`;
-    const w = window.open('', '_blank');
-    if (w) { w.document.write(html); w.document.close(); w.print(); }
-  };
+
+
+
+
+
+
+
 
   return (
     <div className="space-y-4 fade-in">
