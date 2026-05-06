@@ -114,23 +114,50 @@ const printInvoice = (inv: Invoice) => {
   const bankSwift = companySettings?.bank_swift_code || '';
   const mpesaPaybill = companySettings?.mpesa_paybill || '';
   const mpesaAccountNo = companySettings?.mpesa_account_number || inv.invoiceNumber;
+
+
+
+
+
+
+
+
   
-  // Build payment instructions HTML (only if banking details exist)
-  const hasBankDetails = bankName || bankAccount || mpesaPaybill;
-  const paymentInstructionsHtml = hasBankDetails ? `
-    <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e2e8f0;">
-      <h3 style="font-size: 12px; margin: 0 0 8px 0; color: #1a365d;">🏦 PAYMENT INSTRUCTIONS</h3>
-      <div style="font-size: 10px; color: #4a5568;">
-        ${bankName ? `<div><strong>Bank:</strong> ${escapeHtml(bankName)}</div>` : ''}
-        ${bankAccount ? `<div><strong>Account Name:</strong> ${escapeHtml(companyName)}</div>
-        <div><strong>Account Number:</strong> ${escapeHtml(bankAccount)}</div>` : ''}
-        ${bankBranch ? `<div><strong>Branch:</strong> ${escapeHtml(bankBranch)}</div>` : ''}
-        ${bankSwift ? `<div><strong>Swift Code:</strong> ${escapeHtml(bankSwift)}</div>` : ''}
-        ${mpesaPaybill ? `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #cbd5e0;"><strong>M-Pesa Paybill:</strong> ${escapeHtml(mpesaPaybill)}</div>` : ''}
-        ${mpesaAccountNo ? `<div><strong>Account No:</strong> ${escapeHtml(mpesaAccountNo)}</div>` : ''}
+// Build payment instructions HTML (always shows)
+const paymentInstructionsHtml = `
+  <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e2e8f0;">
+    <h3 style="font-size: 12px; margin: 0 0 8px 0; color: #1a365d;">🏦 PAYMENT INSTRUCTIONS</h3>
+    <div style="font-size: 10px; color: #4a5568;">
+      ${bankName ? `<div><strong>Bank:</strong> ${escapeHtml(bankName)}</div>` : ''}
+      ${bankAccount ? `<div><strong>Account Name:</strong> ${escapeHtml(companyName)}</div>
+      <div><strong>Account Number:</strong> ${escapeHtml(bankAccount)}</div>` : ''}
+      ${bankBranch ? `<div><strong>Branch:</strong> ${escapeHtml(bankBranch)}</div>` : ''}
+      ${bankSwift ? `<div><strong>Swift Code:</strong> ${escapeHtml(bankSwift)}</div>` : ''}
+      
+      ${mpesaPaybill ? `
+        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #cbd5e0;">
+          <strong>M-Pesa Paybill:</strong> ${escapeHtml(mpesaPaybill)}
+        </div>
+        <div><strong>Account No:</strong> ${escapeHtml(mpesaAccountNo)}</div>
+      ` : `
+        <div style="margin-top: 8px;">
+          <strong>M-Pesa Till Number:</strong> Pending setup
+        </div>
+      `}
+      
+      <!-- Always show contact info -->
+      <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e2e8f0;">
+        <strong>Questions?</strong> Contact us at ${escapeHtml(companyEmail)}
       </div>
     </div>
-  ` : '';
+  </div>
+`;
+
+
+
+
+
+
 
   const html = `<!DOCTYPE html>
   <html>
