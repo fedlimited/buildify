@@ -8,21 +8,45 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { storage } from '@/lib/storage';
-import { Building, Download, Upload, RotateCcw, Database, Save, ImageIcon, Trash2, Users, CreditCard, Shield } from 'lucide-react';
+import { Building, Download, Upload, RotateCcw, Database, Save, ImageIcon, Trash2, Users, CreditCard, Shield, Phone, Mail, Globe, Landmark, Smartphone, Link as LinkIcon, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
 import { BillingModule } from './BillingModule';
 import { UsersModule } from './UsersModule';
 
 export function SettingsModule() {
   const { companySettings, updateCompanySettings, loadSampleData, resetAllData } = useAppStore();
-  const [form, setForm] = useState<CompanySettings>(companySettings);
+
+  const [form, setForm] = useState<CompanySettings>({
+    name: companySettings?.name || '',
+    address: companySettings?.address || '',
+    phone: companySettings?.phone || '',
+    email: companySettings?.email || '',
+    website: companySettings?.website || '',
+    kraPin: companySettings?.kraPin || '',
+    vatRegistrationNumber: companySettings?.vatRegistrationNumber || '',
+    currency: companySettings?.currency || 'KES',
+    currencySymbol: companySettings?.currencySymbol || 'KSh',
+    logoUrl: companySettings?.logoUrl || '',
+    decimal_places: companySettings?.decimal_places || 2,
+    thousand_separator: companySettings?.thousand_separator || ',',
+    decimal_separator: companySettings?.decimal_separator || '.',
+    bank_name: companySettings?.bank_name || '',
+    bank_account_number: companySettings?.bank_account_number || '',
+    bank_branch: companySettings?.bank_branch || '',
+    bank_swift_code: companySettings?.bank_swift_code || '',
+    mpesa_paybill: companySettings?.mpesa_paybill || '',
+    mpesa_account_number: companySettings?.mpesa_account_number || '',
+    vat_rate: companySettings?.vat_rate || 16,
+    fiscal_year_start: companySettings?.fiscal_year_start || 'January',
+    facebook: companySettings?.facebook || '',
+    twitter: companySettings?.twitter || '',
+    linkedin: companySettings?.linkedin || '',
+    instagram: companySettings?.instagram || '',
+  });
+
   const [saved, setSaved] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
   const fileRef = useRef<HTMLInputElement>(null);
   const logoRef = useRef<HTMLInputElement>(null);
-
-  // Check for saved tab preference from upgrade button
-
-
 
   useEffect(() => {
     const savedTab = localStorage.getItem('settingsTab');
@@ -32,7 +56,6 @@ export function SettingsModule() {
     }
   }, []);
 
-  // Auto-open payment section when coming from upgrade modal
   useEffect(() => {
     if (activeTab === 'billing' && localStorage.getItem('openPaymentSection') === 'true') {
       setTimeout(() => {
@@ -44,10 +67,6 @@ export function SettingsModule() {
       localStorage.removeItem('openPaymentSection');
     }
   }, [activeTab]);
-
-
-
-
 
   const handleSave = () => {
     updateCompanySettings(form);
@@ -206,6 +225,28 @@ export function SettingsModule() {
                     <Label className="text-xs">Address</Label>
                     <Input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
                   </div>
+
+                  {/* Phone, Email, Website, VAT Registration */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs flex items-center gap-1"><Phone size={12} /> Phone Number</Label>
+                      <Input value={form.phone || ''} onChange={e => setForm({ ...form, phone: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-xs flex items-center gap-1"><Mail size={12} /> Email Address</Label>
+                      <Input value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-xs flex items-center gap-1"><Globe size={12} /> Website</Label>
+                      <Input value={form.website || ''} onChange={e => setForm({ ...form, website: e.target.value })} placeholder="https://bochi.ke" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">VAT Registration Number</Label>
+                      <Input value={form.vatRegistrationNumber || ''} onChange={e => setForm({ ...form, vatRegistrationNumber: e.target.value })} />
+                    </div>
+                  </div>
+
+                  {/* KRA PIN and Currency */}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs">KRA PIN</Label>
@@ -224,11 +265,75 @@ export function SettingsModule() {
                       </div>
                     </div>
                   </div>
-                  <Button onClick={handleSave} className="w-fit">
-                    <Save size={16} className="mr-1" />
-                    {saved ? 'Saved ✓' : 'Save Settings'}
-                  </Button>
                 </div>
+              </div>
+
+              {/* Banking & Payment Information */}
+              <div className="bg-card rounded-xl border border-border p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Landmark size={20} className="text-accent" />
+                  <h3 className="font-semibold text-card-foreground">Banking & Payment Information</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Bank Name</Label>
+                    <Input value={form.bank_name || ''} onChange={e => setForm({ ...form, bank_name: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Bank Account Number</Label>
+                    <Input value={form.bank_account_number || ''} onChange={e => setForm({ ...form, bank_account_number: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Bank Branch</Label>
+                    <Input value={form.bank_branch || ''} onChange={e => setForm({ ...form, bank_branch: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Swift/BIC Code</Label>
+                    <Input value={form.bank_swift_code || ''} onChange={e => setForm({ ...form, bank_swift_code: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs flex items-center gap-1"><Smartphone size={12} /> M-Pesa Paybill</Label>
+                    <Input value={form.mpesa_paybill || ''} onChange={e => setForm({ ...form, mpesa_paybill: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">M-Pesa Account Number</Label>
+                    <Input value={form.mpesa_account_number || ''} onChange={e => setForm({ ...form, mpesa_account_number: e.target.value })} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Social Media Links */}
+              <div className="bg-card rounded-xl border border-border p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <LinkIcon size={20} className="text-accent" />
+                  <h3 className="font-semibold text-card-foreground">Social Media (Optional)</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs flex items-center gap-1"><Facebook size={12} /> Facebook</Label>
+                    <Input value={form.facebook || ''} onChange={e => setForm({ ...form, facebook: e.target.value })} placeholder="https://facebook.com/yourcompany" />
+                  </div>
+                  <div>
+                    <Label className="text-xs flex items-center gap-1"><Twitter size={12} /> Twitter/X</Label>
+                    <Input value={form.twitter || ''} onChange={e => setForm({ ...form, twitter: e.target.value })} placeholder="https://twitter.com/yourcompany" />
+                  </div>
+                  <div>
+                    <Label className="text-xs flex items-center gap-1"><Linkedin size={12} /> LinkedIn</Label>
+                    <Input value={form.linkedin || ''} onChange={e => setForm({ ...form, linkedin: e.target.value })} placeholder="https://linkedin.com/company/yourcompany" />
+                  </div>
+                  <div>
+                    <Label className="text-xs flex items-center gap-1"><Instagram size={12} /> Instagram</Label>
+                    <Input value={form.instagram || ''} onChange={e => setForm({ ...form, instagram: e.target.value })} placeholder="https://instagram.com/yourcompany" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <div className="flex justify-end">
+                <Button onClick={handleSave} className="w-fit">
+                  <Save size={16} className="mr-1" />
+                  {saved ? 'Saved ✓' : 'Save All Settings'}
+                </Button>
               </div>
             </div>
 
@@ -241,7 +346,8 @@ export function SettingsModule() {
                 <ul className="space-y-2 text-sm text-blue-700 dark:text-blue-300">
                   <li className="flex items-start gap-2"><span className="text-blue-500">•</span> Upload your company logo to brand invoices and purchase orders</li>
                   <li className="flex items-start gap-2"><span className="text-blue-500">•</span> Set your preferred currency - all financial reports will update automatically</li>
-                  <li className="flex items-start gap-2"><span className="text-blue-500">•</span> Use "Load Sample Data" to test features with demo projects and workers</li>
+                  <li className="flex items-start gap-2"><span className="text-blue-500">•</span> Add banking details for automatic inclusion on invoices</li>
+                  <li className="flex items-start gap-2"><span className="text-blue-500">•</span> M-Pesa Paybill makes mobile payments easier for clients</li>
                   <li className="flex items-start gap-2"><span className="text-blue-500">•</span> Regular backups are recommended - export your data weekly</li>
                 </ul>
               </div>
@@ -280,17 +386,10 @@ export function SettingsModule() {
           </div>
         </TabsContent>
 
-
-
-
-
-
-<TabsContent value="billing" className="space-y-4 mt-3">
-  <BillingModule />
-  <SubscriptionPlansTable />
-</TabsContent>
-
-
+        <TabsContent value="billing" className="space-y-4 mt-3">
+          <BillingModule />
+          <SubscriptionPlansTable />
+        </TabsContent>
 
         {/* Users Tab */}
         <TabsContent value="users" className="space-y-4 mt-3">

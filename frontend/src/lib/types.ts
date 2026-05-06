@@ -260,18 +260,43 @@ export interface SiteDiaryEntry {
   };
   status: 'Draft' | 'Submitted' | 'Approved';
   createdAt: string;
+
+
 }
 
 export interface CompanySettings {
+  id?: number;
+  company_id?: number;
   name: string;
   address: string;
   phone: string;
   email: string;
+  website?: string;
   kraPin: string;
+  vatRegistrationNumber?: string;
   currency: string;
   currencySymbol: string;
   logoUrl?: string;
+  decimal_places?: number;
+  thousand_separator?: string;
+  decimal_separator?: string;
+  // Banking Information
+  bank_name?: string;
+  bank_account_number?: string;
+  bank_branch?: string;
+  bank_swift_code?: string;
+  mpesa_paybill?: string;
+  mpesa_account_number?: string;
+  // Business Settings
+  vat_rate?: number;
+  fiscal_year_start?: string;
+  // Social Media
+  facebook?: string;
+  twitter?: string;
+  linkedin?: string;
+  instagram?: string;
 }
+
 
 // Updated ModuleId to include 'billing'
 export type ModuleId = 'dashboard' | 'projects' | 'income' | 'expenses' | 'payroll' | 'procurement' | 'stores' | 'sitediary' | 'vat' | 'reports' | 'settings' | 'users' | 'subcontractors' | 'invoices' | 'billing' | 'help' | 'legal';
