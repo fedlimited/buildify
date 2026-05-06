@@ -360,10 +360,6 @@ function PurchaseOrdersTab() {
 const printPurchaseOrder = (order) => {
   const printWindow = window.open('', '_blank');
   
-  // IMPORTANT: Use the SAME formatCurrency from your app, not a custom one
-  // Import formatCurrency at the top of the file (already there)
-  // Then use it directly - it already reads from companySettings
-  
   // Use companySettings from the store
   let companyName = companySettings?.name || 'Finite Element Designs Limited';
   let companyLogo = companySettings?.logoUrl || '';
@@ -371,35 +367,9 @@ const printPurchaseOrder = (order) => {
   let companyPhone = companySettings?.phone || '';
   let companyEmail = companySettings?.email || 'info@bochi.ke';
   let kraPin = companySettings?.kraPin || 'P051927399I';
-  let currencySymbol = companySettings?.currency_symbol || 'KES';
   
   // Find supplier details
   const supplier = suppliers.find(s => s.id === order.supplierId);
-  
-  // Build items HTML - EACH ITEM ON ITS OWN ROW with proper formatting
-  let itemsHtml = '';
-  if (order.items && order.items.length > 0) {
-    order.items.forEach((item, idx) => {
-      const unitPrice = item.unitPrice || item.unit_price || 0;
-      const total = item.total || item.amount || (unitPrice * (item.quantity || 0));
-      
-      itemsHtml += `
-        <tr>
-          <td style="padding: 6px 4px; border-bottom: 1px solid #e2e8f0; text-align: center; font-size: 10px;">${idx + 1}</td>
-          <td style="padding: 6px 4px; border-bottom: 1px solid #e2e8f0; font-size: 10px;">${escapeHtml(item.itemName || item.description || '-')}</td>
-          <td style="padding: 6px 4px; border-bottom: 1px solid #e2e8f0; text-align: center; font-size: 10px;">${item.quantity || 0}</td>
-          <td style="padding: 6px 4px; border-bottom: 1px solid #e2e8f0; text-align: center; font-size: 10px;">${item.unit || '-'}</td>
-          <td style="padding: 6px 4px; border-bottom: 1px solid #e2e8f0; text-align: right; font-size: 10px;">${formatCurrency(unitPrice)}</td>
-          <td style="padding: 6px 4px; border-bottom: 1px solid #e2e8f0; text-align: right; font-size: 10px;">${formatCurrency(total)}</td>
-          <td style="padding: 6px 4px; border-bottom: 1px solid #e2e8f0; text-align: center;">
-            <span style="display: inline-block; width: 50px; border-bottom: 1px dotted #999;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-          </td>
-        </tr>
-      `;
-    });
-  } else {
-    itemsHtml = '<tr><td colspan="7" style="padding: 20px; text-align: center;">No items found</td></tr>';
-  }
   
   // Helper to escape HTML
   function escapeHtml(str) {
@@ -412,9 +382,34 @@ const printPurchaseOrder = (order) => {
     });
   }
   
+  // Build items HTML - EACH ITEM ON ITS OWN ROW
+  let itemsHtml = '';
+  if (order.items && order.items.length > 0) {
+    order.items.forEach((item, idx) => {
+      const unitPrice = item.unitPrice || item.unit_price || 0;
+      const total = item.total || item.amount || (unitPrice * (item.quantity || 0));
+      
+      itemsHtml += `
+        <tr>
+          <td style="padding: 8px 6px; border-bottom: 1px solid #ddd; text-align: center;">${idx + 1}</td>
+          <td style="padding: 8px 6px; border-bottom: 1px solid #ddd;">${escapeHtml(item.itemName || item.description || '-')}</td>
+          <td style="padding: 8px 6px; border-bottom: 1px solid #ddd; text-align: center;">${item.quantity || 0}</td>
+          <td style="padding: 8px 6px; border-bottom: 1px solid #ddd; text-align: center;">${escapeHtml(item.unit || '-')}</td>
+          <td style="padding: 8px 6px; border-bottom: 1px solid #ddd; text-align: right;">${formatCurrency(unitPrice)}</td>
+          <td style="padding: 8px 6px; border-bottom: 1px solid #ddd; text-align: right;">${formatCurrency(total)}</td>
+          <td style="padding: 8px 6px; border-bottom: 1px solid #ddd; text-align: center;">
+            <span style="display: inline-block; width: 60px; border-bottom: 1px dotted #999;">__________</span>
+          </td>
+        </tr>
+      `;
+    });
+  } else {
+    itemsHtml = '<tr><td colspan="7" style="padding: 20px; text-align: center;">No items found</td></tr>';
+  }
+  
   const logoHtml = companyLogo 
-    ? `<img src="${companyLogo}" style="max-height: 50px; max-width: 150px; object-fit: contain;" onerror="this.style.display='none'" />` 
-    : `<div style="font-size: 18px; font-weight: bold; color: #1a365d;">${escapeHtml(companyName)}</div>`;
+    ? `<img src="${companyLogo}" style="max-height: 60px; max-width: 180px; object-fit: contain;" onerror="this.style.display='none'" />` 
+    : `<h2 style="margin: 0; color: #1a365d;">${escapeHtml(companyName)}</h2>`;
   
   const html = `
     <!DOCTYPE html>
@@ -426,20 +421,22 @@ const printPurchaseOrder = (order) => {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
           font-family: 'Segoe UI', Arial, sans-serif;
-          padding: 15px;
+          padding: 20px;
           margin: 0;
-          color: #1a202c;
+          color: #333;
           background: white;
-          font-size: 10px;
+          font-size: 12pt;
+          line-height: 1.4;
         }
         .print-container {
-          max-width: 100%;
+          max-width: 1100px;
           margin: 0 auto;
         }
-        /* Compact header for A4 */
+        
+        /* Header - no cards, just clean text */
         .header {
-          margin-bottom: 15px;
-          padding-bottom: 10px;
+          margin-bottom: 20px;
+          padding-bottom: 15px;
           border-bottom: 2px solid #1a365d;
           display: flex;
           justify-content: space-between;
@@ -447,97 +444,130 @@ const printPurchaseOrder = (order) => {
           flex-wrap: wrap;
         }
         .logo-section { flex: 1; }
-        .company-name { font-size: 16px; font-weight: bold; color: #1a365d; }
-        .company-details { margin-top: 5px; }
-        .company-details div { font-size: 8px; color: #4a5568; margin-top: 2px; }
+        .company-details { margin-top: 8px; }
+        .company-details div { font-size: 10pt; color: #555; margin-top: 3px; }
         .po-title-section { text-align: right; }
-        .po-title { font-size: 20px; font-weight: bold; color: #1a365d; letter-spacing: 2px; }
-        .po-number { font-size: 11px; color: #4a5568; margin-top: 3px; font-family: monospace; font-weight: bold; }
+        .po-title { font-size: 20pt; font-weight: bold; color: #1a365d; letter-spacing: 2px; margin-bottom: 5px; }
+        .po-number { font-size: 12pt; color: #555; font-family: monospace; font-weight: bold; }
         
-        /* Compact info boxes */
-        .info-section {
-          display: flex;
-          justify-content: space-between;
+        /* Clean info rows - no cards, just text */
+        .info-row {
           margin-bottom: 12px;
-          gap: 10px;
+          display: flex;
           flex-wrap: wrap;
+          border-bottom: 1px solid #eee;
+          padding-bottom: 10px;
         }
-        .info-box {
+        .info-group {
           flex: 1;
-          padding: 6px 8px;
-          background: #f7fafc;
-          border-radius: 4px;
-          border: 1px solid #e2e8f0;
+          min-width: 200px;
+          margin-bottom: 8px;
         }
-        .info-label { font-weight: bold; font-size: 8px; color: #4a5568; margin-bottom: 3px; text-transform: uppercase; }
-        .info-value { font-size: 10px; font-weight: 500; }
-        .supplier-details { font-size: 8px; margin-top: 3px; color: #4a5568; }
+        .info-label {
+          font-weight: bold;
+          font-size: 10pt;
+          color: #555;
+          margin-bottom: 4px;
+        }
+        .info-value {
+          font-size: 12pt;
+          font-weight: normal;
+        }
         
-        /* Compact items table */
+        /* Items table */
         .items-table {
           width: 100%;
           border-collapse: collapse;
-          margin: 10px 0;
+          margin: 15px 0;
+          font-size: 11pt;
         }
         .items-table th {
           background: #1a365d;
           color: white;
-          padding: 6px 4px;
+          padding: 10px 6px;
           text-align: left;
-          font-size: 9px;
           font-weight: 600;
         }
-        .items-table td { padding: 6px 4px; border-bottom: 1px solid #e2e8f0; font-size: 9px; }
+        .items-table td {
+          padding: 8px 6px;
+          border-bottom: 1px solid #ddd;
+        }
         
-        /* Compact totals */
+        /* Totals */
         .totals {
           text-align: right;
-          margin-top: 10px;
-          padding-top: 10px;
-          border-top: 1px solid #e2e8f0;
-          width: 250px;
+          margin-top: 15px;
+          padding-top: 15px;
+          border-top: 1px solid #ddd;
+          width: 300px;
           margin-left: auto;
         }
-        .total-line { margin: 3px 0; font-size: 9px; display: flex; justify-content: space-between; gap: 15px; }
-        .grand-total { font-size: 11px; font-weight: bold; color: #1a365d; margin-top: 5px; padding-top: 5px; border-top: 1px solid #1a365d; }
-        
-        /* Compact terms */
-        .terms-section {
-          margin-top: 12px;
-          padding: 8px;
-          background: #f7fafc;
-          border-radius: 4px;
-          font-size: 8px;
-        }
-        .terms-title { font-weight: bold; margin-bottom: 4px; font-size: 9px; }
-        
-        /* Compact approval section */
-        .approval-section {
-          margin-top: 15px;
+        .total-line {
+          margin: 6px 0;
+          font-size: 11pt;
           display: flex;
           justify-content: space-between;
           gap: 20px;
-          flex-wrap: wrap;
-          padding-top: 10px;
         }
-        .approval-line { flex: 1; text-align: center; }
-        .approval-line .line { border-top: 1px solid #000; width: 120px; margin: 15px auto 3px auto; }
-        .approval-line .label { font-size: 8px; color: #4a5568; }
+        .grand-total {
+          font-size: 13pt;
+          font-weight: bold;
+          color: #1a365d;
+          margin-top: 8px;
+          padding-top: 8px;
+          border-top: 1px solid #333;
+        }
+        
+        /* Terms section */
+        .terms-section {
+          margin-top: 20px;
+          padding: 12px;
+          background: #f9f9f9;
+          border: 1px solid #eee;
+          font-size: 10pt;
+        }
+        .terms-title {
+          font-weight: bold;
+          margin-bottom: 6px;
+          font-size: 11pt;
+        }
+        
+        /* Approval section */
+        .approval-section {
+          margin-top: 25px;
+          display: flex;
+          justify-content: space-between;
+          gap: 30px;
+          flex-wrap: wrap;
+        }
+        .approval-line {
+          flex: 1;
+          text-align: center;
+        }
+        .approval-line .line {
+          border-top: 1px solid #000;
+          width: 160px;
+          margin: 25px auto 5px auto;
+        }
+        .approval-line .label {
+          font-size: 10pt;
+          color: #555;
+        }
         
         .footer {
-          margin-top: 15px;
-          padding-top: 10px;
+          margin-top: 25px;
+          padding-top: 12px;
           text-align: center;
-          font-size: 7px;
-          color: #a0aec0;
-          border-top: 1px solid #e2e8f0;
+          font-size: 9pt;
+          color: #888;
+          border-top: 1px solid #eee;
         }
         
         .status-badge {
           display: inline-block;
-          padding: 2px 6px;
-          border-radius: 12px;
-          font-size: 8px;
+          padding: 3px 10px;
+          border-radius: 4px;
+          font-size: 10pt;
           font-weight: bold;
         }
         .status-ordered { background: #fef3c7; color: #d97706; }
@@ -562,6 +592,7 @@ const printPurchaseOrder = (order) => {
     </head>
     <body>
       <div class="print-container">
+        <!-- Header -->
         <div class="header">
           <div class="logo-section">
             ${logoHtml}
@@ -578,48 +609,50 @@ const printPurchaseOrder = (order) => {
           </div>
         </div>
         
-        <div class="info-section">
-          <div class="info-box">
+        <!-- Clean info rows - no cards -->
+        <div class="info-row">
+          <div class="info-group">
             <div class="info-label">SUPPLIER</div>
             <div class="info-value">${escapeHtml(order.supplierName || '-')}</div>
-            ${supplier ? `<div class="supplier-details">${supplier.phone ? 'Tel: ' + escapeHtml(supplier.phone) : ''}${supplier.email ? ' | Email: ' + escapeHtml(supplier.email) : ''}</div>` : ''}
+            ${supplier && supplier.phone ? `<div style="font-size: 10pt; color: #666; margin-top: 3px;">Tel: ${escapeHtml(supplier.phone)}</div>` : ''}
+            ${supplier && supplier.email ? `<div style="font-size: 10pt; color: #666;">Email: ${escapeHtml(supplier.email)}</div>` : ''}
           </div>
-          <div class="info-box">
+          <div class="info-group">
             <div class="info-label">PROJECT / SITE</div>
             <div class="info-value">${escapeHtml(order.projectName || '-')}</div>
           </div>
-          <div class="info-box">
-            <div class="info-label">ORDER DETAILS</div>
-            <div class="info-value">Order Date: ${formatDate(order.orderDate)}</div>
-            <div class="info-value">Expected: ${order.expectedDate ? formatDate(order.expectedDate) : 'Not specified'}</div>
+          <div class="info-group">
+            <div class="info-label">ORDER DATE</div>
+            <div class="info-value">${formatDate(order.orderDate)}</div>
           </div>
         </div>
         
-        <div class="info-section">
-          <div class="info-box">
+        <div class="info-row">
+          <div class="info-group">
+            <div class="info-label">EXPECTED DELIVERY</div>
+            <div class="info-value">${order.expectedDate ? formatDate(order.expectedDate) : 'Not specified'}</div>
+          </div>
+          <div class="info-group">
             <div class="info-label">STATUS</div>
             <div class="info-value"><span class="status-badge status-${order.status === 'Supplied' ? 'supplied' : 'ordered'}">${order.status || 'Ordered'}</span></div>
           </div>
-          <div class="info-box">
+          <div class="info-group">
             <div class="info-label">PAYMENT STATUS</div>
             <div class="info-value"><span class="status-badge status-${order.paymentStatus === 'Paid' ? 'supplied' : 'ordered'}">${order.paymentStatus || 'Unpaid'}</span></div>
           </div>
-          <div class="info-box">
-            <div class="info-label">CURRENCY</div>
-            <div class="info-value">${currencySymbol}</div>
-          </div>
         </div>
         
+        <!-- Items Table -->
         <table class="items-table">
           <thead>
             <tr>
-              <th style="width: 30px; text-align: center;">#</th>
+              <th style="width: 40px; text-align: center;">#</th>
               <th style="text-align: left;">Item Description</th>
-              <th style="width: 45px; text-align: center;">Qty</th>
-              <th style="width: 40px; text-align: center;">Unit</th>
-              <th style="width: 70px; text-align: right;">Unit Price</th>
-              <th style="width: 80px; text-align: right;">Total</th>
-              <th style="width: 60px; text-align: center;">Received</th>
+              <th style="width: 60px; text-align: center;">Qty</th>
+              <th style="width: 60px; text-align: center;">Unit</th>
+              <th style="width: 100px; text-align: right;">Unit Price</th>
+              <th style="width: 110px; text-align: right;">Total</th>
+              <th style="width: 80px; text-align: center;">Received</th>
             </tr>
           </thead>
           <tbody>
@@ -627,46 +660,52 @@ const printPurchaseOrder = (order) => {
           </tbody>
         </table>
         
+        <!-- Totals -->
         <div class="totals">
           <div class="total-line"><span>Subtotal:</span><span>${formatCurrency(order.subtotal || 0)}</span></div>
           <div class="total-line"><span>VAT (16%):</span><span>${formatCurrency(order.vat || 0)}</span></div>
           <div class="grand-total"><span>TOTAL:</span><span>${formatCurrency(order.total || 0)}</span></div>
         </div>
         
+        <!-- Terms -->
         <div class="terms-section">
           <div class="terms-title">📋 Terms & Conditions</div>
-          <div>• Payment terms: Net 30 days • Late payment interest: 2% per month</div>
-          <div>• Goods to be delivered to project site • Inspect upon delivery</div>
-          ${order.notes ? `<div style="margin-top: 4px;"><strong>Notes:</strong> ${escapeHtml(order.notes)}</div>` : ''}
+          <div>• Payment terms: Net 30 days from invoice date unless otherwise agreed</div>
+          <div>• Late payment interest: 2% per month on overdue amounts</div>
+          <div>• Goods to be delivered to the project site as specified above</div>
+          <div>• Please inspect all items upon delivery. Claims must be made within 7 days</div>
+          ${order.notes ? `<div style="margin-top: 8px;"><strong>Special Notes:</strong> ${escapeHtml(order.notes)}</div>` : ''}
         </div>
         
+        <!-- Approval Signatures -->
         <div class="approval-section">
           <div class="approval-line">
             <div class="line"></div>
-            <div class="label">Supplier Authorization</div>
-            <div class="label" style="font-size: 7px;">Name, Signature & Date</div>
+            <div class="label">Authorized by (Supplier)</div>
+            <div class="label" style="font-size: 9pt;">Name, Signature & Date</div>
           </div>
           <div class="approval-line">
             <div class="line"></div>
-            <div class="label">Site Received By</div>
-            <div class="label" style="font-size: 7px;">Name, Signature & Date</div>
+            <div class="label">Received by (Site)</div>
+            <div class="label" style="font-size: 9pt;">Name, Signature & Date</div>
           </div>
           <div class="approval-line">
             <div class="line"></div>
             <div class="label">Store Keeper</div>
-            <div class="label" style="font-size: 7px;">Name, Signature & Date</div>
+            <div class="label" style="font-size: 9pt;">Name, Signature & Date</div>
           </div>
         </div>
         
+        <!-- Footer -->
         <div class="footer">
-          <p>This is a computer-generated document. Verify quantities upon delivery.</p>
+          <p>This is a computer-generated document. Please verify all quantities upon delivery.</p>
           <p>Generated on ${new Date().toLocaleString()} | BOCHI Construction Suite</p>
         </div>
       </div>
       
-      <div style="text-align: center; margin-top: 15px;" class="no-print">
-        <button onclick="window.print();" style="padding: 8px 16px; background: #1a365d; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 8px; font-size: 12px;">🖨️ Print / Save as PDF</button>
-        <button onclick="window.close();" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Close</button>
+      <div style="text-align: center; margin-top: 20px;" class="no-print">
+        <button onclick="window.print();" style="padding: 10px 20px; background: #1a365d; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; font-size: 12pt;">🖨️ Print / Save as PDF</button>
+        <button onclick="window.close();" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12pt;">Close</button>
       </div>
     </body>
     </html>
