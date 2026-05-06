@@ -81,9 +81,21 @@ export function Register({ onBackToLogin }: RegisterProps) {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Registration failed');
-      }
+
+
+
+if (!response.ok) {
+  const errorMsg = data.error || '';
+  if (errorMsg.includes('subdomain') || errorMsg.includes('exists')) {
+    throw new Error('Subdomain already taken');
+  } else if (errorMsg.includes('email')) {
+    throw new Error('Email already registered');
+  } else {
+    throw new Error('Check details and try again');
+  }
+}
+
+
 
       setSuccess("Welcome to BOCHI! Your company " + form.name + " has been successfully registered.");
 
@@ -95,9 +107,24 @@ export function Register({ onBackToLogin }: RegisterProps) {
         }
       }, 3000);
 
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
+
+
+
+} catch (err: any) {
+  const message = err.message || '';
+  if (message.includes('network') || message.includes('fetch')) {
+    setError('Check your internet');
+  } else if (message.includes('password')) {
+    setError('Password too weak');
+  } else {
+    setError(message || 'Registration failed');
+  }
+}
+
+
+
+
+ finally {
       setIsLoading(false);
     }
   };

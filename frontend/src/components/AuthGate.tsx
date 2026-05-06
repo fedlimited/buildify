@@ -85,9 +85,21 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       } else {
         setError(response?.message || 'Failed to send OTP');
       }
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong');
-    } finally {
+
+
+} catch (err: any) {
+  const message = err.message || '';
+  if (message.includes('network') || message.includes('fetch') || message.includes('Internet')) {
+    setError('Check your internet and try again');
+  } else if (message.includes('404') || message.includes('not found')) {
+    setError('Wrong email or company subdomain');
+  } else {
+    setError('Try again');
+  }
+}
+
+
+ finally {
       setLoading(false);
     }
   };
@@ -120,9 +132,21 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       } else {
         setError(response?.message || 'Invalid OTP code');
       }
-    } catch (err: any) {
-      setError(err.message || 'Verification failed');
-    } finally {
+
+
+} catch (err: any) {
+  const message = err.message || '';
+  if (message.includes('network') || message.includes('fetch') || message.includes('Internet')) {
+    setError('Check your internet and try again');
+  } else if (message.includes('404') || message.includes('not found')) {
+    setError('Wrong email or company subdomain');
+  } else {
+    setError('Try again');
+  }
+}
+
+
+ finally {
       setLoading(false);
     }
   };
@@ -146,9 +170,22 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
           });
         }, 1000);
       }
-    } catch (err: any) {
-      setError('Failed to resend OTP');
-    } finally {
+
+
+
+} catch (err: any) {
+  const message = err.message || '';
+  if (message.includes('network') || message.includes('fetch') || message.includes('Internet')) {
+    setError('Check your internet and try again');
+  } else if (message.includes('404') || message.includes('not found')) {
+    setError('Wrong email or company subdomain');
+  } else {
+    setError('Try again');
+  }
+}
+
+
+ finally {
       setLoading(false);
     }
   };
