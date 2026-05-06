@@ -46,7 +46,7 @@ async function sendOTP(email, code, purpose = 'login') {
     const transporter = getTransporter();
     
     await transporter.sendMail({
-      from: `"BOCHI Construction Suite" <${process.env.EMAIL_USER}>`,
+      from: `"Bochi Construction Suite" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: `Your ${purpose} verification code - BOCHI`,
       html: `
@@ -61,18 +61,18 @@ async function sendOTP(email, code, purpose = 'login') {
         </head>
         <body>
           <div class="container">
-            <h2>BOCHI Construction Suite</h2>
+            <h2>Bochi Construction Suite</h2>
             <p>Your verification code to ${purposeText} BOCHI is:</p>
             <div class="code">${code}</div>
             <p>This code will expire in 10 minutes.</p>
             <p>If you didn't request this, please ignore this email.</p>
             <hr>
-            <p style="font-size: 12px; color: #666;">BOCHI Construction Suite - Project Management System</p>
+            <p style="font-size: 12px; color: #666;">Bochi Construction Suite - Project Management System</p>
           </div>
         </body>
         </html>
       `,
-      text: `BOCHI Construction Suite\n\nYour verification code to ${purposeText} BOCHI is: ${code}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this, please ignore this email.`
+      text: `Bochi Construction Suite\n\nYour verification code to ${purposeText} BOCHI is: ${code}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this, please ignore this email.`
     });
     
     console.log(`✅ Email sent successfully to ${email}`);
@@ -101,12 +101,12 @@ async function sendInvitationCode(email, code, inviterName, companyName) {
       subject: `Invitation to join ${companyName} on BOCHI`,
       html: `
         <h2>You're Invited!</h2>
-        <p><strong>${inviterName}</strong> has invited you to join <strong>${companyName}</strong> on BOCHI Construction Suite.</p>
+        <p><strong>${inviterName}</strong> has invited you to join <strong>${companyName}</strong> on Bochi Construction Suite.</p>
         <p>Your invitation code: <strong style="font-size: 24px;">${code}</strong></p>
         <p>This code expires in 30 minutes.</p>
-        <p>Click here to register: <a href="https://app.bochi.ke/register">Register Now</a></p>
+        <p>Click here to register: <a href="https://app.Bochi.ke/register">Register Now</a></p>
       `,
-      text: `You're invited to join ${companyName} on BOCHI.\n\nYour invitation code: ${code}\n\nExpires in 30 minutes.\n\nRegister at: https://app.bochi.ke/register`
+      text: `You're invited to join ${companyName} on Bochi.\n\nYour invitation code: ${code}\n\nExpires in 30 minutes.\n\nRegister at: https://app.bochi.ke/register`
     });
     
     console.log(`✅ Invitation email sent to ${email}`);
@@ -138,9 +138,9 @@ async function sendInvoiceEmail(email, payment) {
     const transporter = getTransporter();
     
     await transporter.sendMail({
-      from: `"BOCHI Construction Suite" <${process.env.EMAIL_USER}>`,
+      from: `"Bochi Construction Suite" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: `Invoice ${invoiceNumber} - BOCHI Construction Suite`,
+      subject: `Invoice ${invoiceNumber} - Bochi Construction Suite`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -214,7 +214,7 @@ async function sendInvoiceEmail(email, payment) {
               <p style="margin-top: 20px; color: #555;">Thank you for your business!</p>
             </div>
             <div class="footer">
-              <p>BOCHI Construction Suite | info@bochi.ke | bochi.ke</p>
+              <p>Bochi Construction Suite | info@bochi.ke | bochi.ke</p>
               <p>This is a computer-generated invoice.</p>
             </div>
           </div>
@@ -238,7 +238,7 @@ async function sendInvoiceEmail(email, payment) {
         `${payment.mpesa_transaction_id ? `M-Pesa Ref: ${payment.mpesa_transaction_id}` : ''}`,
         ``,
         `Thank you for your business!`,
-        `BOCHI Construction Suite | info@bochi.ke | bochi.ke`
+        `Bochi Construction Suite | info@bochi.ke | bochi.ke`
       ].filter(Boolean).join('\n')
     });
     
