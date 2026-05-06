@@ -15,7 +15,6 @@ import { UsersModule } from './UsersModule';
 export function SettingsModule() {
   const { companySettings, updateCompanySettings, loadSampleData, resetAllData, fetchCompanySettings } = useAppStore();
 
-  // Initialize form with companySettings or defaults
   const [form, setForm] = useState<CompanySettings>({
     name: '',
     address: '',
@@ -43,6 +42,18 @@ export function SettingsModule() {
     linkedin: '',
     instagram: '',
   });
+
+  const [saved, setSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState('general');
+  const fileRef = useRef<HTMLInputElement>(null);
+  const logoRef = useRef<HTMLInputElement>(null);
+
+  // Fetch settings when component mounts
+  useEffect(() => {
+    if (fetchCompanySettings) {
+      fetchCompanySettings();
+    }
+  }, [fetchCompanySettings]);
 
   // IMPORTANT: Update form when companySettings changes (after save or refresh)
   useEffect(() => {
@@ -76,19 +87,7 @@ export function SettingsModule() {
         instagram: companySettings.instagram || '',
       });
     }
-  }, [companySettings]); // This runs whenever companySettings changes
-
-  // Fetch settings when component mounts
-  useEffect(() => {
-    if (fetchCompanySettings) {
-      fetchCompanySettings();
-    }
-  }, [fetchCompanySettings]);
-
-  const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState('general');
-  const fileRef = useRef<HTMLInputElement>(null);
-  const logoRef = useRef<HTMLInputElement>(null);
+  }, [companySettings]);
 
   useEffect(() => {
     const savedTab = localStorage.getItem('settingsTab');
@@ -121,15 +120,20 @@ export function SettingsModule() {
       mpesa_account_number: form.mpesa_account_number
     });
     
-    await updateCompanySettings(form);
-    
-    // Refresh settings from server to ensure data is persisted
-    if (fetchCompanySettings) {
-      await fetchCompanySettings();
+    try {
+      await updateCompanySettings(form);
+      
+      // Force refetch to ensure store is updated
+      if (fetchCompanySettings) {
+        await fetchCompanySettings();
+      }
+      
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (error) {
+      console.error('Save failed:', error);
+      alert('Failed to save settings. Please try again.');
     }
-    
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
   };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -277,54 +281,30 @@ export function SettingsModule() {
                 <div className="grid gap-3">
                   <div>
                     <Label className="text-xs">Company Name</Label>
-                    <Input 
-                      value={form.name} 
-                      onChange={e => setForm({ ...form, name: e.target.value })} 
-                      placeholder="Your Company Name"
-                    />
+                    <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
                   </div>
                   <div>
                     <Label className="text-xs">Address</Label>
-                    <Input 
-                      value={form.address} 
-                      onChange={e => setForm({ ...form, address: e.target.value })} 
-                      placeholder="Your Business Address"
-                    />
+                    <Input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
                   </div>
 
                   {/* Phone, Email, Website, VAT Registration */}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs flex items-center gap-1"><Phone size={12} /> Phone Number</Label>
-                      <Input 
-                        value={form.phone || ''} 
-                        onChange={e => setForm({ ...form, phone: e.target.value })} 
-                        placeholder="+254 XXX XXX XXX"
-                      />
+                      <Input value={form.phone || ''} onChange={e => setForm({ ...form, phone: e.target.value })} />
                     </div>
                     <div>
                       <Label className="text-xs flex items-center gap-1"><Mail size={12} /> Email Address</Label>
-                      <Input 
-                        value={form.email || ''} 
-                        onChange={e => setForm({ ...form, email: e.target.value })} 
-                        placeholder="info@yourcompany.com"
-                      />
+                      <Input value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} />
                     </div>
                     <div>
                       <Label className="text-xs flex items-center gap-1"><Globe size={12} /> Website</Label>
-                      <Input 
-                        value={form.website || ''} 
-                        onChange={e => setForm({ ...form, website: e.target.value })} 
-                        placeholder="https://yourcompany.com"
-                      />
+                      <Input value={form.website || ''} onChange={e => setForm({ ...form, website: e.target.value })} placeholder="https://bochi.ke" />
                     </div>
                     <div>
                       <Label className="text-xs">VAT Registration Number</Label>
-                      <Input 
-                        value={form.vatRegistrationNumber || ''} 
-                        onChange={e => setForm({ ...form, vatRegistrationNumber: e.target.value })} 
-                        placeholder="e.g., P051927399I"
-                      />
+                      <Input value={form.vatRegistrationNumber || ''} onChange={e => setForm({ ...form, vatRegistrationNumber: e.target.value })} />
                     </div>
                   </div>
 
@@ -332,11 +312,7 @@ export function SettingsModule() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs">KRA PIN</Label>
-                      <Input 
-                        value={form.kraPin} 
-                        onChange={e => setForm({ ...form, kraPin: e.target.value })} 
-                        placeholder="e.g., P051927399I"
-                      />
+                      <Input value={form.kraPin} onChange={e => setForm({ ...form, kraPin: e.target.value })} />
                     </div>
                     <div className="col-span-2">
                       <div className="border border-border rounded-lg p-4 mt-2">
