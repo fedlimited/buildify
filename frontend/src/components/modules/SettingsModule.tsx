@@ -109,32 +109,40 @@ export function SettingsModule() {
     }
   }, [activeTab]);
 
-  const handleSave = async () => {
-    console.log('=== SAVING COMPANY SETTINGS ===');
-    console.log('Banking fields being saved:', {
-      bank_name: form.bank_name,
-      bank_account_number: form.bank_account_number,
-      bank_branch: form.bank_branch,
-      bank_swift_code: form.bank_swift_code,
-      mpesa_paybill: form.mpesa_paybill,
-      mpesa_account_number: form.mpesa_account_number
-    });
+
+
+
+
+
+
+const handleSave = async () => {
+  console.log('=== SAVING COMPANY SETTINGS ===');
+  console.log('Banking fields being saved:', {
+    bank_name: form.bank_name,
+    bank_account_number: form.bank_account_number,
+    bank_branch: form.bank_branch,
+    bank_swift_code: form.bank_swift_code,
+    mpesa_paybill: form.mpesa_paybill,
+    mpesa_account_number: form.mpesa_account_number
+  });
+  
+  try {
+    await updateCompanySettings(form);
     
-    try {
-      await updateCompanySettings(form);
-      
-      // Force refetch to ensure store is updated
-      if (fetchCompanySettings) {
-        await fetchCompanySettings();
-      }
-      
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (error) {
-      console.error('Save failed:', error);
-      alert('Failed to save settings. Please try again.');
-    }
-  };
+    // Force a page reload to refresh all data
+    window.location.reload();
+    
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  } catch (error) {
+    console.error('Save failed:', error);
+    alert('Failed to save settings. Please try again.');
+  }
+};
+
+
+
+
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
