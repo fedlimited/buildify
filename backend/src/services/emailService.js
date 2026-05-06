@@ -48,7 +48,7 @@ async function sendOTP(email, code, purpose = 'login') {
     await transporter.sendMail({
       from: `"Bochi Construction Suite" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: `Your ${purpose} verification code - BOCHI`,
+      subject: `Your ${purpose} verification code - Bochi`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -62,7 +62,7 @@ async function sendOTP(email, code, purpose = 'login') {
         <body>
           <div class="container">
             <h2>Bochi Construction Suite</h2>
-            <p>Your verification code to ${purposeText} BOCHI is:</p>
+            <p>Your verification code to ${purposeText} Bochi is:</p>
             <div class="code">${code}</div>
             <p>This code will expire in 10 minutes.</p>
             <p>If you didn't request this, please ignore this email.</p>
