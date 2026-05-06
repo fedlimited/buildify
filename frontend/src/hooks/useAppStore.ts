@@ -2586,10 +2586,18 @@ updateCurrencySettings: async (settings) => {
 
 
 
+
+
+
+
+
+
+
 // ========== SETTINGS ==========
 fetchCompanySettings: async () => {
   try {
     console.log('Fetching company settings from API...');
+    storage.setCompanySettings(null);
     const settings = await api.getSettings();
     console.log('Settings from API:', settings);
     
@@ -2630,6 +2638,17 @@ fetchCompanySettings: async () => {
     console.error('Failed to fetch company settings:', error);
   }
 },
+
+
+
+
+
+
+
+
+
+
+
 
 updateCompanySettings: async (s) => {
   try {

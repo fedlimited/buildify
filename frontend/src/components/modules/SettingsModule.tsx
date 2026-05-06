@@ -48,12 +48,18 @@ export function SettingsModule() {
   const fileRef = useRef<HTMLInputElement>(null);
   const logoRef = useRef<HTMLInputElement>(null);
 
-  // Fetch settings when component mounts
-  useEffect(() => {
-    if (fetchCompanySettings) {
-      fetchCompanySettings();
-    }
-  }, [fetchCompanySettings]);
+
+
+// Fetch settings when component mounts
+useEffect(() => {
+  console.log('SettingsModule mounted, fetching company settings...');
+  if (fetchCompanySettings) {
+    fetchCompanySettings();
+  }
+}, [fetchCompanySettings]);
+
+
+
 
   // IMPORTANT: Update form when companySettings changes (after save or refresh)
   useEffect(() => {
