@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { storage } from '@/lib/storage';
-import { Building, Download, Upload, RotateCcw, Database, Save, ImageIcon, Trash2, Users, CreditCard, Shield, Phone, Mail, Globe, Landmark, Smartphone, Link as LinkIcon, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
+import { Building, Download, Upload, RotateCcw, Database, Save, ImageIcon, Trash2, Users, CreditCard, Shield, Phone, Mail, Globe, Landmark, Smartphone, Link as LinkIcon, Facebook, Twitter, Linkedin, Instagram, HelpCircle, Info, AlertCircle } from 'lucide-react';
 import { BillingModule } from './BillingModule';
 import { UsersModule } from './UsersModule';
 
@@ -48,20 +48,14 @@ export function SettingsModule() {
   const fileRef = useRef<HTMLInputElement>(null);
   const logoRef = useRef<HTMLInputElement>(null);
 
+  // Fetch settings when component mounts
+  useEffect(() => {
+    if (fetchCompanySettings) {
+      fetchCompanySettings();
+    }
+  }, [fetchCompanySettings]);
 
-
-// Fetch settings when component mounts
-useEffect(() => {
-  console.log('SettingsModule mounted, fetching company settings...');
-  if (fetchCompanySettings) {
-    fetchCompanySettings();
-  }
-}, [fetchCompanySettings]);
-
-
-
-
-  // IMPORTANT: Update form when companySettings changes (after save or refresh)
+  // Update form when companySettings changes
   useEffect(() => {
     if (companySettings) {
       console.log('Company settings loaded from store:', companySettings);
@@ -115,40 +109,32 @@ useEffect(() => {
     }
   }, [activeTab]);
 
-
-
-
-
-
-
-const handleSave = async () => {
-  console.log('=== SAVING COMPANY SETTINGS ===');
-  console.log('Banking fields being saved:', {
-    bank_name: form.bank_name,
-    bank_account_number: form.bank_account_number,
-    bank_branch: form.bank_branch,
-    bank_swift_code: form.bank_swift_code,
-    mpesa_paybill: form.mpesa_paybill,
-    mpesa_account_number: form.mpesa_account_number
-  });
-  
-  try {
-    await updateCompanySettings(form);
+  const handleSave = async () => {
+    console.log('=== SAVING COMPANY SETTINGS ===');
+    console.log('Banking fields being saved:', {
+      bank_name: form.bank_name,
+      bank_account_number: form.bank_account_number,
+      bank_branch: form.bank_branch,
+      bank_swift_code: form.bank_swift_code,
+      mpesa_paybill: form.mpesa_paybill,
+      mpesa_account_number: form.mpesa_account_number
+    });
     
-    // Force a page reload to refresh all data
-    window.location.reload();
-    
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  } catch (error) {
-    console.error('Save failed:', error);
-    alert('Failed to save settings. Please try again.');
-  }
-};
-
-
-
-
+    try {
+      await updateCompanySettings(form);
+      
+      // Force refetch to ensure store is updated
+      if (fetchCompanySettings) {
+        await fetchCompanySettings();
+      }
+      
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (error) {
+      console.error('Save failed:', error);
+      alert('Failed to save settings. Please try again.');
+    }
+  };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -242,15 +228,16 @@ const handleSave = async () => {
           </TabsTrigger>
         </TabsList>
 
-        {/* General Tab */}
+        {/* General Tab - Improved Layout */}
         <TabsContent value="general" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Settings Forms */}
             <div className="lg:col-span-2 space-y-6">
+              
               {/* Company Logo */}
-              <div className="bg-card rounded-xl border border-border p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <ImageIcon size={20} className="text-accent" />
+              <div className="bg-card rounded-xl border border-border p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <ImageIcon size={18} className="text-accent" />
                   <h3 className="font-semibold text-card-foreground">Company Logo</h3>
                 </div>
                 <div className="flex items-center gap-4">
@@ -286,69 +273,105 @@ const handleSave = async () => {
                 <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
               </div>
 
-              {/* Company Information */}
-              <div className="bg-card rounded-xl border border-border p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Building size={20} className="text-accent" />
+              {/* Company Information - 2 Column Layout */}
+              <div className="bg-card rounded-xl border border-border p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <Building size={18} className="text-accent" />
                   <h3 className="font-semibold text-card-foreground">Company Information</h3>
-                </div>
-                <div className="grid gap-3">
-                  <div>
-                    <Label className="text-xs">Company Name</Label>
-                    <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+                  <div className="ml-auto text-xs text-muted-foreground">
+                    <Info size={12} className="inline mr-1" /> Required for legal documents
                   </div>
-                  <div>
-                    <Label className="text-xs">Address</Label>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="md:col-span-2">
+                    <Label className="text-xs font-semibold">Company Name</Label>
+                    <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Appears on all invoices and official documents</p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label className="text-xs font-semibold">Physical Address</Label>
                     <Input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
                   </div>
-
-                  {/* Phone, Email, Website, VAT Registration */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs flex items-center gap-1"><Phone size={12} /> Phone Number</Label>
-                      <Input value={form.phone || ''} onChange={e => setForm({ ...form, phone: e.target.value })} />
-                    </div>
-                    <div>
-                      <Label className="text-xs flex items-center gap-1"><Mail size={12} /> Email Address</Label>
-                      <Input value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} />
-                    </div>
-                    <div>
-                      <Label className="text-xs flex items-center gap-1"><Globe size={12} /> Website</Label>
-                      <Input value={form.website || ''} onChange={e => setForm({ ...form, website: e.target.value })} placeholder="https://bochi.ke" />
-                    </div>
-                    <div>
-                      <Label className="text-xs">VAT Registration Number</Label>
-                      <Input value={form.vatRegistrationNumber || ''} onChange={e => setForm({ ...form, vatRegistrationNumber: e.target.value })} />
-                    </div>
+                  <div>
+                    <Label className="text-xs flex items-center gap-1"><Phone size={12} /> Phone Number</Label>
+                    <Input value={form.phone || ''} onChange={e => setForm({ ...form, phone: e.target.value })} />
                   </div>
+                  <div>
+                    <Label className="text-xs flex items-center gap-1"><Mail size={12} /> Email Address</Label>
+                    <Input value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs flex items-center gap-1"><Globe size={12} /> Website</Label>
+                    <Input value={form.website || ''} onChange={e => setForm({ ...form, website: e.target.value })} placeholder="https://bochi.ke" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">KRA PIN</Label>
+                    <Input value={form.kraPin} onChange={e => setForm({ ...form, kraPin: e.target.value })} />
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Your tax registration number</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs">VAT Registration Number</Label>
+                    <Input value={form.vatRegistrationNumber || ''} onChange={e => setForm({ ...form, vatRegistrationNumber: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Default VAT Rate (%)</Label>
+                    <Input 
+                      type="number" 
+                      value={form.vat_rate || 16} 
+                      onChange={e => setForm({ ...form, vat_rate: Number(e.target.value) })}
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Standard rate is 16% for Kenya</p>
+                  </div>
+                </div>
+              </div>
 
-                  {/* KRA PIN and Currency */}
-                  <div className="grid grid-cols-2 gap-3">
+              {/* Currency & Financial Settings */}
+              <div className="bg-card rounded-xl border border-border p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <CreditCard size={18} className="text-accent" />
+                  <h3 className="font-semibold text-card-foreground">Financial Settings</h3>
+                </div>
+                <div className="border border-border rounded-lg p-4 bg-muted/20">
+                  <div className="flex items-center justify-between flex-wrap gap-4">
                     <div>
-                      <Label className="text-xs">KRA PIN</Label>
-                      <Input value={form.kraPin} onChange={e => setForm({ ...form, kraPin: e.target.value })} />
+                      <p className="text-sm font-semibold">Currency Settings</p>
+                      <p className="text-xs text-muted-foreground">Affects all financial transactions: Income, Expenses, Invoices, Purchase Orders</p>
+                      <p className="text-xs text-muted-foreground mt-1">⚠️ Changing currency will update all financial displays</p>
                     </div>
-                    <div className="col-span-2">
-                      <div className="border border-border rounded-lg p-4 mt-2">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="text-base font-semibold">Currency Settings</h3>
-                            <p className="text-sm text-muted-foreground">Choose your preferred currency for all financial transactions</p>
-                            <p className="text-xs text-muted-foreground mt-1">Affects Income, Expenses, Invoices, Purchase Orders, and Reports</p>
-                          </div>
-                          <CurrencySelector />
-                        </div>
-                      </div>
+                    <CurrencySelector />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mt-3">
+                  <div>
+                    <Label className="text-xs">Fiscal Year Start</Label>
+                    <select 
+                      value={form.fiscal_year_start || 'January'}
+                      onChange={e => setForm({ ...form, fiscal_year_start: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-background"
+                    >
+                      {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map(month => (
+                        <option key={month} value={month}>{month}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Number Format</Label>
+                    <div className="text-sm text-muted-foreground mt-2">
+                      {form.thousand_separator || ','}{form.decimal_separator || '.'}00
+                      <span className="text-xs ml-2">(Thousands, Decimal)</span>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Banking & Payment Information */}
-              <div className="bg-card rounded-xl border border-border p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Landmark size={20} className="text-accent" />
+              <div className="bg-card rounded-xl border border-border p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <Landmark size={18} className="text-accent" />
                   <h3 className="font-semibold text-card-foreground">Banking & Payment Information</h3>
+                  <div className="ml-auto text-xs text-muted-foreground">
+                    <HelpCircle size={12} className="inline mr-1" /> Appears on invoices
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
@@ -396,19 +419,22 @@ const handleSave = async () => {
                     <Input 
                       value={form.mpesa_account_number || ''} 
                       onChange={e => setForm({ ...form, mpesa_account_number: e.target.value })}
-                      placeholder="Reference for payments"
+                      placeholder="Reference for payments (e.g., INV{{number}})"
                     />
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground mt-4">
-                  These details will appear on your invoices for client payment reference.
-                </p>
+                <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                  <p className="text-xs text-blue-700 dark:text-blue-300 flex items-center gap-1">
+                    <Info size={12} />
+                    <span>These details will appear in the "Payment Instructions" section on your invoices.</span>
+                  </p>
+                </div>
               </div>
 
               {/* Social Media Links */}
-              <div className="bg-card rounded-xl border border-border p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <LinkIcon size={20} className="text-accent" />
+              <div className="bg-card rounded-xl border border-border p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <LinkIcon size={18} className="text-accent" />
                   <h3 className="font-semibold text-card-foreground">Social Media (Optional)</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -448,7 +474,7 @@ const handleSave = async () => {
               </div>
 
               {/* Save Button */}
-              <div className="flex justify-end">
+              <div className="flex justify-end sticky bottom-4 bg-background/95 backdrop-blur-sm p-3 rounded-lg border border-border">
                 <Button onClick={handleSave} className="w-fit">
                   <Save size={16} className="mr-1" />
                   {saved ? 'Saved ✓' : 'Save All Settings'}
@@ -456,30 +482,77 @@ const handleSave = async () => {
               </div>
             </div>
 
-            {/* Right Column - Tips */}
+            {/* Right Column - Tips & Information */}
             <div className="space-y-6">
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl border border-blue-200 dark:border-blue-800 p-5">
-                <h3 className="font-semibold text-blue-800 dark:text-blue-300 mb-3 flex items-center gap-2">
-                  <span className="text-lg">💡</span> Quick Tips
+              {/* Getting Started Guide */}
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-xl border border-green-200 dark:border-green-800 p-5">
+                <h3 className="font-semibold text-green-800 dark:text-green-300 mb-3 flex items-center gap-2">
+                  <HelpCircle size={16} />
+                  Quick Setup Guide
                 </h3>
-                <ul className="space-y-2 text-sm text-blue-700 dark:text-blue-300">
-                  <li className="flex items-start gap-2"><span className="text-blue-500">•</span> Upload your company logo to brand invoices and purchase orders</li>
-                  <li className="flex items-start gap-2"><span className="text-blue-500">•</span> Set your preferred currency - all financial reports will update automatically</li>
-                  <li className="flex items-start gap-2"><span className="text-blue-500">•</span> Add banking details for automatic inclusion on invoices</li>
-                  <li className="flex items-start gap-2"><span className="text-blue-500">•</span> M-Pesa Paybill makes mobile payments easier for clients</li>
-                  <li className="flex items-start gap-2"><span className="text-blue-500">•</span> Regular backups are recommended - export your data weekly</li>
-                </ul>
+                <div className="space-y-3 text-sm text-green-700 dark:text-green-300">
+                  <div className="flex items-start gap-2">
+                    <span className="font-bold text-green-600">1.</span>
+                    <span>Upload your <strong>company logo</strong> for branding on invoices</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-bold text-green-600">2.</span>
+                    <span>Set your <strong>currency</strong> (KES for Kenya)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-bold text-green-600">3.</span>
+                    <span>Add <strong>banking details</strong> for automatic inclusion on invoices</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-bold text-green-600">4.</span>
+                    <span>Enter <strong>KRA PIN & VAT</strong> for tax compliance</span>
+                  </div>
+                </div>
               </div>
+
+              {/* Where Info Appears */}
+              <div className="bg-card rounded-xl border border-border p-5">
+                <h3 className="font-semibold text-card-foreground mb-3 flex items-center gap-2">
+                  <Info size={16} />
+                  Where This Info Appears
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between items-center py-1 border-b border-border">
+                    <span className="text-muted-foreground">Company Logo</span>
+                    <span className="text-xs bg-muted px-2 py-0.5 rounded">Invoices, POs</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-border">
+                    <span className="text-muted-foreground">Banking Details</span>
+                    <span className="text-xs bg-muted px-2 py-0.5 rounded">Invoice Payment Section</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-border">
+                    <span className="text-muted-foreground">KRA PIN / VAT</span>
+                    <span className="text-xs bg-muted px-2 py-0.5 rounded">All Financial Documents</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-border">
+                    <span className="text-muted-foreground">Currency</span>
+                    <span className="text-xs bg-muted px-2 py-0.5 rounded">All Money Fields</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-muted-foreground">M-Pesa Paybill</span>
+                    <span className="text-xs bg-muted px-2 py-0.5 rounded">Invoice Payment Section</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Need Help */}
               <div className="bg-card rounded-xl border border-border p-5">
                 <h3 className="font-semibold text-card-foreground mb-3 flex items-center gap-2">
                   <span className="text-lg">🆘</span> Need Help?
                 </h3>
                 <div className="space-y-3 text-sm text-muted-foreground">
-                  <p>📧 <strong>Email Support:</strong> <a href="mailto:support@bochi.ke" className="text-accent hover:underline ml-1">support@bochi.ke</a></p>
-                  <p>📖 <strong>Documentation:</strong> <a href="#" className="text-accent hover:underline ml-1">docs.bochi.ke</a></p>
+                  <p>📧 <strong>Email Support:</strong> <a href="mailto:support@bochi.ke" className="text-accent hover:underline">support@bochi.ke</a></p>
+                  <p>📖 <strong>Documentation:</strong> <a href="#" className="text-accent hover:underline">docs.bochi.ke</a></p>
                   <p>💬 <strong>Response Time:</strong> Within 24 hours</p>
                 </div>
               </div>
+
+              {/* System Status */}
               <div className="bg-card rounded-xl border border-border p-5">
                 <h3 className="font-semibold text-card-foreground mb-3 flex items-center gap-2">
                   <span className="text-lg">📊</span> System Status
@@ -492,12 +565,12 @@ const handleSave = async () => {
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Storage Used:</span>
-                    <span className="font-mono">{(JSON.stringify(localStorage).length / 1024).toFixed(1)} KB</span>
-                  </div>
-                  <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Version:</span>
                     <span className="font-mono">2.1.0</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Last Saved:</span>
+                    <span className="text-xs">{new Date().toLocaleTimeString()}</span>
                   </div>
                 </div>
               </div>
@@ -546,7 +619,7 @@ const handleSave = async () => {
           <div className="bg-card rounded-xl border border-destructive/30 p-6">
             <div className="flex items-center gap-2 mb-4">
               <Shield size={20} className="text-destructive" />
-              <h3 className="font-semibold text-card-foreground">Danger Zone</h3>
+              <h3 className="font-semibold text-destructive">Danger Zone</h3>
             </div>
             <p className="text-sm text-muted-foreground mb-4">
               These actions are irreversible. Please be careful.
