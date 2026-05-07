@@ -44,7 +44,6 @@ export function TenantManager() {
   const [sendToFiltered, setSendToFiltered] = useState(false);
   const [history, setHistory] = useState<CommunicationHistory[]>([]);
   const [showHistory, setShowHistory] = useState(false);
-  const [showEmailForm, setShowEmailForm] = useState(false);
   const [result, setResult] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>('all');
@@ -181,6 +180,93 @@ export function TenantManager() {
       return;
     }
 
+    // Create HTML version with Bochi branding and logo
+    const logoUrl = 'https://bochi.ke/Bochi_logo_transparent.png';
+    const htmlMessage = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            line-height: 1.6; 
+            color: #1f2937; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f9fafb;
+          }
+          .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            background: #ffffff; 
+            border-radius: 12px; 
+            overflow: hidden; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          }
+          .header { 
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); 
+            padding: 30px 20px; 
+            text-align: center; 
+          }
+          .logo {
+            max-width: 140px;
+            height: auto;
+            margin: 0 auto;
+          }
+          .tagline { 
+            color: rgba(255,255,255,0.9); 
+            font-size: 13px; 
+            margin-top: 8px;
+          }
+          .content { 
+            padding: 30px; 
+          }
+          .message { 
+            color: #374151; 
+            font-size: 15px; 
+            line-height: 1.6; 
+          }
+          .footer { 
+            text-align: center; 
+            padding: 20px; 
+            font-size: 12px; 
+            color: #6b7280; 
+            border-top: 1px solid #e5e7eb; 
+            background-color: #f9fafb;
+          }
+          hr {
+            border: none;
+            border-top: 1px solid #e5e7eb;
+            margin: 20px 0;
+          }
+          @media (max-width: 600px) {
+            .content { padding: 20px; }
+            .logo { max-width: 100px; }
+          }
+        </style>
+      </head>
+      <body style="margin: 0; padding: 20px; background-color: #f9fafb;">
+        <div class="container">
+          <div class="header">
+            <img src="${logoUrl}" alt="BOCHI" class="logo" />
+            <div class="tagline">Construction Suite</div>
+          </div>
+          <div class="content">
+            <div class="message">
+              ${message.replace(/\n/g, '<br>')}
+            </div>
+          </div>
+          <div class="footer">
+            <p>&copy; ${new Date().getFullYear()} Bochi Construction Suite. All rights reserved.</p>
+            <p style="font-size: 11px; color: #9ca3af;">This is an automated message from Bochi Admin. Please do not reply.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
     let tenantIdsToSend = [];
     if (sendToAll) {
       tenantIdsToSend = [];
@@ -201,7 +287,7 @@ export function TenantManager() {
         },
         body: JSON.stringify({
           subject,
-          message,
+          message: htmlMessage,
           masterPassword,
           sendToAll: sendToAll,
           tenantIds: tenantIdsToSend
@@ -247,49 +333,9 @@ export function TenantManager() {
     return badges[status?.toLowerCase()] || 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400';
   };
 
-  // Email template with Bochi branding
-  const getEmailTemplate = (customMessage: string) => {
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-          .logo { font-size: 28px; font-weight: bold; color: white; margin-bottom: 5px; }
-          .tagline { color: rgba(255,255,255,0.9); font-size: 14px; }
-          .content { background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-          .message { color: #333; font-size: 16px; line-height: 1.6; }
-          .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; border-top: 1px solid #eee; margin-top: 20px; }
-          .button { display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <div class="logo">🏗️ BOCHI</div>
-            <div class="tagline">Construction Suite</div>
-          </div>
-          <div class="content">
-            <div class="message">
-              ${customMessage.replace(/\n/g, '<br>')}
-            </div>
-          </div>
-          <div class="footer">
-            <p>&copy; ${new Date().getFullYear()} Bochi Construction Suite. All rights reserved.</p>
-            <p style="font-size: 11px; color: #999;">This is an automated message from Bochi Admin. Please do not reply.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-  };
-
   return (
     <div className="p-4 space-y-4">
-      {/* Header Row with Master Password */}
+      {/* Header Row */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Users size={20} className="text-amber-500" />
@@ -317,76 +363,12 @@ export function TenantManager() {
             <Copy size={14} className="mr-1" />
             {copiedEmails ? 'Copied!' : 'Copy Emails'}
           </Button>
-          <Button 
-            variant={showEmailForm ? "default" : "outline"} 
-            size="sm" 
-            onClick={() => setShowEmailForm(!showEmailForm)}
-            className={showEmailForm ? "bg-amber-500 hover:bg-amber-600" : ""}
-          >
-            <Mail size={14} className="mr-1" />
-            Send Email
-          </Button>
           <Button variant="outline" size="sm" onClick={fetchTenants} disabled={loading}>
             <RefreshCw size={14} className={`mr-1 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
       </div>
-
-      {/* Expandable Email Form */}
-      {showEmailForm && (
-        <Card className="border-amber-200 dark:border-amber-800">
-          <CardHeader className="py-2 px-3 bg-amber-50 dark:bg-amber-950/20">
-            <CardTitle className="text-sm font-medium text-amber-700 dark:text-amber-400">Compose Email</CardTitle>
-          </CardHeader>
-          <CardContent className="py-3 px-3 space-y-3">
-            <Input
-              placeholder="Subject"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              className="h-10 text-base"
-            />
-            <Textarea
-              placeholder="Write your message here..."
-              rows={4}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="text-base"
-            />
-            <div className="flex gap-4 text-sm">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={sendToAll}
-                  onChange={(e) => {
-                    setSendToAll(e.target.checked);
-                    if (e.target.checked) setSendToFiltered(false);
-                  }}
-                />
-                <span>All tenants ({tenants.length})</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={sendToFiltered}
-                  onChange={(e) => {
-                    setSendToFiltered(e.target.checked);
-                    if (e.target.checked) setSendToAll(false);
-                  }}
-                />
-                <span>Filtered ({filteredTenants.length})</span>
-              </label>
-              {!sendToAll && !sendToFiltered && (
-                <span className="text-muted-foreground">Manual: {selectedTenants.length} selected</span>
-              )}
-            </div>
-            <Button onClick={handleSendEmail} disabled={sending} className="w-full bg-amber-500 hover:bg-amber-600">
-              <Send size={14} className="mr-2" />
-              {sending ? 'Sending...' : 'Send Email'}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Result Message */}
       {result && (
@@ -399,6 +381,78 @@ export function TenantManager() {
           <span>{result.text}</span>
         </div>
       )}
+
+      {/* Email Composition Card - Always Visible with Good Space */}
+      <Card className="border-amber-200 dark:border-amber-800">
+        <CardHeader className="py-3 px-4 bg-amber-50 dark:bg-amber-950/20">
+          <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+            <Mail size={18} />
+            Compose Email
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="py-4 px-4 space-y-4">
+          <div>
+            <Label className="text-sm font-medium mb-1 block">Subject</Label>
+            <Input
+              placeholder="Enter email subject..."
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className="h-11 text-base"
+            />
+          </div>
+          <div>
+            <Label className="text-sm font-medium mb-1 block">Message</Label>
+            <Textarea
+              placeholder="Write your message here. This will be sent to all selected tenants..."
+              rows={6}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="text-base resize-y"
+            />
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 cursor-pointer text-sm">
+                <input
+                  type="checkbox"
+                  checked={sendToAll}
+                  onChange={(e) => {
+                    setSendToAll(e.target.checked);
+                    if (e.target.checked) setSendToFiltered(false);
+                  }}
+                  className="w-4 h-4"
+                />
+                <span>All tenants ({tenants.length})</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer text-sm">
+                <input
+                  type="checkbox"
+                  checked={sendToFiltered}
+                  onChange={(e) => {
+                    setSendToFiltered(e.target.checked);
+                    if (e.target.checked) setSendToAll(false);
+                  }}
+                  className="w-4 h-4"
+                />
+                <span>Filtered ({filteredTenants.length})</span>
+              </label>
+              {!sendToAll && !sendToFiltered && (
+                <span className="text-sm text-muted-foreground">
+                  Manual: {selectedTenants.length} selected
+                </span>
+              )}
+            </div>
+            <Button 
+              onClick={handleSendEmail} 
+              disabled={sending} 
+              className="bg-amber-500 hover:bg-amber-600 px-6"
+            >
+              <Send size={16} className="mr-2" />
+              {sending ? 'Sending...' : 'Send Email'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stats Row */}
       <div className="grid grid-cols-4 gap-3 text-center">
@@ -420,21 +474,21 @@ export function TenantManager() {
         </div>
       </div>
 
-      {/* Filters Row - Dark mode compatible */}
+      {/* Filters Row */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[150px]">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search..."
+            placeholder="Search by name, email, or company..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8 h-9 text-sm bg-background border-input"
+            className="pl-8 h-9 text-sm"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as any)}
-          className="px-3 py-1.5 border rounded-md text-sm bg-background border-input text-foreground focus:ring-1 focus:ring-amber-500"
+          className="px-3 py-1.5 border rounded-md text-sm bg-background"
         >
           <option value="all">All Status</option>
           <option value="active">Active</option>
@@ -443,7 +497,7 @@ export function TenantManager() {
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value as any)}
-          className="px-3 py-1.5 border rounded-md text-sm bg-background border-input text-foreground focus:ring-1 focus:ring-amber-500"
+          className="px-3 py-1.5 border rounded-md text-sm bg-background"
         >
           <option value="all">All Roles</option>
           <option value="admin">Admin</option>
@@ -452,7 +506,7 @@ export function TenantManager() {
         <select
           value={subscriptionFilter}
           onChange={(e) => setSubscriptionFilter(e.target.value as any)}
-          className="px-3 py-1.5 border rounded-md text-sm bg-background border-input text-foreground focus:ring-1 focus:ring-amber-500"
+          className="px-3 py-1.5 border rounded-md text-sm bg-background"
         >
           <option value="all">All Subscriptions</option>
           <option value="active">Active</option>
@@ -549,11 +603,11 @@ export function TenantManager() {
         </CardContent>
       </Card>
 
-      {/* Communication History */}
+      {/* Communication History - Collapsible */}
       <div>
         <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)} className="text-sm">
           <Clock size={14} className="mr-1" />
-          {showHistory ? 'Hide' : 'Show'} History ({history.length})
+          {showHistory ? 'Hide' : 'Show'} Communication History ({history.length})
           {showHistory ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />}
         </Button>
         {showHistory && (
@@ -567,7 +621,7 @@ export function TenantManager() {
                     <span className="font-medium text-sm">{comm.subject}</span>
                     <span className="text-xs text-muted-foreground">{new Date(comm.sent_at).toLocaleDateString()}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground line-clamp-2">{comm.message}</p>
+                  <p className="text-sm text-muted-foreground line-clamp-2">{comm.message.replace(/<[^>]*>/g, '').substring(0, 150)}...</p>
                   <p className="text-xs text-muted-foreground mt-1">Sent to {comm.recipient_count} recipient(s)</p>
                 </div>
               ))
