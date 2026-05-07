@@ -83,27 +83,37 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <>
       <style>{`
-        .overflow-y-auto::-webkit-scrollbar {
+        /* Custom scrollbar for sidebar navigation */
+        .sidebar-nav {
+          flex: 1;
+          overflow-y: auto;
+          scrollbar-width: thin;
+          scrollbar-color: #c1c1c1 #f1f1f1;
+        }
+        .sidebar-nav::-webkit-scrollbar {
           width: 4px;
         }
-        .overflow-y-auto::-webkit-scrollbar-track {
+        .sidebar-nav::-webkit-scrollbar-track {
           background: #f1f1f1;
           border-radius: 4px;
         }
-        .overflow-y-auto::-webkit-scrollbar-thumb {
+        .sidebar-nav::-webkit-scrollbar-thumb {
           background: #c1c1c1;
           border-radius: 4px;
         }
+        .sidebar-nav::-webkit-scrollbar-thumb:hover {
+          background: #a1a1a1;
+        }
       `}</style>
       <div className="min-h-screen bg-background">
-        {/* Admin Sidebar */}
+        {/* Admin Sidebar - Flex column layout */}
         <aside 
-          className={`fixed left-0 top-0 h-full bg-card border-r transition-all duration-300 z-40 ${
+          className={`fixed left-0 top-0 h-full bg-card border-r transition-all duration-300 z-40 flex flex-col ${
             sidebarCollapsed ? 'w-[68px]' : 'w-[260px]'
           }`}
         >
-          {/* Logo / Header */}
-          <div className="h-16 flex items-center justify-between px-4 border-b">
+          {/* Logo / Header - Fixed at top */}
+          <div className="h-16 flex items-center justify-between px-4 border-b flex-shrink-0">
             {!sidebarCollapsed && (
               <div className="flex items-center gap-2">
                 <Shield className="w-6 h-6 text-primary" />
@@ -125,8 +135,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </button>
           </div>
 
-          {/* Navigation */}
-          <nav className="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-180px)]">
+          {/* Navigation - Scrollable middle section */}
+          <nav className="sidebar-nav p-3 space-y-1">
             {navItems.map((item) => (
               <NavLink
                 key={item.path}
@@ -147,8 +157,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             ))}
           </nav>
 
-          {/* Bottom Section */}
-          <div className="absolute bottom-0 left-0 right-0 p-3 border-t">
+          {/* Bottom Section - Fixed at bottom */}
+          <div className="p-3 border-t flex-shrink-0">
             {/* Return to App */}
             <NavLink
               to="/dashboard"
