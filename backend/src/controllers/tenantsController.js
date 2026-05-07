@@ -166,6 +166,37 @@ const tenantsController = {
       console.error('Error fetching communication history:', error);
       res.status(500).json({ error: error.message });
     }
+  },
+  
+  // Clear communication history
+  clearCommunicationHistory: async (req, res) => {
+    try {
+      const db = await getDb();
+      const { masterPassword } = req.body;
+      
+      // Verify master password
+      if (masterPassword !== process.env.ADMIN_MASTER_PASSWORD) {
+        return res.status(401).json({ error: 'Invalid master password' });
+      }
+      
+      // Check if user is super admin
+      const isSuperAdmin = req.user?.isSuperAdmin || req.user?.role === 'super_admin';
+      if (!isSuperAdmin) {
+        return res.status(403).json({ error: 'Super admin access required' });
+      }
+      
+      const result = await db.query(`DELETE FROM admin_communications`);
+      
+      res.json({
+        success: true,
+        message: `Cleared ${result.rowCount} communication records`,
+        deletedCount: result.rowCount
+      });
+      
+    } catch (error) {
+      console.error('Error clearing communication history:', error);
+      res.status(500).json({ error: error.message });
+    }
   }
 };
 

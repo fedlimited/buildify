@@ -155,6 +155,7 @@ app.get('/api/admin/payments/stats', authenticateToken, adminPaymentsController.
 app.get('/api/admin/tenants', authenticateToken, tenantsController.getAllTenants);
 app.post('/api/admin/tenants/send-email', authenticateToken, tenantsController.sendBulkEmail);
 app.get('/api/admin/communications', authenticateToken, tenantsController.getCommunicationHistory);
+app.delete('/api/admin/communications/clear', authenticateToken, tenantsController.clearCommunicationHistory);
 
 
 // Currency routes

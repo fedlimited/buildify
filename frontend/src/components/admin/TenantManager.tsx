@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Mail, Send, Shield, CheckCircle, XCircle, Clock, Search, Filter, RefreshCw, Eye, EyeOff, Copy, FilterX, ChevronDown, ChevronUp } from 'lucide-react';
+import { Users, Mail, Send, Shield, CheckCircle, XCircle, Clock, Search, Filter, RefreshCw, Eye, EyeOff, Copy, FilterX, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -167,6 +167,43 @@ export function TenantManager() {
     console.log('🔍 Filters cleared');
   };
 
+  const clearCommunicationHistory = async () => {
+    if (!masterPassword) {
+      showResult('error', 'Master password required to clear history');
+      return;
+    }
+    
+    const confirmClear = confirm('⚠️ Are you sure you want to clear ALL communication history? This action cannot be undone.');
+    if (!confirmClear) return;
+    
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/admin/communications/clear`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ masterPassword })
+      });
+      
+      const data = await response.json();
+      if (response.ok) {
+        showResult('success', 'Communication history cleared successfully');
+        setHistory([]);
+        console.log('✅ Communication history cleared');
+      } else {
+        showResult('error', data.error || 'Failed to clear history');
+      }
+    } catch (error) {
+      console.error('❌ Error clearing history:', error);
+      showResult('error', 'Network error - check console');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSendEmail = async () => {
     console.log('📧 ========== STARTING EMAIL SEND ==========');
     
@@ -208,91 +245,6 @@ export function TenantManager() {
       console.log(`📧 Sending to ${recipientCount} manually selected tenants`);
     }
 
-    const htmlMessage = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-          body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            line-height: 1.6; 
-            color: #1f2937; 
-            margin: 0; 
-            padding: 0; 
-            background-color: #f9fafb;
-          }
-          .container { 
-            max-width: 600px; 
-            margin: 0 auto; 
-            background: #ffffff; 
-            border-radius: 12px; 
-            overflow: hidden; 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-          }
-          .header { 
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); 
-            padding: 30px 20px; 
-            text-align: center; 
-          }
-          .header-title {
-            font-size: 28px;
-            font-weight: bold;
-            color: white;
-            letter-spacing: 1px;
-          }
-          .tagline { 
-            color: rgba(255,255,255,0.9); 
-            font-size: 13px; 
-            margin-top: 8px;
-          }
-          .content { 
-            padding: 30px; 
-          }
-          .message { 
-            color: #374151; 
-            font-size: 15px; 
-            line-height: 1.6; 
-          }
-          .footer { 
-            text-align: center; 
-            padding: 20px; 
-            font-size: 12px; 
-            color: #6b7280; 
-            border-top: 1px solid #e5e7eb; 
-            background-color: #f9fafb;
-          }
-          @media (max-width: 600px) {
-            .content { padding: 20px; }
-            .header-title { font-size: 22px; }
-          }
-        </style>
-      </head>
-      <body style="margin: 0; padding: 20px; background-color: #f9fafb;">
-        <div class="container">
-          <div class="header">
-            <div class="header-title">BOCHI</div>
-            <div class="tagline">Construction Suite</div>
-          </div>
-          <div class="content">
-            <div class="message">
-              ${message.replace(/\n/g, '<br>')}
-            </div>
-          </div>
-          <div class="footer">
-            <p>&copy; ${new Date().getFullYear()} Bochi Construction Suite</p>
-            <p style="font-size: 11px;">This is an automated message from Bochi Admin. Please do not reply.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-
-    console.log('📤 Sending request to backend...');
-    console.log('   Subject:', subject);
-    console.log('   Recipients:', recipientCount);
-    
     setSending(true);
     try {
       const token = localStorage.getItem('token');
@@ -304,7 +256,7 @@ export function TenantManager() {
         },
         body: JSON.stringify({
           subject,
-          message: htmlMessage,
+          message,
           masterPassword,
           sendToAll: sendToAll,
           tenantIds: tenantIdsToSend
@@ -628,11 +580,30 @@ export function TenantManager() {
 
       {/* Communication History */}
       <div>
-        <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)} className="text-sm">
-          <Clock size={14} className="mr-1" />
-          {showHistory ? 'Hide' : 'Show'} Communication History ({history.length})
-          {showHistory ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />}
-        </Button>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-medium">Communication History</h3>
+            <p className="text-xs text-muted-foreground">Recent email broadcasts sent to tenants</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {history.length > 0 && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={clearCommunicationHistory}
+                className="text-red-600 hover:text-red-700 border-red-300 hover:border-red-400"
+              >
+                <Trash2 size={14} className="mr-1" />
+                Clear History
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)}>
+              <Clock size={14} className="mr-1" />
+              {showHistory ? 'Hide' : 'Show'} History ({history.length})
+              {showHistory ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />}
+            </Button>
+          </div>
+        </div>
         {showHistory && (
           <div className="mt-2 space-y-2 max-h-60 overflow-y-auto">
             {history.length === 0 ? (
