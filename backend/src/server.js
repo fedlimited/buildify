@@ -648,12 +648,14 @@ async function startServer() {
 
 
 
-// TEST EMAIL ROUTE - Remove after testing
+// TEST EMAIL ROUTE - Temporary for debugging
 app.post('/api/test-email', authenticateToken, async (req, res) => {
   try {
     const { sendOTP } = require('./services/emailService');
     const testEmail = req.body.email || 'pharesatai@gmail.com';
     const testCode = '123456';
+    
+    console.log(`Sending test email to: ${testEmail}`);
     
     const result = await sendOTP(testEmail, testCode, 'test');
     
