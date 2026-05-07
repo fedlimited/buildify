@@ -63,11 +63,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       label: 'Payments', 
       icon: DollarSign 
     },
-    { 
-      path: '/admin/payment-manager', 
-      label: 'Payment Manager', 
-      icon: Trash2 
-    },
+
+
+
     { 
       path: '/admin/tenants', 
       label: 'Tenant Comm', 
