@@ -4,8 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { API_BASE_URL } from '@/config/api';
 
 interface Tenant {
@@ -47,23 +46,19 @@ export function TenantManager() {
   const [showHistory, setShowHistory] = useState(false);
   const [result, setResult] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   
-  // Filter states
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [subscriptionFilter, setSubscriptionFilter] = useState<'all' | 'active' | 'trial' | 'expired'>('all');
   const [copiedEmails, setCopiedEmails] = useState(false);
 
-  // Fetch tenants on load
   useEffect(() => {
     fetchTenants();
     fetchHistory();
   }, []);
 
-  // Filter tenants when any filter changes
   useEffect(() => {
     let filtered = [...tenants];
     
-    // Search filter
     if (searchTerm) {
       filtered = filtered.filter(t => 
         t.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -72,14 +67,12 @@ export function TenantManager() {
       );
     }
     
-    // Status filter (active/inactive)
     if (statusFilter !== 'all') {
       filtered = filtered.filter(t => 
         statusFilter === 'active' ? t.is_active === 1 : t.is_active === 0
       );
     }
     
-    // Subscription filter
     if (subscriptionFilter !== 'all') {
       filtered = filtered.filter(t => {
         const subStatus = t.subscription_status?.toLowerCase() || 'trial';
@@ -90,7 +83,6 @@ export function TenantManager() {
       });
     }
     
-    // Role filter
     if (roleFilter !== 'all') {
       filtered = filtered.filter(t => {
         const role = t.role?.toLowerCase() || 'user';
@@ -103,7 +95,6 @@ export function TenantManager() {
     setFilteredTenants(filtered);
   }, [searchTerm, tenants, statusFilter, subscriptionFilter, roleFilter]);
 
-  // Handle select all (only selects filtered tenants)
   useEffect(() => {
     if (selectAll) {
       setSelectedTenants(filteredTenants.map(t => t.user_id));
@@ -150,7 +141,7 @@ export function TenantManager() {
 
   const showResult = (type: 'success' | 'error', text: string) => {
     setResult({ type, text });
-    setTimeout(() => setResult(null), 5000);
+    setTimeout(() => setResult(null), 3000);
   };
 
   const copyEmailsToClipboard = () => {
@@ -161,7 +152,7 @@ export function TenantManager() {
     navigator.clipboard.writeText(emails);
     setCopiedEmails(true);
     setTimeout(() => setCopiedEmails(false), 2000);
-    showResult('success', `${selectedTenants.length || filteredTenants.length} email(s) copied to clipboard`);
+    showResult('success', `${selectedTenants.length || filteredTenants.length} email(s) copied`);
   };
 
   const clearFilters = () => {
@@ -173,23 +164,22 @@ export function TenantManager() {
 
   const handleSendEmail = async () => {
     if (!masterPassword) {
-      showResult('error', 'Master password is required');
+      showResult('error', 'Master password required');
       return;
     }
     if (!subject) {
-      showResult('error', 'Email subject is required');
+      showResult('error', 'Subject required');
       return;
     }
     if (!message) {
-      showResult('error', 'Email message is required');
+      showResult('error', 'Message required');
       return;
     }
     if (!sendToAll && !sendToFiltered && selectedTenants.length === 0) {
-      showResult('error', 'Please select recipients using one of the options above');
+      showResult('error', 'Select recipients');
       return;
     }
 
-    // Determine which tenant IDs to send to
     let tenantIdsToSend = [];
     if (sendToAll) {
       tenantIdsToSend = [];
@@ -229,10 +219,10 @@ export function TenantManager() {
         setSendToFiltered(false);
         fetchHistory();
       } else {
-        showResult('error', data.error || 'Failed to send emails');
+        showResult('error', data.error || 'Failed to send');
       }
     } catch (error) {
-      showResult('error', 'Network error. Please try again.');
+      showResult('error', 'Network error');
     } finally {
       setSending(false);
     }
@@ -257,306 +247,229 @@ export function TenantManager() {
   };
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-3">
-          <Users size={28} className="text-blue-500" />
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Tenant Communications</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Manage, filter, and communicate with all tenants</p>
-          </div>
+    <div className="p-4 space-y-3">
+      {/* Header - Compact */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Users size={20} className="text-blue-500" />
+          <h1 className="text-lg font-semibold">Tenant Communications</h1>
+          <span className="text-xs text-muted-foreground">{tenants.length} total</span>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={copyEmailsToClipboard}>
-            <Copy size={16} className="mr-2" />
+          <Button variant="outline" size="sm" onClick={copyEmailsToClipboard}>
+            <Copy size={14} className="mr-1" />
             {copiedEmails ? 'Copied!' : 'Copy Emails'}
           </Button>
-          <Button variant="outline" onClick={fetchTenants} disabled={loading}>
-            <RefreshCw size={16} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
+          <Button variant="outline" size="sm" onClick={fetchTenants} disabled={loading}>
+            <RefreshCw size={14} className={`mr-1 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
       </div>
 
-      {/* Result Message */}
+      {/* Result Message - Compact */}
       {result && (
-        <div className={`p-4 rounded-lg flex items-center gap-2 ${
+        <div className={`p-2 rounded flex items-center gap-2 text-sm ${
           result.type === 'success' 
-            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200'
-            : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200'
+            ? 'bg-green-50 text-green-700'
+            : 'bg-red-50 text-red-700'
         }`}>
-          {result.type === 'success' ? <CheckCircle size={18} /> : <XCircle size={18} />}
+          {result.type === 'success' ? <CheckCircle size={14} /> : <XCircle size={14} />}
           <span>{result.text}</span>
         </div>
       )}
 
-      {/* Stats Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-card rounded-lg border p-4">
-          <p className="text-2xl font-bold">{tenants.length}</p>
-          <p className="text-xs text-muted-foreground">Total Tenants</p>
+      {/* Stats Row - Compact */}
+      <div className="grid grid-cols-4 gap-2 text-center text-xs">
+        <div className="bg-card rounded border p-2">
+          <p className="font-bold text-base">{tenants.length}</p>
+          <p className="text-muted-foreground">Total</p>
         </div>
-        <div className="bg-card rounded-lg border p-4">
-          <p className="text-2xl font-bold text-green-600">{tenants.filter(t => t.is_active === 1).length}</p>
-          <p className="text-xs text-muted-foreground">Active Users</p>
+        <div className="bg-card rounded border p-2">
+          <p className="font-bold text-base text-green-600">{tenants.filter(t => t.is_active === 1).length}</p>
+          <p className="text-muted-foreground">Active</p>
         </div>
-        <div className="bg-card rounded-lg border p-4">
-          <p className="text-2xl font-bold text-blue-600">{tenants.filter(t => t.subscription_status === 'active').length}</p>
-          <p className="text-xs text-muted-foreground">Active Subscriptions</p>
+        <div className="bg-card rounded border p-2">
+          <p className="font-bold text-base text-blue-600">{tenants.filter(t => t.subscription_status === 'active').length}</p>
+          <p className="text-muted-foreground">Subscribed</p>
         </div>
-        <div className="bg-card rounded-lg border p-4">
-          <p className="text-2xl font-bold text-yellow-600">{selectedTenants.length}</p>
-          <p className="text-xs text-muted-foreground">Currently Selected</p>
+        <div className="bg-card rounded border p-2">
+          <p className="font-bold text-base text-yellow-600">{selectedTenants.length}</p>
+          <p className="text-muted-foreground">Selected</p>
         </div>
       </div>
 
-      {/* Master Password Input */}
+      {/* Master Password & Email Compose - Combined Compact Card */}
       <Card className="border-blue-200 dark:border-blue-800">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield size={18} />
-            Authentication Required
+        <CardHeader className="py-2 px-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Shield size={14} />
+            <Mail size={14} />
+            <span>Send Email</span>
           </CardTitle>
-          <CardDescription>Enter master password to send communications</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="relative max-w-md">
+        <CardContent className="py-2 px-3 space-y-2">
+          <div className="relative">
             <Input
               type={showPassword ? 'text' : 'password'}
-              placeholder="Enter master password"
+              placeholder="Master password"
               value={masterPassword}
               onChange={(e) => setMasterPassword(e.target.value)}
-              className="pr-10"
+              className="pr-8 h-8 text-sm"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+              className="absolute right-2 top-1/2 -translate-y-1/2"
             >
-              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
             </button>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Email Composition */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail size={18} />
-            Compose Email
-          </CardTitle>
-          <CardDescription>Create and send bulk emails to tenants</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <Label>Subject</Label>
-              <Input
-                placeholder="Email subject"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
+          <Input
+            placeholder="Subject"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="h-8 text-sm"
+          />
+          <Textarea
+            placeholder="Message"
+            rows={3}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            className="text-sm"
+          />
+          <div className="flex gap-3 text-xs">
+            <label className="flex items-center gap-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={sendToAll}
+                onChange={(e) => {
+                  setSendToAll(e.target.checked);
+                  if (e.target.checked) setSendToFiltered(false);
+                }}
               />
-            </div>
-            <div>
-              <Label>Message</Label>
-              <Textarea
-                placeholder="Write your message here..."
-                rows={6}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
+              <span>All ({tenants.length})</span>
+            </label>
+            <label className="flex items-center gap-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={sendToFiltered}
+                onChange={(e) => {
+                  setSendToFiltered(e.target.checked);
+                  if (e.target.checked) setSendToAll(false);
+                }}
               />
-            </div>
-            
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={sendToAll}
-                    onChange={(e) => {
-                      setSendToAll(e.target.checked);
-                      if (e.target.checked) {
-                        setSendToFiltered(false);
-                      }
-                    }}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm">Send to ALL tenants ({tenants.length} total)</span>
-                </label>
-                
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={sendToFiltered}
-                    onChange={(e) => {
-                      setSendToFiltered(e.target.checked);
-                      if (e.target.checked) {
-                        setSendToAll(false);
-                      }
-                    }}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm">Send to FILTERED tenants ({filteredTenants.length} recipients)</span>
-                </label>
-              </div>
-              
-              {!sendToAll && !sendToFiltered && (
-                <span className="text-sm text-gray-500">
-                  {selectedTenants.length} tenant(s) selected manually
-                </span>
-              )}
-            </div>
-            
-            <Button
-              onClick={handleSendEmail}
-              disabled={sending}
-              className="w-full md:w-auto bg-blue-600 hover:bg-blue-700"
-            >
-              <Send size={16} className="mr-2" />
-              {sending ? 'Sending...' : 'Send Email'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Filter size={18} />
-                Filter Tenants
-              </CardTitle>
-              <CardDescription>Filter by status, role, subscription, or search</CardDescription>
-            </div>
-            <Button variant="ghost" size="sm" onClick={clearFilters}>
-              <FilterX size={14} className="mr-1" />
-              Clear Filters
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <Input
-                placeholder="Search by name, email, or company..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-3 py-2 border rounded-lg bg-background"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active Users</option>
-              <option value="inactive">Inactive Users</option>
-            </select>
-            <select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value as any)}
-              className="px-3 py-2 border rounded-lg bg-background"
-            >
-              <option value="all">All Roles</option>
-              <option value="admin">Admin Users</option>
-              <option value="user">Regular Users</option>
-            </select>
-            <select
-              value={subscriptionFilter}
-              onChange={(e) => setSubscriptionFilter(e.target.value as any)}
-              className="px-3 py-2 border rounded-lg bg-background"
-            >
-              <option value="all">All Subscriptions</option>
-              <option value="active">Active Subscription</option>
-              <option value="trial">Trial</option>
-              <option value="expired">Expired</option>
-            </select>
-          </div>
-          <div className="text-sm text-muted-foreground mt-3">
-            Showing {filteredTenants.length} of {tenants.length} tenants
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Tenants List */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Users size={18} />
-                Tenants List
-              </CardTitle>
-              <CardDescription>Select tenants to send emails or copy email addresses</CardDescription>
-            </div>
-            {filteredTenants.length > 0 && (
-              <Button variant="outline" size="sm" onClick={copyEmailsToClipboard}>
-                <Copy size={14} className="mr-1" />
-                Copy All Emails
-              </Button>
+              <span>Filtered ({filteredTenants.length})</span>
+            </label>
+            {!sendToAll && !sendToFiltered && (
+              <span className="text-muted-foreground">Manual: {selectedTenants.length}</span>
             )}
           </div>
-        </CardHeader>
-        <CardContent>
+          <Button onClick={handleSendEmail} disabled={sending} size="sm" className="w-full">
+            <Send size={14} className="mr-1" />
+            {sending ? 'Sending...' : 'Send Email'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Filters - Compact Row */}
+      <div className="flex gap-2 items-center">
+        <div className="relative flex-1">
+          <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Input
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-7 h-8 text-sm"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as any)}
+          className="px-2 py-1.5 border rounded text-sm h-8"
+        >
+          <option value="all">Status: All</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+        <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value as any)}
+          className="px-2 py-1.5 border rounded text-sm h-8"
+        >
+          <option value="all">Role: All</option>
+          <option value="admin">Admin</option>
+          <option value="user">User</option>
+        </select>
+        <select
+          value={subscriptionFilter}
+          onChange={(e) => setSubscriptionFilter(e.target.value as any)}
+          className="px-2 py-1.5 border rounded text-sm h-8"
+        >
+          <option value="all">Sub: All</option>
+          <option value="active">Active</option>
+          <option value="trial">Trial</option>
+          <option value="expired">Expired</option>
+        </select>
+        <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8">
+          <FilterX size={14} />
+        </Button>
+      </div>
+
+      {/* Tenants Table - Compact */}
+      <Card>
+        <CardContent className="p-0">
           {loading ? (
-            <div className="text-center py-8">Loading tenants...</div>
+            <div className="text-center py-8">Loading...</div>
           ) : filteredTenants.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">No tenants match your filters</div>
+            <div className="text-center py-8 text-gray-500">No tenants found</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-xs">
                 <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
-                    <th className="px-4 py-3 text-left w-10">
+                    <th className="px-2 py-2 text-left w-8">
                       <input
                         type="checkbox"
                         checked={selectAll && filteredTenants.length > 0}
                         onChange={(e) => setSelectAll(e.target.checked)}
-                        className="rounded border-gray-300"
                         disabled={sendToAll || sendToFiltered}
                       />
                     </th>
-                    <th className="px-4 py-3 text-left">Tenant</th>
-                    <th className="px-4 py-3 text-left">Company</th>
-                    <th className="px-4 py-3 text-left">Email</th>
-                    <th className="px-4 py-3 text-left">Role</th>
-                    <th className="px-4 py-3 text-left">Subscription</th>
-                    <th className="px-4 py-3 text-left">Status</th>
+                    <th className="px-2 py-2 text-left">Tenant</th>
+                    <th className="px-2 py-2 text-left">Company</th>
+                    <th className="px-2 py-2 text-left">Email</th>
+                    <th className="px-2 py-2 text-left">Role</th>
+                    <th className="px-2 py-2 text-left">Subscription</th>
+                    <th className="px-2 py-2 text-left">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="divide-y">
                   {filteredTenants.map((tenant) => (
                     <tr key={tenant.user_id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         <input
                           type="checkbox"
                           checked={selectedTenants.includes(tenant.user_id)}
                           onChange={() => toggleTenant(tenant.user_id)}
-                          className="rounded border-gray-300"
                           disabled={sendToAll || sendToFiltered}
                         />
-                       </td>
-                      <td className="px-4 py-3 font-medium">{tenant.user_name}</td>
-                      <td className="px-4 py-3">{tenant.company_name}</td>
-                      <td className="px-4 py-3">
+                      </td>
+                      <td className="px-2 py-2 font-medium">{tenant.user_name}</td>
+                      <td className="px-2 py-2">{tenant.company_name}</td>
+                      <td className="px-2 py-2">
                         <button
                           onClick={() => {
                             navigator.clipboard.writeText(tenant.email);
-                            showResult('success', `Email copied: ${tenant.email}`);
+                            showResult('success', 'Email copied');
                           }}
-                          className="text-blue-600 hover:underline cursor-pointer"
+                          className="text-blue-600 hover:underline"
                         >
                           {tenant.email}
                         </button>
                       </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
+                      <td className="px-2 py-2">
+                        <span className={`px-1.5 py-0.5 rounded text-xs ${
                           tenant.role === 'admin' 
                             ? 'bg-purple-100 text-purple-700'
                             : 'bg-gray-100 text-gray-600'
@@ -564,13 +477,13 @@ export function TenantManager() {
                           {tenant.role || 'user'}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs ${getSubscriptionBadge(tenant.subscription_status)}`}>
+                      <td className="px-2 py-2">
+                        <span className={`px-1.5 py-0.5 rounded text-xs ${getSubscriptionBadge(tenant.subscription_status)}`}>
                           {tenant.subscription_status || 'trial'}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
+                      <td className="px-2 py-2">
+                        <span className={`px-1.5 py-0.5 rounded text-xs ${
                           tenant.is_active 
                             ? 'bg-green-100 text-green-700'
                             : 'bg-red-100 text-red-700'
@@ -587,53 +500,31 @@ export function TenantManager() {
         </CardContent>
       </Card>
 
-      {/* Communication History */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Clock size={18} />
-                Communication History
-              </CardTitle>
-              <CardDescription>Recent email broadcasts sent to tenants</CardDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowHistory(!showHistory)}
-            >
-              {showHistory ? 'Hide' : 'Show'} History
-            </Button>
-          </div>
-        </CardHeader>
+      {/* Communication History - Compact Toggle */}
+      <div>
+        <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)} className="text-xs">
+          <Clock size={14} className="mr-1" />
+          {showHistory ? 'Hide' : 'Show'} History ({history.length})
+        </Button>
         {showHistory && (
-          <CardContent>
+          <div className="mt-2 space-y-1 max-h-48 overflow-y-auto">
             {history.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">No communication history yet</div>
+              <div className="text-center py-2 text-xs text-gray-500">No history</div>
             ) : (
-              <div className="space-y-3">
-                {history.map((comm) => (
-                  <div key={comm.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold">{comm.subject}</span>
-                      <span className="text-xs text-gray-500">
-                        {new Date(comm.sent_at).toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
-                      {comm.message}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Sent to {comm.recipient_count} recipient(s)
-                    </p>
+              history.map((comm) => (
+                <div key={comm.id} className="p-2 bg-gray-50 dark:bg-gray-800 rounded text-xs">
+                  <div className="flex justify-between">
+                    <span className="font-medium">{comm.subject}</span>
+                    <span className="text-gray-500">{new Date(comm.sent_at).toLocaleDateString()}</span>
                   </div>
-                ))}
-              </div>
+                  <p className="text-gray-600 truncate">{comm.message}</p>
+                  <p className="text-gray-400">To: {comm.recipient_count} recipients</p>
+                </div>
+              ))
             )}
-          </CardContent>
+          </div>
         )}
-      </Card>
+      </div>
     </div>
   );
 }
