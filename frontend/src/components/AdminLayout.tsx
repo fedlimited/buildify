@@ -107,22 +107,24 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     background: #9ca3af !important;
     border-radius: 4px;
   }
+  /* Subtle hover effect - just slightly darker */
   .sidebar-nav::-webkit-scrollbar-thumb:hover {
-    background: #6b7280 !important;
+    background: #8a8f9a !important;
   }
   
-  /* Dark mode scrollbar - Force dark colors */
+  /* Dark mode scrollbar */
   html.dark .sidebar-nav::-webkit-scrollbar-track {
     background: #1f2937 !important;
   }
   html.dark .sidebar-nav::-webkit-scrollbar-thumb {
     background: #4b5563 !important;
   }
+  /* Subtle hover effect for dark mode - just slightly lighter */
   html.dark .sidebar-nav::-webkit-scrollbar-thumb:hover {
-    background: #6b7280 !important;
+    background: #5a6b7a !important;
   }
   
-  /* Firefox dark mode support */
+  /* Firefox support */
   .sidebar-nav {
     scrollbar-color: #9ca3af #e5e7eb;
   }
@@ -130,7 +132,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     scrollbar-color: #4b5563 #1f2937;
   }
 `}</style>
-
 
 
       <div className="min-h-screen bg-background">
