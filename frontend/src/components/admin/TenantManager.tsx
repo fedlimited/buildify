@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Mail, Send, Shield, CheckCircle, XCircle, Clock, Search, Filter, RefreshCw, Eye, EyeOff } from 'lucide-react';
+import { Users, Mail, Send, Shield, CheckCircle, XCircle, Clock, Search, Filter, RefreshCw, Eye, EyeOff, Copy, FilterX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,6 +45,12 @@ export function TenantManager() {
   const [history, setHistory] = useState<CommunicationHistory[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [result, setResult] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  
+  // Filter states
+  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [subscriptionFilter, setSubscriptionFilter] = useState<'all' | 'active' | 'trial' | 'expired'>('all');
+  const [copiedEmails, setCopiedEmails] = useState(false);
 
   // Fetch tenants on load
   useEffect(() => {
@@ -52,19 +58,49 @@ export function TenantManager() {
     fetchHistory();
   }, []);
 
-  // Filter tenants when search changes
+  // Filter tenants when any filter changes
   useEffect(() => {
+    let filtered = [...tenants];
+    
+    // Search filter
     if (searchTerm) {
-      const filtered = tenants.filter(t => 
+      filtered = filtered.filter(t => 
         t.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         t.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         t.company_name.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      setFilteredTenants(filtered);
-    } else {
-      setFilteredTenants(tenants);
     }
-  }, [searchTerm, tenants]);
+    
+    // Status filter (active/inactive)
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(t => 
+        statusFilter === 'active' ? t.is_active === 1 : t.is_active === 0
+      );
+    }
+    
+    // Subscription filter
+    if (subscriptionFilter !== 'all') {
+      filtered = filtered.filter(t => {
+        const subStatus = t.subscription_status?.toLowerCase() || 'trial';
+        if (subscriptionFilter === 'active') return subStatus === 'active';
+        if (subscriptionFilter === 'trial') return subStatus === 'trial';
+        if (subscriptionFilter === 'expired') return subStatus === 'expired';
+        return true;
+      });
+    }
+    
+    // Role filter
+    if (roleFilter !== 'all') {
+      filtered = filtered.filter(t => {
+        const role = t.role?.toLowerCase() || 'user';
+        if (roleFilter === 'admin') return role === 'admin';
+        if (roleFilter === 'user') return role === 'user';
+        return true;
+      });
+    }
+    
+    setFilteredTenants(filtered);
+  }, [searchTerm, tenants, statusFilter, subscriptionFilter, roleFilter]);
 
   // Handle select all
   useEffect(() => {
@@ -114,6 +150,24 @@ export function TenantManager() {
   const showResult = (type: 'success' | 'error', text: string) => {
     setResult({ type, text });
     setTimeout(() => setResult(null), 5000);
+  };
+
+  const copyEmailsToClipboard = () => {
+    const emails = selectedTenants.length > 0 
+      ? tenants.filter(t => selectedTenants.includes(t.user_id)).map(t => t.email).join(', ')
+      : filteredTenants.map(t => t.email).join(', ');
+    
+    navigator.clipboard.writeText(emails);
+    setCopiedEmails(true);
+    setTimeout(() => setCopiedEmails(false), 2000);
+    showResult('success', `${selectedTenants.length || filteredTenants.length} email(s) copied to clipboard`);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setSubscriptionFilter('all');
+    setRoleFilter('all');
   };
 
   const handleSendEmail = async () => {
@@ -181,21 +235,36 @@ export function TenantManager() {
     }
   };
 
+  const getSubscriptionBadge = (status: string) => {
+    const badges: Record<string, string> = {
+      active: 'bg-green-100 text-green-700',
+      trial: 'bg-blue-100 text-blue-700',
+      expired: 'bg-red-100 text-red-700'
+    };
+    return badges[status?.toLowerCase()] || 'bg-gray-100 text-gray-600';
+  };
+
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">
           <Users size={28} className="text-blue-500" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Tenant Communications</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Manage and communicate with all tenants</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Manage, filter, and communicate with all tenants</p>
           </div>
         </div>
-        <Button variant="outline" onClick={fetchTenants} disabled={loading}>
-          <RefreshCw size={16} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={copyEmailsToClipboard}>
+            <Copy size={16} className="mr-2" />
+            {copiedEmails ? 'Copied!' : 'Copy Emails'}
+          </Button>
+          <Button variant="outline" onClick={fetchTenants} disabled={loading}>
+            <RefreshCw size={16} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Result Message */}
@@ -209,6 +278,26 @@ export function TenantManager() {
           <span>{result.text}</span>
         </div>
       )}
+
+      {/* Stats Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-card rounded-lg border p-4">
+          <p className="text-2xl font-bold">{tenants.length}</p>
+          <p className="text-xs text-muted-foreground">Total Tenants</p>
+        </div>
+        <div className="bg-card rounded-lg border p-4">
+          <p className="text-2xl font-bold text-green-600">{tenants.filter(t => t.is_active === 1).length}</p>
+          <p className="text-xs text-muted-foreground">Active Users</p>
+        </div>
+        <div className="bg-card rounded-lg border p-4">
+          <p className="text-2xl font-bold text-blue-600">{tenants.filter(t => t.subscription_status === 'active').length}</p>
+          <p className="text-xs text-muted-foreground">Active Subscriptions</p>
+        </div>
+        <div className="bg-card rounded-lg border p-4">
+          <p className="text-2xl font-bold text-yellow-600">{selectedTenants.length}</p>
+          <p className="text-xs text-muted-foreground">Currently Selected</p>
+        </div>
+      </div>
 
       {/* Master Password Input */}
       <Card className="border-blue-200 dark:border-blue-800">
@@ -275,7 +364,7 @@ export function TenantManager() {
                   onChange={(e) => setSendToAll(e.target.checked)}
                   className="rounded border-gray-300"
                 />
-                <span className="text-sm">Send to ALL tenants</span>
+                <span className="text-sm">Send to ALL tenants ({filteredTenants.length} recipients)</span>
               </label>
               {!sendToAll && (
                 <span className="text-sm text-gray-500">
@@ -295,33 +384,93 @@ export function TenantManager() {
         </CardContent>
       </Card>
 
-      {/* Tenants List */}
+      {/* Filters */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Users size={18} />
-                Tenants List
+                <Filter size={18} />
+                Filter Tenants
               </CardTitle>
-              <CardDescription>Total: {tenants.length} tenants across all companies</CardDescription>
+              <CardDescription>Filter by status, role, subscription, or search</CardDescription>
             </div>
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              <FilterX size={14} className="mr-1" />
+              Clear Filters
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="relative">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <Input
                 placeholder="Search by name, email, or company..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 w-64"
+                className="pl-9"
               />
             </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              className="px-3 py-2 border rounded-lg bg-background"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active Users</option>
+              <option value="inactive">Inactive Users</option>
+            </select>
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value as any)}
+              className="px-3 py-2 border rounded-lg bg-background"
+            >
+              <option value="all">All Roles</option>
+              <option value="admin">Admin Users</option>
+              <option value="user">Regular Users</option>
+            </select>
+            <select
+              value={subscriptionFilter}
+              onChange={(e) => setSubscriptionFilter(e.target.value as any)}
+              className="px-3 py-2 border rounded-lg bg-background"
+            >
+              <option value="all">All Subscriptions</option>
+              <option value="active">Active Subscription</option>
+              <option value="trial">Trial</option>
+              <option value="expired">Expired</option>
+            </select>
+          </div>
+          <div className="text-sm text-muted-foreground mt-3">
+            Showing {filteredTenants.length} of {tenants.length} tenants
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tenants List */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Users size={18} />
+                Tenants List
+              </CardTitle>
+              <CardDescription>Select tenants to send emails or copy email addresses</CardDescription>
+            </div>
+            {filteredTenants.length > 0 && (
+              <Button variant="outline" size="sm" onClick={copyEmailsToClipboard}>
+                <Copy size={14} className="mr-1" />
+                Copy All Emails
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="text-center py-8">Loading tenants...</div>
           ) : filteredTenants.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">No tenants found</div>
+            <div className="text-center py-8 text-gray-500">No tenants match your filters</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -339,7 +488,7 @@ export function TenantManager() {
                     <th className="px-4 py-3 text-left">Tenant</th>
                     <th className="px-4 py-3 text-left">Company</th>
                     <th className="px-4 py-3 text-left">Email</th>
-                    
+                    <th className="px-4 py-3 text-left">Role</th>
                     <th className="px-4 py-3 text-left">Subscription</th>
                     <th className="px-4 py-3 text-left">Status</th>
                   </tr>
@@ -355,17 +504,31 @@ export function TenantManager() {
                           className="rounded border-gray-300"
                           disabled={sendToAll}
                         />
-                      </td>
+                       </td>
                       <td className="px-4 py-3 font-medium">{tenant.user_name}</td>
                       <td className="px-4 py-3">{tenant.company_name}</td>
-                      <td className="px-4 py-3">{tenant.email}</td>
-                      
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(tenant.email);
+                            showResult('success', `Email copied: ${tenant.email}`);
+                          }}
+                          className="text-blue-600 hover:underline cursor-pointer"
+                        >
+                          {tenant.email}
+                        </button>
+                      </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs ${
-                          tenant.subscription_status === 'active' 
-                            ? 'bg-green-100 text-green-700'
+                          tenant.role === 'admin' 
+                            ? 'bg-purple-100 text-purple-700'
                             : 'bg-gray-100 text-gray-600'
                         }`}>
+                          {tenant.role || 'user'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 rounded-full text-xs ${getSubscriptionBadge(tenant.subscription_status)}`}>
                           {tenant.subscription_status || 'trial'}
                         </span>
                       </td>
@@ -398,11 +561,7 @@ export function TenantManager() {
               </CardTitle>
               <CardDescription>Recent email broadcasts sent to tenants</CardDescription>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowHistory(!showHistory)}
-            >
+            <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)}>
               {showHistory ? 'Hide' : 'Show'} History
             </Button>
           </div>
