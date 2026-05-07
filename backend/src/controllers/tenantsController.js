@@ -12,32 +12,27 @@ const tenantsController = {
       if (!isSuperAdmin) {
         return res.status(403).json({ error: 'Super admin access required' });
       }
-
-
-
-
-const tenants = await db.query(`
-  SELECT 
-    u.id as user_id,
-    u.name as user_name,
-    u.email,
-    u.role,
-    u.is_active,
-    u.created_at as user_created_at,
-    c.id as company_id,
-    c.name as company_name,
-    c.subdomain,
-    c.phone as company_phone,
-    cs.status as subscription_status,
-    cs.current_period_end
-  FROM users u
-  JOIN companies c ON u.company_id = c.id
-  LEFT JOIN company_subscriptions cs ON c.id = cs.company_id AND cs.status = 'active'
-  WHERE u.role != 'super_admin'
-  ORDER BY c.name, u.name
-`);
-
-
+      
+      const tenants = await db.query(`
+        SELECT 
+          u.id as user_id,
+          u.name as user_name,
+          u.email,
+          u.role,
+          u.is_active,
+          u.created_at as user_created_at,
+          c.id as company_id,
+          c.name as company_name,
+          c.subdomain,
+          c.phone as company_phone,
+          cs.status as subscription_status,
+          cs.current_period_end
+        FROM users u
+        JOIN companies c ON u.company_id = c.id
+        LEFT JOIN company_subscriptions cs ON c.id = cs.company_id AND cs.status = 'active'
+        WHERE u.role != 'super_admin'
+        ORDER BY c.name, u.name
+      `);
       
       res.json({
         success: true,
@@ -75,29 +70,17 @@ const tenants = await db.query(`
       
       // Get tenant emails
       let emails = [];
-      let tenants = [];
-
-
-
-
-
-
+      let tenantsList = [];
       
-if (sendToAll) {
-  const result = await db.query(`
-    SELECT u.id, u.name, u.email, c.name as company_name
-    FROM users u
-    JOIN companies c ON u.company_id = c.id
-    WHERE u.role != 'super_admin' AND u.is_active = 1
-  `);
-  tenants = result.rows;
-  emails = result.rows.map(t => t.email);
-}
-
-
-
-
-
+      if (sendToAll) {
+        const result = await db.query(`
+          SELECT u.id, u.name, u.email, c.name as company_name
+          FROM users u
+          JOIN companies c ON u.company_id = c.id
+          WHERE u.role != 'super_admin' AND u.is_active = 1
+        `);
+        tenantsList = result.rows;
+        emails = result.rows.map(t => t.email);
       } else if (tenantIds && tenantIds.length > 0) {
         const placeholders = tenantIds.map((_, i) => `$${i + 1}`).join(',');
         const result = await db.query(`
@@ -106,7 +89,7 @@ if (sendToAll) {
           JOIN companies c ON u.company_id = c.id
           WHERE u.id IN (${placeholders})
         `, tenantIds);
-        tenants = result.rows;
+        tenantsList = result.rows;
         emails = result.rows.map(t => t.email);
       } else {
         return res.status(400).json({ error: 'No recipients selected' });
@@ -124,7 +107,7 @@ if (sendToAll) {
       
       // Send emails (batch process)
       const results = [];
-      for (const tenant of tenants) {
+      for (const tenant of tenantsList) {
         try {
           await sendBulkEmail(tenant.email, subject, message, tenant.name, tenant.company_name);
           results.push({ email: tenant.email, status: 'sent', name: tenant.name });
