@@ -114,10 +114,12 @@ export function TenantManager() {
       if (response.ok) {
         setTenants(data.tenants);
         setFilteredTenants(data.tenants);
+        console.log('✅ Tenants fetched:', data.tenants.length);
       } else {
         showResult('error', data.error || 'Failed to fetch tenants');
       }
     } catch (error) {
+      console.error('❌ Fetch tenants error:', error);
       showResult('error', 'Network error. Please try again.');
     } finally {
       setLoading(false);
@@ -133,6 +135,7 @@ export function TenantManager() {
       const data = await response.json();
       if (response.ok) {
         setHistory(data.communications || []);
+        console.log('✅ History fetched:', data.communications?.length || 0);
       }
     } catch (error) {
       console.error('Failed to fetch history:', error);
@@ -141,7 +144,7 @@ export function TenantManager() {
 
   const showResult = (type: 'success' | 'error', text: string) => {
     setResult({ type, text });
-    setTimeout(() => setResult(null), 3000);
+    setTimeout(() => setResult(null), 5000);
   };
 
   const copyEmailsToClipboard = () => {
@@ -153,6 +156,7 @@ export function TenantManager() {
     setCopiedEmails(true);
     setTimeout(() => setCopiedEmails(false), 2000);
     showResult('success', `${selectedTenants.length || filteredTenants.length} email(s) copied`);
+    console.log('📋 Emails copied:', emails.substring(0, 200) + '...');
   };
 
   const clearFilters = () => {
@@ -160,28 +164,50 @@ export function TenantManager() {
     setStatusFilter('all');
     setSubscriptionFilter('all');
     setRoleFilter('all');
+    console.log('🔍 Filters cleared');
   };
 
   const handleSendEmail = async () => {
+    console.log('📧 ========== STARTING EMAIL SEND ==========');
+    
     if (!masterPassword) {
+      console.log('❌ Master password missing');
       showResult('error', 'Master password required');
       return;
     }
     if (!subject) {
+      console.log('❌ Subject missing');
       showResult('error', 'Subject required');
       return;
     }
     if (!message) {
+      console.log('❌ Message missing');
       showResult('error', 'Message required');
       return;
     }
     if (!sendToAll && !sendToFiltered && selectedTenants.length === 0) {
+      console.log('❌ No recipients selected');
       showResult('error', 'Select recipients');
       return;
     }
 
-    // Create HTML version with Bochi branding and logo
-    const logoUrl = 'https://bochi.ke/Bochi_logo_transparent.png';
+    let tenantIdsToSend = [];
+    let recipientCount = 0;
+    
+    if (sendToAll) {
+      tenantIdsToSend = [];
+      recipientCount = tenants.length;
+      console.log(`📧 Sending to ALL ${recipientCount} tenants`);
+    } else if (sendToFiltered) {
+      tenantIdsToSend = filteredTenants.map(t => t.user_id);
+      recipientCount = filteredTenants.length;
+      console.log(`📧 Sending to FILTERED ${recipientCount} tenants`);
+    } else {
+      tenantIdsToSend = selectedTenants;
+      recipientCount = selectedTenants.length;
+      console.log(`📧 Sending to ${recipientCount} manually selected tenants`);
+    }
+
     const htmlMessage = `
       <!DOCTYPE html>
       <html>
@@ -203,17 +229,18 @@ export function TenantManager() {
             background: #ffffff; 
             border-radius: 12px; 
             overflow: hidden; 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
           }
           .header { 
             background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); 
             padding: 30px 20px; 
             text-align: center; 
           }
-          .logo {
-            max-width: 140px;
-            height: auto;
-            margin: 0 auto;
+          .header-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: white;
+            letter-spacing: 1px;
           }
           .tagline { 
             color: rgba(255,255,255,0.9); 
@@ -236,21 +263,16 @@ export function TenantManager() {
             border-top: 1px solid #e5e7eb; 
             background-color: #f9fafb;
           }
-          hr {
-            border: none;
-            border-top: 1px solid #e5e7eb;
-            margin: 20px 0;
-          }
           @media (max-width: 600px) {
             .content { padding: 20px; }
-            .logo { max-width: 100px; }
+            .header-title { font-size: 22px; }
           }
         </style>
       </head>
       <body style="margin: 0; padding: 20px; background-color: #f9fafb;">
         <div class="container">
           <div class="header">
-            <img src="${logoUrl}" alt="BOCHI" class="logo" />
+            <div class="header-title">BOCHI</div>
             <div class="tagline">Construction Suite</div>
           </div>
           <div class="content">
@@ -259,23 +281,18 @@ export function TenantManager() {
             </div>
           </div>
           <div class="footer">
-            <p>&copy; ${new Date().getFullYear()} Bochi Construction Suite. All rights reserved.</p>
-            <p style="font-size: 11px; color: #9ca3af;">This is an automated message from Bochi Admin. Please do not reply.</p>
+            <p>&copy; ${new Date().getFullYear()} Bochi Construction Suite</p>
+            <p style="font-size: 11px;">This is an automated message from Bochi Admin. Please do not reply.</p>
           </div>
         </div>
       </body>
       </html>
     `;
 
-    let tenantIdsToSend = [];
-    if (sendToAll) {
-      tenantIdsToSend = [];
-    } else if (sendToFiltered) {
-      tenantIdsToSend = filteredTenants.map(t => t.user_id);
-    } else {
-      tenantIdsToSend = selectedTenants;
-    }
-
+    console.log('📤 Sending request to backend...');
+    console.log('   Subject:', subject);
+    console.log('   Recipients:', recipientCount);
+    
     setSending(true);
     try {
       const token = localStorage.getItem('token');
@@ -295,7 +312,10 @@ export function TenantManager() {
       });
 
       const data = await response.json();
+      console.log('📥 Backend response:', data);
+      
       if (response.ok) {
+        console.log(`✅✅✅ EMAIL SENT SUCCESSFULLY! ✅✅✅`);
         showResult('success', data.message);
         setSubject('');
         setMessage('');
@@ -306,12 +326,15 @@ export function TenantManager() {
         setSendToFiltered(false);
         fetchHistory();
       } else {
-        showResult('error', data.error || 'Failed to send');
+        console.error('❌ Backend error:', data.error);
+        showResult('error', data.error || 'Failed to send emails');
       }
     } catch (error) {
-      showResult('error', 'Network error');
+      console.error('❌ Network error:', error);
+      showResult('error', 'Network error - check console');
     } finally {
       setSending(false);
+      console.log('📧 ========== EMAIL SEND COMPLETE ==========');
     }
   };
 
@@ -349,12 +372,12 @@ export function TenantManager() {
               placeholder="Master password"
               value={masterPassword}
               onChange={(e) => setMasterPassword(e.target.value)}
-              className="pr-8 h-9 w-48 text-sm"
+              className="pr-8 h-9 w-48 text-sm bg-background border-input"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-2 top-1/2 -translate-y-1/2"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
             >
               {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
             </button>
@@ -382,7 +405,7 @@ export function TenantManager() {
         </div>
       )}
 
-      {/* Email Composition Card - Always Visible with Good Space */}
+      {/* Email Composition Card */}
       <Card className="border-amber-200 dark:border-amber-800">
         <CardHeader className="py-3 px-4 bg-amber-50 dark:bg-amber-950/20">
           <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
@@ -397,7 +420,7 @@ export function TenantManager() {
               placeholder="Enter email subject..."
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="h-11 text-base"
+              className="h-11 text-base bg-background border-input"
             />
           </div>
           <div>
@@ -407,7 +430,7 @@ export function TenantManager() {
               rows={6}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="text-base resize-y"
+              className="text-base resize-y bg-background border-input"
             />
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -482,13 +505,13 @@ export function TenantManager() {
             placeholder="Search by name, email, or company..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8 h-9 text-sm"
+            className="pl-8 h-9 text-sm bg-background border-input"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as any)}
-          className="px-3 py-1.5 border rounded-md text-sm bg-background"
+          className="px-3 py-1.5 border rounded-md text-sm bg-background border-input text-foreground"
         >
           <option value="all">All Status</option>
           <option value="active">Active</option>
@@ -497,7 +520,7 @@ export function TenantManager() {
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value as any)}
-          className="px-3 py-1.5 border rounded-md text-sm bg-background"
+          className="px-3 py-1.5 border rounded-md text-sm bg-background border-input text-foreground"
         >
           <option value="all">All Roles</option>
           <option value="admin">Admin</option>
@@ -506,7 +529,7 @@ export function TenantManager() {
         <select
           value={subscriptionFilter}
           onChange={(e) => setSubscriptionFilter(e.target.value as any)}
-          className="px-3 py-1.5 border rounded-md text-sm bg-background"
+          className="px-3 py-1.5 border rounded-md text-sm bg-background border-input text-foreground"
         >
           <option value="all">All Subscriptions</option>
           <option value="active">Active</option>
@@ -603,7 +626,7 @@ export function TenantManager() {
         </CardContent>
       </Card>
 
-      {/* Communication History - Collapsible */}
+      {/* Communication History */}
       <div>
         <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)} className="text-sm">
           <Clock size={14} className="mr-1" />
