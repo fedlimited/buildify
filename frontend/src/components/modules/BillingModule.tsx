@@ -19,7 +19,7 @@ interface Plan {
   features: string[];
 }
 
-type PaymentMethod = 'mpesa' | 'card' | 'paystack';
+type PaymentMethod = 'mpesa' | 'paystack';
 
 // Helper function to format M-Pesa number
 const formatMpesaNumber = (value: string): string => {
@@ -51,6 +51,7 @@ export const BillingModule = () => {
   const [currentInstallment, setCurrentInstallment] = useState<any>(null);
   const [installmentPaymentStatus, setInstallmentPaymentStatus] = useState('idle');
   const [paystackLoading, setPaystackLoading] = useState(false);
+  const [userEmail, setUserEmail] = useState<string>('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -74,6 +75,27 @@ export const BillingModule = () => {
       }
     };
     fetchData();
+  }, []);
+
+  // Get user email for Paystack
+  useEffect(() => {
+    const getUserEmail = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const user = await response.json();
+        setUserEmail(user.email);
+        console.log('User email loaded:', user.email);
+      } catch (err) {
+        console.error('Failed to get user email:', err);
+      }
+    };
+    
+    if (!userEmail) {
+      getUserEmail();
+    }
   }, []);
 
   const getPrice = (plan: Plan) => {
@@ -208,35 +230,80 @@ export const BillingModule = () => {
       return;
     }
 
-    // Handle Paystack Card Payment
+    // Handle Paystack Payment - Popup with multiple options
     if (paymentMethod === 'paystack') {
       setPaystackLoading(true);
       setError('');
+      
+      // Get the price based on selected cycle
+      const amount = selectedCycle === 'monthly' 
+        ? (selectedPlan?.price_monthly_usd || selectedPlan?.price_monthly_kes)
+        : (selectedPlan?.price_yearly_usd || selectedPlan?.price_yearly_kes);
+      
+      const currency = 'KES';
+      const amountInCents = Math.round(amount * 100);
+      
+      // Generate unique transaction reference
+      const reference = `BOCHI-${selectedPlan?.id}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+      
+      console.log('Opening Paystack popup with:', { amount, currency, reference });
+      
       try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${API_BASE_URL}/paystack/initialize`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+        // Check if PaystackPop is available
+        if (typeof (window as any).PaystackPop === 'undefined') {
+          throw new Error('Paystack script not loaded. Please refresh the page.');
+        }
+        
+        const handler = (window as any).PaystackPop.setup({
+          key: 'pk_live_a6e7b8e964d31c439083d4c2c1a26d2bc1014e38f',
+          email: userEmail || 'customer@example.com',
+          amount: amountInCents,
+          currency: currency,
+          ref: reference,
+          channels: ['card', 'mobile_money', 'bank_transfer'],
+          metadata: {
+            plan_id: selectedPlan?.id,
+            plan_name: selectedPlan?.display_name,
+            billing_cycle: selectedCycle
           },
-          body: JSON.stringify({
-            planId: selectedPlan?.id,
-            currency: 'USD',
-            billingCycle: selectedCycle
-          })
+          callback: async (response: any) => {
+            console.log('Paystack callback:', response);
+            
+            // Verify payment with backend
+            try {
+              const token = localStorage.getItem('token');
+              const verifyResponse = await fetch(`${API_BASE_URL}/paystack/verify?reference=${response.reference}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              const verifyData = await verifyResponse.json();
+              
+              if (verifyData.success) {
+                setStatus('completed');
+                setTimeout(() => {
+                  setShowModal(false);
+                  window.location.reload();
+                }, 2000);
+              } else {
+                setError('Payment verification pending. Please contact support.');
+              }
+            } catch (err) {
+              console.error('Verification error:', err);
+              setError('Payment completed but verification failed. Please contact support.');
+            }
+            
+            setPaystackLoading(false);
+            setShowModal(false);
+          },
+          onClose: () => {
+            console.log('Paystack modal closed');
+            setPaystackLoading(false);
+          }
         });
         
-        const data = await response.json();
-        
-        if (data.success) {
-          window.location.href = data.authorization_url;
-        } else {
-          setError(data.error || 'Payment initialization failed');
-          setPaystackLoading(false);
-        }
+        handler.openIframe();
       } catch (err: any) {
-        setError(err.message || 'Network error');
+        console.error('Paystack error:', err);
+        setError(err.message || 'Failed to initialize payment');
         setPaystackLoading(false);
       }
       return;
@@ -304,9 +371,6 @@ export const BillingModule = () => {
         setStatus('error');
         setError(err.message);
       }
-    } else {
-      setStatus('error');
-      setError('Please select M-Pesa or Card Payment');
     }
   };
 
@@ -369,17 +433,6 @@ export const BillingModule = () => {
             <span>M-Pesa (KES)</span>
           </button>
           <button
-            onClick={() => setPaymentMethod('card')}
-            className={`px-5 py-1.5 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${
-              paymentMethod === 'card'
-                ? 'bg-white dark:bg-gray-900 shadow-md text-amber-600 dark:text-amber-400'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-            }`}
-          >
-            <CreditCard size={14} />
-            <span>Visa / Mastercard (USD)</span>
-          </button>
-          <button
             onClick={() => setPaymentMethod('paystack')}
             className={`px-5 py-1.5 rounded-md flex items-center gap-2 transition-all text-sm font-medium ${
               paymentMethod === 'paystack'
@@ -388,7 +441,7 @@ export const BillingModule = () => {
             }`}
           >
             <CreditCard size={14} />
-            <span>Card (USD) - Paystack</span>
+            <span>Card / M-Pesa via Paystack</span>
           </button>
         </div>
 
@@ -413,7 +466,7 @@ export const BillingModule = () => {
         </div>
       </div>
 
-      {/* M-Pesa Payment Information - Compact */}
+      {/* Payment Information */}
       {paymentMethod === 'mpesa' ? (
         <div className="mb-3 flex items-center justify-start gap-2">
           <div className="relative group">
@@ -434,7 +487,7 @@ export const BillingModule = () => {
       ) : (
         <div className="mb-3 flex items-center justify-start gap-2">
           <CreditCard size={14} className="text-amber-500" />
-          <span className="text-xs text-gray-500">Card payments available via Paystack</span>
+          <span className="text-xs text-gray-500">Pay with Card, M-Pesa, or Bank Transfer</span>
         </div>
       )}
 
@@ -634,14 +687,16 @@ export const BillingModule = () => {
                   <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
                     <CreditCard size={40} className="mx-auto text-amber-500 dark:text-amber-400 mb-2" />
                     <p className="text-center text-amber-700 dark:text-amber-400 font-medium">
-                      Pay with Card (USD)
+                      Multiple Payment Options
                     </p>
                     <p className="text-xs text-center text-amber-600 dark:text-amber-500 mt-1">
-                      You will be redirected to Paystack secure payment page
+                      Choose from: Card, M-Pesa, or Bank Transfer
                     </p>
-                    <p className="text-xs text-center text-gray-500 mt-2">
-                      💳 Accepts Visa, Mastercard, American Express
-                    </p>
+                    <div className="flex justify-center gap-3 mt-2 text-xs">
+                      <span className="bg-white dark:bg-gray-800 px-2 py-1 rounded">💳 Card</span>
+                      <span className="bg-white dark:bg-gray-800 px-2 py-1 rounded">📱 M-Pesa</span>
+                      <span className="bg-white dark:bg-gray-800 px-2 py-1 rounded">🏦 Bank Transfer</span>
+                    </div>
                   </div>
                   {error && (
                     <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-sm">
@@ -656,10 +711,10 @@ export const BillingModule = () => {
                     {paystackLoading ? (
                       <div className="flex items-center justify-center gap-2">
                         <Loader2 size={16} className="animate-spin" />
-                        <span>Redirecting to Paystack...</span>
+                        <span>Opening payment window...</span>
                       </div>
                     ) : (
-                      'Pay Now with Card'
+                      'Continue to Payment'
                     )}
                   </button>
                 </>
