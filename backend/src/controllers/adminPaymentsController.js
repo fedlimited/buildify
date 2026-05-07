@@ -19,10 +19,10 @@ const adminPaymentsController = {
       
       console.log(`Clearing payments from ${startDate} to ${endDate}`);
       
-      // PostgreSQL syntax - use $1, $2 placeholders
+      // Use created_at as the date column
       const subscriptionResult = await db.query(
         `DELETE FROM subscription_payments 
-         WHERE payment_date BETWEEN $1 AND $2 
+         WHERE DATE(created_at) BETWEEN $1 AND $2 
          AND status IN ($3, $4, $5)`,
         [startDate, endDate, 'completed', 'failed', 'test']
       );
@@ -59,7 +59,6 @@ const adminPaymentsController = {
       
       console.log('Clearing ALL payments...');
       
-      // PostgreSQL syntax
       const subscriptionResult = await db.query(`DELETE FROM subscription_payments`);
       
       res.json({
@@ -90,27 +89,13 @@ const adminPaymentsController = {
       
       console.log(`Clearing payment with ID: ${id}`);
       
-      // PostgreSQL syntax - use $1 placeholder
       const result = await db.query(
         `DELETE FROM subscription_payments WHERE id = $1`,
         [id]
       );
       
       if (result.rowCount === 0) {
-        // Try payments table if it exists
-        const paymentsResult = await db.query(
-          `DELETE FROM payments WHERE id = $1`,
-          [id]
-        );
-        
-        if (paymentsResult.rowCount === 0) {
-          return res.status(404).json({ error: 'Payment not found' });
-        }
-        
-        return res.json({
-          success: true,
-          message: `Payment ID ${id} cleared successfully from payments table`
-        });
+        return res.status(404).json({ error: 'Payment not found' });
       }
       
       res.json({
@@ -129,15 +114,14 @@ const adminPaymentsController = {
     try {
       const db = await getDb();
       
-      // PostgreSQL syntax
       const stats = await db.query(`
         SELECT 
           COUNT(*) as total_payments,
           COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_count,
           COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed_count,
           COUNT(CASE WHEN status = 'test' THEN 1 END) as test_count,
-          MIN(payment_date) as earliest_payment,
-          MAX(payment_date) as latest_payment
+          MIN(created_at) as earliest_payment,
+          MAX(created_at) as latest_payment
         FROM subscription_payments
       `);
       
