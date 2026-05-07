@@ -13,7 +13,8 @@ import {
   ChevronRight,
   Home,
   BarChart3,
-  Star
+  Star,
+  Trash2
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -24,10 +25,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { authUser, sidebarCollapsed, toggleSidebar, logout } = useAppStore();
-
-  const isActive = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(path + '/');
-  };
 
   const handleLogout = () => {
     logout();
@@ -65,6 +62,16 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       path: '/admin/payments', 
       label: 'Payments', 
       icon: DollarSign 
+    },
+    { 
+      path: '/admin/payment-manager', 
+      label: 'Payment Manager', 
+      icon: Trash2 
+    },
+    { 
+      path: '/admin/tenants', 
+      label: 'Tenant Comm', 
+      icon: Users 
     },
     { 
       path: '/admin/testimonials', 
