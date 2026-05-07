@@ -15,6 +15,7 @@ import { AuthGate } from '@/components/AuthGate';
 import { PaymentManager } from '@/components/admin/PaymentManager';
 import { TenantManager } from '@/components/admin/TenantManager';
 import { AdminTestimonials } from '@/components/modules/AdminTestimonials';
+import { PaymentVerification } from '@/pages/PaymentVerification';
 
 
 // Admin components
@@ -86,8 +87,16 @@ const App = () => {
             <Route path="/" element={<LandingPage />} />
 
             {/* Auth pages */}
+
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/payment-verification" element={<PaymentVerification />} />
+
+
+
+
+
+
 
             {/* Legal Pages */}
             <Route path="/terms" element={<TermsOfService />} />

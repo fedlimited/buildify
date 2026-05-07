@@ -34,6 +34,7 @@ const testimonialRoutes = require('./routes/testimonialRoutes');
 const app = express();
 const adminPaymentsController = require('./controllers/adminPaymentsController');
 const tenantsController = require('./controllers/tenantsController');
+const paystackController = require('./controllers/paystackController');
 // FORCE RENDER REBUILD - Super Admin Implementation v2
 const PORT = process.env.PORT || 5000;
 
@@ -128,6 +129,14 @@ app.post('/api/auth/resend-otp', otpController.resendOTP);
 // Traditional login (keep for backward compatibility)
 app.post('/api/auth/login', authController.login);
 app.post('/api/companies/register', companyController.registerCompany);
+
+
+// Paystack Payment Routes
+app.post('/api/paystack/initialize', authenticateToken, paystackController.initializePayment);
+app.get('/api/paystack/verify', paystackController.verifyPayment);
+app.post('/api/subscription/paystack-webhook', paystackController.handleWebhook);
+
+
 
 // ========== TESTIMONIAL ROUTES ==========
 app.use('/api/testimonials', testimonialRoutes);
