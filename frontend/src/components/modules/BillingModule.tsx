@@ -230,84 +230,93 @@ export const BillingModule = () => {
       return;
     }
 
-    // Handle Paystack Payment - Popup with multiple options
-    if (paymentMethod === 'paystack') {
-      setPaystackLoading(true);
-      setError('');
-      
-      // Get the price based on selected cycle
-      const amount = selectedCycle === 'monthly' 
-        ? (selectedPlan?.price_monthly_usd || selectedPlan?.price_monthly_kes)
-        : (selectedPlan?.price_yearly_usd || selectedPlan?.price_yearly_kes);
-      
-      const currency = 'KES';
-      const amountInCents = Math.round(amount * 100);
-      
-      // Generate unique transaction reference
-      const reference = `BOCHI-${selectedPlan?.id}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-      
-      console.log('Opening Paystack popup with:', { amount, currency, reference });
-      
-      try {
-        // Check if PaystackPop is available
-        if (typeof (window as any).PaystackPop === 'undefined') {
-          throw new Error('Paystack script not loaded. Please refresh the page.');
+// Handle Paystack Payment - Popup with multiple options
+if (paymentMethod === 'paystack') {
+  setPaystackLoading(true);
+  setError('');
+  
+  // Get the price based on selected cycle
+  const amount = selectedCycle === 'monthly' 
+    ? (selectedPlan?.price_monthly_usd || selectedPlan?.price_monthly_kes)
+    : (selectedPlan?.price_yearly_usd || selectedPlan?.price_yearly_kes);
+  
+  const currency = 'KES';
+  const amountInCents = Math.round(amount * 100);
+  
+  // Generate unique transaction reference
+  const reference = `BOCHI-${selectedPlan?.id}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+  
+  console.log('Opening Paystack popup with:', { amount, currency, reference });
+  
+  try {
+    // Check if PaystackPop is available
+    if (typeof (window as any).PaystackPop === 'undefined') {
+      throw new Error('Paystack script not loaded. Please refresh the page.');
+    }
+    
+    // NEW SYNTAX - Use 'new PaystackPop()' instead of 'PaystackPop.setup()'
+    const handler = new (window as any).PaystackPop();
+    
+    handler.newTransaction({
+      key: 'pk_live_a6e7b8e964d31c439083d4c2c1a26d2bc1014e38',
+      email: userEmail || 'customer@example.com',
+      amount: amountInCents,
+      currency: currency,
+      ref: reference,
+      channels: ['card', 'mobile_money', 'bank_transfer'],
+      metadata: {
+        plan_id: selectedPlan?.id,
+        plan_name: selectedPlan?.display_name,
+        billing_cycle: selectedCycle
+      },
+      onSuccess: async (response: any) => {
+        console.log('Paystack success:', response);
+        
+        // Verify payment with backend
+        try {
+          const token = localStorage.getItem('token');
+          const verifyResponse = await fetch(`${API_BASE_URL}/paystack/verify?reference=${response.reference}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const verifyData = await verifyResponse.json();
+          
+          if (verifyData.success) {
+            setStatus('completed');
+            setTimeout(() => {
+              setShowModal(false);
+              window.location.reload();
+            }, 2000);
+          } else {
+            setError('Payment verification pending. Please contact support.');
+          }
+        } catch (err) {
+          console.error('Verification error:', err);
+          setError('Payment completed but verification failed. Please contact support.');
         }
         
-        const handler = (window as any).PaystackPop.setup({
-          key: 'pk_live_a6e7b8e964d31c439083d4c2c1a26d2bc1014e38f',
-          email: userEmail || 'customer@example.com',
-          amount: amountInCents,
-          currency: currency,
-          ref: reference,
-          channels: ['card', 'mobile_money', 'bank_transfer'],
-          metadata: {
-            plan_id: selectedPlan?.id,
-            plan_name: selectedPlan?.display_name,
-            billing_cycle: selectedCycle
-          },
-          callback: async (response: any) => {
-            console.log('Paystack callback:', response);
-            
-            // Verify payment with backend
-            try {
-              const token = localStorage.getItem('token');
-              const verifyResponse = await fetch(`${API_BASE_URL}/paystack/verify?reference=${response.reference}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-              });
-              const verifyData = await verifyResponse.json();
-              
-              if (verifyData.success) {
-                setStatus('completed');
-                setTimeout(() => {
-                  setShowModal(false);
-                  window.location.reload();
-                }, 2000);
-              } else {
-                setError('Payment verification pending. Please contact support.');
-              }
-            } catch (err) {
-              console.error('Verification error:', err);
-              setError('Payment completed but verification failed. Please contact support.');
-            }
-            
-            setPaystackLoading(false);
-            setShowModal(false);
-          },
-          onClose: () => {
-            console.log('Paystack modal closed');
-            setPaystackLoading(false);
-          }
-        });
-        
-        handler.openIframe();
-      } catch (err: any) {
-        console.error('Paystack error:', err);
-        setError(err.message || 'Failed to initialize payment');
+        setPaystackLoading(false);
+        setShowModal(false);
+      },
+      onCancel: () => {
+        console.log('Paystack transaction cancelled');
+        setPaystackLoading(false);
+      },
+      onError: (error: any) => {
+        console.error('Paystack error:', error);
+        setError(error.message || 'Payment failed. Please try again.');
         setPaystackLoading(false);
       }
-      return;
-    }
+    });
+    
+  } catch (err: any) {
+    console.error('Paystack error:', err);
+    setError(err.message || 'Failed to initialize payment');
+    setPaystackLoading(false);
+  }
+  return;
+}
+
+
 
     // Handle M-Pesa payment
     if (paymentMethod === 'mpesa') {
