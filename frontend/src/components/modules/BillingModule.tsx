@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Check, Smartphone, CreditCard, Globe, MapPin, Loader2, Zap, Building2, Users, Shield, TrendingUp, Clock, Crown, Sparkles } from 'lucide-react';
 import api from '@/services/api';
 import { SubscriptionPlansTable } from '@/components/SubscriptionPlansTable';
+import { API_BASE_URL } from '@/config/api';
 
 interface Plan {
   id: number;
