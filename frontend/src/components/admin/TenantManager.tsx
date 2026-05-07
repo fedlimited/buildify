@@ -42,6 +42,7 @@ export function TenantManager() {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [sendToAll, setSendToAll] = useState(false);
+  const [sendToFiltered, setSendToFiltered] = useState(false);
   const [history, setHistory] = useState<CommunicationHistory[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [result, setResult] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -102,7 +103,7 @@ export function TenantManager() {
     setFilteredTenants(filtered);
   }, [searchTerm, tenants, statusFilter, subscriptionFilter, roleFilter]);
 
-  // Handle select all
+  // Handle select all (only selects filtered tenants)
   useEffect(() => {
     if (selectAll) {
       setSelectedTenants(filteredTenants.map(t => t.user_id));
@@ -183,9 +184,19 @@ export function TenantManager() {
       showResult('error', 'Email message is required');
       return;
     }
-    if (!sendToAll && selectedTenants.length === 0) {
-      showResult('error', 'Please select at least one tenant or select "Send to All"');
+    if (!sendToAll && !sendToFiltered && selectedTenants.length === 0) {
+      showResult('error', 'Please select recipients using one of the options above');
       return;
+    }
+
+    // Determine which tenant IDs to send to
+    let tenantIdsToSend = [];
+    if (sendToAll) {
+      tenantIdsToSend = [];
+    } else if (sendToFiltered) {
+      tenantIdsToSend = filteredTenants.map(t => t.user_id);
+    } else {
+      tenantIdsToSend = selectedTenants;
     }
 
     setSending(true);
@@ -202,7 +213,7 @@ export function TenantManager() {
           message,
           masterPassword,
           sendToAll: sendToAll,
-          tenantIds: sendToAll ? [] : selectedTenants
+          tenantIds: tenantIdsToSend
         })
       });
 
@@ -215,6 +226,7 @@ export function TenantManager() {
         setSelectedTenants([]);
         setSelectAll(false);
         setSendToAll(false);
+        setSendToFiltered(false);
         fetchHistory();
       } else {
         showResult('error', data.error || 'Failed to send emails');
@@ -356,22 +368,47 @@ export function TenantManager() {
                 onChange={(e) => setMessage(e.target.value)}
               />
             </div>
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={sendToAll}
-                  onChange={(e) => setSendToAll(e.target.checked)}
-                  className="rounded border-gray-300"
-                />
-                <span className="text-sm">Send to ALL tenants ({filteredTenants.length} recipients)</span>
-              </label>
-              {!sendToAll && (
+            
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={sendToAll}
+                    onChange={(e) => {
+                      setSendToAll(e.target.checked);
+                      if (e.target.checked) {
+                        setSendToFiltered(false);
+                      }
+                    }}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Send to ALL tenants ({tenants.length} total)</span>
+                </label>
+                
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={sendToFiltered}
+                    onChange={(e) => {
+                      setSendToFiltered(e.target.checked);
+                      if (e.target.checked) {
+                        setSendToAll(false);
+                      }
+                    }}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Send to FILTERED tenants ({filteredTenants.length} recipients)</span>
+                </label>
+              </div>
+              
+              {!sendToAll && !sendToFiltered && (
                 <span className="text-sm text-gray-500">
-                  {selectedTenants.length} tenant(s) selected
+                  {selectedTenants.length} tenant(s) selected manually
                 </span>
               )}
             </div>
+            
             <Button
               onClick={handleSendEmail}
               disabled={sending}
@@ -482,7 +519,7 @@ export function TenantManager() {
                         checked={selectAll && filteredTenants.length > 0}
                         onChange={(e) => setSelectAll(e.target.checked)}
                         className="rounded border-gray-300"
-                        disabled={sendToAll}
+                        disabled={sendToAll || sendToFiltered}
                       />
                     </th>
                     <th className="px-4 py-3 text-left">Tenant</th>
@@ -502,7 +539,7 @@ export function TenantManager() {
                           checked={selectedTenants.includes(tenant.user_id)}
                           onChange={() => toggleTenant(tenant.user_id)}
                           className="rounded border-gray-300"
-                          disabled={sendToAll}
+                          disabled={sendToAll || sendToFiltered}
                         />
                        </td>
                       <td className="px-4 py-3 font-medium">{tenant.user_name}</td>
@@ -561,7 +598,11 @@ export function TenantManager() {
               </CardTitle>
               <CardDescription>Recent email broadcasts sent to tenants</CardDescription>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowHistory(!showHistory)}
+            >
               {showHistory ? 'Hide' : 'Show'} History
             </Button>
           </div>
