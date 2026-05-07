@@ -13,27 +13,33 @@ const tenantsController = {
         return res.status(403).json({ error: 'Super admin access required' });
       }
       
-      const tenants = await db.query(`
-        SELECT 
-          u.id as user_id,
-          u.name as user_name,
-          u.email,
-          u.role,
-          u.is_active,
-          u.created_at as user_created_at,
-          c.id as company_id,
-          c.name as company_name,
-          c.subdomain,
-          c.phone as company_phone,
-          cs.status as subscription_status,
-          cs.current_period_end
-        FROM users u
-        JOIN companies c ON u.company_id = c.id
-        LEFT JOIN company_subscriptions cs ON c.id = cs.company_id AND cs.status = 'active'
-        WHERE u.role != 'super_admin'
-        ORDER BY c.name, u.name
-      `);
-      
+
+
+
+const tenants = await db.query(`
+  SELECT 
+    u.id as user_id,
+    u.name as user_name,
+    u.email,
+    u.role,
+    u.is_active,
+    u.created_at as user_created_at,
+    c.id as company_id,
+    c.name as company_name,
+    c.subdomain,
+    c.phone as company_phone,
+    cs.status as subscription_status
+  FROM users u
+  JOIN companies c ON u.company_id = c.id
+  LEFT JOIN company_subscriptions cs ON c.id = cs.company_id AND cs.status = 'active'
+  WHERE u.role != 'super_admin'
+  ORDER BY c.name, u.name
+`);
+
+
+
+
+
       res.json({
         success: true,
         tenants: tenants.rows,
