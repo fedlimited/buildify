@@ -33,6 +33,7 @@ const superAdminRoutes = require('./routes/superAdminRoutes');
 const testimonialRoutes = require('./routes/testimonialRoutes');
 const app = express();
 const adminPaymentsController = require('./controllers/adminPaymentsController');
+const tenantsController = require('./controllers/tenantsController');
 // FORCE RENDER REBUILD - Super Admin Implementation v2
 const PORT = process.env.PORT || 5000;
 
@@ -149,6 +150,11 @@ app.post('/api/admin/payments/clear-by-date', authenticateToken, adminPaymentsCo
 app.post('/api/admin/payments/clear-all', authenticateToken, adminPaymentsController.clearAllPayments);
 app.delete('/api/admin/payments/:id', authenticateToken, adminPaymentsController.clearPaymentById);
 app.get('/api/admin/payments/stats', authenticateToken, adminPaymentsController.getPaymentStats);
+
+// Super Admin - Tenant Management & Communications
+app.get('/api/admin/tenants', authenticateToken, tenantsController.getAllTenants);
+app.post('/api/admin/tenants/send-email', authenticateToken, tenantsController.sendBulkEmail);
+app.get('/api/admin/communications', authenticateToken, tenantsController.getCommunicationHistory);
 
 
 // Currency routes

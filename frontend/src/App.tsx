@@ -13,7 +13,9 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { AuthGate } from '@/components/AuthGate';
 import { PaymentManager } from '@/components/admin/PaymentManager';
+import { TenantManager } from '@/components/admin/TenantManager';
 import { AdminTestimonials } from '@/components/modules/AdminTestimonials';
+
 
 // Admin components
 import './components/modules/admin-exports';
@@ -146,6 +148,24 @@ const App = () => {
                 </AdminLayout>
               </AuthGate>
             } />
+
+<Route path="/admin/payment-manager" element={
+  <AuthGate>
+    <AdminLayout>
+      <PaymentManager />
+    </AdminLayout>
+  </AuthGate>
+} />
+
+<Route path="/admin/tenants" element={
+  <AuthGate>
+    <AdminLayout>
+      <TenantManager />
+    </AdminLayout>
+  </AuthGate>
+} />
+
+
             <Route path="/admin/analytics" element={
               <AuthGate>
                 <AdminLayout>

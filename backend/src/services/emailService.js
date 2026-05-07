@@ -266,4 +266,56 @@ async function verifyTransporter() {
   }
 }
 
-module.exports = { sendOTP, sendInvitationCode, sendInvoiceEmail, verifyTransporter };
+
+// Send bulk email to tenants
+async function sendBulkEmail(email, subject, message, userName, companyName) {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #1a56db; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; }
+        .footer { background: #f3f4f6; padding: 15px; text-align: center; font-size: 12px; color: #666; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h2>Bochi Construction Suite</h2>
+        </div>
+        <div class="content">
+          <p>Dear ${userName},</p>
+          <p>${message.replace(/\n/g, '<br>')}</p>
+          <hr>
+          <p style="font-size: 12px; color: #666;">This is an official communication from Bochi Construction Suite admin.</p>
+        </div>
+        <div class="footer">
+          <p>Bochi Construction Suite | info@bochi.ke | bochi.ke</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  const text = `Dear ${userName},\n\n${message}\n\n---\nBochi Construction Suite`;
+  
+  try {
+    const transporter = getTransporter();
+    await transporter.sendMail({
+      from: `"Bochi Admin" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: subject,
+      html: html,
+      text: text
+    });
+    return true;
+  } catch (error) {
+    console.error(`Failed to send bulk email to ${email}:`, error.message);
+    throw error;
+  }
+}
+
+module.exports = { sendOTP, sendInvitationCode, sendInvoiceEmail, verifyTransporter, sendBulkEmail };
