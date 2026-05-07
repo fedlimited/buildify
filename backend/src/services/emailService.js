@@ -267,40 +267,107 @@ async function verifyTransporter() {
 }
 
 
-// Send bulk email to tenants
-async function sendBulkEmail(email, subject, message, userName, companyName) {
-  const html = `
+
+// Send bulk email to tenants - accepts raw HTML to prevent double wrapping
+async function sendBulkEmail(email, subject, message, userName, companyName, htmlMessage = null) {
+  // If htmlMessage is provided (from frontend), use it directly WITHOUT extra wrapping
+  // This prevents the double-box effect and preserves your formatting
+  const finalHtml = htmlMessage || `
     <!DOCTYPE html>
     <html>
     <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: #1a56db; color: white; padding: 20px; text-align: center; }
-        .content { padding: 20px; }
-        .footer { background: #f3f4f6; padding: 15px; text-align: center; font-size: 12px; color: #666; }
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+          line-height: 1.6;
+          color: #333333;
+          margin: 0;
+          padding: 0;
+          background-color: #f5f5f5;
+        }
+        .email-container {
+          max-width: 600px;
+          margin: 0 auto;
+          background-color: #ffffff;
+          border-radius: 12px;
+          overflow: hidden;
+        }
+        .header {
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+          padding: 30px 20px;
+          text-align: center;
+        }
+        .header-title {
+          font-size: 28px;
+          font-weight: bold;
+          color: #ffffff;
+        }
+        .tagline {
+          font-size: 13px;
+          color: rgba(255,255,255,0.9);
+          margin-top: 5px;
+        }
+        .content {
+          padding: 30px;
+          background-color: #ffffff;
+        }
+        .greeting {
+          font-size: 18px;
+          font-weight: 600;
+          color: #1f2937;
+          margin-bottom: 20px;
+        }
+        .paragraph {
+          font-size: 16px;
+          color: #374151;
+          margin-bottom: 20px;
+          line-height: 1.6;
+        }
+        .footer {
+          background-color: #f9fafb;
+          padding: 20px;
+          text-align: center;
+          border-top: 1px solid #e5e7eb;
+        }
+        .footer-text {
+          font-size: 12px;
+          color: #9ca3af;
+        }
+        @media (max-width: 600px) {
+          .content {
+            padding: 20px;
+          }
+          .paragraph {
+            font-size: 15px;
+          }
+        }
       </style>
     </head>
-    <body>
-      <div class="container">
+    <body style="margin: 0; padding: 20px 10px; background-color: #f5f5f5;">
+      <div class="email-container">
         <div class="header">
-          <h2>Bochi Construction Suite</h2>
+          <div class="header-title">BOCHI</div>
+          <div class="tagline">Construction Suite</div>
         </div>
         <div class="content">
-          <p>Dear ${userName},</p>
-          <p>${message.replace(/\n/g, '<br>')}</p>
-          <hr>
-          <p style="font-size: 12px; color: #666;">This is an official communication from Bochi Construction Suite admin.</p>
+          <div class="greeting">Dear ${userName},</div>
+          <div class="paragraph">${message.replace(/\n/g, '<br>')}</div>
         </div>
         <div class="footer">
-          <p>Bochi Construction Suite | info@bochi.ke | bochi.ke</p>
+          <div class="footer-text">© ${new Date().getFullYear()} Bochi Construction Suite</div>
+          <div class="footer-text" style="margin-top: 5px;">This is an automated message from Bochi Admin. Please do not reply.</div>
         </div>
       </div>
     </body>
     </html>
   `;
   
-  const text = `Dear ${userName},\n\n${message}\n\n---\nBochi Construction Suite`;
+  // Extract plain text from HTML for text version
+  const plainText = message.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ');
+  
+  const text = `Dear ${userName},\n\n${plainText}\n\n---\nBochi Construction Suite\ninfo@bochi.ke | bochi.ke`;
   
   try {
     const transporter = getTransporter();
@@ -308,14 +375,14 @@ async function sendBulkEmail(email, subject, message, userName, companyName) {
       from: `"Bochi Admin" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: subject,
-      html: html,
+      html: finalHtml,
       text: text
     });
+    console.log(`✅ Bulk email sent to ${email}`);
     return true;
   } catch (error) {
-    console.error(`Failed to send bulk email to ${email}:`, error.message);
+    console.error(`❌ Failed to send bulk email to ${email}:`, error.message);
     throw error;
   }
 }
-
 module.exports = { sendOTP, sendInvitationCode, sendInvoiceEmail, verifyTransporter, sendBulkEmail };
