@@ -339,7 +339,7 @@ export function TenantManager() {
                     <th className="px-4 py-3 text-left">Tenant</th>
                     <th className="px-4 py-3 text-left">Company</th>
                     <th className="px-4 py-3 text-left">Email</th>
-                    <th className="px-4 py-3 text-left">Phone</th>
+                    
                     <th className="px-4 py-3 text-left">Subscription</th>
                     <th className="px-4 py-3 text-left">Status</th>
                   </tr>
@@ -359,7 +359,7 @@ export function TenantManager() {
                       <td className="px-4 py-3 font-medium">{tenant.user_name}</td>
                       <td className="px-4 py-3">{tenant.company_name}</td>
                       <td className="px-4 py-3">{tenant.email}</td>
-                      <td className="px-4 py-3">{tenant.phone || '-'}</td>
+                      
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs ${
                           tenant.subscription_status === 'active' 
