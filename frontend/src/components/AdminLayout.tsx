@@ -82,29 +82,57 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <>
-      <style>{`
-        /* Custom scrollbar for sidebar navigation */
-        .sidebar-nav {
-          flex: 1;
-          overflow-y: auto;
-          scrollbar-width: thin;
-          scrollbar-color: #c1c1c1 #f1f1f1;
-        }
-        .sidebar-nav::-webkit-scrollbar {
-          width: 4px;
-        }
-        .sidebar-nav::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 4px;
-        }
-        .sidebar-nav::-webkit-scrollbar-thumb {
-          background: #c1c1c1;
-          border-radius: 4px;
-        }
-        .sidebar-nav::-webkit-scrollbar-thumb:hover {
-          background: #a1a1a1;
-        }
-      `}</style>
+
+
+
+
+
+<style>{`
+  /* Custom scrollbar for sidebar navigation - supports dark mode */
+  .sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  
+  /* Light mode scrollbar */
+  .sidebar-nav::-webkit-scrollbar {
+    width: 4px;
+  }
+  .sidebar-nav::-webkit-scrollbar-track {
+    background: #e5e7eb !important;
+    border-radius: 4px;
+  }
+  .sidebar-nav::-webkit-scrollbar-thumb {
+    background: #9ca3af !important;
+    border-radius: 4px;
+  }
+  .sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: #6b7280 !important;
+  }
+  
+  /* Dark mode scrollbar - Force dark colors */
+  html.dark .sidebar-nav::-webkit-scrollbar-track {
+    background: #1f2937 !important;
+  }
+  html.dark .sidebar-nav::-webkit-scrollbar-thumb {
+    background: #4b5563 !important;
+  }
+  html.dark .sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: #6b7280 !important;
+  }
+  
+  /* Firefox dark mode support */
+  .sidebar-nav {
+    scrollbar-color: #9ca3af #e5e7eb;
+  }
+  html.dark .sidebar-nav {
+    scrollbar-color: #4b5563 #1f2937;
+  }
+`}</style>
+
+
+
       <div className="min-h-screen bg-background">
         {/* Admin Sidebar - Flex column layout */}
         <aside 
