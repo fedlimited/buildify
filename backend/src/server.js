@@ -150,6 +150,7 @@ app.post('/api/admin/payments/clear-by-date', authenticateToken, adminPaymentsCo
 app.post('/api/admin/payments/clear-all', authenticateToken, adminPaymentsController.clearAllPayments);
 app.delete('/api/admin/payments/:id', authenticateToken, adminPaymentsController.clearPaymentById);
 app.get('/api/admin/payments/stats', authenticateToken, adminPaymentsController.getPaymentStats);
+app.get('/api/admin/payments/all', authenticateToken, adminPaymentsController.getAllPayments);
 
 // Super Admin - Tenant Management & Communications
 app.get('/api/admin/tenants', authenticateToken, tenantsController.getAllTenants);

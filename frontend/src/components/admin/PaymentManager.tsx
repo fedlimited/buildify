@@ -78,21 +78,27 @@ export function PaymentManager() {
     }
   };
 
-  const fetchPayments = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/super-admin/payments`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setPayments(data);
-        setFilteredPayments(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch payments:', error);
+
+
+const fetchPayments = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/admin/payments/all`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await response.json();
+    if (response.ok) {
+      setPayments(data);
+      setFilteredPayments(data);
+      console.log('✅ Payments fetched:', data.length);
+    } else {
+      console.error('Failed to fetch payments:', data);
     }
-  };
+  } catch (error) {
+    console.error('Failed to fetch payments:', error);
+  }
+};
+
 
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });

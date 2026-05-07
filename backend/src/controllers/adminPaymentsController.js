@@ -8,7 +8,6 @@ const adminPaymentsController = {
       const db = await getDb();
       const { startDate, endDate, masterPassword } = req.body;
       
-      // Verify master password
       if (masterPassword !== process.env.ADMIN_MASTER_PASSWORD) {
         return res.status(401).json({ error: 'Invalid master password' });
       }
@@ -19,7 +18,6 @@ const adminPaymentsController = {
       
       console.log(`Clearing payments from ${startDate} to ${endDate}`);
       
-      // Use created_at as the date column
       const subscriptionResult = await db.query(
         `DELETE FROM subscription_payments 
          WHERE DATE(created_at) BETWEEN $1 AND $2 
@@ -48,7 +46,6 @@ const adminPaymentsController = {
       const db = await getDb();
       const { masterPassword, confirm } = req.body;
       
-      // Verify master password
       if (masterPassword !== process.env.ADMIN_MASTER_PASSWORD) {
         return res.status(401).json({ error: 'Invalid master password' });
       }
@@ -82,7 +79,6 @@ const adminPaymentsController = {
       const { id } = req.params;
       const { masterPassword } = req.body;
       
-      // Verify master password
       if (masterPassword !== process.env.ADMIN_MASTER_PASSWORD) {
         return res.status(401).json({ error: 'Invalid master password' });
       }
@@ -138,6 +134,43 @@ const adminPaymentsController = {
       
     } catch (error) {
       console.error('Error getting payment stats:', error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  // Get all payments with company information
+  getAllPayments: async (req, res) => {
+    try {
+      const db = await getDb();
+      
+      const isSuperAdmin = req.user?.isSuperAdmin || req.user?.role === 'super_admin';
+      if (!isSuperAdmin) {
+        return res.status(403).json({ error: 'Super admin access required' });
+      }
+      
+      const payments = await db.query(`
+        SELECT 
+          sp.id,
+          sp.amount_usd,
+          sp.amount_kes,
+          sp.payment_method,
+          sp.mpesa_transaction_id,
+          sp.stripe_payment_intent_id,
+          sp.status,
+          sp.paid_at,
+          sp.created_at,
+          c.name as company_name,
+          c.subdomain
+        FROM subscription_payments sp
+        JOIN company_subscriptions cs ON sp.subscription_id = cs.id
+        JOIN companies c ON cs.company_id = c.id
+        ORDER BY sp.created_at DESC
+      `);
+      
+      res.json(payments.rows);
+      
+    } catch (error) {
+      console.error('Error getting all payments:', error);
       res.status(500).json({ error: error.message });
     }
   }
