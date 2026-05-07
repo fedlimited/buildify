@@ -13,7 +13,9 @@ const tenantsController = {
         return res.status(403).json({ error: 'Super admin access required' });
       }
 
-      
+
+
+
 const tenants = await db.query(`
   SELECT 
     u.id as user_id,
@@ -26,7 +28,6 @@ const tenants = await db.query(`
     c.name as company_name,
     c.subdomain,
     c.phone as company_phone,
-    cs.plan_type,
     cs.status as subscription_status,
     cs.current_period_end
   FROM users u
@@ -35,6 +36,8 @@ const tenants = await db.query(`
   WHERE u.role != 'super_admin'
   ORDER BY c.name, u.name
 `);
+
+
       
       res.json({
         success: true,
@@ -73,16 +76,28 @@ const tenants = await db.query(`
       // Get tenant emails
       let emails = [];
       let tenants = [];
+
+
+
+
+
+
       
-      if (sendToAll) {
-        const result = await db.query(`
-          SELECT u.id, u.name, u.email, c.name as company_name
-          FROM users u
-          JOIN companies c ON u.company_id = c.id
-          WHERE u.role != 'super_admin' AND u.is_active = 1
-        `);
-        tenants = result.rows;
-        emails = result.rows.map(t => t.email);
+if (sendToAll) {
+  const result = await db.query(`
+    SELECT u.id, u.name, u.email, c.name as company_name
+    FROM users u
+    JOIN companies c ON u.company_id = c.id
+    WHERE u.role != 'super_admin' AND u.is_active = 1
+  `);
+  tenants = result.rows;
+  emails = result.rows.map(t => t.email);
+}
+
+
+
+
+
       } else if (tenantIds && tenantIds.length > 0) {
         const placeholders = tenantIds.map((_, i) => `$${i + 1}`).join(',');
         const result = await db.query(`
