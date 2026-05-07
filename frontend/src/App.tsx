@@ -12,7 +12,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { AuthGate } from '@/components/AuthGate';
-
+import { PaymentManager } from '@/components/admin/PaymentManager';
 import { AdminTestimonials } from '@/components/modules/AdminTestimonials';
 
 // Admin components
