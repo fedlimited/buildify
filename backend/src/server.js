@@ -32,6 +32,7 @@ const subscriptionPaymentController = require('./controllers/subscriptionPayment
 const superAdminRoutes = require('./routes/superAdminRoutes');
 const testimonialRoutes = require('./routes/testimonialRoutes');
 const app = express();
+const adminPaymentsController = require('./controllers/adminPaymentsController');
 // FORCE RENDER REBUILD - Super Admin Implementation v2
 const PORT = process.env.PORT || 5000;
 
@@ -143,6 +144,11 @@ app.get('/api/auth/me', authenticateToken, authController.getCurrentUser);
 // All other /api routes need company check
 app.use('/api', authenticateToken, requireCompanyAccess);
 
+// Super Admin - Payment Management
+app.post('/api/admin/payments/clear-by-date', authenticateToken, adminPaymentsController.clearPaymentsByDate);
+app.post('/api/admin/payments/clear-all', authenticateToken, adminPaymentsController.clearAllPayments);
+app.delete('/api/admin/payments/:id', authenticateToken, adminPaymentsController.clearPaymentById);
+app.get('/api/admin/payments/stats', authenticateToken, adminPaymentsController.getPaymentStats);
 
 
 // Currency routes
