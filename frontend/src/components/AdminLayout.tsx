@@ -88,59 +88,79 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
 
 <style>{`
-  /* Custom scrollbar for sidebar navigation - supports dark mode */
+  /* Force scrollbar styles with high specificity */
+  aside.fixed .sidebar-nav,
   .sidebar-nav {
     flex: 1;
     overflow-y: auto;
     scrollbar-width: thin;
   }
   
-  /* Light mode scrollbar */
+  /* Light mode - Webkit (Chrome, Edge, Safari) */
+  aside.fixed .sidebar-nav::-webkit-scrollbar,
   .sidebar-nav::-webkit-scrollbar {
-    width: 4px;
-  }
-  .sidebar-nav::-webkit-scrollbar-track {
-    background: #e5e7eb !important;
-    border-radius: 4px;
-  }
-  .sidebar-nav::-webkit-scrollbar-thumb {
-    background: #9ca3af !important;
-    border-radius: 4px;
-  }
-  /* Subtle hover effect */
-  .sidebar-nav::-webkit-scrollbar-thumb:hover {
-    background: #8a8f9a !important;
-  }
-  /* Subtle active effect (when clicking/dragging) */
-  .sidebar-nav::-webkit-scrollbar-thumb:active {
-    background: #7a7f8a !important;
+    width: 4px !important;
+    height: 4px !important;
   }
   
-  /* Dark mode scrollbar */
+  aside.fixed .sidebar-nav::-webkit-scrollbar-track,
+  .sidebar-nav::-webkit-scrollbar-track {
+    background: #e5e7eb !important;
+    border-radius: 4px !important;
+  }
+  
+  aside.fixed .sidebar-nav::-webkit-scrollbar-thumb,
+  .sidebar-nav::-webkit-scrollbar-thumb {
+    background: #9ca3af !important;
+    border-radius: 4px !important;
+  }
+  
+  /* Light mode - NO hover effect (keep same color) */
+  aside.fixed .sidebar-nav::-webkit-scrollbar-thumb:hover,
+  .sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af !important;
+  }
+  
+  /* Light mode - NO active effect (keep same color) */
+  aside.fixed .sidebar-nav::-webkit-scrollbar-thumb:active,
+  .sidebar-nav::-webkit-scrollbar-thumb:active {
+    background: #9ca3af !important;
+  }
+  
+  /* Dark mode - Webkit */
+  html.dark aside.fixed .sidebar-nav::-webkit-scrollbar-track,
   html.dark .sidebar-nav::-webkit-scrollbar-track {
     background: #1f2937 !important;
   }
+  
+  html.dark aside.fixed .sidebar-nav::-webkit-scrollbar-thumb,
   html.dark .sidebar-nav::-webkit-scrollbar-thumb {
     background: #4b5563 !important;
   }
-  /* Subtle hover effect for dark mode */
+  
+  /* Dark mode - NO hover effect */
+  html.dark aside.fixed .sidebar-nav::-webkit-scrollbar-thumb:hover,
   html.dark .sidebar-nav::-webkit-scrollbar-thumb:hover {
-    background: #556579 !important;
-  }
-  /* Subtle active effect for dark mode (when clicking/dragging) */
-  html.dark .sidebar-nav::-webkit-scrollbar-thumb:active {
-    background: #5a6a7e !important;
+    background: #4b5563 !important;
   }
   
-  /* Firefox support */
-  .sidebar-nav {
-    scrollbar-color: #9ca3af #e5e7eb;
+  /* Dark mode - NO active effect */
+  html.dark aside.fixed .sidebar-nav::-webkit-scrollbar-thumb:active,
+  html.dark .sidebar-nav::-webkit-scrollbar-thumb:active {
+    background: #4b5563 !important;
   }
+  
+  /* Firefox */
+  aside.fixed .sidebar-nav,
+  .sidebar-nav {
+    scrollbar-color: #9ca3af #e5e7eb !important;
+  }
+  
+  html.dark aside.fixed .sidebar-nav,
   html.dark .sidebar-nav {
-    scrollbar-color: #4b5563 #1f2937;
+    scrollbar-color: #4b5563 #1f2937 !important;
   }
 `}</style>
-
 
 
       <div className="min-h-screen bg-background">
