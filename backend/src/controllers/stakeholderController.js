@@ -56,8 +56,11 @@ const stakeholderController = {
       if (user.rows.length === 0) {
         // Create new user
         const newUser = await db.query(`
-          INSERT INTO users (name, email, password, role, stakeholder_type, temporary_password, password_changed, company_id, is_active)
-          VALUES ($1, $2, $3, 'stakeholder', $4, $5, false, $6, true) RETURNING id
+
+
+       INSERT INTO users (name, email, password, role, stakeholder_type, temporary_password, password_changed, company_id, is_active)
+       VALUES ($1, $2, $3, 'stakeholder', $4, $5, false, $6, 1) RETURNING id
+
         `, [name, email, hashedPassword, stakeholderType, tempPassword, company_id]);
         userId = newUser.rows[0].id;
       } else {
@@ -147,21 +150,26 @@ const stakeholderController = {
     try {
       const db = await getDb();
       const userId = req.user.id;
-      
-      const projects = await db.query(`
-        SELECT 
-          p.id,
-          p.name,
-          p.client,
-          p.location,
-          p.progress,
-          p.status,
-          ps.stakeholder_type,
-          ps.invite_status
-        FROM project_stakeholders ps
-        JOIN projects p ON ps.project_id = p.id
-        WHERE ps.user_id = $1 AND ps.is_active = true AND ps.invite_status = 'accepted'
-      `, [userId]);
+
+
+  
+
+const projects = await db.query(`
+  SELECT 
+    p.id,
+    p.name,
+    p.client,
+    p.location,
+    p.progress,
+    p.status,
+    ps.stakeholder_type,
+    ps.invite_status
+  FROM project_stakeholders ps
+  JOIN projects p ON ps.project_id = p.id
+  WHERE ps.user_id = $1 AND ps.is_active = 1 AND ps.invite_status = 'accepted'
+`, [userId]);
+
+
       
       res.json({ projects: projects.rows });
     } catch (error) {
