@@ -5,7 +5,7 @@ import LandingPage from './components/LandingPage';
 import Login from '@/pages/Login';
 import { Register } from '@/pages/Register';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, Outlet } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,7 +16,8 @@ import { PaymentManager } from '@/components/admin/PaymentManager';
 import { TenantManager } from '@/components/admin/TenantManager';
 import { AdminTestimonials } from '@/components/modules/AdminTestimonials';
 import { PaymentVerification } from '@/pages/PaymentVerification';
-
+import { StakeholderLayout } from '@/components/StakeholderLayout';
+import { StakeholderDashboard } from '@/pages/StakeholderDashboard';
 
 // Admin components
 import './components/modules/admin-exports';
@@ -189,6 +190,27 @@ const App = () => {
                 </AdminLayout>
               </AuthGate>
             } />
+
+
+            {/* ========== STAKEHOLDER PORTAL ROUTES ========== */}
+            <Route path="/stakeholder" element={
+              <AuthGate>
+                <StakeholderLayout>
+                  <Outlet />
+                </StakeholderLayout>
+              </AuthGate>
+            }>
+              <Route index element={<Navigate to="/stakeholder/dashboard" replace />} />
+              <Route path="dashboard" element={<StakeholderDashboard />} />
+              <Route path="projects" element={<div className="p-6 text-center">Projects Page Coming Soon</div>} />
+              <Route path="documents" element={<div className="p-6 text-center">Documents Page Coming Soon</div>} />
+              <Route path="meetings" element={<div className="p-6 text-center">Meetings Page Coming Soon</div>} />
+              <Route path="comments" element={<div className="p-6 text-center">Discussions Page Coming Soon</div>} />
+            </Route>
+
+            {/* Fallback - 404 */}
+            <Route path="*" element={<NotFound />} />
+
 
             {/* Fallback - 404 */}
             <Route path="*" element={<NotFound />} />

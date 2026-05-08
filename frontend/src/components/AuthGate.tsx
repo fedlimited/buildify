@@ -59,9 +59,26 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     }} />;
   }
 
-  if (authUser) {
-    return <>{children}</>;
+
+
+
+if (authUser) {
+  // If user is a stakeholder, redirect to stakeholder dashboard
+  if (authUser.role === 'stakeholder') {
+    const currentPath = window.location.pathname;
+    // Only redirect if not already on stakeholder dashboard
+    if (!currentPath.startsWith('/stakeholder')) {
+      window.location.href = '/stakeholder/dashboard';
+      return null;
+    }
   }
+  return <>{children}</>;
+}
+
+
+
+
+
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
