@@ -8,6 +8,7 @@ import {
   Phone, Mail, User, Briefcase, AlertTriangle, CheckSquare
 } from 'lucide-react';
 import { API_BASE_URL } from '@/config/api';
+import { useProject } from '@/contexts/ProjectContext';
 
 interface Project {
   id: number;
@@ -70,6 +71,7 @@ interface TeamMember {
 export function StakeholderProjectPortal() {
   const { projectId } = useParams();
   const navigate = useNavigate();
+  const { setCurrentProjectName } = useProject();
   const [project, setProject] = useState<Project | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -104,6 +106,7 @@ export function StakeholderProjectPortal() {
       const data = await response.json();
       if (response.ok) {
         setProject(data);
+        setCurrentProjectName(data.name);
       }
     } catch (error) {
       console.error('Error fetching project:', error);
@@ -245,6 +248,7 @@ export function StakeholderProjectPortal() {
   return (
     <div className="space-y-6">
       {/* Back Button */}
+
       <button
         onClick={() => navigate('/stakeholder/dashboard')}
         className="flex items-center gap-2 text-gray-600 hover:text-amber-500 transition"
