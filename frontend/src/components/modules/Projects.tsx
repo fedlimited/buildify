@@ -10,11 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, RefreshCw, MapPin, Navigation, Globe } from 'lucide-react';
+import { Plus, Pencil, Trash2, RefreshCw, MapPin, Navigation, Globe, Users } from 'lucide-react';
 import { useSubscriptionLimit } from '@/hooks/useSubscriptionLimit';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
-
-// Updated: April 30, 2026 - Accessibility fixes
+import { ProjectStakeholders } from '@/components/projects/ProjectStakeholders';
 
 const emptyProject: Omit<Project, 'id' | 'createdAt'> = {
   name: '', client: '', contractSum: 0, location: '', startDate: '', endDate: '', status: 'Active', projectManager: '', description: '',
@@ -34,9 +33,10 @@ export function Projects() {
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [mapType, setMapType] = useState<'leaflet' | 'google'>('leaflet');
+  const [activeTab, setActiveTab] = useState<'details' | 'stakeholders'>('details');
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   const openNew = () => { 
-    // Check limit before allowing new project
     if (!limits.projects.allowed) {
       setShowUpgradeModal(true);
       return;
@@ -63,7 +63,7 @@ export function Projects() {
         await fetchProjects();
       }
       setOpen(false);
-      refreshLimits(); // Refresh limits after adding
+      refreshLimits();
     } catch (error) {
       console.error('Failed to save project:', error);
       alert('Failed to save project. Please try again.');
@@ -90,7 +90,6 @@ export function Projects() {
     return Math.min(100, (received / proj.contractSum) * 100);
   };
 
-  // Location Functions
   const openLocationDialog = (project: Project) => {
     setLocationDialog(project);
     setLocationAddress(project.locationAddress || project.location || '');
@@ -109,7 +108,6 @@ export function Projects() {
       location: locationAddress || locationDialog.location
     };
     
-    // Generate Google Maps URL
     if (latitude && longitude) {
       updateData.googleMapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
     } else if (locationAddress) {
@@ -127,18 +125,9 @@ export function Projects() {
     }
   };
 
-  const openGoogleMaps = (project: Project) => {
-    if (project.googleMapsUrl) {
-      window.open(project.googleMapsUrl, '_blank');
-    } else if (project.latitude && project.longitude) {
-      window.open(`https://www.google.com/maps?q=${project.latitude},${project.longitude}`, '_blank');
-    } else if (project.locationAddress) {
-      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(project.locationAddress)}`, '_blank');
-    } else if (project.location) {
-      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(project.location)}`, '_blank');
-    } else {
-      alert('No location set for this project');
-    }
+  const openStakeholders = (project: Project) => {
+    setSelectedProject(project);
+    setActiveTab('stakeholders');
   };
 
   return (
@@ -171,27 +160,20 @@ export function Projects() {
                 }`}>{p.status}</span>
               </div>
               
-              {/* Location with Google Maps button */}
               <div className="flex items-center justify-between mb-1">
                 <p className="text-xs text-muted-foreground truncate flex-1">
                   {p.locationAddress || p.location || 'No location set'}
                 </p>
-
-
-
-<button
-  onClick={() => openLocationDialog(p)}
-  className="text-blue-500 hover:text-blue-700 flex items-center gap-1 ml-2 flex-shrink-0"
-  title="Set or view site location"
->
-  <MapPin size={14} />
-  <span className="text-xs">{p.latitude ? 'View/Update' : 'Set'} Site Location</span>
-</button>
-
+                <button
+                  onClick={() => openLocationDialog(p)}
+                  className="text-blue-500 hover:text-blue-700 flex items-center gap-1 ml-2 flex-shrink-0"
+                  title="Set or view site location"
+                >
+                  <MapPin size={14} />
+                  <span className="text-xs">{p.latitude ? 'View/Update' : 'Set'} Site Location</span>
+                </button>
               </div>
 
-            
-              {/* Coordinates display if available */}
               {p.latitude && p.longitude && (
                 <p className="text-xs text-muted-foreground mb-2">
                   📍 {p.latitude.toFixed(6)}, {p.longitude.toFixed(6)}
@@ -214,13 +196,24 @@ export function Projects() {
                 <span>{formatDate(p.startDate)}</span>
                 <span>{formatDate(p.endDate)}</span>
               </div>
-              
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => openEdit(p)}>
-                  <Pencil size={14} className="mr-1" />Edit
-                </Button>
-                <Button variant="outline" size="sm" className="text-xs text-destructive hover:text-destructive" onClick={() => handleDelete(p.id)}>
-                  <Trash2 size={14} />
+
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => openEdit(p)}>
+                    <Pencil size={14} className="mr-1" />Edit
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-xs text-destructive hover:text-destructive" onClick={() => handleDelete(p.id)}>
+                    <Trash2 size={14} />
+                  </Button>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full text-xs" 
+                  onClick={() => openStakeholders(p)}
+                >
+                  <Users size={14} className="mr-1" />
+                  Manage Stakeholders
                 </Button>
               </div>
             </div>
@@ -228,29 +221,18 @@ export function Projects() {
         })}
       </div>
 
-
-
-
-{/* Add/Edit Project Dialog */}
-<Dialog open={open} onOpenChange={setOpen}>
-
-
-
-<DialogContent 
-  className="max-w-lg max-h-[90vh] overflow-y-auto"
-  aria-describedby="project-dialog-description"
->
-  <DialogHeader>
-    <DialogTitle>{editing ? 'Edit Project' : 'New Project'}</DialogTitle>
-    <p id="project-dialog-description" className="text-sm text-muted-foreground mt-1">
-      {editing ? 'Update the project details below' : 'Fill in the project information below'}
-    </p>
-  </DialogHeader>
-
-
-
-
-
+      {/* Add/Edit Project Dialog */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent 
+          className="max-w-lg max-h-[90vh] overflow-y-auto"
+          aria-describedby="project-dialog-description"
+        >
+          <DialogHeader>
+            <DialogTitle>{editing ? 'Edit Project' : 'New Project'}</DialogTitle>
+            <p id="project-dialog-description" className="text-sm text-muted-foreground mt-1">
+              {editing ? 'Update the project details below' : 'Fill in the project information below'}
+            </p>
+          </DialogHeader>
           <div className="grid gap-3 py-2">
             <div><Label className="text-xs">Project Name *</Label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
             <div><Label className="text-xs">Client *</Label><Input value={form.client} onChange={e => setForm({ ...form, client: e.target.value })} /></div>
@@ -280,95 +262,72 @@ export function Projects() {
 
       {/* Location Dialog with Leaflet Map */}
       <Dialog open={!!locationDialog} onOpenChange={() => setLocationDialog(null)}>
-
-
-
-
-<DialogContent 
-  className="max-w-4xl max-h-[90vh] overflow-y-auto"
-  aria-describedby="location-dialog-description"
->
-  <DialogHeader>
-    <div className="flex items-center justify-between">
-      <DialogTitle>Set Project Location - {locationDialog?.name}</DialogTitle>
-      <div className="flex items-center gap-2">
-        <Button 
-          variant={mapType === 'leaflet' ? 'default' : 'outline'} 
-          size="sm"
-          onClick={() => setMapType('leaflet')}
-          className="text-xs"
+        <DialogContent 
+          className="max-w-4xl max-h-[90vh] overflow-y-auto"
+          aria-describedby="location-dialog-description"
         >
-          OpenStreetMap
-        </Button>
-        <Button 
-          variant={mapType === 'google' ? 'default' : 'outline'} 
-          size="sm"
-          onClick={() => setMapType('google')}
-          className="text-xs"
-        >
-          Google Maps
-        </Button>
-      </div>
-    </div>
-    <p id="location-dialog-description" className="text-sm text-muted-foreground mt-1">
-      {mapType === 'leaflet' 
-        ? 'Click anywhere on the map to set the exact project site location' 
-        : 'Click on map to set marker | Use drawing tools (top-center) to draw site boundary | Toggle Satellite for aerial view'}
-    </p>
-  </DialogHeader>
-
-
-
-
-<div className="space-y-4 py-4">
-  {locationDialog && (
-    <>
-      {mapType === 'leaflet' && (
-        <LeafletMapPicker
-          onLocationSelect={(lat, lng, address) => {
-            setLatitude(lat.toString());
-            setLongitude(lng.toString());
-            setLocationAddress(address);
-          }}
-          initialLat={locationDialog.latitude}
-          initialLng={locationDialog.longitude}
-          initialAddress={locationDialog.locationAddress}
-        />
-      )}
-      {mapType === 'google' && (
-        <GoogleMapPicker
-          onLocationSelect={(lat, lng, address) => {
-            setLatitude(lat.toString());
-            setLongitude(lng.toString());
-            setLocationAddress(address);
-          }}
-          initialLat={locationDialog.latitude}
-          initialLng={locationDialog.longitude}
-          initialAddress={locationDialog.locationAddress}
-        />
-      )}
-    </>
-  )}
-  
-  <div className="flex justify-end gap-2 pt-2">
-    <Button variant="outline" onClick={() => setLocationDialog(null)}>
-      Cancel
-    </Button>
-    <Button onClick={saveProjectLocation}>
-      Save Location
-    </Button>
-  </div>
-</div>
-
-
-
-
-
-
-
-
-
-
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <DialogTitle>Set Project Location - {locationDialog?.name}</DialogTitle>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant={mapType === 'leaflet' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setMapType('leaflet')}
+                  className="text-xs"
+                >
+                  OpenStreetMap
+                </Button>
+                <Button 
+                  variant={mapType === 'google' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setMapType('google')}
+                  className="text-xs"
+                >
+                  Google Maps
+                </Button>
+              </div>
+            </div>
+            <p id="location-dialog-description" className="text-sm text-muted-foreground mt-1">
+              {mapType === 'leaflet' 
+                ? 'Click anywhere on the map to set the exact project site location' 
+                : 'Click on map to set marker | Use drawing tools (top-center) to draw site boundary | Toggle Satellite for aerial view'}
+            </p>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {locationDialog && (
+              <>
+                {mapType === 'leaflet' && (
+                  <LeafletMapPicker
+                    onLocationSelect={(lat, lng, address) => {
+                      setLatitude(lat.toString());
+                      setLongitude(lng.toString());
+                      setLocationAddress(address);
+                    }}
+                    initialLat={locationDialog.latitude}
+                    initialLng={locationDialog.longitude}
+                    initialAddress={locationDialog.locationAddress}
+                  />
+                )}
+                {mapType === 'google' && (
+                  <GoogleMapPicker
+                    onLocationSelect={(lat, lng, address) => {
+                      setLatitude(lat.toString());
+                      setLongitude(lng.toString());
+                      setLocationAddress(address);
+                    }}
+                    initialLat={locationDialog.latitude}
+                    initialLng={locationDialog.longitude}
+                    initialAddress={locationDialog.locationAddress}
+                  />
+                )}
+              </>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setLocationDialog(null)}>Cancel</Button>
+              <Button onClick={saveProjectLocation}>Save Location</Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -380,6 +339,27 @@ export function Projects() {
         current={limits.projects.current}
         max={limits.projects.max}
       />
+
+      {/* Stakeholders Management Dialog */}
+      <Dialog open={activeTab === 'stakeholders' && !!selectedProject} onOpenChange={() => {
+        setActiveTab('details');
+        setSelectedProject(null);
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Manage Stakeholders - {selectedProject?.name}</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Invite and manage clients, consultants, and other stakeholders for this project
+            </p>
+          </DialogHeader>
+          {selectedProject && (
+            <ProjectStakeholders 
+              projectId={selectedProject.id} 
+              projectName={selectedProject.name} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
