@@ -19,6 +19,7 @@ import { PaymentVerification } from '@/pages/PaymentVerification';
 import { StakeholderLayout } from '@/components/StakeholderLayout';
 import { StakeholderDashboard } from '@/pages/StakeholderDashboard';
 import { StakeholderProjectPortal } from '@/pages/StakeholderProjectPortal';
+import { StakeholderPreview } from '@/pages/StakeholderPreview';
 
 // Admin components
 import './components/modules/admin-exports';
@@ -89,16 +90,9 @@ const App = () => {
             <Route path="/" element={<LandingPage />} />
 
             {/* Auth pages */}
-
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/payment-verification" element={<PaymentVerification />} />
-
-
-
-
-
-
 
             {/* Legal Pages */}
             <Route path="/terms" element={<TermsOfService />} />
@@ -159,24 +153,20 @@ const App = () => {
                 </AdminLayout>
               </AuthGate>
             } />
-
-<Route path="/admin/payment-manager" element={
-  <AuthGate>
-    <AdminLayout>
-      <PaymentManager />
-    </AdminLayout>
-  </AuthGate>
-} />
-
-<Route path="/admin/tenants" element={
-  <AuthGate>
-    <AdminLayout>
-      <TenantManager />
-    </AdminLayout>
-  </AuthGate>
-} />
-
-
+            <Route path="/admin/payment-manager" element={
+              <AuthGate>
+                <AdminLayout>
+                  <PaymentManager />
+                </AdminLayout>
+              </AuthGate>
+            } />
+            <Route path="/admin/tenants" element={
+              <AuthGate>
+                <AdminLayout>
+                  <TenantManager />
+                </AdminLayout>
+              </AuthGate>
+            } />
             <Route path="/admin/analytics" element={
               <AuthGate>
                 <AdminLayout>
@@ -192,32 +182,29 @@ const App = () => {
               </AuthGate>
             } />
 
+            {/* Stakeholder Portal Routes */}
+            <Route path="/stakeholder" element={
+              <AuthGate>
+                <StakeholderLayout>
+                  <Outlet />
+                </StakeholderLayout>
+              </AuthGate>
+            }>
+              <Route index element={<Navigate to="/stakeholder/dashboard" replace />} />
+              <Route path="dashboard" element={<StakeholderDashboard />} />
+              <Route path="projects" element={<div>Projects Page Coming Soon</div>} />
+              <Route path="projects/:projectId" element={<StakeholderProjectPortal />} />
+              <Route path="documents" element={<div>Documents Page Coming Soon</div>} />
+              <Route path="meetings" element={<div>Meetings Page Coming Soon</div>} />
+              <Route path="comments" element={<div>Discussions Page Coming Soon</div>} />
+            </Route>
 
-
-
-
-{/* Stakeholder Portal Routes */}
-<Route path="/stakeholder" element={
-  <AuthGate>
-    <StakeholderLayout>
-      <Outlet />
-    </StakeholderLayout>
-  </AuthGate>
-}>
-  <Route index element={<Navigate to="/stakeholder/dashboard" replace />} />
-  <Route path="dashboard" element={<StakeholderDashboard />} />
-  <Route path="projects" element={<div>Projects Page Coming Soon</div>} />
-  <Route path="projects/:projectId" element={<StakeholderProjectPortal />} />
-  <Route path="documents" element={<div>Documents Page Coming Soon</div>} />
-  <Route path="meetings" element={<div>Meetings Page Coming Soon</div>} />
-  <Route path="comments" element={<div>Discussions Page Coming Soon</div>} />
-</Route>
-
-
-
-            {/* Fallback - 404 */}
-            <Route path="*" element={<NotFound />} />
-
+            {/* Stakeholder Preview Route - For contractors to view as stakeholder */}
+            <Route path="/stakeholder/portal/:projectId" element={
+              <AuthGate>
+                <StakeholderPreview />
+              </AuthGate>
+            } />
 
             {/* Fallback - 404 */}
             <Route path="*" element={<NotFound />} />

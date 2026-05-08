@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, RefreshCw, MapPin, Navigation, Globe, Users, FileText, Calendar, Image } from 'lucide-react';
+import { Plus, Pencil, Trash2, RefreshCw, MapPin, Navigation, Globe, Users, FileText, Calendar, Image, Eye } from 'lucide-react';
 import { useSubscriptionLimit } from '@/hooks/useSubscriptionLimit';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
 import { ProjectStakeholders } from '@/components/projects/ProjectStakeholders';
@@ -162,6 +162,11 @@ export function Projects() {
     setActiveTab('reports');
   };
 
+
+const viewAsStakeholder = (project: Project) => {
+  window.open(`/stakeholder/portal/${project.id}`, '_blank');
+};
+
   return (
     <div className="space-y-4 fade-in">
 
@@ -248,36 +253,52 @@ export function Projects() {
                     <Trash2 size={14} />
                   </Button>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" size="sm" className="text-xs" onClick={() => openStakeholders(p)}>
-                    <Users size={12} className="mr-1" />
-                    Stakeholders
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs" onClick={() => openTeam(p)}>
-                    <Users size={12} className="mr-1" />
-                    Team
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs" onClick={() => openDocuments(p)}>
-                    <FileText size={12} className="mr-1" />
-                    Documents
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs" onClick={() => openMeetings(p)}>
-                    <Calendar size={12} className="mr-1" />
-                    Meetings
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs" onClick={() => openDrawings(p)}>
-                    <FileText size={12} className="mr-1" />
-                    Drawings
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs" onClick={() => openPhotos(p)}>
-                    <Image size={12} className="mr-1" />
-                    Photos
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs col-span-2" onClick={() => openReports(p)}>
-                    <FileText size={12} className="mr-1" />
-                    Reports
-                  </Button>
-                </div>
+
+
+
+
+<div className="grid grid-cols-2 gap-2">
+  <Button variant="outline" size="sm" className="text-xs" onClick={() => openStakeholders(p)}>
+    <Users size={12} className="mr-1" />
+    Stakeholders
+  </Button>
+  <Button variant="outline" size="sm" className="text-xs" onClick={() => openTeam(p)}>
+    <Users size={12} className="mr-1" />
+    Team
+  </Button>
+  <Button variant="outline" size="sm" className="text-xs" onClick={() => openDocuments(p)}>
+    <FileText size={12} className="mr-1" />
+    Documents
+  </Button>
+  <Button variant="outline" size="sm" className="text-xs" onClick={() => openMeetings(p)}>
+    <Calendar size={12} className="mr-1" />
+    Meetings
+  </Button>
+  <Button variant="outline" size="sm" className="text-xs" onClick={() => openDrawings(p)}>
+    <FileText size={12} className="mr-1" />
+    Drawings
+  </Button>
+  <Button variant="outline" size="sm" className="text-xs" onClick={() => openPhotos(p)}>
+    <Image size={12} className="mr-1" />
+    Photos
+  </Button>
+  <Button variant="outline" size="sm" className="text-xs col-span-2" onClick={() => openReports(p)}>
+    <FileText size={12} className="mr-1" />
+    Reports
+  </Button>
+  <Button variant="outline" size="sm" className="text-xs col-span-2 bg-amber-50 border-amber-200 hover:bg-amber-100" onClick={() => viewAsStakeholder(p)}>
+    <Eye size={12} className="mr-1" />
+    View as Stakeholder
+  </Button>
+</div>
+
+
+
+
+
+
+
+
               </div>
             </div>
           );
