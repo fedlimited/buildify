@@ -1,3 +1,4 @@
+
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { useState } from 'react';
 import { LeafletMapPicker } from '@/components/LeafletMapPicker';
@@ -14,6 +15,7 @@ import { Plus, Pencil, Trash2, RefreshCw, MapPin, Navigation, Globe, Users } fro
 import { useSubscriptionLimit } from '@/hooks/useSubscriptionLimit';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
 import { ProjectStakeholders } from '@/components/projects/ProjectStakeholders';
+import { ProjectTeamManager } from '@/components/projects/ProjectTeamManager';
 
 const emptyProject: Omit<Project, 'id' | 'createdAt'> = {
   name: '', client: '', contractSum: 0, location: '', startDate: '', endDate: '', status: 'Active', projectManager: '', description: '',
@@ -33,7 +35,7 @@ export function Projects() {
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [mapType, setMapType] = useState<'leaflet' | 'google'>('leaflet');
-  const [activeTab, setActiveTab] = useState<'details' | 'stakeholders'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'stakeholders' | 'team'>('details');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   const openNew = () => { 
@@ -130,33 +132,32 @@ export function Projects() {
     setActiveTab('stakeholders');
   };
 
+  const openTeam = (project: Project) => {
+    setSelectedProject(project);
+    setActiveTab('team');
+  };
+
   return (
     <div className="space-y-4 fade-in">
 
-
-
-
-<div className="flex items-center justify-between">
-  <p className="text-sm text-muted-foreground">{projects.length} project{projects.length !== 1 ? 's' : ''}</p>
-  <div className="flex gap-2">
-    <Button 
-      variant="outline" 
-      size="sm" 
-      onClick={() => window.open('/stakeholder/dashboard', '_blank')}
-      title="View stakeholder portal"
-    >
-      <Users size={14} className="mr-1" />
-      Stakeholder Portal
-    </Button>
-    <Button variant="outline" size="sm" onClick={() => fetchProjects()}>
-      <RefreshCw size={14} className="mr-1" /> Refresh
-    </Button>
-    <Button onClick={openNew} size="sm"><Plus size={16} className="mr-1" />Add Project</Button>
-  </div>
-</div>
-
-
-
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">{projects.length} project{projects.length !== 1 ? 's' : ''}</p>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => window.open('/stakeholder/dashboard', '_blank')}
+            title="View stakeholder portal"
+          >
+            <Users size={14} className="mr-1" />
+            Stakeholder Portal
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => fetchProjects()}>
+            <RefreshCw size={14} className="mr-1" /> Refresh
+          </Button>
+          <Button onClick={openNew} size="sm"><Plus size={16} className="mr-1" />Add Project</Button>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {projects.map(p => {
@@ -230,6 +231,15 @@ export function Projects() {
                 >
                   <Users size={14} className="mr-1" />
                   Manage Stakeholders
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full text-xs" 
+                  onClick={() => openTeam(p)}
+                >
+                  <Users size={14} className="mr-1" />
+                  Manage Team
                 </Button>
               </div>
             </div>
@@ -370,6 +380,27 @@ export function Projects() {
           </DialogHeader>
           {selectedProject && (
             <ProjectStakeholders 
+              projectId={selectedProject.id} 
+              projectName={selectedProject.name} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Team Management Dialog */}
+      <Dialog open={activeTab === 'team' && !!selectedProject} onOpenChange={() => {
+        setActiveTab('details');
+        setSelectedProject(null);
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Project Team - {selectedProject?.name}</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage project consultants, engineers, and key personnel
+            </p>
+          </DialogHeader>
+          {selectedProject && (
+            <ProjectTeamManager 
               projectId={selectedProject.id} 
               projectName={selectedProject.name} 
             />

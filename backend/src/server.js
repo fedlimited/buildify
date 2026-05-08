@@ -36,8 +36,8 @@ const adminPaymentsController = require('./controllers/adminPaymentsController')
 const tenantsController = require('./controllers/tenantsController');
 const paystackController = require('./controllers/paystackController');
 const stakeholderController = require('./controllers/stakeholderController');
-
 const { requireStakeholderAccess } = require('./middleware/stakeholderAccess');
+const projectTeamController = require('./controllers/projectTeamController');
 
 // FORCE RENDER REBUILD - Super Admin Implementation v2
 const PORT = process.env.PORT || 5000;
@@ -297,6 +297,16 @@ app.get('/api/stakeholder/projects/:projectId', authenticateToken, requireStakeh
 app.post('/api/stakeholder/projects/:projectId/accept', authenticateToken, stakeholderController.acceptInvitation);
 app.get('/api/stakeholder/projects/:projectId/financial-summary', authenticateToken, requireStakeholderAccess, stakeholderController.getFinancialSummary);
 app.get('/api/stakeholder/projects/:projectId/site-diaries', authenticateToken, requireStakeholderAccess, stakeholderController.getSiteDiaries);
+
+
+// Project Team routes (for contractors to manage)
+app.get('/api/projects/:projectId/team', authenticateToken, projectTeamController.getProjectTeam);
+app.post('/api/projects/:projectId/team', authenticateToken, projectTeamController.addTeamMember);
+app.put('/api/projects/:projectId/team/:teamId', authenticateToken, projectTeamController.updateTeamMember);
+app.delete('/api/projects/:projectId/team/:teamId', authenticateToken, projectTeamController.deleteTeamMember);
+
+// Stakeholder view of project team
+app.get('/api/stakeholder/projects/:projectId/team', authenticateToken, requireStakeholderAccess, projectTeamController.getProjectTeam);
 
 
 // ========== MIGRATION ENDPOINT - Run once to add missing columns ==========
