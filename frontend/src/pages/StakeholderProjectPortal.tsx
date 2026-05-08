@@ -5,7 +5,8 @@ import {
   MessageSquare, Download, Eye, ChevronLeft, Loader2,
   CheckCircle, AlertCircle, TrendingUp, DollarSign,
   MapPin, CalendarDays, HardHat, ClipboardList, Camera,
-  Phone, Mail, User, Briefcase, AlertTriangle, CheckSquare
+  Phone, Mail, User, Briefcase, AlertTriangle, CheckSquare,
+  Image
 } from 'lucide-react';
 import { API_BASE_URL } from '@/config/api';
 import { useProject } from '@/contexts/ProjectContext';
@@ -26,12 +27,14 @@ interface Project {
   projectManagerPhone: string;
 }
 
-interface Document {
+interface Link {
   id: number;
   title: string;
   description: string;
-  file_url: string;
+  url: string;
+  link_type: string;
   category: string;
+  created_by_name: string;
   created_at: string;
 }
 
@@ -73,18 +76,24 @@ export function StakeholderProjectPortal() {
   const navigate = useNavigate();
   const { setCurrentProjectName } = useProject();
   const [project, setProject] = useState<Project | null>(null);
-  const [documents, setDocuments] = useState<Document[]>([]);
+  const [documentLinks, setDocumentLinks] = useState<Link[]>([]);
+  const [drawingLinks, setDrawingLinks] = useState<Link[]>([]);
+  const [photoLinks, setPhotoLinks] = useState<Link[]>([]);
+  const [reportLinks, setReportLinks] = useState<Link[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [siteDiaries, setSiteDiaries] = useState<SiteDiary[]>([]);
   const [financial, setFinancial] = useState<FinancialSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'meetings' | 'progress' | 'financial' | 'team'>('overview');
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'drawings' | 'photos' | 'reports' | 'meetings' | 'progress' | 'financial' | 'team'>('overview');
 
   useEffect(() => {
     fetchProjectDetails();
-    fetchDocuments();
+    fetchDocumentLinks();
+    fetchDrawingLinks();
+    fetchPhotoLinks();
+    fetchReportLinks();
     fetchMeetings();
     fetchSiteDiaries();
     fetchFinancialSummary();
@@ -114,18 +123,63 @@ export function StakeholderProjectPortal() {
     }
   };
 
-  const fetchDocuments = async () => {
+  const fetchDocumentLinks = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/documents`, {
+      const response = await fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/links/document`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
       if (response.ok) {
-        setDocuments(data);
+        setDocumentLinks(data);
       }
     } catch (error) {
-      console.error('Error fetching documents:', error);
+      console.error('Error fetching document links:', error);
+    }
+  };
+
+  const fetchDrawingLinks = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/links/drawing`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setDrawingLinks(data);
+      }
+    } catch (error) {
+      console.error('Error fetching drawing links:', error);
+    }
+  };
+
+  const fetchPhotoLinks = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/links/photo`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setPhotoLinks(data);
+      }
+    } catch (error) {
+      console.error('Error fetching photo links:', error);
+    }
+  };
+
+  const fetchReportLinks = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/links/report`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setReportLinks(data);
+      }
+    } catch (error) {
+      console.error('Error fetching report links:', error);
     }
   };
 
@@ -248,7 +302,6 @@ export function StakeholderProjectPortal() {
   return (
     <div className="space-y-6">
       {/* Back Button */}
-
       <button
         onClick={() => navigate('/stakeholder/dashboard')}
         className="flex items-center gap-2 text-gray-600 hover:text-amber-500 transition"
@@ -315,7 +368,7 @@ export function StakeholderProjectPortal() {
             </div>
             <div>
               <p className="text-xs text-gray-500">Documents</p>
-              <p className="text-lg font-bold">{documents.length}</p>
+              <p className="text-lg font-bold">{documentLinks.length}</p>
             </div>
           </div>
         </div>
@@ -345,7 +398,7 @@ export function StakeholderProjectPortal() {
 
       {/* Tabs */}
       <div className="border-b border-gray-200 dark:border-gray-700">
-        <div className="flex flex-wrap gap-6">
+        <div className="flex flex-wrap gap-4">
           <button
             onClick={() => setActiveTab('overview')}
             className={`pb-3 px-1 text-sm font-medium transition ${
@@ -364,7 +417,37 @@ export function StakeholderProjectPortal() {
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            Documents ({documents.length})
+            Documents ({documentLinks.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('drawings')}
+            className={`pb-3 px-1 text-sm font-medium transition ${
+              activeTab === 'drawings'
+                ? 'text-amber-500 border-b-2 border-amber-500'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Drawings ({drawingLinks.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('photos')}
+            className={`pb-3 px-1 text-sm font-medium transition ${
+              activeTab === 'photos'
+                ? 'text-amber-500 border-b-2 border-amber-500'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Photos ({photoLinks.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('reports')}
+            className={`pb-3 px-1 text-sm font-medium transition ${
+              activeTab === 'reports'
+                ? 'text-amber-500 border-b-2 border-amber-500'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Reports ({reportLinks.length})
           </button>
           <button
             onClick={() => setActiveTab('meetings')}
@@ -452,24 +535,127 @@ export function StakeholderProjectPortal() {
       {/* Tab Content - Documents */}
       {activeTab === 'documents' && (
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-          {documents.length === 0 ? (
+          {documentLinks.length === 0 ? (
             <div className="text-center py-8">
               <FileText size={48} className="mx-auto text-gray-400 mb-3" />
               <p className="text-gray-500">No documents shared yet</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {documents.map((doc) => (
+              {documentLinks.map((doc) => (
                 <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <div className="flex items-center gap-3">
                     <FileText size={20} className="text-blue-500" />
                     <div>
                       <p className="font-medium">{doc.title}</p>
-                      <p className="text-xs text-gray-500">{new Date(doc.created_at).toLocaleDateString()}</p>
+                      {doc.description && <p className="text-xs text-gray-500">{doc.description}</p>}
+                      <p className="text-xs text-gray-500">Added by {doc.created_by_name} on {new Date(doc.created_at).toLocaleDateString()}</p>
                     </div>
                   </div>
                   <a 
-                    href={doc.file_url} 
+                    href={doc.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="p-2 text-blue-500 hover:text-blue-600"
+                  >
+                    <Download size={18} />
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab Content - Drawings */}
+      {activeTab === 'drawings' && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+          {drawingLinks.length === 0 ? (
+            <div className="text-center py-8">
+              <FileText size={48} className="mx-auto text-gray-400 mb-3" />
+              <p className="text-gray-500">No drawings shared yet</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {drawingLinks.map((doc) => (
+                <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <FileText size={20} className="text-amber-500" />
+                    <div>
+                      <p className="font-medium">{doc.title}</p>
+                      {doc.description && <p className="text-xs text-gray-500">{doc.description}</p>}
+                      <p className="text-xs text-gray-500">Added by {doc.created_by_name} on {new Date(doc.created_at).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                  <a 
+                    href={doc.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="p-2 text-blue-500 hover:text-blue-600"
+                  >
+                    <Download size={18} />
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab Content - Photos */}
+      {activeTab === 'photos' && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+          {photoLinks.length === 0 ? (
+            <div className="text-center py-8">
+              <Image size={48} className="mx-auto text-gray-400 mb-3" />
+              <p className="text-gray-500">No photos shared yet</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {photoLinks.map((photo) => (
+                <a 
+                  key={photo.id}
+                  href={photo.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="group relative bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden hover:shadow-lg transition"
+                >
+                  <div className="aspect-video flex items-center justify-center bg-gray-200 dark:bg-gray-600">
+                    <Image size={32} className="text-gray-400 group-hover:text-amber-500 transition" />
+                  </div>
+                  <div className="p-2">
+                    <p className="text-sm font-medium truncate">{photo.title}</p>
+                    <p className="text-xs text-gray-500">{new Date(photo.created_at).toLocaleDateString()}</p>
+                  </div>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab Content - Reports */}
+      {activeTab === 'reports' && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+          {reportLinks.length === 0 ? (
+            <div className="text-center py-8">
+              <FileText size={48} className="mx-auto text-gray-400 mb-3" />
+              <p className="text-gray-500">No reports shared yet</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {reportLinks.map((doc) => (
+                <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <FileText size={20} className="text-purple-500" />
+                    <div>
+                      <p className="font-medium">{doc.title}</p>
+                      {doc.description && <p className="text-xs text-gray-500">{doc.description}</p>}
+                      <p className="text-xs text-gray-500">Added by {doc.created_by_name} on {new Date(doc.created_at).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                  <a 
+                    href={doc.url} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="p-2 text-blue-500 hover:text-blue-600"
