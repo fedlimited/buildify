@@ -35,6 +35,8 @@ const app = express();
 const adminPaymentsController = require('./controllers/adminPaymentsController');
 const tenantsController = require('./controllers/tenantsController');
 const paystackController = require('./controllers/paystackController');
+const stakeholderController = require('./controllers/stakeholderController');
+
 // FORCE RENDER REBUILD - Super Admin Implementation v2
 const PORT = process.env.PORT || 5000;
 
@@ -277,6 +279,21 @@ app.put('/api/site-diary-entries/:id', SiteDiaryController.updateEntry);
 app.delete('/api/site-diary-entries/:id', SiteDiaryController.deleteEntry);
 app.get('/api/site-diary-entries/statistics', SiteDiaryController.getStatistics);
 app.get('/api/site-diary-entries/range', SiteDiaryController.getEntriesByDateRange);
+
+
+
+// ========== STAKEHOLDER ROUTES ==========
+// Project stakeholder management (Contractor routes)
+app.get('/api/projects/:projectId/stakeholders', authenticateToken, stakeholderController.getProjectStakeholders);
+app.post('/api/projects/:projectId/stakeholders/invite', authenticateToken, stakeholderController.inviteStakeholder);
+app.delete('/api/projects/:projectId/stakeholders/:stakeholderId', authenticateToken, stakeholderController.removeStakeholder);
+
+// Stakeholder portal routes (Stakeholder access)
+app.get('/api/stakeholder/projects', authenticateToken, stakeholderController.getStakeholderProjects);
+app.post('/api/stakeholder/projects/:projectId/accept', authenticateToken, stakeholderController.acceptInvitation);
+
+
+
 
 // ========== MIGRATION ENDPOINT - Run once to add missing columns ==========
 app.post('/api/migrate/site-diary', authenticateToken, requireAdmin, async (req, res) => {

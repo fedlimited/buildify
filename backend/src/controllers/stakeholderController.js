@@ -1,0 +1,194 @@
+const { getDb } = require('../config/database');
+const { sendStakeholderInvitation } = require('../services/emailService');
+const bcrypt = require('bcryptjs');
+
+const stakeholderController = {
+  // Get all stakeholders for a project
+  getProjectStakeholders: async (req, res) => {
+    try {
+      const db = await getDb();
+      const { projectId } = req.params;
+      const company_id = req.user?.companyId || req.user?.company_id;
+      
+      const stakeholders = await db.query(`
+        SELECT 
+          ps.id,
+          ps.user_id,
+          ps.stakeholder_type,
+          ps.invite_status,
+          ps.invited_at,
+          ps.is_active,
+          u.name,
+          u.email
+        FROM project_stakeholders ps
+        JOIN users u ON ps.user_id = u.id
+        WHERE ps.project_id = $1 AND u.company_id = $2
+        ORDER BY ps.invited_at DESC
+      `, [projectId, company_id]);
+      
+      res.json(stakeholders.rows);
+    } catch (error) {
+      console.error('Error fetching stakeholders:', error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  // Invite stakeholder to project
+  inviteStakeholder: async (req, res) => {
+    try {
+      const db = await getDb();
+      const { projectId } = req.params;
+      const { email, name, stakeholderType } = req.body;
+      const company_id = req.user?.companyId || req.user?.company_id;
+      
+      // Generate temporary password
+      const tempPassword = Math.random().toString(36).slice(-8);
+      const hashedPassword = await bcrypt.hash(tempPassword, 10);
+      
+      // Check if user already exists
+      let user = await db.query(
+        `SELECT id FROM users WHERE email = $1 AND company_id = $2`,
+        [email, company_id]
+      );
+      
+      let userId;
+      
+      if (user.rows.length === 0) {
+        // Create new user
+        const newUser = await db.query(`
+          INSERT INTO users (name, email, password, role, stakeholder_type, temporary_password, password_changed, company_id, is_active)
+          VALUES ($1, $2, $3, 'stakeholder', $4, $5, false, $6, true) RETURNING id
+        `, [name, email, hashedPassword, stakeholderType, tempPassword, company_id]);
+        userId = newUser.rows[0].id;
+      } else {
+        userId = user.rows[0].id;
+        // Update stakeholder type if needed
+        await db.query(`UPDATE users SET stakeholder_type = $1 WHERE id = $2`, [stakeholderType, userId]);
+      }
+      
+      // Add to project stakeholders
+      await db.query(`
+        INSERT INTO project_stakeholders (project_id, user_id, stakeholder_type, invite_status, invited_by)
+        VALUES ($1, $2, $3, 'pending', $4)
+        ON CONFLICT (project_id, user_id) DO NOTHING
+      `, [projectId, userId, stakeholderType, req.user.id]);
+      
+      // Get project details for email
+      const project = await db.query(`SELECT name FROM projects WHERE id = $1`, [projectId]);
+      
+      // Send invitation email
+      await sendStakeholderInvitation(email, name, tempPassword, project.rows[0].name, stakeholderType, req.user.name);
+      
+      res.json({ success: true, message: 'Invitation sent successfully' });
+    } catch (error) {
+      console.error('Error inviting stakeholder:', error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  // Resend invitation to stakeholder
+  resendInvitation: async (req, res) => {
+    try {
+      const db = await getDb();
+      const { projectId } = req.params;
+      const { email, name } = req.body;
+      
+      // Generate new temporary password
+      const tempPassword = Math.random().toString(36).slice(-8);
+      const hashedPassword = await bcrypt.hash(tempPassword, 10);
+      
+      // Update user password
+      await db.query(`
+        UPDATE users 
+        SET password = $1, temporary_password = $2, password_changed = false 
+        WHERE email = $3
+      `, [hashedPassword, tempPassword, email]);
+      
+      // Get project details
+      const project = await db.query(`SELECT name FROM projects WHERE id = $1`, [projectId]);
+      
+      // Get stakeholder type
+      const stakeholder = await db.query(`
+        SELECT ps.stakeholder_type 
+        FROM project_stakeholders ps
+        JOIN users u ON ps.user_id = u.id
+        WHERE ps.project_id = $1 AND u.email = $2
+      `, [projectId, email]);
+      
+      const stakeholderType = stakeholder.rows[0]?.stakeholder_type || 'consultant';
+      
+      // Send invitation email
+      await sendStakeholderInvitation(email, name, tempPassword, project.rows[0].name, stakeholderType, req.user.name);
+      
+      res.json({ success: true, message: 'Invitation resent successfully' });
+    } catch (error) {
+      console.error('Error resending invitation:', error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  // Remove stakeholder from project
+  removeStakeholder: async (req, res) => {
+    try {
+      const db = await getDb();
+      const { projectId, stakeholderId } = req.params;
+      
+      await db.query(`DELETE FROM project_stakeholders WHERE project_id = $1 AND id = $2`, [projectId, stakeholderId]);
+      
+      res.json({ success: true, message: 'Stakeholder removed successfully' });
+    } catch (error) {
+      console.error('Error removing stakeholder:', error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  // Get projects for stakeholder dashboard
+  getStakeholderProjects: async (req, res) => {
+    try {
+      const db = await getDb();
+      const userId = req.user.id;
+      
+      const projects = await db.query(`
+        SELECT 
+          p.id,
+          p.name,
+          p.client,
+          p.location,
+          p.progress,
+          p.status,
+          ps.stakeholder_type,
+          ps.invite_status
+        FROM project_stakeholders ps
+        JOIN projects p ON ps.project_id = p.id
+        WHERE ps.user_id = $1 AND ps.is_active = true AND ps.invite_status = 'accepted'
+      `, [userId]);
+      
+      res.json({ projects: projects.rows });
+    } catch (error) {
+      console.error('Error fetching stakeholder projects:', error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  // Accept invitation
+  acceptInvitation: async (req, res) => {
+    try {
+      const db = await getDb();
+      const { projectId } = req.params;
+      const userId = req.user.id;
+      
+      await db.query(`
+        UPDATE project_stakeholders 
+        SET invite_status = 'accepted', last_active = NOW()
+        WHERE project_id = $1 AND user_id = $2
+      `, [projectId, userId]);
+      
+      res.json({ success: true, message: 'Invitation accepted' });
+    } catch (error) {
+      console.error('Error accepting invitation:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+};
+
+module.exports = stakeholderController;

@@ -2,8 +2,6 @@ const nodemailer = require('nodemailer');
 
 let transporter = null;
 
-
-
 function getTransporter() {
   if (!transporter) {
     // Use environment variables with NovaHost cPanel defaults
@@ -28,8 +26,6 @@ function getTransporter() {
   }
   return transporter;
 }
-
-
 
 async function sendOTP(email, code, purpose = 'login') {
   const purposeText = purpose === 'login' ? 'log in to' : 'register for';
@@ -75,11 +71,11 @@ async function sendOTP(email, code, purpose = 'login') {
       text: `Bochi Construction Suite\n\nYour verification code to ${purposeText} BOCHI is: ${code}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this, please ignore this email.`
     });
     
-    console.log(`✅ Email sent successfully to ${email}`);
+    console.log(`✅ OTP email sent successfully to ${email}`);
     return true;
     
   } catch (error) {
-    console.error(`❌ Failed to send email to ${email}:`, error.message);
+    console.error(`❌ Failed to send OTP email to ${email}:`, error.message);
     return false;
   }
 }
@@ -189,24 +185,12 @@ async function sendInvoiceEmail(email, payment) {
               
               <table>
                 <thead>
-                  <tr>
-                    <th>Description</th>
-                    <th class="text-right">Amount (KES)</th>
-                  </tr>
+                  <tr><th>Description</th><th class="text-right">Amount (KES)</th></tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>Subscription Payment</td>
-                    <td class="text-right">${subtotal.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</td>
-                  </tr>
-                  <tr>
-                    <td>VAT (16%)</td>
-                    <td class="text-right">${vatAmount.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</td>
-                  </tr>
-                  <tr class="total-row">
-                    <td>Total</td>
-                    <td class="text-right">KES ${amountKES.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</td>
-                  </tr>
+                  <tr><td>Subscription Payment</td><td class="text-right">${subtotal.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</td></tr>
+                  <tr><td>VAT (16%)</td><td class="text-right">${vatAmount.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</td></tr>
+                  <tr class="total-row"><td>Total</td><td class="text-right">KES ${amountKES.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</td></tr>
                   ${usdAmount > 0 ? `<tr><td style="font-size: 12px; color: #888;">Equivalent (USD)</td><td class="text-right" style="font-size: 12px; color: #888;">$${usdAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td></tr>` : ''}
                 </tbody>
               </table>
@@ -265,8 +249,6 @@ async function verifyTransporter() {
     return false;
   }
 }
-
-
 
 // Send bulk email to tenants - accepts raw HTML to prevent double wrapping
 async function sendBulkEmail(email, subject, message, userName, companyName, htmlMessage = null) {
@@ -385,4 +367,87 @@ async function sendBulkEmail(email, subject, message, userName, companyName, htm
     throw error;
   }
 }
-module.exports = { sendOTP, sendInvitationCode, sendInvoiceEmail, verifyTransporter, sendBulkEmail };
+
+// Send stakeholder invitation email
+async function sendStakeholderInvitation(email, name, tempPassword, projectName, stakeholderType, inviterName) {
+  const stakeholderLabels = {
+    client: 'Client/Owner',
+    consultant: 'Consultant',
+    architect: 'Architect',
+    structural_engineer: 'Structural Engineer',
+    electrical_engineer: 'Electrical Engineer',
+    mechanical_engineer: 'Mechanical Engineer',
+    quantity_surveyor: 'Quantity Surveyor',
+    project_manager: 'Project Manager'
+  };
+  
+  const displayType = stakeholderLabels[stakeholderType] || stakeholderType;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #f59e0b, #d97706); padding: 30px; text-align: center; color: white; border-radius: 12px 12px 0 0; }
+        .content { padding: 30px; background: #ffffff; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px; }
+        .temp-password { font-size: 24px; font-weight: bold; font-family: monospace; background: #f3f4f6; padding: 10px; text-align: center; letter-spacing: 2px; border-radius: 8px; margin: 20px 0; }
+        .button { display: inline-block; background: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; }
+        .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; border-top: 1px solid #e5e7eb; margin-top: 20px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h2>BOCHI Construction Suite</h2>
+          <p>You've been invited to collaborate!</p>
+        </div>
+        <div class="content">
+          <p>Dear <strong>${name}</strong>,</p>
+          <p><strong>${inviterName}</strong> has invited you to join <strong>${projectName}</strong> as a <strong>${displayType}</strong>.</p>
+          <p>Your temporary login credentials:</p>
+          <div class="temp-password">${tempPassword}</div>
+          <p style="text-align: center;">
+            <a href="https://bochi.ke/login" class="button">Login to Your Portal</a>
+          </p>
+          <p><strong>Important:</strong> Upon first login, you will be prompted to change your password.</p>
+          <hr>
+          <p style="font-size: 12px; color: #666;">You will only have access to information related to this specific project.</p>
+        </div>
+        <div class="footer">
+          <p>BOCHI Construction Suite | <a href="https://bochi.ke">bochi.ke</a></p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  const text = `Dear ${name},\n\n${inviterName} has invited you to join ${projectName} as a ${displayType}.\n\nYour temporary password is: ${tempPassword}\n\nLogin at: https://bochi.ke/login\n\nUpon first login, you will be prompted to change your password.\n\n---\nBOCHI Construction Suite`;
+  
+  try {
+    const transporter = getTransporter();
+    await transporter.sendMail({
+      from: `"Bochi Admin" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: `Invitation to collaborate on ${projectName}`,
+      html: html,
+      text: text
+    });
+    console.log(`✅ Stakeholder invitation email sent to ${email}`);
+    return true;
+  } catch (error) {
+    console.error(`❌ Failed to send stakeholder invitation to ${email}:`, error.message);
+    throw error;
+  }
+}
+
+module.exports = { 
+  sendOTP, 
+  sendInvitationCode, 
+  sendInvoiceEmail, 
+  verifyTransporter, 
+  sendBulkEmail, 
+  sendStakeholderInvitation 
+};
