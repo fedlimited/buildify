@@ -80,6 +80,18 @@ export function StakeholderDashboard() {
     fetchProjects();
   }, []);
 
+
+// Auto-navigate to project if coming from contractor view
+useEffect(() => {
+  const projectId = sessionStorage.getItem('stakeholderViewProjectId');
+  
+  if (projectId) {
+    sessionStorage.removeItem('stakeholderViewProjectId');
+    navigate(`/stakeholder/projects/${projectId}`);
+  }
+}, [navigate]);
+
+
   const fetchProjects = async () => {
     setLoading(true);
     try {

@@ -162,9 +162,21 @@ export function Projects() {
     setActiveTab('reports');
   };
 
-  const viewAsStakeholder = (project: Project) => {
-    window.location.href = `/stakeholder/projects/${project.id}`;
-  };
+
+
+
+
+const viewAsStakeholder = (project: Project) => {
+  // Store the project ID to auto-select it in stakeholder dashboard
+  sessionStorage.setItem('stakeholderViewProjectId', project.id.toString());
+  // Open stakeholder dashboard
+  window.open(`/stakeholder/dashboard`, '_blank');
+};
+
+
+
+
+
 
   return (
     <div className="space-y-4 fade-in">
@@ -243,55 +255,70 @@ export function Projects() {
                 <span>{formatDate(p.endDate)}</span>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => openEdit(p)}>
-                    <Pencil size={14} className="mr-1" />Edit
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs text-destructive hover:text-destructive" onClick={() => handleDelete(p.id)}>
-                    <Trash2 size={14} />
-                  </Button>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" size="sm" className="text-xs" onClick={() => openStakeholders(p)}>
-                    <Users size={12} className="mr-1" />
-                    Stakeholders
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs" onClick={() => openTeam(p)}>
-                    <Users size={12} className="mr-1" />
-                    Team
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs" onClick={() => openDocuments(p)}>
-                    <FileText size={12} className="mr-1" />
-                    Documents
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs" onClick={() => openMeetings(p)}>
-                    <Calendar size={12} className="mr-1" />
-                    Meetings
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs" onClick={() => openDrawings(p)}>
-                    <FileText size={12} className="mr-1" />
-                    Drawings
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs" onClick={() => openPhotos(p)}>
-                    <Image size={12} className="mr-1" />
-                    Photos
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs" onClick={() => openReports(p)}>
-                    <FileText size={12} className="mr-1" />
-                    Reports
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="text-xs bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/50" 
-                    onClick={() => viewAsStakeholder(p)}
-                  >
-                    <Eye size={12} className="mr-1" />
-                    View as Stakeholder
-                  </Button>
-                </div>
-              </div>
+
+
+
+
+
+
+<div className="flex flex-col gap-2">
+  <div className="flex gap-2">
+    <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => openEdit(p)}>
+      <Pencil size={14} className="mr-1" />Edit
+    </Button>
+    <Button variant="outline" size="sm" className="text-xs text-destructive hover:text-destructive" onClick={() => handleDelete(p.id)}>
+      <Trash2 size={14} />
+    </Button>
+  </div>
+  <div className="grid grid-cols-2 gap-2">
+    <Button variant="outline" size="sm" className="text-xs" onClick={() => openStakeholders(p)}>
+      <Users size={12} className="mr-1" />
+      Stakeholders
+    </Button>
+    <Button variant="outline" size="sm" className="text-xs" onClick={() => openTeam(p)}>
+      <Users size={12} className="mr-1" />
+      Team
+    </Button>
+    <Button variant="outline" size="sm" className="text-xs" onClick={() => openDocuments(p)}>
+      <FileText size={12} className="mr-1" />
+      Documents
+    </Button>
+    <Button variant="outline" size="sm" className="text-xs" onClick={() => openMeetings(p)}>
+      <Calendar size={12} className="mr-1" />
+      Meetings
+    </Button>
+    <Button variant="outline" size="sm" className="text-xs" onClick={() => openDrawings(p)}>
+      <FileText size={12} className="mr-1" />
+      Drawings
+    </Button>
+    <Button variant="outline" size="sm" className="text-xs" onClick={() => openPhotos(p)}>
+      <Image size={12} className="mr-1" />
+      Photos
+    </Button>
+    <Button variant="outline" size="sm" className="text-xs" onClick={() => openReports(p)}>
+      <FileText size={12} className="mr-1" />
+      Reports
+    </Button>
+    <Button 
+      variant="outline" 
+      size="sm" 
+      className="text-xs dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/30" 
+      onClick={() => viewAsStakeholder(p)}
+    >
+      <Eye size={12} className="mr-1" />
+      View as Stakeholder
+    </Button>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
             </div>
           );
         })}
