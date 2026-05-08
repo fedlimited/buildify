@@ -57,6 +57,16 @@ interface FinancialSummary {
   contractSum: number;
 }
 
+interface TeamMember {
+  id: number;
+  role: string;
+  name: string;
+  firm_name: string;
+  email: string;
+  phone: string;
+  address: string;
+}
+
 export function StakeholderProjectPortal() {
   const { projectId } = useParams();
   const navigate = useNavigate();
@@ -67,7 +77,8 @@ export function StakeholderProjectPortal() {
   const [financial, setFinancial] = useState<FinancialSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'meetings' | 'progress' | 'financial'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'meetings' | 'progress' | 'financial' | 'team'>('overview');
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
   useEffect(() => {
     fetchProjectDetails();
@@ -75,6 +86,7 @@ export function StakeholderProjectPortal() {
     fetchMeetings();
     fetchSiteDiaries();
     fetchFinancialSummary();
+    fetchTeamMembers();
   }, [projectId]);
 
   const fetchProjectDetails = async () => {
@@ -158,6 +170,21 @@ export function StakeholderProjectPortal() {
       console.error('Error fetching financial summary:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTeamMembers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/team`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setTeamMembers(data);
+      }
+    } catch (error) {
+      console.error('Error fetching team members:', error);
     }
   };
 
@@ -367,6 +394,16 @@ export function StakeholderProjectPortal() {
               Financial
             </button>
           )}
+          <button
+            onClick={() => setActiveTab('team')}
+            className={`pb-3 px-1 text-sm font-medium transition ${
+              activeTab === 'team'
+                ? 'text-amber-500 border-b-2 border-amber-500'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Team ({teamMembers.length})
+          </button>
         </div>
       </div>
 
@@ -544,6 +581,65 @@ export function StakeholderProjectPortal() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Tab Content - Team */}
+      {activeTab === 'team' && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+          <h3 className="text-lg font-semibold mb-4">Project Team</h3>
+          {teamMembers.length === 0 ? (
+            <div className="text-center py-8">
+              <Users size={48} className="mx-auto text-gray-400 mb-3" />
+              <p className="text-gray-500">No team members added yet</p>
+              <p className="text-sm text-gray-400">Team information will appear here once added by the contractor.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {teamMembers.map((member) => (
+                <div key={member.id} className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="flex flex-wrap justify-between items-start gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap mb-2">
+                        <h4 className="font-semibold text-gray-900 dark:text-white">{member.name}</h4>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                          {member.role}
+                        </span>
+                      </div>
+                      {member.firm_name && (
+                        <p className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1 mt-1">
+                          <Building2 size={14} />
+                          {member.firm_name}
+                        </p>
+                      )}
+                      {member.email && (
+                        <p className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1 mt-1">
+                          <Mail size={14} />
+                          <a href={`mailto:${member.email}`} className="text-blue-600 hover:underline">
+                            {member.email}
+                          </a>
+                        </p>
+                      )}
+                      {member.phone && (
+                        <p className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1 mt-1">
+                          <Phone size={14} />
+                          <a href={`tel:${member.phone}`} className="hover:underline">
+                            {member.phone}
+                          </a>
+                        </p>
+                      )}
+                      {member.address && (
+                        <p className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1 mt-1">
+                          <MapPin size={14} />
+                          {member.address}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
