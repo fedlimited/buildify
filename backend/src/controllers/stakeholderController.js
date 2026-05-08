@@ -244,6 +244,65 @@ const stakeholderController = {
       console.error('Error accepting invitation:', error);
       res.status(500).json({ error: error.message });
     }
+  },
+
+  // Get financial summary for stakeholder
+  getFinancialSummary: async (req, res) => {
+    try {
+      const db = await getDb();
+      const { projectId } = req.params;
+      
+      // Get contract sum from project
+      const project = await db.query(
+        `SELECT contract_sum FROM projects WHERE id = $1`,
+        [projectId]
+      );
+      
+      // Get total invoiced and paid from income table
+      const financial = await db.query(`
+        SELECT 
+          COALESCE(SUM(gross_amount), 0) as total_invoiced,
+          COALESCE(SUM(amount_received), 0) as total_paid
+        FROM income
+        WHERE project_id = $1
+      `, [projectId]);
+      
+      const contractSum = project.rows[0]?.contract_sum || 0;
+      const totalInvoiced = financial.rows[0]?.total_invoiced || 0;
+      const totalPaid = financial.rows[0]?.total_paid || 0;
+      const outstanding = totalInvoiced - totalPaid;
+      
+      res.json({
+        contractSum,
+        totalInvoiced,
+        totalPaid,
+        outstanding
+      });
+    } catch (error) {
+      console.error('Error fetching financial summary:', error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  // Get site diaries for stakeholder
+  getSiteDiaries: async (req, res) => {
+    try {
+      const db = await getDb();
+      const { projectId } = req.params;
+      
+      const diaries = await db.query(`
+        SELECT id, date, summary, weather, total_workers as workers_count
+        FROM site_diary_entries
+        WHERE project_id = $1
+        ORDER BY date DESC
+        LIMIT 10
+      `, [projectId]);
+      
+      res.json(diaries.rows);
+    } catch (error) {
+      console.error('Error fetching site diaries:', error);
+      res.status(500).json({ error: error.message });
+    }
   }
 };
 
