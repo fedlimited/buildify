@@ -18,6 +18,7 @@ import { AdminTestimonials } from '@/components/modules/AdminTestimonials';
 import { PaymentVerification } from '@/pages/PaymentVerification';
 import { StakeholderLayout } from '@/components/StakeholderLayout';
 import { StakeholderDashboard } from '@/pages/StakeholderDashboard';
+import { StakeholderProjectPortal } from '@/pages/StakeholderProjectPortal';
 
 // Admin components
 import './components/modules/admin-exports';
@@ -192,21 +193,27 @@ const App = () => {
             } />
 
 
-            {/* ========== STAKEHOLDER PORTAL ROUTES ========== */}
-            <Route path="/stakeholder" element={
-              <AuthGate>
-                <StakeholderLayout>
-                  <Outlet />
-                </StakeholderLayout>
-              </AuthGate>
-            }>
-              <Route index element={<Navigate to="/stakeholder/dashboard" replace />} />
-              <Route path="dashboard" element={<StakeholderDashboard />} />
-              <Route path="projects" element={<div className="p-6 text-center">Projects Page Coming Soon</div>} />
-              <Route path="documents" element={<div className="p-6 text-center">Documents Page Coming Soon</div>} />
-              <Route path="meetings" element={<div className="p-6 text-center">Meetings Page Coming Soon</div>} />
-              <Route path="comments" element={<div className="p-6 text-center">Discussions Page Coming Soon</div>} />
-            </Route>
+
+
+
+{/* Stakeholder Portal Routes */}
+<Route path="/stakeholder" element={
+  <AuthGate>
+    <StakeholderLayout>
+      <Outlet />
+    </StakeholderLayout>
+  </AuthGate>
+}>
+  <Route index element={<Navigate to="/stakeholder/dashboard" replace />} />
+  <Route path="dashboard" element={<StakeholderDashboard />} />
+  <Route path="projects" element={<div>Projects Page Coming Soon</div>} />
+  <Route path="projects/:projectId" element={<StakeholderProjectPortal />} />
+  <Route path="documents" element={<div>Documents Page Coming Soon</div>} />
+  <Route path="meetings" element={<div>Meetings Page Coming Soon</div>} />
+  <Route path="comments" element={<div>Discussions Page Coming Soon</div>} />
+</Route>
+
+
 
             {/* Fallback - 404 */}
             <Route path="*" element={<NotFound />} />
