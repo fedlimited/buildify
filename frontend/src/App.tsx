@@ -20,6 +20,7 @@ import { StakeholderLayout } from '@/components/StakeholderLayout';
 import { StakeholderDashboard } from '@/pages/StakeholderDashboard';
 import { StakeholderProjectPortal } from '@/pages/StakeholderProjectPortal';
 import { StakeholderPreview } from '@/pages/StakeholderPreview';
+import { ProjectProvider } from '@/contexts/ProjectContext';
 
 // Admin components
 import './components/modules/admin-exports';
@@ -182,12 +183,14 @@ const App = () => {
               </AuthGate>
             } />
 
-            {/* Stakeholder Portal Routes */}
+            {/* Stakeholder Portal Routes with ProjectProvider */}
             <Route path="/stakeholder" element={
               <AuthGate>
-                <StakeholderLayout>
-                  <Outlet />
-                </StakeholderLayout>
+                <ProjectProvider>
+                  <StakeholderLayout>
+                    <Outlet />
+                  </StakeholderLayout>
+                </ProjectProvider>
               </AuthGate>
             }>
               <Route index element={<Navigate to="/stakeholder/dashboard" replace />} />

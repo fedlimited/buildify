@@ -15,7 +15,8 @@ import {
   Users,
   Clock,
   AlertCircle,
-  Building2
+  Building2,
+  ArrowLeft
 } from 'lucide-react';
 import { useAppStore } from '@/hooks/useAppStore';
 
@@ -28,6 +29,15 @@ export function StakeholderLayout({ children }: StakeholderLayoutProps) {
   const location = useLocation();
   const { authUser, logout } = useAppStore();
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+  
+  // Check if we're on a project page
+  const isProjectPage = location.pathname.includes('/stakeholder/projects/');
+  
+  // Get project ID from URL if on project page
+  const projectId = React.useMemo(() => {
+    const match = location.pathname.match(/\/stakeholder\/projects\/(\d+)/);
+    return match ? parseInt(match[1]) : null;
+  }, [location.pathname]);
 
   const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
 
@@ -36,9 +46,18 @@ export function StakeholderLayout({ children }: StakeholderLayoutProps) {
     navigate('/login');
   };
 
+  // Navigation items with project context preservation
+  const getNavPath = (basePath: string) => {
+    if (projectId && isProjectPage) {
+      // When on a project page, add project as query param to maintain context
+      return `${basePath}?project=${projectId}`;
+    }
+    return basePath;
+  };
+
   const navItems = [
     { path: '/stakeholder/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/stakeholder/projects', label: 'My Projects', icon: FolderKanban },
+    { path: '/stakeholder/dashboard', label: 'My Projects', icon: FolderKanban },
     { path: '/stakeholder/documents', label: 'Documents', icon: FileText },
     { path: '/stakeholder/meetings', label: 'Meetings', icon: Calendar },
     { path: '/stakeholder/comments', label: 'Discussions', icon: MessagesSquare },
@@ -75,15 +94,37 @@ export function StakeholderLayout({ children }: StakeholderLayoutProps) {
           </button>
         </div>
 
+        {/* Project Banner - Shows when viewing a specific project */}
+        {isProjectPage && projectId && (
+          <div className="m-3 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
+            <div className="flex items-center gap-2">
+              <Building2 size={16} className="text-amber-500" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Current Project</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                  Project View
+                </p>
+              </div>
+              <button
+                onClick={() => navigate('/stakeholder/dashboard')}
+                className="p-1 text-amber-500 hover:text-amber-600"
+                title="Back to Dashboard"
+              >
+                <ArrowLeft size={14} />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Navigation */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
             <NavLink
               key={item.path}
-              to={item.path}
+              to={getNavPath(item.path)}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                  isActive
+                  isActive && !isProjectPage
                     ? 'bg-amber-500 text-white'
                     : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                 } ${sidebarCollapsed ? 'justify-center' : ''}`
@@ -129,8 +170,17 @@ export function StakeholderLayout({ children }: StakeholderLayoutProps) {
         {/* Top Bar */}
         <header className="h-16 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 sticky top-0 z-30 flex items-center justify-between px-6">
           <div className="flex items-center gap-2">
-            <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Welcome, {authUser?.name?.split(' ')[0] || 'Guest'}
+            {isProjectPage && projectId && (
+              <button
+                onClick={() => navigate('/stakeholder/dashboard')}
+                className="flex items-center gap-1 text-sm text-gray-600 hover:text-amber-500 transition"
+              >
+                <ArrowLeft size={16} />
+                Back to Dashboard
+              </button>
+            )}
+            <h1 className="text-lg font-semibold text-gray-900 dark:text-white ml-2">
+              {isProjectPage ? 'Project Details' : `Welcome, ${authUser?.name?.split(' ')[0] || 'Guest'}`}
             </h1>
           </div>
           <div className="flex items-center gap-3">
