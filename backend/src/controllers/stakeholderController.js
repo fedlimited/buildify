@@ -1,3 +1,4 @@
+
 const { getDb } = require('../config/database');
 const { sendStakeholderInvitation } = require('../services/emailService');
 const bcrypt = require('bcryptjs');
@@ -56,11 +57,8 @@ const stakeholderController = {
       if (user.rows.length === 0) {
         // Create new user
         const newUser = await db.query(`
-
-
-       INSERT INTO users (name, email, password, role, stakeholder_type, temporary_password, password_changed, company_id, is_active)
-       VALUES ($1, $2, $3, 'stakeholder', $4, $5, false, $6, 1) RETURNING id
-
+          INSERT INTO users (name, email, password, role, stakeholder_type, temporary_password, password_changed, company_id, is_active)
+          VALUES ($1, $2, $3, 'stakeholder', $4, $5, false, $6, 1) RETURNING id
         `, [name, email, hashedPassword, stakeholderType, tempPassword, company_id]);
         userId = newUser.rows[0].id;
       } else {
@@ -151,29 +149,79 @@ const stakeholderController = {
       const db = await getDb();
       const userId = req.user.id;
 
+      const projects = await db.query(`
+        SELECT 
+          p.id,
+          p.name,
+          p.client,
+          p.location,
+          p.progress,
+          p.status,
+          ps.stakeholder_type,
+          ps.invite_status
+        FROM project_stakeholders ps
+        JOIN projects p ON ps.project_id = p.id
+        WHERE ps.user_id = $1 AND ps.is_active = 1
+      `, [userId]);
 
-  
-
-const projects = await db.query(`
-  SELECT 
-    p.id,
-    p.name,
-    p.client,
-    p.location,
-    p.progress,
-    p.status,
-    ps.stakeholder_type,
-    ps.invite_status
-  FROM project_stakeholders ps
-  JOIN projects p ON ps.project_id = p.id
-  WHERE ps.user_id = $1 AND ps.is_active = 1 AND ps.invite_status = 'accepted'
-`, [userId]);
-
-
-      
       res.json({ projects: projects.rows });
     } catch (error) {
       console.error('Error fetching stakeholder projects:', error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  // Get a single project (with access verification)
+  getStakeholderProject: async (req, res) => {
+    try {
+      const db = await getDb();
+      const { projectId } = req.params;
+      const userId = req.user.id;
+      const userRole = req.user.role;
+      
+      // First, check if user has access
+      let hasAccess = false;
+      
+      if (userRole === 'admin' || userRole === 'super_admin') {
+        hasAccess = true;
+      } else if (userRole === 'stakeholder') {
+        const accessCheck = await db.query(`
+          SELECT 1 FROM project_stakeholders 
+          WHERE user_id = $1 AND project_id = $2 AND is_active = 1
+        `, [userId, projectId]);
+        hasAccess = accessCheck.rows.length > 0;
+      }
+      
+      if (!hasAccess) {
+        return res.status(403).json({ error: 'You do not have access to this project' });
+      }
+      
+      // Get project details
+      const project = await db.query(`
+        SELECT 
+          p.id,
+          p.name,
+          p.client,
+          p.location,
+          p.description,
+          p.progress,
+          p.status,
+          p.start_date as "startDate",
+          p.end_date as "endDate",
+          ps.stakeholder_type
+        FROM projects p
+        LEFT JOIN project_stakeholders ps ON p.id = ps.project_id AND ps.user_id = $1
+        WHERE p.id = $2
+      `, [userId, projectId]);
+      
+      if (project.rows.length === 0) {
+        return res.status(404).json({ error: 'Project not found' });
+      }
+      
+      res.json(project.rows[0]);
+      
+    } catch (error) {
+      console.error('Error fetching stakeholder project:', error);
       res.status(500).json({ error: error.message });
     }
   },
