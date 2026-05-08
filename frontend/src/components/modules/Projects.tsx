@@ -132,15 +132,31 @@ export function Projects() {
 
   return (
     <div className="space-y-4 fade-in">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{projects.length} project{projects.length !== 1 ? 's' : ''}</p>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => fetchProjects()}>
-            <RefreshCw size={14} className="mr-1" /> Refresh
-          </Button>
-          <Button onClick={openNew} size="sm"><Plus size={16} className="mr-1" />Add Project</Button>
-        </div>
-      </div>
+
+
+
+
+<div className="flex items-center justify-between">
+  <p className="text-sm text-muted-foreground">{projects.length} project{projects.length !== 1 ? 's' : ''}</p>
+  <div className="flex gap-2">
+    <Button 
+      variant="outline" 
+      size="sm" 
+      onClick={() => window.open('/stakeholder/dashboard', '_blank')}
+      title="View stakeholder portal"
+    >
+      <Users size={14} className="mr-1" />
+      Stakeholder Portal
+    </Button>
+    <Button variant="outline" size="sm" onClick={() => fetchProjects()}>
+      <RefreshCw size={14} className="mr-1" /> Refresh
+    </Button>
+    <Button onClick={openNew} size="sm"><Plus size={16} className="mr-1" />Add Project</Button>
+  </div>
+</div>
+
+
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {projects.map(p => {
