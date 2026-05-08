@@ -1,4 +1,3 @@
-
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { useState } from 'react';
 import { LeafletMapPicker } from '@/components/LeafletMapPicker';
@@ -11,11 +10,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, RefreshCw, MapPin, Navigation, Globe, Users } from 'lucide-react';
+import { Plus, Pencil, Trash2, RefreshCw, MapPin, Navigation, Globe, Users, FileText, Calendar, Image } from 'lucide-react';
 import { useSubscriptionLimit } from '@/hooks/useSubscriptionLimit';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
 import { ProjectStakeholders } from '@/components/projects/ProjectStakeholders';
 import { ProjectTeamManager } from '@/components/projects/ProjectTeamManager';
+import { ProjectLinkManager } from '@/components/projects/ProjectLinkManager';
 
 const emptyProject: Omit<Project, 'id' | 'createdAt'> = {
   name: '', client: '', contractSum: 0, location: '', startDate: '', endDate: '', status: 'Active', projectManager: '', description: '',
@@ -35,7 +35,7 @@ export function Projects() {
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [mapType, setMapType] = useState<'leaflet' | 'google'>('leaflet');
-  const [activeTab, setActiveTab] = useState<'details' | 'stakeholders' | 'team'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'stakeholders' | 'team' | 'documents' | 'meetings' | 'drawings' | 'photos' | 'reports'>('details');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   const openNew = () => { 
@@ -137,6 +137,31 @@ export function Projects() {
     setActiveTab('team');
   };
 
+  const openDocuments = (project: Project) => {
+    setSelectedProject(project);
+    setActiveTab('documents');
+  };
+
+  const openMeetings = (project: Project) => {
+    setSelectedProject(project);
+    setActiveTab('meetings');
+  };
+
+  const openDrawings = (project: Project) => {
+    setSelectedProject(project);
+    setActiveTab('drawings');
+  };
+
+  const openPhotos = (project: Project) => {
+    setSelectedProject(project);
+    setActiveTab('photos');
+  };
+
+  const openReports = (project: Project) => {
+    setSelectedProject(project);
+    setActiveTab('reports');
+  };
+
   return (
     <div className="space-y-4 fade-in">
 
@@ -223,24 +248,36 @@ export function Projects() {
                     <Trash2 size={14} />
                   </Button>
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full text-xs" 
-                  onClick={() => openStakeholders(p)}
-                >
-                  <Users size={14} className="mr-1" />
-                  Manage Stakeholders
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full text-xs" 
-                  onClick={() => openTeam(p)}
-                >
-                  <Users size={14} className="mr-1" />
-                  Manage Team
-                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" size="sm" className="text-xs" onClick={() => openStakeholders(p)}>
+                    <Users size={12} className="mr-1" />
+                    Stakeholders
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-xs" onClick={() => openTeam(p)}>
+                    <Users size={12} className="mr-1" />
+                    Team
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-xs" onClick={() => openDocuments(p)}>
+                    <FileText size={12} className="mr-1" />
+                    Documents
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-xs" onClick={() => openMeetings(p)}>
+                    <Calendar size={12} className="mr-1" />
+                    Meetings
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-xs" onClick={() => openDrawings(p)}>
+                    <FileText size={12} className="mr-1" />
+                    Drawings
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-xs" onClick={() => openPhotos(p)}>
+                    <Image size={12} className="mr-1" />
+                    Photos
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-xs col-span-2" onClick={() => openReports(p)}>
+                    <FileText size={12} className="mr-1" />
+                    Reports
+                  </Button>
+                </div>
               </div>
             </div>
           );
@@ -403,6 +440,121 @@ export function Projects() {
             <ProjectTeamManager 
               projectId={selectedProject.id} 
               projectName={selectedProject.name} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Documents Dialog */}
+      <Dialog open={activeTab === 'documents' && !!selectedProject} onOpenChange={() => {
+        setActiveTab('details');
+        setSelectedProject(null);
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Project Documents - {selectedProject?.name}</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Share Google Drive links for project documents
+            </p>
+          </DialogHeader>
+          {selectedProject && (
+            <ProjectLinkManager 
+              projectId={selectedProject.id} 
+              projectName={selectedProject.name}
+              linkType="document"
+              title="Documents"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Meetings Dialog */}
+      <Dialog open={activeTab === 'meetings' && !!selectedProject} onOpenChange={() => {
+        setActiveTab('details');
+        setSelectedProject(null);
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Meeting Minutes - {selectedProject?.name}</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Share Google Drive links for meeting minutes
+            </p>
+          </DialogHeader>
+          {selectedProject && (
+            <ProjectLinkManager 
+              projectId={selectedProject.id} 
+              projectName={selectedProject.name}
+              linkType="meeting"
+              title="Meeting Minutes"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Drawings Dialog */}
+      <Dialog open={activeTab === 'drawings' && !!selectedProject} onOpenChange={() => {
+        setActiveTab('details');
+        setSelectedProject(null);
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Project Drawings - {selectedProject?.name}</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Share Google Drive links for architectural and engineering drawings
+            </p>
+          </DialogHeader>
+          {selectedProject && (
+            <ProjectLinkManager 
+              projectId={selectedProject.id} 
+              projectName={selectedProject.name}
+              linkType="drawing"
+              title="Drawings"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Photos Dialog */}
+      <Dialog open={activeTab === 'photos' && !!selectedProject} onOpenChange={() => {
+        setActiveTab('details');
+        setSelectedProject(null);
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Project Photos - {selectedProject?.name}</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Share Google Drive links for project photos
+            </p>
+          </DialogHeader>
+          {selectedProject && (
+            <ProjectLinkManager 
+              projectId={selectedProject.id} 
+              projectName={selectedProject.name}
+              linkType="photo"
+              title="Photos"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Reports Dialog */}
+      <Dialog open={activeTab === 'reports' && !!selectedProject} onOpenChange={() => {
+        setActiveTab('details');
+        setSelectedProject(null);
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Project Reports - {selectedProject?.name}</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Share Google Drive links for project reports
+            </p>
+          </DialogHeader>
+          {selectedProject && (
+            <ProjectLinkManager 
+              projectId={selectedProject.id} 
+              projectName={selectedProject.name}
+              linkType="report"
+              title="Reports"
             />
           )}
         </DialogContent>

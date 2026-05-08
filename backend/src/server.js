@@ -38,6 +38,7 @@ const paystackController = require('./controllers/paystackController');
 const stakeholderController = require('./controllers/stakeholderController');
 const { requireStakeholderAccess } = require('./middleware/stakeholderAccess');
 const projectTeamController = require('./controllers/projectTeamController');
+const projectLinkController = require('./controllers/projectLinkController');
 
 // FORCE RENDER REBUILD - Super Admin Implementation v2
 const PORT = process.env.PORT || 5000;
@@ -307,6 +308,15 @@ app.delete('/api/projects/:projectId/team/:teamId', authenticateToken, projectTe
 
 // Stakeholder view of project team
 app.get('/api/stakeholder/projects/:projectId/team', authenticateToken, requireStakeholderAccess, projectTeamController.getProjectTeam);
+
+// Contractor routes for managing links
+app.get('/api/projects/:projectId/links', authenticateToken, projectLinkController.getProjectLinks);
+app.post('/api/projects/:projectId/links', authenticateToken, projectLinkController.createLink);
+app.put('/api/projects/:projectId/links/:linkId', authenticateToken, projectLinkController.updateLink);
+app.delete('/api/projects/:projectId/links/:linkId', authenticateToken, projectLinkController.deleteLink);
+
+// Stakeholder routes for viewing links
+app.get('/api/stakeholder/projects/:projectId/links/:type', authenticateToken, requireStakeholderAccess, projectLinkController.getLinksByType);
 
 
 // ========== MIGRATION ENDPOINT - Run once to add missing columns ==========
