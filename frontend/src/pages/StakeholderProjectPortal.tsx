@@ -2,11 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Building2, FileText, Calendar, ChartLine, Clock, Users, 
-  MessageSquare, Download, Eye, ChevronLeft, Loader2,
-  CheckCircle, AlertCircle, TrendingUp, DollarSign,
-  MapPin, CalendarDays, HardHat, ClipboardList, Camera,
-  Phone, Mail, User, Briefcase, AlertTriangle, CheckSquare,
-  Image
+  Download, ChevronLeft, Loader2, CheckCircle, AlertCircle, 
+  TrendingUp, DollarSign, MapPin, CalendarDays, HardHat, 
+  Phone, Mail, User, Briefcase, Image, FolderOpen
 } from 'lucide-react';
 import { API_BASE_URL } from '@/config/api';
 import { useProject } from '@/contexts/ProjectContext';
@@ -33,7 +31,6 @@ interface Link {
   description: string;
   url: string;
   link_type: string;
-  category: string;
   created_by_name: string;
   created_at: string;
 }
@@ -43,7 +40,6 @@ interface Meeting {
   title: string;
   meeting_date: string;
   summary: string;
-  action_items: any[];
 }
 
 interface SiteDiary {
@@ -68,7 +64,6 @@ interface TeamMember {
   firm_name: string;
   email: string;
   phone: string;
-  address: string;
 }
 
 export function StakeholderProjectPortal() {
@@ -86,162 +81,58 @@ export function StakeholderProjectPortal() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'drawings' | 'photos' | 'reports' | 'meetings' | 'progress' | 'financial' | 'team'>('overview');
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    fetchProjectDetails();
-    fetchDocumentLinks();
-    fetchDrawingLinks();
-    fetchPhotoLinks();
-    fetchReportLinks();
-    fetchMeetings();
-    fetchSiteDiaries();
-    fetchFinancialSummary();
-    fetchTeamMembers();
+    fetchAllData();
   }, [projectId]);
 
-  const fetchProjectDetails = async () => {
+  const fetchAllData = async () => {
+    setLoading(true);
+    const token = localStorage.getItem('token');
+    
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}`, {
+      // Fetch project details
+      const projectRes = await fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
-      if (response.status === 403) {
+      if (projectRes.status === 403) {
         setError('You do not have access to this project');
+        setLoading(false);
         return;
       }
+      const projectData = await projectRes.json();
+      if (projectRes.ok) {
+        setProject(projectData);
+        setCurrentProjectName(projectData.name);
+      }
+
+      // Fetch all links in parallel
+      const [docs, drawings, photos, reports, meetingsRes, diariesRes, teamRes, financialRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/links/document`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
+        fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/links/drawing`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
+        fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/links/photo`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
+        fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/links/report`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
+        fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/meetings`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
+        fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/site-diaries`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
+        fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/team`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
+        fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/financial-summary`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json())
+      ]);
+
+      setDocumentLinks(docs || []);
+      setDrawingLinks(drawings || []);
+      setPhotoLinks(photos || []);
+      setReportLinks(reports || []);
+      setMeetings(meetingsRes || []);
+      setSiteDiaries(diariesRes || []);
+      setTeamMembers(teamRes || []);
+      setFinancial(financialRes || null);
       
-      const data = await response.json();
-      if (response.ok) {
-        setProject(data);
-        setCurrentProjectName(data.name);
-      }
     } catch (error) {
-      console.error('Error fetching project:', error);
+      console.error('Error fetching data:', error);
       setError('Failed to load project details');
-    }
-  };
-
-  const fetchDocumentLinks = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/links/document`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setDocumentLinks(data);
-      }
-    } catch (error) {
-      console.error('Error fetching document links:', error);
-    }
-  };
-
-  const fetchDrawingLinks = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/links/drawing`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setDrawingLinks(data);
-      }
-    } catch (error) {
-      console.error('Error fetching drawing links:', error);
-    }
-  };
-
-  const fetchPhotoLinks = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/links/photo`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setPhotoLinks(data);
-      }
-    } catch (error) {
-      console.error('Error fetching photo links:', error);
-    }
-  };
-
-  const fetchReportLinks = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/links/report`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setReportLinks(data);
-      }
-    } catch (error) {
-      console.error('Error fetching report links:', error);
-    }
-  };
-
-  const fetchMeetings = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/meetings`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setMeetings(data);
-      }
-    } catch (error) {
-      console.error('Error fetching meetings:', error);
-    }
-  };
-
-  const fetchSiteDiaries = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/site-diaries`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setSiteDiaries(data);
-      }
-    } catch (error) {
-      console.error('Error fetching site diaries:', error);
-    }
-  };
-
-  const fetchFinancialSummary = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/financial-summary`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setFinancial(data);
-      }
-    } catch (error) {
-      console.error('Error fetching financial summary:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchTeamMembers = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/team`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setTeamMembers(data);
-      }
-    } catch (error) {
-      console.error('Error fetching team members:', error);
     }
   };
 
@@ -251,48 +142,31 @@ export function StakeholderProjectPortal() {
     return 'bg-green-500';
   };
 
-  const getStatusBadge = (status: string) => {
-    const badges: Record<string, string> = {
-      Active: 'bg-green-100 text-green-700',
-      Completed: 'bg-blue-100 text-blue-700',
-      'On Hold': 'bg-yellow-100 text-yellow-700',
-      Cancelled: 'bg-red-100 text-red-700'
-    };
-    return badges[status] || 'bg-gray-100 text-gray-700';
-  };
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: Building2, count: null },
+    { id: 'documents', label: 'Docs', icon: FileText, count: documentLinks.length },
+    { id: 'drawings', label: 'Drawings', icon: FolderOpen, count: drawingLinks.length },
+    { id: 'photos', label: 'Photos', icon: Image, count: photoLinks.length },
+    { id: 'reports', label: 'Reports', icon: FileText, count: reportLinks.length },
+    { id: 'meetings', label: 'Meetings', icon: Calendar, count: meetings.length },
+    { id: 'team', label: 'Team', icon: Users, count: teamMembers.length },
+    { id: 'financial', label: 'Financial', icon: DollarSign, count: null },
+  ];
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <Loader2 size={48} className="animate-spin text-amber-500" />
+        <Loader2 size={40} className="animate-spin text-amber-500" />
       </div>
     );
   }
 
-  if (error) {
+  if (error || !project) {
     return (
       <div className="text-center py-12">
         <AlertCircle size={48} className="mx-auto text-red-500 mb-3" />
-        <p className="text-red-600">{error}</p>
-        <button 
-          onClick={() => navigate('/stakeholder/dashboard')}
-          className="mt-4 text-amber-500 hover:underline"
-        >
-          Back to Dashboard
-        </button>
-      </div>
-    );
-  }
-
-  if (!project) {
-    return (
-      <div className="text-center py-12">
-        <Building2 size={48} className="mx-auto text-gray-400 mb-3" />
-        <p className="text-gray-500">Project not found</p>
-        <button 
-          onClick={() => navigate('/stakeholder/dashboard')}
-          className="mt-4 text-amber-500 hover:underline"
-        >
+        <p className="text-red-600">{error || 'Project not found'}</p>
+        <button onClick={() => navigate('/stakeholder/dashboard')} className="mt-4 text-amber-500 hover:underline">
           Back to Dashboard
         </button>
       </div>
@@ -300,538 +174,290 @@ export function StakeholderProjectPortal() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Back Button */}
-      <button
-        onClick={() => navigate('/stakeholder/dashboard')}
-        className="flex items-center gap-2 text-gray-600 hover:text-amber-500 transition"
-      >
-        <ChevronLeft size={20} />
+      <button onClick={() => navigate('/stakeholder/dashboard')} className="flex items-center gap-1 text-sm text-gray-500 hover:text-amber-500 transition">
+        <ChevronLeft size={16} />
         Back to Dashboard
       </button>
 
-      {/* Project Header */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex flex-wrap justify-between items-start gap-4">
+      {/* Project Header - Compact */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
+        <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{project.name}</h1>
-            <div className="flex flex-wrap gap-3 mt-2">
-              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${getStatusBadge(project.status)}`}>
-                {project.status}
-              </span>
-              <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-                <MapPin size={12} />
-                {project.location}
-              </span>
-              <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-                <CalendarDays size={12} />
-                {new Date(project.startDate).toLocaleDateString()} - {new Date(project.endDate).toLocaleDateString()}
-              </span>
+            <h1 className="text-xl font-bold">{project.name}</h1>
+            <div className="flex gap-3 mt-1 text-xs text-gray-500">
+              <span className="flex items-center gap-1"><MapPin size={12} /> {project.location}</span>
+              <span className="flex items-center gap-1"><CalendarDays size={12} /> {new Date(project.startDate).toLocaleDateString()} - {new Date(project.endDate).toLocaleDateString()}</span>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-sm text-gray-500">Overall Progress</div>
-            <div className="text-3xl font-bold text-amber-500">{project.progress}%</div>
-          </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="mt-4">
-          <div className="w-full bg-gray-200 rounded-full h-3">
-            <div 
-              className={`${getProgressColor(project.progress)} h-3 rounded-full transition-all`}
-              style={{ width: `${project.progress}%` }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <CalendarDays size={20} className="text-blue-500" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Days Remaining</p>
-              <p className="text-lg font-bold">
-                {Math.ceil((new Date(project.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-              <FileText size={20} className="text-green-500" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Documents</p>
-              <p className="text-lg font-bold">{documentLinks.length}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-              <Users size={20} className="text-amber-500" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Meetings</p>
-              <p className="text-lg font-bold">{meetings.length}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-              <DollarSign size={20} className="text-purple-500" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Contract Sum</p>
-              <p className="text-lg font-bold">KES {(project.contractSum || 0).toLocaleString()}</p>
+            <div className="text-2xl font-bold text-amber-500">{project.progress}%</div>
+            <div className="w-32 mt-1 bg-gray-200 rounded-full h-1.5">
+              <div className={`${getProgressColor(project.progress)} h-1.5 rounded-full`} style={{ width: `${project.progress}%` }} />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <div className="flex flex-wrap gap-4">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`pb-3 px-1 text-sm font-medium transition ${
-              activeTab === 'overview'
-                ? 'text-amber-500 border-b-2 border-amber-500'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Overview
-          </button>
-          <button
-            onClick={() => setActiveTab('documents')}
-            className={`pb-3 px-1 text-sm font-medium transition ${
-              activeTab === 'documents'
-                ? 'text-amber-500 border-b-2 border-amber-500'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Documents ({documentLinks.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('drawings')}
-            className={`pb-3 px-1 text-sm font-medium transition ${
-              activeTab === 'drawings'
-                ? 'text-amber-500 border-b-2 border-amber-500'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Drawings ({drawingLinks.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('photos')}
-            className={`pb-3 px-1 text-sm font-medium transition ${
-              activeTab === 'photos'
-                ? 'text-amber-500 border-b-2 border-amber-500'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Photos ({photoLinks.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('reports')}
-            className={`pb-3 px-1 text-sm font-medium transition ${
-              activeTab === 'reports'
-                ? 'text-amber-500 border-b-2 border-amber-500'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Reports ({reportLinks.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('meetings')}
-            className={`pb-3 px-1 text-sm font-medium transition ${
-              activeTab === 'meetings'
-                ? 'text-amber-500 border-b-2 border-amber-500'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Meetings ({meetings.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('progress')}
-            className={`pb-3 px-1 text-sm font-medium transition ${
-              activeTab === 'progress'
-                ? 'text-amber-500 border-b-2 border-amber-500'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Site Progress
-          </button>
-          {financial && (
-            <button
-              onClick={() => setActiveTab('financial')}
-              className={`pb-3 px-1 text-sm font-medium transition ${
-                activeTab === 'financial'
-                  ? 'text-amber-500 border-b-2 border-amber-500'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Financial
-            </button>
-          )}
-          <button
-            onClick={() => setActiveTab('team')}
-            className={`pb-3 px-1 text-sm font-medium transition ${
-              activeTab === 'team'
-                ? 'text-amber-500 border-b-2 border-amber-500'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Team ({teamMembers.length})
-          </button>
+      {/* Quick Stats - Compact row */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2 text-center">
+          <p className="text-lg font-bold">{documentLinks.length + drawingLinks.length + photoLinks.length + reportLinks.length}</p>
+          <p className="text-xs text-gray-500">Documents</p>
+        </div>
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2 text-center">
+          <p className="text-lg font-bold">{meetings.length}</p>
+          <p className="text-xs text-gray-500">Meetings</p>
+        </div>
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2 text-center">
+          <p className="text-lg font-bold">{teamMembers.length}</p>
+          <p className="text-xs text-gray-500">Team</p>
+        </div>
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2 text-center">
+          <p className="text-lg font-bold">{Math.ceil((new Date(project.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}</p>
+          <p className="text-xs text-gray-500">Days Left</p>
+        </div>
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2 text-center">
+          <p className="text-lg font-bold text-green-600">KES {(project.contractSum || 0).toLocaleString()}</p>
+          <p className="text-xs text-gray-500">Contract</p>
         </div>
       </div>
 
-      {/* Tab Content - Overview */}
-      {activeTab === 'overview' && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold mb-4">Project Description</h3>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
-            {project.description || 'No description provided.'}
-          </p>
+      {/* Tabs - Compact */}
+      <div className="border-b flex flex-wrap gap-1">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition rounded-t-lg ${
+              activeTab === tab.id
+                ? 'text-amber-500 border-b-2 border-amber-500 bg-amber-50/50 dark:bg-amber-950/20'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            <tab.icon size={14} />
+            <span>{tab.label}</span>
+            {tab.count !== null && tab.count > 0 && (
+              <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-600 px-1.5 py-0.5 rounded-full">
+                {tab.count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
 
-          <h3 className="text-lg font-semibold mb-4">Project Team</h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <User size={20} className="text-amber-500 mt-0.5" />
-              <div>
-                <p className="font-medium">Project Manager</p>
-                <p className="text-sm">{project.projectManager || 'Not assigned'}</p>
-                {project.projectManagerEmail && (
-                  <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                    <Mail size={12} /> {project.projectManagerEmail}
-                  </p>
-                )}
-                {project.projectManagerPhone && (
-                  <p className="text-xs text-gray-500 flex items-center gap-1">
-                    <Phone size={12} /> {project.projectManagerPhone}
-                  </p>
-                )}
+      {/* Tab Content */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
+        
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-sm font-semibold mb-2">Project Description</h3>
+              <p className="text-sm text-gray-600">{project.description || 'No description provided.'}</p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="flex items-start gap-2 p-2 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+                <User size={16} className="text-amber-500 mt-0.5" />
+                <div>
+                  <p className="text-xs font-medium">Project Manager</p>
+                  <p className="text-sm">{project.projectManager || 'Not assigned'}</p>
+                  {project.projectManagerEmail && <p className="text-xs text-gray-500">{project.projectManagerEmail}</p>}
+                  {project.projectManagerPhone && <p className="text-xs text-gray-500">{project.projectManagerPhone}</p>}
+                </div>
+              </div>
+              <div className="flex items-start gap-2 p-2 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+                <Building2 size={16} className="text-amber-500 mt-0.5" />
+                <div>
+                  <p className="text-xs font-medium">Client</p>
+                  <p className="text-sm">{project.client}</p>
+                </div>
               </div>
             </div>
-            <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <Building2 size={20} className="text-amber-500 mt-0.5" />
-              <div>
-                <p className="font-medium">Client</p>
-                <p className="text-sm">{project.client}</p>
+            {financial && (
+              <div className="border-t pt-3">
+                <h3 className="text-sm font-semibold mb-2">Payment Summary</h3>
+                <div className="grid grid-cols-3 gap-2 text-center text-sm">
+                  <div>
+                    <p className="text-xs text-gray-500">Invoiced</p>
+                    <p className="font-semibold">KES {financial.totalInvoiced.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Paid</p>
+                    <p className="font-semibold text-green-600">KES {financial.totalPaid.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Outstanding</p>
+                    <p className={`font-semibold ${financial.outstanding > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      KES {financial.outstanding.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Tab Content - Documents */}
-      {activeTab === 'documents' && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-          {documentLinks.length === 0 ? (
-            <div className="text-center py-8">
-              <FileText size={48} className="mx-auto text-gray-400 mb-3" />
-              <p className="text-gray-500">No documents shared yet</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {documentLinks.map((doc) => (
-                <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <FileText size={20} className="text-blue-500" />
+        {/* Documents Tab */}
+        {activeTab === 'documents' && (
+          <div className="space-y-2">
+            {documentLinks.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">No documents shared yet</div>
+            ) : (
+              documentLinks.map((doc) => (
+                <a key={doc.id} href={doc.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition">
+                  <div className="flex items-center gap-2">
+                    <FileText size={16} className="text-blue-500" />
                     <div>
-                      <p className="font-medium">{doc.title}</p>
+                      <p className="text-sm font-medium">{doc.title}</p>
                       {doc.description && <p className="text-xs text-gray-500">{doc.description}</p>}
-                      <p className="text-xs text-gray-500">Added by {doc.created_by_name} on {new Date(doc.created_at).toLocaleDateString()}</p>
                     </div>
                   </div>
-                  <a 
-                    href={doc.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="p-2 text-blue-500 hover:text-blue-600"
-                  >
-                    <Download size={18} />
-                  </a>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Tab Content - Drawings */}
-      {activeTab === 'drawings' && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-          {drawingLinks.length === 0 ? (
-            <div className="text-center py-8">
-              <FileText size={48} className="mx-auto text-gray-400 mb-3" />
-              <p className="text-gray-500">No drawings shared yet</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {drawingLinks.map((doc) => (
-                <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <FileText size={20} className="text-amber-500" />
-                    <div>
-                      <p className="font-medium">{doc.title}</p>
-                      {doc.description && <p className="text-xs text-gray-500">{doc.description}</p>}
-                      <p className="text-xs text-gray-500">Added by {doc.created_by_name} on {new Date(doc.created_at).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                  <a 
-                    href={doc.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="p-2 text-blue-500 hover:text-blue-600"
-                  >
-                    <Download size={18} />
-                  </a>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Tab Content - Photos */}
-      {activeTab === 'photos' && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-          {photoLinks.length === 0 ? (
-            <div className="text-center py-8">
-              <Image size={48} className="mx-auto text-gray-400 mb-3" />
-              <p className="text-gray-500">No photos shared yet</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {photoLinks.map((photo) => (
-                <a 
-                  key={photo.id}
-                  href={photo.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="group relative bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden hover:shadow-lg transition"
-                >
-                  <div className="aspect-video flex items-center justify-center bg-gray-200 dark:bg-gray-600">
-                    <Image size={32} className="text-gray-400 group-hover:text-amber-500 transition" />
-                  </div>
-                  <div className="p-2">
-                    <p className="text-sm font-medium truncate">{photo.title}</p>
-                    <p className="text-xs text-gray-500">{new Date(photo.created_at).toLocaleDateString()}</p>
-                  </div>
+                  <Download size={14} className="text-gray-400" />
                 </a>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+              ))
+            )}
+          </div>
+        )}
 
-      {/* Tab Content - Reports */}
-      {activeTab === 'reports' && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-          {reportLinks.length === 0 ? (
-            <div className="text-center py-8">
-              <FileText size={48} className="mx-auto text-gray-400 mb-3" />
-              <p className="text-gray-500">No reports shared yet</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {reportLinks.map((doc) => (
-                <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <FileText size={20} className="text-purple-500" />
+        {/* Drawings Tab */}
+        {activeTab === 'drawings' && (
+          <div className="space-y-2">
+            {drawingLinks.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">No drawings shared yet</div>
+            ) : (
+              drawingLinks.map((doc) => (
+                <a key={doc.id} href={doc.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition">
+                  <div className="flex items-center gap-2">
+                    <FolderOpen size={16} className="text-amber-500" />
                     <div>
-                      <p className="font-medium">{doc.title}</p>
+                      <p className="text-sm font-medium">{doc.title}</p>
                       {doc.description && <p className="text-xs text-gray-500">{doc.description}</p>}
-                      <p className="text-xs text-gray-500">Added by {doc.created_by_name} on {new Date(doc.created_at).toLocaleDateString()}</p>
                     </div>
                   </div>
-                  <a 
-                    href={doc.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="p-2 text-blue-500 hover:text-blue-600"
-                  >
-                    <Download size={18} />
-                  </a>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+                  <Download size={14} className="text-gray-400" />
+                </a>
+              ))
+            )}
+          </div>
+        )}
 
-      {/* Tab Content - Meetings */}
-      {activeTab === 'meetings' && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-          {meetings.length === 0 ? (
-            <div className="text-center py-8">
-              <Calendar size={48} className="mx-auto text-gray-400 mb-3" />
-              <p className="text-gray-500">No meetings scheduled yet</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {meetings.map((meeting) => (
-                <div key={meeting.id} className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <div className="flex justify-between items-start mb-2">
+        {/* Photos Tab */}
+        {activeTab === 'photos' && (
+          <div className="grid grid-cols-3 gap-2">
+            {photoLinks.length === 0 ? (
+              <div className="col-span-3 text-center py-8 text-gray-500">No photos shared yet</div>
+            ) : (
+              photoLinks.map((photo) => (
+                <a key={photo.id} href={photo.url} target="_blank" rel="noopener noreferrer" className="group bg-gray-100 dark:bg-gray-700 rounded-lg p-2 text-center hover:bg-amber-50 transition">
+                  <Image size={24} className="mx-auto text-gray-400 group-hover:text-amber-500 mb-1" />
+                  <p className="text-xs font-medium truncate">{photo.title}</p>
+                  <p className="text-[10px] text-gray-500">{new Date(photo.created_at).toLocaleDateString()}</p>
+                </a>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* Reports Tab */}
+        {activeTab === 'reports' && (
+          <div className="space-y-2">
+            {reportLinks.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">No reports shared yet</div>
+            ) : (
+              reportLinks.map((doc) => (
+                <a key={doc.id} href={doc.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition">
+                  <div className="flex items-center gap-2">
+                    <FileText size={16} className="text-purple-500" />
                     <div>
-                      <p className="font-semibold">{meeting.title}</p>
-                      <p className="text-sm text-gray-500 flex items-center gap-1">
-                        <Calendar size={12} />
-                        {new Date(meeting.meeting_date).toLocaleDateString()}
-                      </p>
+                      <p className="text-sm font-medium">{doc.title}</p>
+                      {doc.description && <p className="text-xs text-gray-500">{doc.description}</p>}
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600 mt-2">{meeting.summary}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+                  <Download size={14} className="text-gray-400" />
+                </a>
+              ))
+            )}
+          </div>
+        )}
 
-      {/* Tab Content - Site Progress */}
-      {activeTab === 'progress' && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-          {siteDiaries.length === 0 ? (
-            <div className="text-center py-8">
-              <HardHat size={48} className="mx-auto text-gray-400 mb-3" />
-              <p className="text-gray-500">No site diary entries yet</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {siteDiaries.map((diary) => (
-                <div key={diary.id} className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium">{new Date(diary.date).toLocaleDateString()}</p>
-                      <p className="text-sm text-gray-500 flex items-center gap-2">
-                        <span>Weather: {diary.weather || 'N/A'}</span>
-                        <span>•</span>
-                        <span>Workers: {diary.workers_count || 0}</span>
-                      </p>
-                    </div>
+        {/* Meetings Tab */}
+        {activeTab === 'meetings' && (
+          <div className="space-y-2">
+            {meetings.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">No meetings scheduled yet</div>
+            ) : (
+              meetings.map((meeting) => (
+                <div key={meeting.id} className="p-2 border-b last:border-0">
+                  <p className="text-sm font-medium">{meeting.title}</p>
+                  <p className="text-xs text-gray-500">{new Date(meeting.meeting_date).toLocaleDateString()}</p>
+                  <p className="text-xs text-gray-600 mt-1">{meeting.summary?.substring(0, 100)}...</p>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* Team Tab */}
+        {activeTab === 'team' && (
+          <div className="space-y-2">
+            {teamMembers.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">No team members added yet</div>
+            ) : (
+              teamMembers.map((member) => (
+                <div key={member.id} className="flex items-start gap-2 p-2 border-b last:border-0">
+                  <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                    <User size={14} className="text-amber-600" />
                   </div>
-                  <p className="text-sm text-gray-600 mt-2">{diary.summary}</p>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-medium">{member.name}</p>
+                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700">{member.role}</span>
+                    </div>
+                    {member.firm_name && <p className="text-xs text-gray-500">{member.firm_name}</p>}
+                    {member.email && <p className="text-xs text-blue-500">{member.email}</p>}
+                    {member.phone && <p className="text-xs text-gray-500">{member.phone}</p>}
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+              ))
+            )}
+          </div>
+        )}
 
-      {/* Tab Content - Financial */}
-      {activeTab === 'financial' && financial && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h3 className="font-semibold">Payment Summary</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between pb-2 border-b">
-                  <span className="text-gray-600">Contract Sum</span>
-                  <span className="font-medium">KES {financial.contractSum.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between pb-2 border-b">
-                  <span className="text-gray-600">Total Invoiced</span>
-                  <span className="text-blue-600">KES {financial.totalInvoiced.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between pb-2 border-b">
-                  <span className="text-gray-600">Total Paid</span>
-                  <span className="text-green-600">KES {financial.totalPaid.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between pt-2">
-                  <span className="font-semibold">Outstanding Balance</span>
-                  <span className={`font-bold ${financial.outstanding > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    KES {financial.outstanding.toLocaleString()}
-                  </span>
-                </div>
+        {/* Financial Tab */}
+        {activeTab === 'financial' && financial && (
+          <div className="space-y-3">
+            <div className="flex justify-between text-sm py-1 border-b">
+              <span className="text-gray-600">Contract Sum</span>
+              <span className="font-medium">KES {financial.contractSum.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-sm py-1 border-b">
+              <span className="text-gray-600">Total Invoiced</span>
+              <span className="text-blue-600">KES {financial.totalInvoiced.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-sm py-1 border-b">
+              <span className="text-gray-600">Total Paid</span>
+              <span className="text-green-600">KES {financial.totalPaid.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-sm py-1">
+              <span className="font-semibold">Outstanding</span>
+              <span className={`font-bold ${financial.outstanding > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                KES {financial.outstanding.toLocaleString()}
+              </span>
+            </div>
+            <div className="mt-3">
+              <div className="flex justify-between text-xs mb-1">
+                <span>Payment Progress</span>
+                <span>{((financial.totalPaid / financial.contractSum) * 100).toFixed(1)}%</span>
               </div>
-            </div>
-            <div className="space-y-4">
-              <h3 className="font-semibold">Payment Progress</h3>
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Paid: {((financial.totalPaid / financial.contractSum) * 100).toFixed(1)}%</span>
-                  <span>Remaining: {((financial.outstanding / financial.contractSum) * 100).toFixed(1)}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-green-500 h-2 rounded-full"
-                    style={{ width: `${(financial.totalPaid / financial.contractSum) * 100}%` }}
-                  />
-                </div>
+              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div className="bg-green-500 h-1.5 rounded-full" style={{ width: `${(financial.totalPaid / financial.contractSum) * 100}%` }} />
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Tab Content - Team */}
-      {activeTab === 'team' && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold mb-4">Project Team</h3>
-          {teamMembers.length === 0 ? (
-            <div className="text-center py-8">
-              <Users size={48} className="mx-auto text-gray-400 mb-3" />
-              <p className="text-gray-500">No team members added yet</p>
-              <p className="text-sm text-gray-400">Team information will appear here once added by the contractor.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {teamMembers.map((member) => (
-                <div key={member.id} className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <div className="flex flex-wrap justify-between items-start gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap mb-2">
-                        <h4 className="font-semibold text-gray-900 dark:text-white">{member.name}</h4>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                          {member.role}
-                        </span>
-                      </div>
-                      {member.firm_name && (
-                        <p className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1 mt-1">
-                          <Building2 size={14} />
-                          {member.firm_name}
-                        </p>
-                      )}
-                      {member.email && (
-                        <p className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1 mt-1">
-                          <Mail size={14} />
-                          <a href={`mailto:${member.email}`} className="text-blue-600 hover:underline">
-                            {member.email}
-                          </a>
-                        </p>
-                      )}
-                      {member.phone && (
-                        <p className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1 mt-1">
-                          <Phone size={14} />
-                          <a href={`tel:${member.phone}`} className="hover:underline">
-                            {member.phone}
-                          </a>
-                        </p>
-                      )}
-                      {member.address && (
-                        <p className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1 mt-1">
-                          <MapPin size={14} />
-                          {member.address}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
