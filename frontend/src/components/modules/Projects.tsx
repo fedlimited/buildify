@@ -162,10 +162,14 @@ export function Projects() {
     setActiveTab('reports');
   };
 
-  const viewAsStakeholder = (project: Project) => {
-    sessionStorage.setItem('stakeholderViewProjectId', project.id.toString());
-    window.open(`/stakeholder/dashboard`, '_blank');
-  };
+
+
+const viewAsStakeholder = (project: Project) => {
+  // Open the stakeholder dashboard with project ID as URL parameter
+  window.open(`/stakeholder/dashboard?project=${project.id}`, '_blank');
+};
+
+
 
   return (
     <div className="space-y-4 fade-in">

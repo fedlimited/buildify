@@ -81,15 +81,26 @@ export function StakeholderDashboard() {
   }, []);
 
 
+
+
 // Auto-navigate to project if coming from contractor view
 useEffect(() => {
-  const projectId = sessionStorage.getItem('stakeholderViewProjectId');
+  // Check URL parameter first
+  const urlParams = new URLSearchParams(window.location.search);
+  const projectIdFromUrl = urlParams.get('project');
   
-  if (projectId) {
-    sessionStorage.removeItem('stakeholderViewProjectId');
-    navigate(`/stakeholder/projects/${projectId}`);
+  if (projectIdFromUrl) {
+    navigate(`/stakeholder/projects/${projectIdFromUrl}`);
+  } else {
+    // Fallback to sessionStorage
+    const projectId = sessionStorage.getItem('stakeholderViewProjectId');
+    if (projectId) {
+      sessionStorage.removeItem('stakeholderViewProjectId');
+      navigate(`/stakeholder/projects/${projectId}`);
+    }
   }
 }, [navigate]);
+
 
 
   const fetchProjects = async () => {

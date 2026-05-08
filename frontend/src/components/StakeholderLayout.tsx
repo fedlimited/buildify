@@ -48,13 +48,18 @@ export function StakeholderLayout({ children }: StakeholderLayoutProps) {
     navigate('/login');
   };
 
+
+
+
   // Get navigation path with project context preserved
-  const getNavPath = (basePath: string) => {
-    if (activeProjectId) {
-      return `${basePath}?project=${activeProjectId}`;
-    }
-    return basePath;
-  };
+const getNavPath = (basePath: string) => {
+  if (activeProjectId) {
+    return `${basePath}?project=${activeProjectId}`;
+  }
+  return basePath;
+};
+
+
 
   const navItems = [
     { path: '/stakeholder/dashboard', label: 'Dashboard', icon: LayoutDashboard },
