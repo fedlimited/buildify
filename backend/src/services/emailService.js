@@ -43,7 +43,7 @@ async function sendOTP(email, code, purpose = 'login') {
       subject = `Your Login Code - BOCHABERI`;
       htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #1a365d;">BOCHABERI Construction Suite</h2>
+          <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
           <h3>Your Login Code</h3>
           <p>Use the following code to log in to your account:</p>
           <div style="font-size: 32px; font-weight: bold; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px; letter-spacing: 5px;">${code}</div>
@@ -56,7 +56,7 @@ async function sendOTP(email, code, purpose = 'login') {
       subject = `Verify Your Registration - BOCHABERI`;
       htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #1a365d;">BOCHABERI Construction Suite</h2>
+          <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
           <h3>Verify Your Registration</h3>
           <p>Use the following code to complete your registration:</p>
           <div style="font-size: 32px; font-weight: bold; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px; letter-spacing: 5px;">${code}</div>
@@ -69,7 +69,7 @@ async function sendOTP(email, code, purpose = 'login') {
       subject = `You've Been Invited - BOCHABERI`;
       htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #1a365d;">BOCHABERI Construction Suite</h2>
+          <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
           <h3>You've Been Invited!</h3>
           <p>Use the following code to complete your registration:</p>
           <div style="font-size: 32px; font-weight: bold; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px; letter-spacing: 5px;">${code}</div>
@@ -109,7 +109,7 @@ async function sendInvitationCode(email, code, inviterName, companyName) {
       subject: `Invitation to join ${companyName} on BOCHABERI`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #1a365d;">BOCHABERI Construction Suite</h2>
+          <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
           <h3>You've Been Invited!</h3>
           <p><strong>${inviterName}</strong> has invited you to join <strong>${companyName}</strong>.</p>
           <p>Use the following code to complete your registration:</p>
