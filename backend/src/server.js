@@ -301,6 +301,9 @@ app.post('/api/stakeholder/projects/:projectId/accept', authenticateToken, stake
 app.get('/api/stakeholder/projects/:projectId/financial-summary', authenticateToken, requireStakeholderAccess, stakeholderController.getFinancialSummary);
 app.get('/api/stakeholder/projects/:projectId/site-diaries', authenticateToken, requireStakeholderAccess, stakeholderController.getSiteDiaries);
 
+// Stakeholder meetings
+app.get('/api/stakeholder/projects/:projectId/meetings', authenticateToken, requireStakeholderAccess, stakeholderController.getProjectMeetings);
+
 
 // Project Team routes (for contractors to manage)
 app.get('/api/projects/:projectId/team', authenticateToken, projectTeamController.getProjectTeam);
