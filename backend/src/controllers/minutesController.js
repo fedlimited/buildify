@@ -24,7 +24,7 @@ class MinutesController {
             console.error('Get minutes error:', error);
             res.status(500).json({ error: error.message });
         }
-    },
+    }
 
     // Get matters arising from previous meetings
     async getMattersArising(req, res) {
@@ -49,7 +49,7 @@ class MinutesController {
             console.error('Get matters arising error:', error);
             res.status(500).json({ error: error.message });
         }
-    },
+    }
 
     // Create new minutes
     async createMinutes(req, res) {
@@ -109,7 +109,7 @@ class MinutesController {
             console.error('Create minutes error:', error);
             res.status(500).json({ error: error.message });
         }
-    },
+    }
 
     // Update minutes with agenda, decisions, etc.
     async updateMinutes(req, res) {
@@ -214,7 +214,7 @@ class MinutesController {
             console.error('Update minutes error:', error);
             res.status(500).json({ error: error.message });
         }
-    },
+    }
 
     // Publish minutes for approval
     async publishMinutes(req, res) {
@@ -262,7 +262,7 @@ class MinutesController {
                 SELECT u.email, u.name, u.can_approve FROM project_stakeholders ps
                 JOIN users u ON ps.user_id = u.id
                 WHERE ps.project_id = (SELECT project_id FROM project_minutes WHERE id = $1)
-                AND ps.is_active = 'active'
+                AND ps.is_active = true
                 AND (u.can_approve = true OR u.id = (SELECT created_by FROM project_minutes WHERE id = $1))
             `, [minutesId]);
             
@@ -290,7 +290,7 @@ class MinutesController {
             console.error('Publish error:', error);
             res.status(500).json({ error: error.message });
         }
-    },
+    }
 
     // Approve minutes
     async approveMinutes(req, res) {
@@ -322,7 +322,7 @@ class MinutesController {
             console.error('Approve error:', error);
             res.status(500).json({ error: error.message });
         }
-    },
+    }
 
     // Reject minutes with feedback
     async rejectMinutes(req, res) {
@@ -358,7 +358,7 @@ class MinutesController {
             console.error('Reject error:', error);
             res.status(500).json({ error: error.message });
         }
-    },
+    }
 
     // Get minutes with all details
     async getMinutesDetails(req, res) {
@@ -389,7 +389,7 @@ class MinutesController {
                 `SELECT u.id, u.name, u.email, u.role, u.stakeholder_type, u.can_approve
                  FROM users u
                  JOIN project_stakeholders ps ON u.id = ps.user_id
-                 WHERE ps.project_id = $1 AND ps.is_active = 'active'`,
+                 WHERE ps.project_id = $1 AND ps.is_active = true`,
                 [projectId]
             );
 
@@ -477,7 +477,7 @@ class MinutesController {
             console.error('Get minutes details error:', error);
             res.status(500).json({ error: error.message });
         }
-    },
+    }
 
     // Add action item with task assignment
     async addActionItem(req, res) {
@@ -511,7 +511,7 @@ class MinutesController {
                  JOIN project_stakeholders ps ON u.id = ps.user_id
                  JOIN projects p ON ps.project_id = p.id
                  JOIN project_minutes m ON m.project_id = p.id
-                 WHERE u.id = $1 AND m.id = $2 AND ps.is_active = 'active'`,
+                 WHERE u.id = $1 AND m.id = $2 AND ps.is_active = true`,
                 [assigned_to, minutes_id]
             );
 
@@ -578,7 +578,7 @@ class MinutesController {
             console.error('Add action item error:', error);
             res.status(500).json({ error: error.message });
         }
-    },
+    }
 
     // Update task status
     async updateTaskStatus(req, res) {
@@ -638,7 +638,7 @@ class MinutesController {
             console.error('Update task error:', error);
             res.status(500).json({ error: error.message });
         }
-    },
+    }
 
     // Get upcoming tasks for current user
     async getUpcomingTasks(req, res) {
@@ -677,7 +677,7 @@ class MinutesController {
             console.error('Get upcoming tasks error:', error);
             res.status(500).json({ error: error.message });
         }
-    },
+    }
 
     // Get overdue actions count for dashboard
     async getOverdueActionsCount(req, res) {
@@ -700,7 +700,7 @@ class MinutesController {
             console.error('Get overdue count error:', error);
             res.status(500).json({ error: error.message });
         }
-    },
+    }
 
     // Delete minutes
     async deleteMinutes(req, res) {
