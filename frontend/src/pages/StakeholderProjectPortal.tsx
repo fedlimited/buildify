@@ -6,7 +6,7 @@ import {
   CheckCircle, AlertCircle, TrendingUp, DollarSign,
   MapPin, CalendarDays, HardHat, ClipboardList, Camera,
   Phone, Mail, User, Briefcase, AlertTriangle, CheckSquare,
-  Image
+  Image, Plus
 } from 'lucide-react';
 import { API_BASE_URL } from '@/config/api';
 import { useProject } from '@/contexts/ProjectContext';
@@ -42,7 +42,10 @@ interface Meeting {
   id: number;
   title: string;
   meeting_date: string;
-  summary: string;
+  location?: string;
+  meeting_type?: string;
+  status?: string;
+  summary?: string;
   action_items: any[];
 }
 
@@ -87,6 +90,16 @@ export function StakeholderProjectPortal() {
   const [error, setError] = useState<string | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'drawings' | 'photos' | 'reports' | 'meetings' | 'progress' | 'financial' | 'team'>('overview');
+  
+  // New Meeting Form States
+  const [showMeetingForm, setShowMeetingForm] = useState(false);
+  const [creatingMeeting, setCreatingMeeting] = useState(false);
+  const [newMeeting, setNewMeeting] = useState({
+    title: '',
+    meeting_date: '',
+    location: '',
+    meeting_type: 'regular'
+  });
 
   useEffect(() => {
     fetchProjectDetails();
@@ -242,6 +255,53 @@ export function StakeholderProjectPortal() {
       }
     } catch (error) {
       console.error('Error fetching team members:', error);
+    }
+  };
+
+  // Create Meeting Handler
+  const handleCreateMeeting = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreatingMeeting(true);
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/minutes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          project_id: parseInt(projectId!),
+          meeting_date: newMeeting.meeting_date,
+          title: newMeeting.title,
+          location: newMeeting.location,
+          meeting_type: newMeeting.meeting_type
+        })
+      });
+      
+      if (response.ok) {
+        // Refresh meetings list
+        await fetchMeetings();
+        // Close form
+        setShowMeetingForm(false);
+        // Reset form
+        setNewMeeting({
+          title: '',
+          meeting_date: '',
+          location: '',
+          meeting_type: 'regular'
+        });
+      } else {
+        const error = await response.json();
+        console.error('Create meeting error:', error);
+        alert('Failed to create meeting');
+      }
+    } catch (error) {
+      console.error('Error creating meeting:', error);
+      alert('Error creating meeting');
+    } finally {
+      setCreatingMeeting(false);
     }
   };
 
@@ -669,13 +729,30 @@ export function StakeholderProjectPortal() {
         </div>
       )}
 
-      {/* Tab Content - Meetings */}
+      {/* Tab Content - Meetings with Create Meeting Button */}
       {activeTab === 'meetings' && (
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-          {meetings.length === 0 ? (
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">Meeting Minutes</h3>
+            <button
+              onClick={() => setShowMeetingForm(true)}
+              className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm flex items-center gap-1"
+            >
+              <Plus size={14} />
+              New Meeting
+            </button>
+          </div>
+
+          {meetings.length === 0 && !showMeetingForm ? (
             <div className="text-center py-8">
               <Calendar size={48} className="mx-auto text-gray-400 mb-3" />
               <p className="text-gray-500">No meetings scheduled yet</p>
+              <button
+                onClick={() => setShowMeetingForm(true)}
+                className="mt-3 text-amber-500 hover:underline text-sm"
+              >
+                Create your first meeting
+              </button>
             </div>
           ) : (
             <div className="space-y-4">
@@ -687,12 +764,107 @@ export function StakeholderProjectPortal() {
                       <p className="text-sm text-gray-500 flex items-center gap-1">
                         <Calendar size={12} />
                         {new Date(meeting.meeting_date).toLocaleDateString()}
+                        {meeting.location && ` • ${meeting.location}`}
                       </p>
+                      {meeting.meeting_type && (
+                        <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                          {meeting.meeting_type}
+                        </span>
+                      )}
                     </div>
+                    {meeting.status && (
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        meeting.status === 'published' 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {meeting.status}
+                      </span>
+                    )}
                   </div>
-                  <p className="text-sm text-gray-600 mt-2">{meeting.summary}</p>
+                  {meeting.summary && (
+                    <p className="text-sm text-gray-600 mt-2">{meeting.summary}</p>
+                  )}
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* New Meeting Form Modal */}
+          {showMeetingForm && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-lg p-6">
+                <h3 className="text-lg font-semibold mb-4">Create New Meeting</h3>
+                <form onSubmit={handleCreateMeeting} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Meeting Title *</label>
+                    <input
+                      type="text"
+                      value={newMeeting.title}
+                      onChange={(e) => setNewMeeting({...newMeeting, title: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Meeting Date *</label>
+                    <input
+                      type="date"
+                      value={newMeeting.meeting_date}
+                      onChange={(e) => setNewMeeting({...newMeeting, meeting_date: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Location</label>
+                    <input
+                      type="text"
+                      value={newMeeting.location}
+                      onChange={(e) => setNewMeeting({...newMeeting, location: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700"
+                      placeholder="e.g., Site Office, Conference Room"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Meeting Type</label>
+                    <select
+                      value={newMeeting.meeting_type}
+                      onChange={(e) => setNewMeeting({...newMeeting, meeting_type: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700"
+                    >
+                      <option value="regular">Regular</option>
+                      <option value="progress">Progress Review</option>
+                      <option value="technical">Technical</option>
+                      <option value="emergency">Emergency</option>
+                    </select>
+                  </div>
+                  <div className="flex justify-end gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowMeetingForm(false);
+                        setNewMeeting({
+                          title: '',
+                          meeting_date: '',
+                          location: '',
+                          meeting_type: 'regular'
+                        });
+                      }}
+                      className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={creatingMeeting}
+                      className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50"
+                    >
+                      {creatingMeeting ? 'Creating...' : 'Create Meeting'}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           )}
         </div>
