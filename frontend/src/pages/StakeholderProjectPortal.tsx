@@ -162,6 +162,7 @@ export function StakeholderProjectPortal() {
   const [error, setError] = useState<string | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
+  const [allStakeholders, setAllStakeholders] = useState<Stakeholder[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'drawings' | 'photos' | 'reports' | 'meetings' | 'progress' | 'financial' | 'team'>('meetings');
   
   // Overdue counter
@@ -397,7 +398,9 @@ export function StakeholderProjectPortal() {
         setActionItems(data.actionItems || []);
         setMattersArising(data.mattersArising || []);
         setVersions(data.versions || []);
-        
+        setAllStakeholders(data.allStakeholders || []);
+
+       
         // Load content from topics
         setMinutesContent({
           discussions: data.topics?.find((t: Topic) => t.topic_type === 'discussion')?.content || '',
@@ -1121,18 +1124,70 @@ export function StakeholderProjectPortal() {
                   </div>
                 </div>
 
-                {/* Matters Present - Stakeholders in Attendance */}
-                <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
-                  <h4 className="font-semibold flex items-center gap-2 mb-3"><Users size={18} className="text-blue-500" /> Matters Present (Stakeholders in Attendance)</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {meetingAttendees.map((stakeholder) => (
-                      <span key={stakeholder.id} className="px-2 py-1 bg-white dark:bg-gray-700 rounded-full text-sm">{stakeholder.name} ({stakeholder.role})</span>
-                    ))}
-                    {meetingAttendees.length === 0 && stakeholders.map((s) => (
-                      <span key={s.id} className="px-2 py-1 bg-white dark:bg-gray-700 rounded-full text-sm">{s.name} ({s.role})</span>
-                    ))}
-                  </div>
-                </div>
+
+
+
+{/* Matters Present - Stakeholders in Attendance with Dropdown */}
+<div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+  <h4 className="font-semibold flex items-center gap-2 mb-3">
+    <Users size={18} className="text-blue-500" />
+    Matters Present (Stakeholders in Attendance)
+  </h4>
+  
+  {/* Display existing attendees */}
+  <div className="flex flex-wrap gap-2 mb-3">
+    {meetingAttendees.map((stakeholder) => (
+      <div key={stakeholder.id} className="flex items-center gap-1 px-2 py-1 bg-white dark:bg-gray-700 rounded-full text-sm">
+        <span>{stakeholder.name} ({stakeholder.role})</span>
+        {editingMode === 'edit' && (
+          <button
+            onClick={() => setMeetingAttendees(meetingAttendees.filter(a => a.id !== stakeholder.id))}
+            className="text-red-500 hover:text-red-600 ml-1"
+          >
+            <X size={12} />
+          </button>
+        )}
+      </div>
+    ))}
+    {meetingAttendees.length === 0 && (
+      <p className="text-sm text-gray-500">No attendees added yet</p>
+    )}
+  </div>
+  
+  {/* Dropdown to add attendees */}
+  {editingMode === 'edit' && (
+    <div className="flex gap-2 mt-2">
+      <select
+        id="attendeeSelect"
+        className="flex-1 px-3 py-2 border rounded-lg text-sm dark:bg-gray-700"
+        value=""
+        onChange={(e) => {
+          if (e.target.value) {
+            const selectedId = parseInt(e.target.value);
+            const selectedStakeholder = allStakeholders.find(s => s.id === selectedId);
+            if (selectedStakeholder && !meetingAttendees.find(a => a.id === selectedId)) {
+              setMeetingAttendees([...meetingAttendees, selectedStakeholder]);
+            }
+            e.target.value = ''; // Reset select
+          }
+        }}
+      >
+        <option value="">-- Add stakeholder --</option>
+        {allStakeholders
+          .filter(s => !meetingAttendees.find(a => a.id === s.id))
+          .map((stakeholder) => (
+            <option key={stakeholder.id} value={stakeholder.id}>
+              {stakeholder.name} ({stakeholder.role})
+            </option>
+          ))}
+      </select>
+    </div>
+  )}
+</div>
+
+
+
+
 
                 {/* Matters Arising from Previous Meetings */}
                 {mattersArising.length > 0 && (
@@ -1161,6 +1216,12 @@ export function StakeholderProjectPortal() {
                     </div>
                   </div>
                 )}
+
+
+
+
+
+
 
                 {/* Agenda Section */}
                 <div className="mb-6">
