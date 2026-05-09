@@ -4,23 +4,13 @@ let transporter = null;
 
 function getTransporter() {
   if (!transporter) {
-    // Use environment variables with NovaHost cPanel defaults
-    const host = process.env.EMAIL_HOST || 'mail.bochi.ke';
-    const port = parseInt(process.env.EMAIL_PORT) || 465;
-    const secure = process.env.EMAIL_SECURE === 'true';
-    
-    console.log(`📧 SMTP Config: ${host}:${port} (secure: ${secure})`);
-    
     transporter = nodemailer.createTransport({
-      host: host,
-      port: port,
-      secure: secure,
+      host: 'smtp-relay.brevo.com',
+      port: 587,
+      secure: false,
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-      },
-      tls: {
-        rejectUnauthorized: false  // Required for some cPanel servers
+        user: process.env.BREVO_SMTP_USER || 'your_brevo_email@example.com',
+        pass: process.env.BREVO_API_KEY
       }
     });
   }
@@ -28,426 +18,342 @@ function getTransporter() {
 }
 
 async function sendOTP(email, code, purpose = 'login') {
-  const purposeText = purpose === 'login' ? 'log in to' : 'register for';
-  
-  // Always show in console
-  console.log('\n🔐 ========================================');
-  console.log(`📧 TO: ${email}`);
-  console.log(`🔑 OTP CODE: ${code}`);
-  console.log(`📝 PURPOSE: ${purpose}`);
-  console.log('========================================\n');
-  
-  // Send real email
   try {
     const transporter = getTransporter();
     
-    await transporter.sendMail({
-      from: `"Bochi Construction Suite" <${process.env.EMAIL_USER}>`,
+    let subject = '';
+    let htmlContent = '';
+    
+    if (purpose === 'login') {
+      subject = `Your Login Code - BOCHABERI`;
+      htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+          <h2 style="color: #1a365d;">BOCHABERI Construction Suite</h2>
+          <h3>Your Login Code</h3>
+          <p>Use the following code to log in to your account:</p>
+          <div style="font-size: 32px; font-weight: bold; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px; letter-spacing: 5px;">${code}</div>
+          <p style="color: #666; font-size: 12px; margin-top: 20px;">This code expires in 5 minutes. Do not share this code with anyone.</p>
+          <hr style="margin: 20px 0;">
+          <p style="color: #999; font-size: 10px;">BOCHABERI Construction Management System</p>
+        </div>
+      `;
+    } else if (purpose === 'registration') {
+      subject = `Verify Your Registration - BOCHABERI`;
+      htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+          <h2 style="color: #1a365d;">BOCHABERI Construction Suite</h2>
+          <h3>Verify Your Registration</h3>
+          <p>Use the following code to complete your registration:</p>
+          <div style="font-size: 32px; font-weight: bold; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px; letter-spacing: 5px;">${code}</div>
+          <p style="color: #666; font-size: 12px; margin-top: 20px;">This code expires in 5 minutes.</p>
+          <hr style="margin: 20px 0;">
+          <p style="color: #999; font-size: 10px;">BOCHABERI Construction Management System</p>
+        </div>
+      `;
+    } else if (purpose === 'invitation') {
+      subject = `You've Been Invited - BOCHABERI`;
+      htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+          <h2 style="color: #1a365d;">BOCHABERI Construction Suite</h2>
+          <h3>You've Been Invited!</h3>
+          <p>Use the following code to complete your registration:</p>
+          <div style="font-size: 32px; font-weight: bold; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px; letter-spacing: 5px;">${code}</div>
+          <p style="color: #666; font-size: 12px; margin-top: 20px;">This code expires in 5 minutes.</p>
+          <hr style="margin: 20px 0;">
+          <p style="color: #999; font-size: 10px;">BOCHABERI Construction Management System</p>
+        </div>
+      `;
+    }
+    
+    const info = await transporter.sendMail({
+      from: `"${process.env.BREVO_SENDER_NAME || 'BOCHABERI'}" <${process.env.BREVO_SENDER_EMAIL || 'noreply@bochaberi.com'}>`,
       to: email,
-      subject: `Your ${purpose} verification code - Bochi`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .code { font-size: 32px; font-weight: bold; color: #1a56db; padding: 20px; background: #f3f4f6; text-align: center; letter-spacing: 5px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h2>Bochi Construction Suite</h2>
-            <p>Your verification code to ${purposeText} Bochi is:</p>
-            <div class="code">${code}</div>
-            <p>This code will expire in 10 minutes.</p>
-            <p>If you didn't request this, please ignore this email.</p>
-            <hr>
-            <p style="font-size: 12px; color: #666;">Bochi Construction Suite - Project Management System</p>
-          </div>
-        </body>
-        </html>
-      `,
-      text: `Bochi Construction Suite\n\nYour verification code to ${purposeText} BOCHI is: ${code}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this, please ignore this email.`
+      subject: subject,
+      html: htmlContent
     });
     
-    console.log(`✅ OTP email sent successfully to ${email}`);
-    return true;
-    
+    console.log(`✅ OTP sent to ${email} for ${purpose}`);
+    return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error(`❌ Failed to send OTP email to ${email}:`, error.message);
-    return false;
+    console.error('Email send error:', error);
+    return { success: false, error: error.message };
   }
 }
 
 async function sendInvitationCode(email, code, inviterName, companyName) {
-  console.log('\n📨 ========================================');
-  console.log(`📧 TO: ${email}`);
-  console.log(`🎫 INVITATION CODE: ${code}`);
-  console.log(`👤 FROM: ${inviterName}`);
-  console.log(`🏢 COMPANY: ${companyName}`);
-  console.log('========================================\n');
-  
   try {
     const transporter = getTransporter();
     
-    await transporter.sendMail({
-      from: `"${inviterName} via BOCHI" <${process.env.EMAIL_USER}>`,
+    const info = await transporter.sendMail({
+      from: `"${process.env.BREVO_SENDER_NAME || 'BOCHABERI'}" <${process.env.BREVO_SENDER_EMAIL || 'noreply@bochaberi.com'}>`,
       to: email,
-      subject: `Invitation to join ${companyName} on BOCHI`,
+      subject: `Invitation to join ${companyName} on BOCHABERI`,
       html: `
-        <h2>You're Invited!</h2>
-        <p><strong>${inviterName}</strong> has invited you to join <strong>${companyName}</strong> on Bochi Construction Suite.</p>
-        <p>Your invitation code: <strong style="font-size: 24px;">${code}</strong></p>
-        <p>This code expires in 30 minutes.</p>
-        <p>Click here to register: <a href="https://app.Bochi.ke/register">Register Now</a></p>
-      `,
-      text: `You're invited to join ${companyName} on Bochi.\n\nYour invitation code: ${code}\n\nExpires in 30 minutes.\n\nRegister at: https://app.bochi.ke/register`
+        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+          <h2 style="color: #1a365d;">BOCHABERI Construction Suite</h2>
+          <h3>You've Been Invited!</h3>
+          <p><strong>${inviterName}</strong> has invited you to join <strong>${companyName}</strong>.</p>
+          <p>Use the following code to complete your registration:</p>
+          <div style="font-size: 32px; font-weight: bold; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px; letter-spacing: 5px;">${code}</div>
+          <p style="color: #666; font-size: 12px; margin-top: 20px;">This code expires in 5 minutes.</p>
+          <hr style="margin: 20px 0;">
+          <p style="color: #999; font-size: 10px;">BOCHABERI Construction Management System</p>
+        </div>
+      `
     });
     
-    console.log(`✅ Invitation email sent to ${email}`);
-    return true;
+    console.log(`✅ Invitation sent to ${email}`);
+    return { success: true };
   } catch (error) {
-    console.error(`❌ Failed to send invitation:`, error.message);
-    return false;
+    console.error('Invitation send error:', error);
+    return { success: false, error: error.message };
   }
 }
 
-async function sendInvoiceEmail(email, payment) {
-  const invoiceNumber = `INV-BOCHI-${String(payment.id).padStart(6, '0')}`;
-  const invoiceDate = new Date(payment.paid_at || payment.created_at).toLocaleDateString('en-KE', {
-    year: 'numeric', month: 'long', day: 'numeric'
-  });
-  const amountKES = payment.amount_kes || 0;
-  const usdAmount = payment.amount_usd || 0;
-  const vatRate = 0.16;
-  const vatAmount = amountKES * vatRate;
-  const subtotal = amountKES - vatAmount;
 
-  console.log('\n📄 ========================================');
-  console.log(`📧 Sending invoice to: ${email}`);
-  console.log(`🧾 Invoice #: ${invoiceNumber}`);
-  console.log(`💰 Amount: KES ${amountKES.toLocaleString()}`);
-  console.log('========================================\n');
-
-  try {
-    const transporter = getTransporter();
-    
-    await transporter.sendMail({
-      from: `"Bochi Construction Suite" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: `Invoice ${invoiceNumber} - Bochi Construction Suite`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
-            .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-            .header { background: #1a1a1a; padding: 25px; text-align: center; }
-            .header h1 { color: #f59e0b; margin: 0; font-size: 28px; }
-            .header p { color: #888; margin: 5px 0 0 0; font-size: 13px; }
-            .body { padding: 25px; }
-            .body h2 { margin: 0 0 5px 0; color: #333; }
-            .info-table { width: 100%; margin: 15px 0; }
-            .info-table td { padding: 3px 0; font-size: 14px; color: #555; }
-            table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-            th { text-align: left; padding: 10px; background: #f9fafb; font-size: 11px; color: #666; text-transform: uppercase; border-bottom: 1px solid #e5e7eb; }
-            td { padding: 10px; font-size: 14px; border-bottom: 1px solid #e5e7eb; }
-            .text-right { text-align: right; }
-            .total-row td { font-size: 18px; font-weight: bold; border-top: 2px solid #333; padding-top: 12px; }
-            .footer { background: #f9fafb; padding: 20px; text-align: center; font-size: 12px; color: #888; border-top: 1px solid #eee; }
-            .paid-badge { display: inline-block; background: #d4edda; color: #155724; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>BOCHI</h1>
-              <p>Construction Suite</p>
-            </div>
-            <div class="body">
-              <h2>Invoice #${invoiceNumber}</h2>
-              <table class="info-table">
-                <tr><td><strong>Date:</strong></td><td>${invoiceDate}</td></tr>
-                <tr><td><strong>Status:</strong></td><td><span class="paid-badge">PAID</span></td></tr>
-                <tr><td><strong>Payment Method:</strong></td><td style="text-transform: capitalize;">${payment.payment_method || 'N/A'}</td></tr>
-                ${payment.mpesa_transaction_id ? `<tr><td><strong>M-Pesa Ref:</strong></td><td>${payment.mpesa_transaction_id}</td></tr>` : ''}
-              </table>
-              
-              <div style="border: 1px solid #eee; padding: 12px; border-radius: 4px; margin: 15px 0;">
-                <p style="margin: 0; font-weight: bold;">From:</p>
-                <p style="margin: 3px 0; font-size: 14px;">Finite Element Designs Limited</p>
-                <p style="margin: 2px 0; font-size: 13px; color: #555;">P.O. Box 197-00618 Ruaraka, Nairobi, Kenya</p>
-                <p style="margin: 2px 0; font-size: 13px; color: #555;">KRA PIN: P051927399I</p>
-                <p style="margin: 2px 0; font-size: 13px; color: #555;">Email: info@bochi.ke | Web: bochi.ke</p>
-              </div>
-              
-              <table>
-                <thead>
-                  <tr><th>Description</th><th class="text-right">Amount (KES)</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td>Subscription Payment</td><td class="text-right">${subtotal.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</td></tr>
-                  <tr><td>VAT (16%)</td><td class="text-right">${vatAmount.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</td></tr>
-                  <tr class="total-row"><td>Total</td><td class="text-right">KES ${amountKES.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</td></tr>
-                  ${usdAmount > 0 ? `<tr><td style="font-size: 12px; color: #888;">Equivalent (USD)</td><td class="text-right" style="font-size: 12px; color: #888;">$${usdAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td></tr>` : ''}
-                </tbody>
-              </table>
-              
-              <p style="margin-top: 20px; color: #555;">Thank you for your business!</p>
-            </div>
-            <div class="footer">
-              <p>Bochi Construction Suite | info@bochi.ke | bochi.ke</p>
-              <p>This is a computer-generated invoice.</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
-      text: [
-        `INVOICE ${invoiceNumber}`,
-        `Date: ${invoiceDate}`,
-        `Status: PAID`,
-        ``,
-        `From: Finite Element Designs Limited`,
-        `P.O. Box 197-00618 Ruaraka, Nairobi, Kenya`,
-        `KRA PIN: P051927399I`,
-        ``,
-        `Subtotal: KES ${subtotal.toLocaleString('en-KE', { minimumFractionDigits: 2 })}`,
-        `VAT (16%): KES ${vatAmount.toLocaleString('en-KE', { minimumFractionDigits: 2 })}`,
-        `Total: KES ${amountKES.toLocaleString('en-KE', { minimumFractionDigits: 2 })}`,
-        ``,
-        `Payment Method: ${payment.payment_method || 'N/A'}`,
-        `${payment.mpesa_transaction_id ? `M-Pesa Ref: ${payment.mpesa_transaction_id}` : ''}`,
-        ``,
-        `Thank you for your business!`,
-        `Bochi Construction Suite | info@bochi.ke | bochi.ke`
-      ].filter(Boolean).join('\n')
-    });
-    
-    console.log(`✅ Invoice email sent to ${email}`);
-    return true;
-  } catch (error) {
-    console.error(`❌ Failed to send invoice email to ${email}:`, error.message);
-    return false;
-  }
+// ========== DOCUMENT NOTIFICATION EMAIL ==========
+async function sendDocumentNotification({ to, stakeholder_name, project_name, document, action, uploaded_by, revision_notes }) {
+    try {
+        const transporter = getTransporter();
+        const actionText = action === 'upload' ? 'uploaded' : 'updated';
+        const subject = `[${project_name}] New Document ${actionText}: ${document.title}`;
+        
+        const html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background: #4F46E5; color: white; padding: 20px; text-align: center; }
+                    .content { background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; }
+                    .document-details { background: white; padding: 15px; border-left: 4px solid #4F46E5; margin: 15px 0; }
+                    .button { background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; }
+                    .footer { font-size: 12px; color: #6b7280; text-align: center; margin-top: 30px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h2>Document Notification</h2>
+                    </div>
+                    <div class="content">
+                        <p>Dear ${stakeholder_name},</p>
+                        <p><strong>${uploaded_by}</strong> has ${actionText} a new document for project <strong>${project_name}</strong>:</p>
+                        
+                        <div class="document-details">
+                            <p><strong>Title:</strong> ${document.title}</p>
+                            <p><strong>Category:</strong> ${document.category}</p>
+                            <p><strong>Version:</strong> ${document.version}</p>
+                            ${document.description ? `<p><strong>Description:</strong> ${document.description}</p>` : ''}
+                            ${revision_notes ? `<p><strong>Revision Notes:</strong> ${revision_notes}</p>` : ''}
+                        </div>
+                        
+                        <p style="text-align: center;">
+                            <a href="${process.env.FRONTEND_URL || 'https://your-app.com'}/stakeholder/projects/${document.project_id}/documents" class="button">
+                                View Document
+                            </a>
+                        </p>
+                        
+                        <hr>
+                        <p><small>Direct link: <a href="${document.file_url}">${document.file_name || 'Download File'}</a></small></p>
+                    </div>
+                    <div class="footer">
+                        <p>This is an automated notification from BOCHABERI Construction Suite.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
+        
+        await transporter.sendMail({
+            from: `"${process.env.BREVO_SENDER_NAME || 'BOCHABERI'}" <${process.env.BREVO_SENDER_EMAIL || 'noreply@bochaberi.com'}>`,
+            to: to,
+            subject: subject,
+            html: html
+        });
+        
+        console.log(`✅ Document notification sent to ${to}`);
+        return true;
+    } catch (error) {
+        console.error('Document notification error:', error);
+        return false;
+    }
 }
 
+// ========== TASK ASSIGNMENT EMAIL ==========
+async function sendTaskAssignment({ to, assignee_name, assigner_name, project_name, minutes_title, task, due_date, priority, action_item_id }) {
+    try {
+        const transporter = getTransporter();
+        const priorityColors = {
+            low: '#28a745',
+            medium: '#ffc107',
+            high: '#fd7e14',
+            urgent: '#dc3545'
+        };
+        const color = priorityColors[priority] || '#ffc107';
+        
+        const subject = `[Action Required] New Task Assigned: ${project_name}`;
+        const formattedDueDate = new Date(due_date).toLocaleDateString();
+        
+        const html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background: #4F46E5; color: white; padding: 20px; text-align: center; }
+                    .content { background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; }
+                    .task-details { background: white; padding: 15px; border-left: 4px solid ${color}; margin: 15px 0; }
+                    .priority { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; background: ${color}; color: white; }
+                    .button { background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; }
+                    .footer { font-size: 12px; color: #6b7280; text-align: center; margin-top: 30px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h2>New Task Assignment</h2>
+                    </div>
+                    <div class="content">
+                        <p>Dear ${assignee_name},</p>
+                        <p><strong>${assigner_name}</strong> has assigned you a task:</p>
+                        
+                        <div class="task-details">
+                            <p><strong>Project:</strong> ${project_name}</p>
+                            ${minutes_title ? `<p><strong>Meeting:</strong> ${minutes_title}</p>` : ''}
+                            <p><strong>Task:</strong> ${task}</p>
+                            <p><strong>Due Date:</strong> ${formattedDueDate}</p>
+                            <p><strong>Priority:</strong> <span class="priority">${priority.toUpperCase()}</span></p>
+                        </div>
+                        
+                        <p style="text-align: center;">
+                            <a href="${process.env.FRONTEND_URL || 'https://your-app.com'}/stakeholder/tasks/${action_item_id}" class="button">
+                                View & Complete Task
+                            </a>
+                        </p>
+                    </div>
+                    <div class="footer">
+                        <p>Please update the task status once completed.</p>
+                        <p>This is an automated notification from BOCHABERI Construction Suite.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
+        
+        await transporter.sendMail({
+            from: `"${process.env.BREVO_SENDER_NAME || 'BOCHABERI'}" <${process.env.BREVO_SENDER_EMAIL || 'noreply@bochaberi.com'}>`,
+            to: to,
+            subject: subject,
+            html: html
+        });
+        
+        console.log(`✅ Task assignment sent to ${to}`);
+        return true;
+    } catch (error) {
+        console.error('Task assignment error:', error);
+        return false;
+    }
+}
+
+// ========== TASK REMINDER EMAIL ==========
+async function sendTaskReminder({ to, assignee_name, task, due_date, priority, project_name, minutes_title, action_item_id }) {
+    try {
+        const transporter = getTransporter();
+        const daysUntilDue = Math.ceil((new Date(due_date) - new Date()) / (1000 * 60 * 60 * 24));
+        const isUrgent = daysUntilDue <= 1;
+        const urgency = isUrgent ? 'URGENT' : 'Reminder';
+        
+        const priorityColors = {
+            low: '#28a745',
+            medium: '#ffc107',
+            high: '#fd7e14',
+            urgent: '#dc3545'
+        };
+        const color = priorityColors[priority] || '#ffc107';
+        const formattedDueDate = new Date(due_date).toLocaleDateString();
+        
+        const subject = `[${urgency}] Task Reminder: ${project_name}`;
+        
+        const html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background: ${isUrgent ? '#dc3545' : '#4F46E5'}; color: white; padding: 20px; text-align: center; }
+                    .content { background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; }
+                    .task-details { background: white; padding: 15px; border-left: 4px solid ${color}; margin: 15px 0; }
+                    .priority { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; background: ${color}; color: white; }
+                    .button { background: ${isUrgent ? '#dc3545' : '#4F46E5'}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; }
+                    .footer { font-size: 12px; color: #6b7280; text-align: center; margin-top: 30px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h2>${urgency}: Task Due Soon</h2>
+                    </div>
+                    <div class="content">
+                        <p>Dear ${assignee_name},</p>
+                        <p>This is a reminder for your assigned task:</p>
+                        
+                        <div class="task-details">
+                            <p><strong>Project:</strong> ${project_name}</p>
+                            ${minutes_title ? `<p><strong>Meeting:</strong> ${minutes_title}</p>` : ''}
+                            <p><strong>Task:</strong> ${task}</p>
+                            <p><strong>Due Date:</strong> ${formattedDueDate} ${isUrgent ? '<span style="color: red;"> (Due soon!)</span>' : ''}</p>
+                            <p><strong>Days Remaining:</strong> ${daysUntilDue}</p>
+                            <p><strong>Priority:</strong> <span class="priority">${priority.toUpperCase()}</span></p>
+                        </div>
+                        
+                        <p style="text-align: center;">
+                            <a href="${process.env.FRONTEND_URL || 'https://your-app.com'}/stakeholder/tasks/${action_item_id}" class="button">
+                                Complete Task Now
+                            </a>
+                        </p>
+                    </div>
+                    <div class="footer">
+                        <p>Please complete this task by the due date.</p>
+                        <p>This is an automated reminder from BOCHABERI Construction Suite.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
+        
+        await transporter.sendMail({
+            from: `"${process.env.BREVO_SENDER_NAME || 'BOCHABERI'}" <${process.env.BREVO_SENDER_EMAIL || 'noreply@bochaberi.com'}>`,
+            to: to,
+            subject: subject,
+            html: html
+        });
+        
+        console.log(`✅ Task reminder sent to ${to}`);
+        return true;
+    } catch (error) {
+        console.error('Task reminder error:', error);
+        return false;
+    }
+}
+
+
+// ========== VERIFY TRANSPORTER ==========
 async function verifyTransporter() {
-  try {
-    const transporter = getTransporter();
-    await transporter.verify();
-    console.log('✅ Email service is ready!');
-    console.log(`📧 Sending from: ${process.env.EMAIL_USER}`);
-    console.log(`🌐 SMTP Server: ${process.env.EMAIL_HOST || 'mail.bochi.ke'}:${process.env.EMAIL_PORT || 465}`);
-    return true;
-  } catch (error) {
-    console.error('❌ Email service error:', error.message);
-    console.log('📝 Continuing in fallback mode (OTP shown in console only)');
-    console.log('💡 Check EMAIL_HOST, EMAIL_PORT, EMAIL_SECURE in Render environment');
-    return false;
-  }
+    try {
+        const transporter = getTransporter();
+        await transporter.verify();
+        console.log('✅ Email transporter verified successfully');
+        return true;
+    } catch (error) {
+        console.error('❌ Email transporter verification failed:', error.message);
+        return false;
+    }
 }
 
-// Send bulk email to tenants - accepts raw HTML to prevent double wrapping
-async function sendBulkEmail(email, subject, message, userName, companyName, htmlMessage = null) {
-  // If htmlMessage is provided (from frontend), use it directly WITHOUT extra wrapping
-  // This prevents the double-box effect and preserves your formatting
-  const finalHtml = htmlMessage || `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <style>
-        body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-          line-height: 1.6;
-          color: #333333;
-          margin: 0;
-          padding: 0;
-          background-color: #f5f5f5;
-        }
-        .email-container {
-          max-width: 600px;
-          margin: 0 auto;
-          background-color: #ffffff;
-          border-radius: 12px;
-          overflow: hidden;
-        }
-        .header {
-          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-          padding: 30px 20px;
-          text-align: center;
-        }
-        .header-title {
-          font-size: 28px;
-          font-weight: bold;
-          color: #ffffff;
-        }
-        .tagline {
-          font-size: 13px;
-          color: rgba(255,255,255,0.9);
-          margin-top: 5px;
-        }
-        .content {
-          padding: 30px;
-          background-color: #ffffff;
-        }
-        .greeting {
-          font-size: 18px;
-          font-weight: 600;
-          color: #1f2937;
-          margin-bottom: 20px;
-        }
-        .paragraph {
-          font-size: 16px;
-          color: #374151;
-          margin-bottom: 20px;
-          line-height: 1.6;
-        }
-        .footer {
-          background-color: #f9fafb;
-          padding: 20px;
-          text-align: center;
-          border-top: 1px solid #e5e7eb;
-        }
-        .footer-text {
-          font-size: 12px;
-          color: #9ca3af;
-        }
-        @media (max-width: 600px) {
-          .content {
-            padding: 20px;
-          }
-          .paragraph {
-            font-size: 15px;
-          }
-        }
-      </style>
-    </head>
-    <body style="margin: 0; padding: 20px 10px; background-color: #f5f5f5;">
-      <div class="email-container">
-        <div class="header">
-          <div class="header-title">BOCHI</div>
-          <div class="tagline">Construction Suite</div>
-        </div>
-        <div class="content">
-          <div class="greeting">Dear ${userName},</div>
-          <div class="paragraph">${message.replace(/\n/g, '<br>')}</div>
-        </div>
-        <div class="footer">
-          <div class="footer-text">© ${new Date().getFullYear()} Bochi Construction Suite</div>
-          <div class="footer-text" style="margin-top: 5px;">This is an automated message from Bochi Admin. Please do not reply.</div>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
-  
-  // Extract plain text from HTML for text version
-  const plainText = message.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ');
-  
-  const text = `Dear ${userName},\n\n${plainText}\n\n---\nBochi Construction Suite\ninfo@bochi.ke | bochi.ke`;
-  
-  try {
-    const transporter = getTransporter();
-    await transporter.sendMail({
-      from: `"Bochi Admin" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: subject,
-      html: finalHtml,
-      text: text
-    });
-    console.log(`✅ Bulk email sent to ${email}`);
-    return true;
-  } catch (error) {
-    console.error(`❌ Failed to send bulk email to ${email}:`, error.message);
-    throw error;
-  }
-}
 
-// Send stakeholder invitation email
-async function sendStakeholderInvitation(email, name, tempPassword, projectName, stakeholderType, inviterName) {
-  const stakeholderLabels = {
-    client: 'Client/Owner',
-    consultant: 'Consultant',
-    architect: 'Architect',
-    structural_engineer: 'Structural Engineer',
-    electrical_engineer: 'Electrical Engineer',
-    mechanical_engineer: 'Mechanical Engineer',
-    quantity_surveyor: 'Quantity Surveyor',
-    project_manager: 'Project Manager'
-  };
-  
-  const displayType = stakeholderLabels[stakeholderType] || stakeholderType;
-  
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="UTF-8">
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #f59e0b, #d97706); padding: 30px; text-align: center; color: white; border-radius: 12px 12px 0 0; }
-        .content { padding: 30px; background: #ffffff; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px; }
-        .temp-password { font-size: 24px; font-weight: bold; font-family: monospace; background: #f3f4f6; padding: 10px; text-align: center; letter-spacing: 2px; border-radius: 8px; margin: 20px 0; }
-        .button { display: inline-block; background: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; }
-        .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; border-top: 1px solid #e5e7eb; margin-top: 20px; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h2>BOCHI Construction Suite</h2>
-          <p>You've been invited to collaborate!</p>
-        </div>
-        <div class="content">
-          <p>Dear <strong>${name}</strong>,</p>
-          <p><strong>${inviterName}</strong> has invited you to join <strong>${projectName}</strong> as a <strong>${displayType}</strong>.</p>
-          <p>Your temporary login credentials:</p>
-          <div class="temp-password">${tempPassword}</div>
-          <p style="text-align: center;">
-            <a href="https://bochi.ke/login" class="button">Login to Your Portal</a>
-          </p>
-          <p><strong>Important:</strong> Upon first login, you will be prompted to change your password.</p>
-          <hr>
-          <p style="font-size: 12px; color: #666;">You will only have access to information related to this specific project.</p>
-        </div>
-        <div class="footer">
-          <p>BOCHI Construction Suite | <a href="https://bochi.ke">bochi.ke</a></p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
-  
-  const text = `Dear ${name},\n\n${inviterName} has invited you to join ${projectName} as a ${displayType}.\n\nYour temporary password is: ${tempPassword}\n\nLogin at: https://bochi.ke/login\n\nUpon first login, you will be prompted to change your password.\n\n---\nBOCHI Construction Suite`;
-  
-  try {
-    const transporter = getTransporter();
-    await transporter.sendMail({
-      from: `"Bochi Admin" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: `Invitation to collaborate on ${projectName}`,
-      html: html,
-      text: text
-    });
-    console.log(`✅ Stakeholder invitation email sent to ${email}`);
-    return true;
-  } catch (error) {
-    console.error(`❌ Failed to send stakeholder invitation to ${email}:`, error.message);
-    throw error;
-  }
-}
 
-module.exports = { 
-  sendOTP, 
-  sendInvitationCode, 
-  sendInvoiceEmail, 
-  verifyTransporter, 
-  sendBulkEmail, 
-  sendStakeholderInvitation 
-};
+module.exports = { sendOTP, sendInvitationCode, sendDocumentNotification, sendTaskAssignment, sendTaskReminder, verifyTransporter };
