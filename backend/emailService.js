@@ -1,40 +1,37 @@
+
 const nodemailer = require('nodemailer');
 
-let transporter = null;
+let emailTransporter = null;
 
 function getTransporter() {
-  if (!transporter) {
-    // Try Brevo first (better deliverability)
-    if (process.env.BREVO_API_KEY && process.env.BREVO_SMTP_USER) {
-      console.log('📧 Using Brevo SMTP as primary');
-      transporter = nodemailer.createTransport({
-        host: 'smtp-relay.brevo.com',
-        port: 587,
-        secure: false,
-        auth: {
-          user: process.env.BREVO_SMTP_USER,
-          pass: process.env.BREVO_API_KEY
-        }
-      });
-    } 
-    // Fallback to your SMTP
-    else if (process.env.EMAIL_HOST) {
-      console.log('📧 Using custom SMTP as fallback');
-      transporter = nodemailer.createTransport({
-        host: process.env.EMAIL_HOST,
-        port: parseInt(process.env.EMAIL_PORT) || 465,
-        secure: process.env.EMAIL_SECURE === 'true',
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASSWORD
-        },
-        tls: {
-          rejectUnauthorized: false
-        }
-      });
+  const host = process.env.EMAIL_HOST || 'mail.bochi.ke';
+  const port = parseInt(process.env.EMAIL_PORT) || 465;
+  const secure = process.env.EMAIL_SECURE === 'true';
+  const user = process.env.EMAIL_USER || 'noreply@bochi.ke';
+  const pass = process.env.EMAIL_PASSWORD;
+  
+  if (!emailTransporter) {
+    console.log(`📧 Creating email transporter with: ${host}:${port} (secure: ${secure})`);
+    console.log(`📧 Using user: ${user}`);
+    
+    if (!pass) {
+      console.error('❌ EMAIL_PASSWORD is not set in environment variables!');
     }
+    
+    emailTransporter = nodemailer.createTransport({
+      host: host,
+      port: port,
+      secure: secure,
+      auth: {
+        user: user,
+        pass: pass
+      },
+      tls: {
+        rejectUnauthorized: false
+      }
+    });
   }
-  return transporter;
+  return emailTransporter;
 }
 
 async function sendOTP(email, code, purpose = 'login') {
@@ -86,7 +83,7 @@ async function sendOTP(email, code, purpose = 'login') {
     }
     
     const info = await transporter.sendMail({
-      from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || process.env.BREVO_SENDER_EMAIL || 'noreply@bochi.ke'}>`,
+      from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
       to: email,
       subject: subject,
       html: htmlContent
@@ -105,7 +102,7 @@ async function sendInvitationCode(email, code, inviterName, companyName) {
     const transporter = getTransporter();
     
     const info = await transporter.sendMail({
-      from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || process.env.BREVO_SENDER_EMAIL || 'noreply@bochi.ke'}>`,
+      from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
       to: email,
       subject: `Invitation to join ${companyName} on Bochi Construction Suite`,
       html: `
@@ -186,7 +183,7 @@ async function sendDocumentNotification({ to, stakeholder_name, project_name, do
         `;
         
         await transporter.sendMail({
-            from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || process.env.BREVO_SENDER_EMAIL || 'noreply@bochi.ke'}>`,
+            from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
             to: to,
             subject: subject,
             html: html
@@ -263,7 +260,7 @@ async function sendTaskAssignment({ to, assignee_name, assigner_name, project_na
         `;
         
         await transporter.sendMail({
-            from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || process.env.BREVO_SENDER_EMAIL || 'noreply@bochi.ke'}>`,
+            from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
             to: to,
             subject: subject,
             html: html
@@ -345,7 +342,7 @@ async function sendTaskReminder({ to, assignee_name, task, due_date, priority, p
         `;
         
         await transporter.sendMail({
-            from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || process.env.BREVO_SENDER_EMAIL || 'noreply@bochi.ke'}>`,
+            from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
             to: to,
             subject: subject,
             html: html
@@ -383,7 +380,7 @@ async function sendApprovalRequest({ to, name, minutesTitle, minutesId, frontend
         `;
         
         await transporter.sendMail({
-            from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || process.env.BREVO_SENDER_EMAIL || 'noreply@bochi.ke'}>`,
+            from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
             to: to,
             subject: subject,
             html: html
@@ -423,7 +420,7 @@ async function sendMinutesRejection({ to, name, minutesTitle, feedback, minutesI
         `;
         
         await transporter.sendMail({
-            from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || process.env.BREVO_SENDER_EMAIL || 'noreply@bochi.ke'}>`,
+            from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
             to: to,
             subject: subject,
             html: html
@@ -440,6 +437,10 @@ async function sendMinutesRejection({ to, name, minutesTitle, feedback, minutesI
 async function verifyTransporter() {
     try {
         const transporter = getTransporter();
+        if (!transporter) {
+            console.error('❌ Transporter is null');
+            return false;
+        }
         await transporter.verify();
         console.log('✅ Email transporter verified successfully');
         return true;
