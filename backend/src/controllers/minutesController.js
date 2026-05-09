@@ -262,7 +262,7 @@ class MinutesController {
                 SELECT u.email, u.name, u.can_approve FROM project_stakeholders ps
                 JOIN users u ON ps.user_id = u.id
                 WHERE ps.project_id = (SELECT project_id FROM project_minutes WHERE id = $1)
-                AND ps.is_active = true
+                AND ps.is_active = 1
                 AND (u.can_approve = true OR u.id = (SELECT created_by FROM project_minutes WHERE id = $1))
             `, [minutesId]);
             
@@ -389,7 +389,7 @@ class MinutesController {
                 `SELECT u.id, u.name, u.email, u.role, u.stakeholder_type, u.can_approve
                  FROM users u
                  JOIN project_stakeholders ps ON u.id = ps.user_id
-                 WHERE ps.project_id = $1 AND ps.is_active = true`,
+                 WHERE ps.project_id = $1 AND ps.is_active = 1`,
                 [projectId]
             );
 
@@ -511,7 +511,7 @@ class MinutesController {
                  JOIN project_stakeholders ps ON u.id = ps.user_id
                  JOIN projects p ON ps.project_id = p.id
                  JOIN project_minutes m ON m.project_id = p.id
-                 WHERE u.id = $1 AND m.id = $2 AND ps.is_active = true`,
+                 WHERE u.id = $1 AND m.id = $2 AND ps.is_active = 1`,
                 [assigned_to, minutes_id]
             );
 
