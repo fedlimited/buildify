@@ -303,8 +303,7 @@ const stakeholderController = {
       console.error('Error fetching site diaries:', error);
       res.status(500).json({ error: error.message });
     }
-  }
-
+  },
 
   // Get meetings for stakeholder
   getProjectMeetings: async (req, res) => {
@@ -344,8 +343,6 @@ const stakeholderController = {
       res.status(500).json({ error: error.message });
     }
   }
-
-
 };
 
 module.exports = stakeholderController;
