@@ -342,24 +342,36 @@ async function verifyTransporter() {
     }
 }
 
-// ========== BULK EMAIL FOR SUPER ADMIN ==========
+
+
+// ========== GENERIC SEND EMAIL (for super admin) ==========
+async function sendEmail(to, subject, htmlContent) {
+    try {
+        const transporter = getTransporter();
+        const info = await transporter.sendMail({
+            from: `"${process.env.BREVO_SENDER_NAME || 'BOCHABERI'}" <${process.env.BREVO_SENDER_EMAIL || 'noreply@bochaberi.com'}>`,
+            to: to,
+            subject: subject,
+            html: htmlContent
+        });
+        console.log(`✅ Email sent to ${to}`);
+        return { success: true, messageId: info.messageId };
+    } catch (error) {
+        console.error(`❌ Email failed to ${to}:`, error.message);
+        return { success: false, error: error.message };
+    }
+}
+
+// ========== BULK EMAIL (for super admin mass emails) ==========
 async function sendBulkEmail(recipients, subject, message) {
     let successCount = 0;
     let failCount = 0;
     
     for (const email of recipients) {
-        try {
-            const transporter = getTransporter();
-            await transporter.sendMail({
-                from: `"${process.env.BREVO_SENDER_NAME || 'BOCHABERI'}" <${process.env.BREVO_SENDER_EMAIL || 'noreply@bochaberi.com'}>`,
-                to: email,
-                subject: subject,
-                html: message
-            });
-            console.log(`✅ Email sent to ${email}`);
+        const result = await sendEmail(email, subject, message);
+        if (result.success) {
             successCount++;
-        } catch (error) {
-            console.error(`❌ Failed to send to ${email}:`, error.message);
+        } else {
             failCount++;
         }
     }
@@ -369,16 +381,9 @@ async function sendBulkEmail(recipients, subject, message) {
 
 
 
-
 module.exports = { 
     sendOTP, 
     sendInvitationCode, 
-    sendDocumentNotification, 
-    sendTaskAssignment, 
-    sendTaskReminder,
-    sendApprovalRequest,
-    sendMinutesRejection,
     sendEmail,
-    sendBulkEmail,
-    verifyTransporter 
+    sendBulkEmail 
 };
