@@ -3,36 +3,44 @@ const nodemailer = require('nodemailer');
 
 let emailTransporter = null;
 
+
+
+
+
+
+
+
+
+
+
+
 function getTransporter() {
-  const host = process.env.EMAIL_HOST || 'mail.bochi.ke';
-  const port = parseInt(process.env.EMAIL_PORT) || 465;
-  const secure = process.env.EMAIL_SECURE === 'true';
-  const user = process.env.EMAIL_USER || 'noreply@bochi.ke';
-  const pass = process.env.EMAIL_PASSWORD;
-  
-  if (!emailTransporter) {
-    console.log(`📧 Creating email transporter with: ${host}:${port} (secure: ${secure})`);
-    console.log(`📧 Using user: ${user}`);
-    
-    if (!pass) {
-      console.error('❌ EMAIL_PASSWORD is not set in environment variables!');
-    }
-    
-    emailTransporter = nodemailer.createTransport({
-      host: host,
-      port: port,
-      secure: secure,
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST || 'mail.bochi.ke',
+      port: parseInt(process.env.EMAIL_PORT) || 465,
+      secure: process.env.EMAIL_SECURE === 'true',
       auth: {
-        user: user,
-        pass: pass
+        user: process.env.EMAIL_USER || 'noreply@bochi.ke',
+        pass: 'bochi@Mtzy941#'  // Hardcoded temporarily
       },
       tls: {
         rejectUnauthorized: false
       }
     });
   }
-  return emailTransporter;
+  return transporter;
 }
+
+
+
+
+
+
+
+
+
+
 
 async function sendOTP(email, code, purpose = 'login') {
   try {
