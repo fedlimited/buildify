@@ -40,7 +40,7 @@ async function sendOTP(email, code, purpose = 'login') {
     let htmlContent = '';
 
     if (purpose === 'login') {
-      subject = `Your Login Code - BOCHABERI`;
+      subject = `Your Login Code - Bochi Construction Suite`;
       htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
           <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
@@ -49,11 +49,11 @@ async function sendOTP(email, code, purpose = 'login') {
           <div style="font-size: 32px; font-weight: bold; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px; letter-spacing: 5px;">${code}</div>
           <p style="color: #666; font-size: 12px; margin-top: 20px;">This code expires in 5 minutes. Do not share this code with anyone.</p>
           <hr style="margin: 20px 0;">
-          <p style="color: #999; font-size: 10px;">BOCHABERI Construction Management System</p>
+          <p style="color: #999; font-size: 10px;">Bochi Construction Suite - Construction Management System</p>
         </div>
       `;
     } else if (purpose === 'registration') {
-      subject = `Verify Your Registration - BOCHABERI`;
+      subject = `Verify Your Registration - Bochi Construction Suite`;
       htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
           <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
@@ -62,11 +62,11 @@ async function sendOTP(email, code, purpose = 'login') {
           <div style="font-size: 32px; font-weight: bold; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px; letter-spacing: 5px;">${code}</div>
           <p style="color: #666; font-size: 12px; margin-top: 20px;">This code expires in 5 minutes.</p>
           <hr style="margin: 20px 0;">
-          <p style="color: #999; font-size: 10px;">BOCHABERI Construction Management System</p>
+          <p style="color: #999; font-size: 10px;">Bochi Construction Suite - Construction Management System</p>
         </div>
       `;
     } else if (purpose === 'invitation') {
-      subject = `You've Been Invited - BOCHABERI`;
+      subject = `You've Been Invited - Bochi Construction Suite`;
       htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
           <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
@@ -75,13 +75,13 @@ async function sendOTP(email, code, purpose = 'login') {
           <div style="font-size: 32px; font-weight: bold; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px; letter-spacing: 5px;">${code}</div>
           <p style="color: #666; font-size: 12px; margin-top: 20px;">This code expires in 5 minutes.</p>
           <hr style="margin: 20px 0;">
-          <p style="color: #999; font-size: 10px;">BOCHABERI Construction Management System</p>
+          <p style="color: #999; font-size: 10px;">Bochi Construction Suite - Construction Management System</p>
         </div>
       `;
     }
 
     const info = await transporter.sendMail({
-      from: `"BOCHABERI" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
+      from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
       to: email,
       subject: subject,
       html: htmlContent
@@ -104,9 +104,9 @@ async function sendInvitationCode(email, code, inviterName, companyName) {
     }
 
     const info = await transporter.sendMail({
-      from: `"BOCHABERI" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
+      from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
       to: email,
-      subject: `Invitation to join ${companyName} on BOCHABERI`,
+      subject: `Invitation to join ${companyName} on Bochi Construction Suite`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
           <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
@@ -116,7 +116,7 @@ async function sendInvitationCode(email, code, inviterName, companyName) {
           <div style="font-size: 32px; font-weight: bold; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px; letter-spacing: 5px;">${code}</div>
           <p style="color: #666; font-size: 12px; margin-top: 20px;">This code expires in 5 minutes.</p>
           <hr style="margin: 20px 0;">
-          <p style="color: #999; font-size: 10px;">BOCHABERI Construction Management System</p>
+          <p style="color: #999; font-size: 10px;">Bochi Construction Suite - Construction Management System</p>
         </div>
       `
     });
@@ -129,7 +129,7 @@ async function sendInvitationCode(email, code, inviterName, companyName) {
   }
 }
 
-// ========== NEW FUNCTIONS FOR DOCUMENTS & TASKS ==========
+// ========== DOCUMENT NOTIFICATION EMAIL ==========
 async function sendDocumentNotification({ to, stakeholder_name, project_name, document, action, uploaded_by, revision_notes }) {
     try {
         const transporter = getTransporter();
@@ -152,12 +152,12 @@ async function sendDocumentNotification({ to, stakeholder_name, project_name, do
                 </div>
                 <p><a href="${document.file_url}" style="background: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Document</a></p>
                 <hr style="margin: 20px 0;">
-                <p style="color: #999; font-size: 10px;">BOCHABERI Construction Management System</p>
+                <p style="color: #999; font-size: 10px;">Bochi Construction Suite - Construction Management System</p>
             </div>
         `;
         
         await transporter.sendMail({
-            from: `"BOCHABERI" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
+            from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
             to: to,
             subject: subject,
             html: html
@@ -171,6 +171,7 @@ async function sendDocumentNotification({ to, stakeholder_name, project_name, do
     }
 }
 
+// ========== TASK ASSIGNMENT EMAIL ==========
 async function sendTaskAssignment({ to, assignee_name, assigner_name, project_name, minutes_title, task, due_date, priority, action_item_id }) {
     try {
         const transporter = getTransporter();
@@ -195,12 +196,12 @@ async function sendTaskAssignment({ to, assignee_name, assigner_name, project_na
                     <p><strong>Priority:</strong> <span style="background: ${color}; color: white; padding: 2px 8px; border-radius: 20px;">${priority.toUpperCase()}</span></p>
                 </div>
                 <hr style="margin: 20px 0;">
-                <p style="color: #999; font-size: 10px;">BOCHABERI Construction Management System</p>
+                <p style="color: #999; font-size: 10px;">Bochi Construction Suite - Construction Management System</p>
             </div>
         `;
         
         await transporter.sendMail({
-            from: `"BOCHABERI" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
+            from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
             to: to,
             subject: subject,
             html: html
@@ -214,6 +215,7 @@ async function sendTaskAssignment({ to, assignee_name, assigner_name, project_na
     }
 }
 
+// ========== TASK REMINDER EMAIL ==========
 async function sendTaskReminder({ to, assignee_name, task, due_date, priority, project_name, minutes_title, action_item_id }) {
     try {
         const transporter = getTransporter();
@@ -235,12 +237,12 @@ async function sendTaskReminder({ to, assignee_name, task, due_date, priority, p
                     <p><strong>Days Remaining:</strong> ${daysUntilDue}</p>
                 </div>
                 <hr style="margin: 20px 0;">
-                <p style="color: #999; font-size: 10px;">BOCHABERI Construction Management System</p>
+                <p style="color: #999; font-size: 10px;">Bochi Construction Suite - Construction Management System</p>
             </div>
         `;
         
         await transporter.sendMail({
-            from: `"BOCHABERI" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
+            from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
             to: to,
             subject: subject,
             html: html
