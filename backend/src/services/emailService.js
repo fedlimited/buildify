@@ -4,13 +4,23 @@ let transporter = null;
 
 function getTransporter() {
   if (!transporter) {
+    // Use your actual email configuration from Render
+    const host = process.env.EMAIL_HOST || 'mail.bochi.ke';
+    const port = parseInt(process.env.EMAIL_PORT) || 465;
+    const secure = process.env.EMAIL_SECURE === 'true';
+    
+    console.log(`📧 Configuring email: ${host}:${port} (secure: ${secure})`);
+    
     transporter = nodemailer.createTransport({
-      host: 'smtp-relay.brevo.com',
-      port: 587,
-      secure: false,
+      host: host,
+      port: port,
+      secure: secure,
       auth: {
-        user: process.env.BREVO_SMTP_USER || 'your_brevo_email@example.com',
-        pass: process.env.BREVO_API_KEY
+        user: process.env.EMAIL_USER || 'noreply@bochi.ke',
+        pass: process.env.EMAIL_PASSWORD
+      },
+      tls: {
+        rejectUnauthorized: false
       }
     });
   }
@@ -21,9 +31,14 @@ async function sendOTP(email, code, purpose = 'login') {
   try {
     const transporter = getTransporter();
     
+    if (!transporter) {
+      console.error('❌ Email transporter not configured');
+      return { success: false, error: 'Email service not configured' };
+    }
+    
     let subject = '';
     let htmlContent = '';
-    
+
     if (purpose === 'login') {
       subject = `Your Login Code - BOCHABERI`;
       htmlContent = `
@@ -64,14 +79,14 @@ async function sendOTP(email, code, purpose = 'login') {
         </div>
       `;
     }
-    
+
     const info = await transporter.sendMail({
-      from: `"${process.env.BREVO_SENDER_NAME || 'BOCHABERI'}" <${process.env.BREVO_SENDER_EMAIL || 'noreply@bochaberi.com'}>`,
+      from: `"BOCHABERI" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
       to: email,
       subject: subject,
       html: htmlContent
     });
-    
+
     console.log(`✅ OTP sent to ${email} for ${purpose}`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
@@ -84,8 +99,12 @@ async function sendInvitationCode(email, code, inviterName, companyName) {
   try {
     const transporter = getTransporter();
     
+    if (!transporter) {
+      return { success: false, error: 'Email service not configured' };
+    }
+
     const info = await transporter.sendMail({
-      from: `"${process.env.BREVO_SENDER_NAME || 'BOCHABERI'}" <${process.env.BREVO_SENDER_EMAIL || 'noreply@bochaberi.com'}>`,
+      from: `"BOCHABERI" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
       to: email,
       subject: `Invitation to join ${companyName} on BOCHABERI`,
       html: `
@@ -101,7 +120,7 @@ async function sendInvitationCode(email, code, inviterName, companyName) {
         </div>
       `
     });
-    
+
     console.log(`✅ Invitation sent to ${email}`);
     return { success: true };
   } catch (error) {
@@ -110,64 +129,35 @@ async function sendInvitationCode(email, code, inviterName, companyName) {
   }
 }
 
-
-// ========== DOCUMENT NOTIFICATION EMAIL ==========
+// ========== NEW FUNCTIONS FOR DOCUMENTS & TASKS ==========
 async function sendDocumentNotification({ to, stakeholder_name, project_name, document, action, uploaded_by, revision_notes }) {
     try {
         const transporter = getTransporter();
+        if (!transporter) return false;
+        
         const actionText = action === 'upload' ? 'uploaded' : 'updated';
         const subject = `[${project_name}] New Document ${actionText}: ${document.title}`;
         
         const html = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background: #4F46E5; color: white; padding: 20px; text-align: center; }
-                    .content { background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; }
-                    .document-details { background: white; padding: 15px; border-left: 4px solid #4F46E5; margin: 15px 0; }
-                    .button { background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; }
-                    .footer { font-size: 12px; color: #6b7280; text-align: center; margin-top: 30px; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h2>Document Notification</h2>
-                    </div>
-                    <div class="content">
-                        <p>Dear ${stakeholder_name},</p>
-                        <p><strong>${uploaded_by}</strong> has ${actionText} a new document for project <strong>${project_name}</strong>:</p>
-                        
-                        <div class="document-details">
-                            <p><strong>Title:</strong> ${document.title}</p>
-                            <p><strong>Category:</strong> ${document.category}</p>
-                            <p><strong>Version:</strong> ${document.version}</p>
-                            ${document.description ? `<p><strong>Description:</strong> ${document.description}</p>` : ''}
-                            ${revision_notes ? `<p><strong>Revision Notes:</strong> ${revision_notes}</p>` : ''}
-                        </div>
-                        
-                        <p style="text-align: center;">
-                            <a href="${process.env.FRONTEND_URL || 'https://your-app.com'}/stakeholder/projects/${document.project_id}/documents" class="button">
-                                View Document
-                            </a>
-                        </p>
-                        
-                        <hr>
-                        <p><small>Direct link: <a href="${document.file_url}">${document.file_name || 'Download File'}</a></small></p>
-                    </div>
-                    <div class="footer">
-                        <p>This is an automated notification from BOCHABERI Construction Suite.</p>
-                    </div>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <h2 style="color: #1a365d;">Document Notification</h2>
+                <p>Dear ${stakeholder_name},</p>
+                <p><strong>${uploaded_by}</strong> has ${actionText} a new document for project <strong>${project_name}</strong>:</p>
+                <div style="background: #f5f5f5; padding: 15px; border-left: 4px solid #4F46E5; margin: 15px 0;">
+                    <p><strong>Title:</strong> ${document.title}</p>
+                    <p><strong>Category:</strong> ${document.category}</p>
+                    <p><strong>Version:</strong> ${document.version}</p>
+                    ${document.description ? `<p><strong>Description:</strong> ${document.description}</p>` : ''}
+                    ${revision_notes ? `<p><strong>Revision Notes:</strong> ${revision_notes}</p>` : ''}
                 </div>
-            </body>
-            </html>
+                <p><a href="${document.file_url}" style="background: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Document</a></p>
+                <hr style="margin: 20px 0;">
+                <p style="color: #999; font-size: 10px;">BOCHABERI Construction Management System</p>
+            </div>
         `;
         
         await transporter.sendMail({
-            from: `"${process.env.BREVO_SENDER_NAME || 'BOCHABERI'}" <${process.env.BREVO_SENDER_EMAIL || 'noreply@bochaberi.com'}>`,
+            from: `"BOCHABERI" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
             to: to,
             subject: subject,
             html: html
@@ -181,70 +171,36 @@ async function sendDocumentNotification({ to, stakeholder_name, project_name, do
     }
 }
 
-// ========== TASK ASSIGNMENT EMAIL ==========
 async function sendTaskAssignment({ to, assignee_name, assigner_name, project_name, minutes_title, task, due_date, priority, action_item_id }) {
     try {
         const transporter = getTransporter();
-        const priorityColors = {
-            low: '#28a745',
-            medium: '#ffc107',
-            high: '#fd7e14',
-            urgent: '#dc3545'
-        };
-        const color = priorityColors[priority] || '#ffc107';
+        if (!transporter) return false;
         
         const subject = `[Action Required] New Task Assigned: ${project_name}`;
         const formattedDueDate = new Date(due_date).toLocaleDateString();
         
+        const priorityColors = { low: '#28a745', medium: '#ffc107', high: '#fd7e14', urgent: '#dc3545' };
+        const color = priorityColors[priority] || '#ffc107';
+        
         const html = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background: #4F46E5; color: white; padding: 20px; text-align: center; }
-                    .content { background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; }
-                    .task-details { background: white; padding: 15px; border-left: 4px solid ${color}; margin: 15px 0; }
-                    .priority { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; background: ${color}; color: white; }
-                    .button { background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; }
-                    .footer { font-size: 12px; color: #6b7280; text-align: center; margin-top: 30px; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h2>New Task Assignment</h2>
-                    </div>
-                    <div class="content">
-                        <p>Dear ${assignee_name},</p>
-                        <p><strong>${assigner_name}</strong> has assigned you a task:</p>
-                        
-                        <div class="task-details">
-                            <p><strong>Project:</strong> ${project_name}</p>
-                            ${minutes_title ? `<p><strong>Meeting:</strong> ${minutes_title}</p>` : ''}
-                            <p><strong>Task:</strong> ${task}</p>
-                            <p><strong>Due Date:</strong> ${formattedDueDate}</p>
-                            <p><strong>Priority:</strong> <span class="priority">${priority.toUpperCase()}</span></p>
-                        </div>
-                        
-                        <p style="text-align: center;">
-                            <a href="${process.env.FRONTEND_URL || 'https://your-app.com'}/stakeholder/tasks/${action_item_id}" class="button">
-                                View & Complete Task
-                            </a>
-                        </p>
-                    </div>
-                    <div class="footer">
-                        <p>Please update the task status once completed.</p>
-                        <p>This is an automated notification from BOCHABERI Construction Suite.</p>
-                    </div>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <h2 style="color: #1a365d;">New Task Assignment</h2>
+                <p>Dear ${assignee_name},</p>
+                <p><strong>${assigner_name}</strong> has assigned you a task:</p>
+                <div style="background: #f5f5f5; padding: 15px; border-left: 4px solid ${color}; margin: 15px 0;">
+                    <p><strong>Project:</strong> ${project_name}</p>
+                    ${minutes_title ? `<p><strong>Meeting:</strong> ${minutes_title}</p>` : ''}
+                    <p><strong>Task:</strong> ${task}</p>
+                    <p><strong>Due Date:</strong> ${formattedDueDate}</p>
+                    <p><strong>Priority:</strong> <span style="background: ${color}; color: white; padding: 2px 8px; border-radius: 20px;">${priority.toUpperCase()}</span></p>
                 </div>
-            </body>
-            </html>
+                <hr style="margin: 20px 0;">
+                <p style="color: #999; font-size: 10px;">BOCHABERI Construction Management System</p>
+            </div>
         `;
         
         await transporter.sendMail({
-            from: `"${process.env.BREVO_SENDER_NAME || 'BOCHABERI'}" <${process.env.BREVO_SENDER_EMAIL || 'noreply@bochaberi.com'}>`,
+            from: `"BOCHABERI" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
             to: to,
             subject: subject,
             html: html
@@ -258,75 +214,33 @@ async function sendTaskAssignment({ to, assignee_name, assigner_name, project_na
     }
 }
 
-// ========== TASK REMINDER EMAIL ==========
 async function sendTaskReminder({ to, assignee_name, task, due_date, priority, project_name, minutes_title, action_item_id }) {
     try {
         const transporter = getTransporter();
+        if (!transporter) return false;
+        
         const daysUntilDue = Math.ceil((new Date(due_date) - new Date()) / (1000 * 60 * 60 * 24));
         const isUrgent = daysUntilDue <= 1;
         const urgency = isUrgent ? 'URGENT' : 'Reminder';
-        
-        const priorityColors = {
-            low: '#28a745',
-            medium: '#ffc107',
-            high: '#fd7e14',
-            urgent: '#dc3545'
-        };
-        const color = priorityColors[priority] || '#ffc107';
-        const formattedDueDate = new Date(due_date).toLocaleDateString();
-        
         const subject = `[${urgency}] Task Reminder: ${project_name}`;
         
         const html = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background: ${isUrgent ? '#dc3545' : '#4F46E5'}; color: white; padding: 20px; text-align: center; }
-                    .content { background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; }
-                    .task-details { background: white; padding: 15px; border-left: 4px solid ${color}; margin: 15px 0; }
-                    .priority { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; background: ${color}; color: white; }
-                    .button { background: ${isUrgent ? '#dc3545' : '#4F46E5'}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; }
-                    .footer { font-size: 12px; color: #6b7280; text-align: center; margin-top: 30px; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h2>${urgency}: Task Due Soon</h2>
-                    </div>
-                    <div class="content">
-                        <p>Dear ${assignee_name},</p>
-                        <p>This is a reminder for your assigned task:</p>
-                        
-                        <div class="task-details">
-                            <p><strong>Project:</strong> ${project_name}</p>
-                            ${minutes_title ? `<p><strong>Meeting:</strong> ${minutes_title}</p>` : ''}
-                            <p><strong>Task:</strong> ${task}</p>
-                            <p><strong>Due Date:</strong> ${formattedDueDate} ${isUrgent ? '<span style="color: red;"> (Due soon!)</span>' : ''}</p>
-                            <p><strong>Days Remaining:</strong> ${daysUntilDue}</p>
-                            <p><strong>Priority:</strong> <span class="priority">${priority.toUpperCase()}</span></p>
-                        </div>
-                        
-                        <p style="text-align: center;">
-                            <a href="${process.env.FRONTEND_URL || 'https://your-app.com'}/stakeholder/tasks/${action_item_id}" class="button">
-                                Complete Task Now
-                            </a>
-                        </p>
-                    </div>
-                    <div class="footer">
-                        <p>Please complete this task by the due date.</p>
-                        <p>This is an automated reminder from BOCHABERI Construction Suite.</p>
-                    </div>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <h2 style="color: ${isUrgent ? '#dc3545' : '#1a365d'};">${urgency}: Task Due Soon</h2>
+                <p>Dear ${assignee_name},</p>
+                <p>This is a reminder for your assigned task:</p>
+                <div style="background: #f5f5f5; padding: 15px; margin: 15px 0;">
+                    <p><strong>Task:</strong> ${task}</p>
+                    <p><strong>Due Date:</strong> ${new Date(due_date).toLocaleDateString()} ${isUrgent ? '⚠️ Due soon!' : ''}</p>
+                    <p><strong>Days Remaining:</strong> ${daysUntilDue}</p>
                 </div>
-            </body>
-            </html>
+                <hr style="margin: 20px 0;">
+                <p style="color: #999; font-size: 10px;">BOCHABERI Construction Management System</p>
+            </div>
         `;
         
         await transporter.sendMail({
-            from: `"${process.env.BREVO_SENDER_NAME || 'BOCHABERI'}" <${process.env.BREVO_SENDER_EMAIL || 'noreply@bochaberi.com'}>`,
+            from: `"BOCHABERI" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
             to: to,
             subject: subject,
             html: html
@@ -340,11 +254,10 @@ async function sendTaskReminder({ to, assignee_name, task, due_date, priority, p
     }
 }
 
-
-// ========== VERIFY TRANSPORTER ==========
 async function verifyTransporter() {
     try {
         const transporter = getTransporter();
+        if (!transporter) return false;
         await transporter.verify();
         console.log('✅ Email transporter verified successfully');
         return true;
@@ -354,6 +267,11 @@ async function verifyTransporter() {
     }
 }
 
-
-
-module.exports = { sendOTP, sendInvitationCode, sendDocumentNotification, sendTaskAssignment, sendTaskReminder, verifyTransporter };
+module.exports = { 
+    sendOTP, 
+    sendInvitationCode, 
+    sendDocumentNotification, 
+    sendTaskAssignment, 
+    sendTaskReminder, 
+    verifyTransporter 
+};
