@@ -6,7 +6,8 @@ import {
   CheckCircle, AlertCircle, TrendingUp, DollarSign,
   MapPin, CalendarDays, HardHat, ClipboardList, Camera,
   Phone, Mail, User, Briefcase, AlertTriangle, CheckSquare,
-  Image, Plus
+  Image, Plus, X, Trash2, Edit2, Save, Clock as ClockIcon,
+  Flag, UserPlus, ListChecks, FileWarning
 } from 'lucide-react';
 import { API_BASE_URL } from '@/config/api';
 import { useProject } from '@/contexts/ProjectContext';
@@ -46,7 +47,45 @@ interface Meeting {
   meeting_type?: string;
   status?: string;
   summary?: string;
-  action_items: any[];
+  action_items?: ActionItem[];
+  attendees?: Stakeholder[];
+}
+
+interface ActionItem {
+  id: number;
+  description: string;
+  assigned_to: number;
+  assigned_to_name: string;
+  assigned_by: number;
+  assigned_by_name: string;
+  due_date: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  status: 'pending' | 'in_progress' | 'completed' | 'overdue';
+  completion_notes?: string;
+  created_at: string;
+}
+
+interface Stakeholder {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  stakeholder_type: string;
+}
+
+interface AgendaItem {
+  id?: number;
+  title: string;
+  description: string;
+  proposed_by?: string;
+}
+
+interface MatterArising {
+  id?: number;
+  from_meeting: string;
+  issue: string;
+  resolution_status: 'pending' | 'resolved' | 'in_progress';
+  notes: string;
 }
 
 interface SiteDiary {
@@ -89,9 +128,10 @@ export function StakeholderProjectPortal() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'drawings' | 'photos' | 'reports' | 'meetings' | 'progress' | 'financial' | 'team'>('overview');
+  const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
+  const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'drawings' | 'photos' | 'reports' | 'meetings' | 'progress' | 'financial' | 'team'>('meetings');
   
-  // New Meeting Form States
+  // Meeting Form States
   const [showMeetingForm, setShowMeetingForm] = useState(false);
   const [creatingMeeting, setCreatingMeeting] = useState(false);
   const [newMeeting, setNewMeeting] = useState({
@@ -100,6 +140,37 @@ export function StakeholderProjectPortal() {
     location: '',
     meeting_type: 'regular'
   });
+
+  // Meeting Details States
+  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
+  const [showMeetingDetails, setShowMeetingDetails] = useState(false);
+  const [meetingAttendees, setMeetingAttendees] = useState<number[]>([]);
+  
+  // Agenda States
+  const [agendaItems, setAgendaItems] = useState<AgendaItem[]>([]);
+  const [newAgendaItem, setNewAgendaItem] = useState({ title: '', description: '' });
+  
+  // Matters Arising States
+  const [mattersArising, setMattersArising] = useState<MatterArising[]>([]);
+  const [newMatter, setNewMatter] = useState({ from_meeting: '', issue: '', notes: '' });
+  
+  // Action Items States
+  const [actionItems, setActionItems] = useState<ActionItem[]>([]);
+  const [newActionItem, setNewActionItem] = useState({
+    description: '',
+    assigned_to: '',
+    due_date: '',
+    priority: 'medium' as const
+  });
+  const [addingActionItem, setAddingActionItem] = useState(false);
+  
+  // Minutes Content States
+  const [minutesContent, setMinutesContent] = useState({
+    discussions: '',
+    decisions: '',
+    next_steps: ''
+  });
+  const [savingMinutes, setSavingMinutes] = useState(false);
 
   useEffect(() => {
     fetchProjectDetails();
@@ -111,6 +182,7 @@ export function StakeholderProjectPortal() {
     fetchSiteDiaries();
     fetchFinancialSummary();
     fetchTeamMembers();
+    fetchStakeholders();
   }, [projectId]);
 
   const fetchProjectDetails = async () => {
@@ -258,7 +330,45 @@ export function StakeholderProjectPortal() {
     }
   };
 
-  // Create Meeting Handler
+  const fetchStakeholders = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/projects/${projectId}/stakeholders`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setStakeholders(data);
+      }
+    } catch (error) {
+      console.error('Error fetching stakeholders:', error);
+    }
+  };
+
+  const fetchMeetingDetails = async (minutesId: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/stakeholder/minutes/${minutesId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setSelectedMeeting(data.minutes);
+        setMeetingAttendees(data.attendees?.map((a: any) => a.stakeholder_id) || []);
+        setAgendaItems(data.agenda || []);
+        setActionItems(data.actionItems || []);
+        setMinutesContent({
+          discussions: data.topics?.find((t: any) => t.topic_type === 'discussion')?.content || '',
+          decisions: data.topics?.find((t: any) => t.topic_type === 'decision')?.content || '',
+          next_steps: data.topics?.find((t: any) => t.topic_type === 'next_steps')?.content || ''
+        });
+        setShowMeetingDetails(true);
+      }
+    } catch (error) {
+      console.error('Error fetching meeting details:', error);
+    }
+  };
+
   const handleCreateMeeting = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreatingMeeting(true);
@@ -276,22 +386,21 @@ export function StakeholderProjectPortal() {
           meeting_date: newMeeting.meeting_date,
           title: newMeeting.title,
           location: newMeeting.location,
-          meeting_type: newMeeting.meeting_type
+          meeting_type: newMeeting.meeting_type,
+          attendees: meetingAttendees.map(id => ({ id, status: 'present' }))
         })
       });
       
       if (response.ok) {
-        // Refresh meetings list
         await fetchMeetings();
-        // Close form
         setShowMeetingForm(false);
-        // Reset form
         setNewMeeting({
           title: '',
           meeting_date: '',
           location: '',
           meeting_type: 'regular'
         });
+        setMeetingAttendees([]);
       } else {
         const error = await response.json();
         console.error('Create meeting error:', error);
@@ -302,6 +411,137 @@ export function StakeholderProjectPortal() {
       alert('Error creating meeting');
     } finally {
       setCreatingMeeting(false);
+    }
+  };
+
+  const handleAddAgendaItem = async () => {
+    if (!selectedMeeting || !newAgendaItem.title) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/stakeholder/minutes/${selectedMeeting.id}/agenda`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newAgendaItem)
+      });
+      
+      if (response.ok) {
+        await fetchMeetingDetails(selectedMeeting.id);
+        setNewAgendaItem({ title: '', description: '' });
+      }
+    } catch (error) {
+      console.error('Error adding agenda item:', error);
+    }
+  };
+
+  const handleAddActionItem = async () => {
+    if (!selectedMeeting || !newActionItem.description || !newActionItem.assigned_to) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    
+    setAddingActionItem(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/stakeholder/minutes/${selectedMeeting.id}/action-items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          minutes_id: selectedMeeting.id,
+          description: newActionItem.description,
+          assigned_to: parseInt(newActionItem.assigned_to),
+          due_date: newActionItem.due_date,
+          priority: newActionItem.priority
+        })
+      });
+      
+      if (response.ok) {
+        await fetchMeetingDetails(selectedMeeting.id);
+        setNewActionItem({ description: '', assigned_to: '', due_date: '', priority: 'medium' });
+        alert('Action item added successfully!');
+      }
+    } catch (error) {
+      console.error('Error adding action item:', error);
+      alert('Error adding action item');
+    } finally {
+      setAddingActionItem(false);
+    }
+  };
+
+  const handleUpdateTaskStatus = async (actionItemId: number, newStatus: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/stakeholder/tasks/${actionItemId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      
+      if (response.ok && selectedMeeting) {
+        await fetchMeetingDetails(selectedMeeting.id);
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
+  };
+
+  const handleSaveMinutesContent = async () => {
+    if (!selectedMeeting) return;
+    setSavingMinutes(true);
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/stakeholder/minutes/${selectedMeeting.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          topics: [
+            { title: 'Discussions', content: minutesContent.discussions, topic_type: 'discussion' },
+            { title: 'Decisions', content: minutesContent.decisions, topic_type: 'decision' },
+            { title: 'Next Steps', content: minutesContent.next_steps, topic_type: 'next_steps' }
+          ],
+          status: 'published'
+        })
+      });
+      
+      if (response.ok) {
+        alert('Meeting minutes saved successfully!');
+      }
+    } catch (error) {
+      console.error('Error saving minutes:', error);
+      alert('Error saving minutes');
+    } finally {
+      setSavingMinutes(false);
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'urgent': return 'bg-red-100 text-red-700';
+      case 'high': return 'bg-orange-100 text-orange-700';
+      case 'medium': return 'bg-yellow-100 text-yellow-700';
+      default: return 'bg-green-100 text-green-700';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-100 text-green-700';
+      case 'in_progress': return 'bg-blue-100 text-blue-700';
+      case 'overdue': return 'bg-red-100 text-red-700';
+      default: return 'bg-gray-100 text-gray-700';
     }
   };
 
@@ -729,7 +969,7 @@ export function StakeholderProjectPortal() {
         </div>
       )}
 
-      {/* Tab Content - Meetings with Create Meeting Button */}
+      {/* Tab Content - Meetings with Full Minutes System */}
       {activeTab === 'meetings' && (
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex justify-between items-center mb-4">
@@ -757,7 +997,11 @@ export function StakeholderProjectPortal() {
           ) : (
             <div className="space-y-4">
               {meetings.map((meeting) => (
-                <div key={meeting.id} className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div 
+                  key={meeting.id} 
+                  className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                  onClick={() => fetchMeetingDetails(meeting.id)}
+                >
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <p className="font-semibold">{meeting.title}</p>
@@ -783,7 +1027,7 @@ export function StakeholderProjectPortal() {
                     )}
                   </div>
                   {meeting.summary && (
-                    <p className="text-sm text-gray-600 mt-2">{meeting.summary}</p>
+                    <p className="text-sm text-gray-600 mt-2 line-clamp-2">{meeting.summary}</p>
                   )}
                 </div>
               ))}
@@ -839,6 +1083,28 @@ export function StakeholderProjectPortal() {
                       <option value="emergency">Emergency</option>
                     </select>
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Attendees</label>
+                    <div className="max-h-40 overflow-y-auto border rounded-lg p-2 space-y-1">
+                      {stakeholders.map((stakeholder) => (
+                        <label key={stakeholder.id} className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={meetingAttendees.includes(stakeholder.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setMeetingAttendees([...meetingAttendees, stakeholder.id]);
+                              } else {
+                                setMeetingAttendees(meetingAttendees.filter(id => id !== stakeholder.id));
+                              }
+                            }}
+                            className="rounded"
+                          />
+                          {stakeholder.name} ({stakeholder.role})
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                   <div className="flex justify-end gap-3 pt-4">
                     <button
                       type="button"
@@ -850,6 +1116,7 @@ export function StakeholderProjectPortal() {
                           location: '',
                           meeting_type: 'regular'
                         });
+                        setMeetingAttendees([]);
                       }}
                       className="px-4 py-2 border rounded-lg hover:bg-gray-50"
                     >
@@ -864,6 +1131,223 @@ export function StakeholderProjectPortal() {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {/* Meeting Details Modal - Full Minutes System */}
+          {showMeetingDetails && selectedMeeting && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto">
+              <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-5xl p-6 m-4 max-h-[90vh] overflow-y-auto">
+                {/* Header */}
+                <div className="flex justify-between items-start mb-6 pb-4 border-b">
+                  <div>
+                    <h3 className="text-xl font-bold">{selectedMeeting.title}</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {new Date(selectedMeeting.meeting_date).toLocaleDateString()} 
+                      {selectedMeeting.location && ` • ${selectedMeeting.location}`}
+                      {selectedMeeting.meeting_type && ` • ${selectedMeeting.meeting_type}`}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowMeetingDetails(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                {/* Matters Present - Pulled from Stakeholders Register */}
+                <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+                  <h4 className="font-semibold flex items-center gap-2 mb-3">
+                    <Users size={18} className="text-blue-500" />
+                    Matters Present (Stakeholders in Attendance)
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {stakeholders.filter(s => meetingAttendees.includes(s.id)).map(stakeholder => (
+                      <span key={stakeholder.id} className="px-2 py-1 bg-white dark:bg-gray-700 rounded-full text-sm">
+                        {stakeholder.name} ({stakeholder.role})
+                      </span>
+                    ))}
+                    {meetingAttendees.length === 0 && (
+                      <p className="text-sm text-gray-500">No attendees recorded yet</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Agenda Section */}
+                <div className="mb-6">
+                  <h4 className="font-semibold flex items-center gap-2 mb-3">
+                    <ClipboardList size={18} className="text-amber-500" />
+                    Agenda
+                  </h4>
+                  <div className="space-y-2">
+                    {agendaItems.map((item, idx) => (
+                      <div key={idx} className="p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
+                        <p className="font-medium">{item.title}</p>
+                        {item.description && <p className="text-sm text-gray-600 mt-1">{item.description}</p>}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="New agenda item"
+                      value={newAgendaItem.title}
+                      onChange={(e) => setNewAgendaItem({...newAgendaItem, title: e.target.value})}
+                      className="flex-1 px-3 py-1 border rounded-lg text-sm dark:bg-gray-700"
+                    />
+                    <button
+                      onClick={handleAddAgendaItem}
+                      className="px-3 py-1 bg-amber-500 text-white rounded-lg text-sm"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+
+                {/* Minutes Content - Discussions, Decisions, Next Steps */}
+                <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Discussions</label>
+                    <textarea
+                      value={minutesContent.discussions}
+                      onChange={(e) => setMinutesContent({...minutesContent, discussions: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 h-32"
+                      placeholder="Record discussion points..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Decisions Made</label>
+                    <textarea
+                      value={minutesContent.decisions}
+                      onChange={(e) => setMinutesContent({...minutesContent, decisions: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 h-32"
+                      placeholder="Record decisions made..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Next Steps</label>
+                    <textarea
+                      value={minutesContent.next_steps}
+                      onChange={(e) => setMinutesContent({...minutesContent, next_steps: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 h-32"
+                      placeholder="Action items to be taken..."
+                    />
+                  </div>
+                </div>
+
+                {/* Action Items / Tasks Section */}
+                <div className="mb-6">
+                  <h4 className="font-semibold flex items-center gap-2 mb-3">
+                    <Flag size={18} className="text-red-500" />
+                    Action Items & Tasks
+                  </h4>
+                  
+                  {/* Existing Action Items */}
+                  <div className="space-y-3 mb-4">
+                    {actionItems.map((item) => (
+                      <div key={item.id} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <p className="font-medium">{item.description}</p>
+                            <div className="flex flex-wrap gap-3 mt-2 text-xs">
+                              <span className="flex items-center gap-1">
+                                <User size={12} /> Assigned to: {item.assigned_to_name}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Calendar size={12} /> Due: {new Date(item.due_date).toLocaleDateString()}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded-full ${getPriorityColor(item.priority)}`}>
+                                {item.priority}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded-full ${getStatusColor(item.status)}`}>
+                                {item.status}
+                              </span>
+                            </div>
+                          </div>
+                          <select
+                            value={item.status}
+                            onChange={(e) => handleUpdateTaskStatus(item.id, e.target.value)}
+                            className="text-xs px-2 py-1 border rounded-lg"
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                          </select>
+                        </div>
+                      </div>
+                    ))}
+                    {actionItems.length === 0 && (
+                      <p className="text-sm text-gray-500 text-center py-2">No action items assigned yet</p>
+                    )}
+                  </div>
+
+                  {/* Add New Action Item */}
+                  <div className="border-t pt-4">
+                    <h5 className="text-sm font-medium mb-2">Assign New Task</h5>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                      <input
+                        type="text"
+                        placeholder="Task description"
+                        value={newActionItem.description}
+                        onChange={(e) => setNewActionItem({...newActionItem, description: e.target.value})}
+                        className="px-3 py-2 border rounded-lg text-sm dark:bg-gray-700"
+                      />
+                      <select
+                        value={newActionItem.assigned_to}
+                        onChange={(e) => setNewActionItem({...newActionItem, assigned_to: e.target.value})}
+                        className="px-3 py-2 border rounded-lg text-sm dark:bg-gray-700"
+                      >
+                        <option value="">Assign to...</option>
+                        {stakeholders.map((s) => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="date"
+                        value={newActionItem.due_date}
+                        onChange={(e) => setNewActionItem({...newActionItem, due_date: e.target.value})}
+                        className="px-3 py-2 border rounded-lg text-sm dark:bg-gray-700"
+                      />
+                      <select
+                        value={newActionItem.priority}
+                        onChange={(e) => setNewActionItem({...newActionItem, priority: e.target.value as any})}
+                        className="px-3 py-2 border rounded-lg text-sm dark:bg-gray-700"
+                      >
+                        <option value="low">Low Priority</option>
+                        <option value="medium">Medium Priority</option>
+                        <option value="high">High Priority</option>
+                        <option value="urgent">Urgent</option>
+                      </select>
+                    </div>
+                    <button
+                      onClick={handleAddActionItem}
+                      disabled={addingActionItem}
+                      className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 disabled:opacity-50"
+                    >
+                      {addingActionItem ? 'Adding...' : '+ Add Action Item'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Save Button */}
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <button
+                    onClick={() => setShowMeetingDetails(false)}
+                    className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={handleSaveMinutesContent}
+                    disabled={savingMinutes}
+                    className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <Save size={16} />
+                    {savingMinutes ? 'Saving...' : 'Save Minutes'}
+                  </button>
+                </div>
               </div>
             </div>
           )}
