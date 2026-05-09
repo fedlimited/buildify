@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } useNavigate from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Building2, FileText, Calendar, ChartLine, Clock, Users, 
   MessageSquare, Download, Eye, ChevronLeft, Loader2,
