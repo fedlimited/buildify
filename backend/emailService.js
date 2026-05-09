@@ -4,15 +4,35 @@ let transporter = null;
 
 function getTransporter() {
   if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: 'smtp-relay.brevo.com',
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.BREVO_SMTP_USER || 'your_brevo_email@example.com',
-        pass: process.env.BREVO_API_KEY
-      }
-    });
+    // Try Brevo first (better deliverability)
+    if (process.env.BREVO_API_KEY && process.env.BREVO_SMTP_USER) {
+      console.log('📧 Using Brevo SMTP as primary');
+      transporter = nodemailer.createTransport({
+        host: 'smtp-relay.brevo.com',
+        port: 587,
+        secure: false,
+        auth: {
+          user: process.env.BREVO_SMTP_USER,
+          pass: process.env.BREVO_API_KEY
+        }
+      });
+    } 
+    // Fallback to your SMTP
+    else if (process.env.EMAIL_HOST) {
+      console.log('📧 Using custom SMTP as fallback');
+      transporter = nodemailer.createTransport({
+        host: process.env.EMAIL_HOST,
+        port: parseInt(process.env.EMAIL_PORT) || 465,
+        secure: process.env.EMAIL_SECURE === 'true',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASSWORD
+        },
+        tls: {
+          rejectUnauthorized: false
+        }
+      });
+    }
   }
   return transporter;
 }
@@ -25,48 +45,48 @@ async function sendOTP(email, code, purpose = 'login') {
     let htmlContent = '';
     
     if (purpose === 'login') {
-      subject = `Your Login Code - BOCHABERI`;
+      subject = `Your Login Code - Bochi Construction Suite`;
       htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #1a365d;">BOCHABERI Construction Suite</h2>
+          <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
           <h3>Your Login Code</h3>
           <p>Use the following code to log in to your account:</p>
           <div style="font-size: 32px; font-weight: bold; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px; letter-spacing: 5px;">${code}</div>
           <p style="color: #666; font-size: 12px; margin-top: 20px;">This code expires in 5 minutes. Do not share this code with anyone.</p>
           <hr style="margin: 20px 0;">
-          <p style="color: #999; font-size: 10px;">BOCHABERI Construction Management System</p>
+          <p style="color: #999; font-size: 10px;">Bochi Construction Suite - Construction Management System</p>
         </div>
       `;
     } else if (purpose === 'registration') {
-      subject = `Verify Your Registration - BOCHABERI`;
+      subject = `Verify Your Registration - Bochi Construction Suite`;
       htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #1a365d;">BOCHABERI Construction Suite</h2>
+          <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
           <h3>Verify Your Registration</h3>
           <p>Use the following code to complete your registration:</p>
           <div style="font-size: 32px; font-weight: bold; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px; letter-spacing: 5px;">${code}</div>
           <p style="color: #666; font-size: 12px; margin-top: 20px;">This code expires in 5 minutes.</p>
           <hr style="margin: 20px 0;">
-          <p style="color: #999; font-size: 10px;">BOCHABERI Construction Management System</p>
+          <p style="color: #999; font-size: 10px;">Bochi Construction Suite - Construction Management System</p>
         </div>
       `;
     } else if (purpose === 'invitation') {
-      subject = `You've Been Invited - BOCHABERI`;
+      subject = `You've Been Invited - Bochi Construction Suite`;
       htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #1a365d;">BOCHABERI Construction Suite</h2>
+          <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
           <h3>You've Been Invited!</h3>
           <p>Use the following code to complete your registration:</p>
           <div style="font-size: 32px; font-weight: bold; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px; letter-spacing: 5px;">${code}</div>
           <p style="color: #666; font-size: 12px; margin-top: 20px;">This code expires in 5 minutes.</p>
           <hr style="margin: 20px 0;">
-          <p style="color: #999; font-size: 10px;">BOCHABERI Construction Management System</p>
+          <p style="color: #999; font-size: 10px;">Bochi Construction Suite - Construction Management System</p>
         </div>
       `;
     }
     
     const info = await transporter.sendMail({
-      from: `"${process.env.BREVO_SENDER_NAME || 'BOCHABERI'}" <${process.env.BREVO_SENDER_EMAIL || 'noreply@bochaberi.com'}>`,
+      from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || process.env.BREVO_SENDER_EMAIL || 'noreply@bochi.ke'}>`,
       to: email,
       subject: subject,
       html: htmlContent
@@ -85,19 +105,19 @@ async function sendInvitationCode(email, code, inviterName, companyName) {
     const transporter = getTransporter();
     
     const info = await transporter.sendMail({
-      from: `"${process.env.BREVO_SENDER_NAME || 'BOCHABERI'}" <${process.env.BREVO_SENDER_EMAIL || 'noreply@bochaberi.com'}>`,
+      from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || process.env.BREVO_SENDER_EMAIL || 'noreply@bochi.ke'}>`,
       to: email,
-      subject: `Invitation to join ${companyName} on BOCHABERI`,
+      subject: `Invitation to join ${companyName} on Bochi Construction Suite`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #1a365d;">BOCHABERI Construction Suite</h2>
+          <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
           <h3>You've Been Invited!</h3>
           <p><strong>${inviterName}</strong> has invited you to join <strong>${companyName}</strong>.</p>
           <p>Use the following code to complete your registration:</p>
           <div style="font-size: 32px; font-weight: bold; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px; letter-spacing: 5px;">${code}</div>
           <p style="color: #666; font-size: 12px; margin-top: 20px;">This code expires in 5 minutes.</p>
           <hr style="margin: 20px 0;">
-          <p style="color: #999; font-size: 10px;">BOCHABERI Construction Management System</p>
+          <p style="color: #999; font-size: 10px;">Bochi Construction Suite - Construction Management System</p>
         </div>
       `
     });
@@ -109,7 +129,6 @@ async function sendInvitationCode(email, code, inviterName, companyName) {
     return { success: false, error: error.message };
   }
 }
-
 
 // ========== DOCUMENT NOTIFICATION EMAIL ==========
 async function sendDocumentNotification({ to, stakeholder_name, project_name, document, action, uploaded_by, revision_notes }) {
@@ -150,7 +169,7 @@ async function sendDocumentNotification({ to, stakeholder_name, project_name, do
                         </div>
                         
                         <p style="text-align: center;">
-                            <a href="${process.env.FRONTEND_URL || 'https://your-app.com'}/stakeholder/projects/${document.project_id}/documents" class="button">
+                            <a href="${process.env.FRONTEND_URL || 'https://bochi.ke'}/stakeholder/projects/${document.project_id}/documents" class="button">
                                 View Document
                             </a>
                         </p>
@@ -159,7 +178,7 @@ async function sendDocumentNotification({ to, stakeholder_name, project_name, do
                         <p><small>Direct link: <a href="${document.file_url}">${document.file_name || 'Download File'}</a></small></p>
                     </div>
                     <div class="footer">
-                        <p>This is an automated notification from BOCHABERI Construction Suite.</p>
+                        <p>This is an automated notification from Bochi Construction Suite.</p>
                     </div>
                 </div>
             </body>
@@ -167,7 +186,7 @@ async function sendDocumentNotification({ to, stakeholder_name, project_name, do
         `;
         
         await transporter.sendMail({
-            from: `"${process.env.BREVO_SENDER_NAME || 'BOCHABERI'}" <${process.env.BREVO_SENDER_EMAIL || 'noreply@bochaberi.com'}>`,
+            from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || process.env.BREVO_SENDER_EMAIL || 'noreply@bochi.ke'}>`,
             to: to,
             subject: subject,
             html: html
@@ -229,14 +248,14 @@ async function sendTaskAssignment({ to, assignee_name, assigner_name, project_na
                         </div>
                         
                         <p style="text-align: center;">
-                            <a href="${process.env.FRONTEND_URL || 'https://your-app.com'}/stakeholder/tasks/${action_item_id}" class="button">
+                            <a href="${process.env.FRONTEND_URL || 'https://bochi.ke'}/stakeholder/tasks/${action_item_id}" class="button">
                                 View & Complete Task
                             </a>
                         </p>
                     </div>
                     <div class="footer">
                         <p>Please update the task status once completed.</p>
-                        <p>This is an automated notification from BOCHABERI Construction Suite.</p>
+                        <p>This is an automated notification from Bochi Construction Suite.</p>
                     </div>
                 </div>
             </body>
@@ -244,7 +263,7 @@ async function sendTaskAssignment({ to, assignee_name, assigner_name, project_na
         `;
         
         await transporter.sendMail({
-            from: `"${process.env.BREVO_SENDER_NAME || 'BOCHABERI'}" <${process.env.BREVO_SENDER_EMAIL || 'noreply@bochaberi.com'}>`,
+            from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || process.env.BREVO_SENDER_EMAIL || 'noreply@bochi.ke'}>`,
             to: to,
             subject: subject,
             html: html
@@ -311,14 +330,14 @@ async function sendTaskReminder({ to, assignee_name, task, due_date, priority, p
                         </div>
                         
                         <p style="text-align: center;">
-                            <a href="${process.env.FRONTEND_URL || 'https://your-app.com'}/stakeholder/tasks/${action_item_id}" class="button">
+                            <a href="${process.env.FRONTEND_URL || 'https://bochi.ke'}/stakeholder/tasks/${action_item_id}" class="button">
                                 Complete Task Now
                             </a>
                         </p>
                     </div>
                     <div class="footer">
                         <p>Please complete this task by the due date.</p>
-                        <p>This is an automated reminder from BOCHABERI Construction Suite.</p>
+                        <p>This is an automated notification from Bochi Construction Suite.</p>
                     </div>
                 </div>
             </body>
@@ -326,7 +345,7 @@ async function sendTaskReminder({ to, assignee_name, task, due_date, priority, p
         `;
         
         await transporter.sendMail({
-            from: `"${process.env.BREVO_SENDER_NAME || 'BOCHABERI'}" <${process.env.BREVO_SENDER_EMAIL || 'noreply@bochaberi.com'}>`,
+            from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || process.env.BREVO_SENDER_EMAIL || 'noreply@bochi.ke'}>`,
             to: to,
             subject: subject,
             html: html
@@ -340,5 +359,103 @@ async function sendTaskReminder({ to, assignee_name, task, due_date, priority, p
     }
 }
 
+// ========== APPROVAL REQUEST EMAIL ==========
+async function sendApprovalRequest({ to, name, minutesTitle, minutesId, frontendUrl }) {
+    try {
+        const transporter = getTransporter();
+        const subject = `[Action Required] Please review and approve meeting minutes: ${minutesTitle}`;
+        const html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <h2 style="color: #1a365d;">Meeting Minutes Ready for Approval</h2>
+                <p>Dear ${name},</p>
+                <p>The minutes for <strong>${minutesTitle}</strong> have been prepared and are ready for your review.</p>
+                <p>Please review the document and click approve if everything is correct.</p>
+                <div style="margin: 20px 0; text-align: center;">
+                    <a href="${frontendUrl || process.env.FRONTEND_URL || 'https://bochi.ke'}/stakeholder/minutes/${minutesId}/approve" 
+                       style="background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                        Review & Approve Minutes
+                    </a>
+                </div>
+                <p>If you have any changes, please contact the meeting chairperson.</p>
+                <hr style="margin: 20px 0;">
+                <p style="font-size: 12px; color: #666;">Bochi Construction Suite - Construction Management System</p>
+            </div>
+        `;
+        
+        await transporter.sendMail({
+            from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || process.env.BREVO_SENDER_EMAIL || 'noreply@bochi.ke'}>`,
+            to: to,
+            subject: subject,
+            html: html
+        });
+        console.log(`✅ Approval request sent to ${to}`);
+        return true;
+    } catch (error) {
+        console.error('Approval request error:', error);
+        return false;
+    }
+}
 
-module.exports = { sendOTP, sendInvitationCode, sendDocumentNotification, sendTaskAssignment, sendTaskReminder };
+// ========== MINUTES REJECTION EMAIL ==========
+async function sendMinutesRejection({ to, name, minutesTitle, feedback, minutesId, frontendUrl }) {
+    try {
+        const transporter = getTransporter();
+        const subject = `Meeting Minutes Need Revision: ${minutesTitle}`;
+        const html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <h2 style="color: #1a365d;">Meeting Minutes Require Changes</h2>
+                <p>Dear ${name},</p>
+                <p>The minutes for <strong>${minutesTitle}</strong> were not approved and need revision.</p>
+                ${feedback ? `<div style="background: #f8d7da; padding: 15px; border-left: 4px solid #dc3545; margin: 20px 0;">
+                    <p><strong>Feedback from approver:</strong></p>
+                    <p>${feedback}</p>
+                </div>` : ''}
+                <p>Please make the necessary changes and resubmit for approval.</p>
+                <div style="margin: 20px 0; text-align: center;">
+                    <a href="${frontendUrl || process.env.FRONTEND_URL || 'https://bochi.ke'}/stakeholder/minutes/${minutesId}/edit" 
+                       style="background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                        Edit Minutes
+                    </a>
+                </div>
+                <hr style="margin: 20px 0;">
+                <p style="font-size: 12px; color: #666;">Bochi Construction Suite - Construction Management System</p>
+            </div>
+        `;
+        
+        await transporter.sendMail({
+            from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || process.env.BREVO_SENDER_EMAIL || 'noreply@bochi.ke'}>`,
+            to: to,
+            subject: subject,
+            html: html
+        });
+        console.log(`✅ Rejection notice sent to ${to}`);
+        return true;
+    } catch (error) {
+        console.error('Rejection email error:', error);
+        return false;
+    }
+}
+
+// ========== VERIFY TRANSPORTER ==========
+async function verifyTransporter() {
+    try {
+        const transporter = getTransporter();
+        await transporter.verify();
+        console.log('✅ Email transporter verified successfully');
+        return true;
+    } catch (error) {
+        console.error('❌ Email transporter verification failed:', error.message);
+        return false;
+    }
+}
+
+module.exports = { 
+    sendOTP, 
+    sendInvitationCode, 
+    sendDocumentNotification, 
+    sendTaskAssignment, 
+    sendTaskReminder,
+    sendApprovalRequest,
+    sendMinutesRejection,
+    verifyTransporter 
+};

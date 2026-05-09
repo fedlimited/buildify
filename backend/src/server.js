@@ -424,6 +424,32 @@ app.delete('/api/invoices/:id', InvoiceController.deleteInvoice);
 // ========== SUPER ADMIN ROUTES ==========
 app.use('/api/super-admin', superAdminRoutes);
 
+// Additional Minutes routes
+app.get('/api/stakeholder/minutes/:minutesId/matters-arising', 
+    authenticateToken, 
+    minutesController.getMattersArising);
+    
+app.post('/api/stakeholder/minutes/:minutesId/publish', 
+    authenticateToken, 
+    minutesController.publishMinutes);
+    
+app.post('/api/stakeholder/minutes/:minutesId/approve', 
+    authenticateToken, 
+    minutesController.approveMinutes);
+    
+app.post('/api/stakeholder/minutes/:minutesId/reject', 
+    authenticateToken, 
+    minutesController.rejectMinutes);
+    
+app.delete('/api/stakeholder/minutes/:minutesId', 
+    authenticateToken, 
+    minutesController.deleteMinutes);
+    
+app.get('/api/stakeholder/tasks/overdue-count', 
+    authenticateToken, 
+    minutesController.getOverdueActionsCount);
+
+
 // ========== LOAD SAMPLE DATA ==========
 app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, res) => {
   try {
