@@ -760,4 +760,16 @@ async function startServer() {
   }
 }
 
+
+// Debug endpoint to check email service exports
+app.get('/api/debug/email-functions', (req, res) => {
+    const emailService = require('../emailService');
+    const functions = Object.keys(emailService);
+    res.json({ 
+        functions: functions,
+        hasSendStakeholderInvitation: typeof emailService.sendStakeholderInvitation === 'function'
+    });
+});
+
+
 startServer();// FORCE DEPLOY v2 
