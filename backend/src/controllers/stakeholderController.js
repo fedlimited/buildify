@@ -1,4 +1,3 @@
-
 const { getDb } = require('../config/database');
 const { sendStakeholderInvitation } = require('../../emailService');
 const bcrypt = require('bcryptjs');
@@ -303,7 +302,28 @@ const stakeholderController = {
       console.error('Error fetching site diaries:', error);
       res.status(500).json({ error: error.message });
     }
-  }
+  },
+
+  // Get meetings for a project (stakeholder view)
+  getProjectMeetings: async (req, res) => {
+    try {
+      const db = getDb();
+      const { projectId } = req.params;
+      
+      const result = await db.query(
+        `SELECT id, title, meeting_date, location, meeting_type, status, created_at
+         FROM project_minutes 
+         WHERE project_id = $1 
+         ORDER BY meeting_date DESC`,
+        [projectId]
+      );
+      
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Get meetings error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  },
 };
 
 module.exports = stakeholderController;
