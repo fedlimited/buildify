@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -192,7 +193,7 @@ export function StakeholderProjectPortal() {
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
   const [mattersArising, setMattersArising] = useState<MatterArising[]>([]);
   const [versions, setVersions] = useState<Version[]>([]);
-  const [meetingAttendees, setMeetingAttendees] = useState<TeamMember[]>([]);
+  const [meetingAttendees, setMeetingAttendees] = useState<Stakeholder[]>([]);
   const [allStakeholders, setAllStakeholders] = useState<Stakeholder[]>([]);
   
   // Agenda Register States
@@ -224,7 +225,6 @@ export function StakeholderProjectPortal() {
   const [rejectionFeedback, setRejectionFeedback] = useState('');
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [showMissingFeaturesAlert, setShowMissingFeaturesAlert] = useState(false);
-  const [sendingApologies, setSendingApologies] = useState(false);
 
   // ============ DATA FETCHING ============
   useEffect(() => {
@@ -808,73 +808,21 @@ export function StakeholderProjectPortal() {
 
   // ============ AUTO-EMAIL ABSENTEES ============
   const handleEmailAbsentees = async () => {
-    const absentees = teamMembers.filter(m => !meetingAttendees.some(a => a.id === m.id));
+    const absentees = allStakeholders.filter(s => !meetingAttendees.some(a => a.id === s.id));
     if (absentees.length === 0) {
       alert('No absentees to email.');
       return;
     }
     
-    setSendingApologies(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/stakeholder/minutes/${selectedMeeting?.id}/send-apologies`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          absentees: absentees.map(a => ({ email: a.email, name: a.name })),
-          meetingTitle: selectedMeeting?.title,
-          meetingDate: selectedMeeting?.meeting_date
-        })
-      });
-      
-      const data = await response.json();
-      if (response.ok) {
-        alert(`Sent apology requests to ${absentees.length} absentees.`);
-      } else {
-        alert(data.error || 'Failed to send apology emails');
-      }
-    } catch (error) {
-      console.error('Error sending apologies:', error);
-      alert('Error sending apology emails');
-    } finally {
-      setSendingApologies(false);
-    }
+    setShowMissingFeaturesAlert(true);
+    // This would call an API endpoint to send emails to absentees
+    alert(`Would send apology request emails to ${absentees.length} absentees. This feature is coming soon!`);
   };
 
   // ============ CALENDAR SYNC ============
-  const handleCalendarSync = async () => {
-    if (!selectedMeeting) {
-      alert('Please select a meeting first.');
-      return;
-    }
-    
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/stakeholder/minutes/${selectedMeeting.id}/calendar`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${selectedMeeting.title.replace(/[^a-z0-9]/gi, '_')}.ics`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-        alert('Calendar file downloaded! You can now import it into your calendar app.');
-      } else {
-        alert('Failed to generate calendar file');
-      }
-    } catch (error) {
-      console.error('Calendar sync error:', error);
-      alert('Error generating calendar file');
-    }
+  const handleCalendarSync = () => {
+    setShowMissingFeaturesAlert(true);
+    alert('Calendar sync (.ics export) coming soon!');
   };
 
   // ============ UTILITY FUNCTIONS ============
@@ -1244,49 +1192,48 @@ export function StakeholderProjectPortal() {
                   </div>
                 </div>
 
-                {/* Matters Present - USING TEAM MEMBERS (Accepted Stakeholders) */}
+                {/* Matters Present - Checkboxes from Stakeholders Register */}
                 <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
                   <h4 className="font-semibold flex items-center gap-2 mb-3 text-gray-900 dark:text-white">
                     <Users size={18} className="text-blue-500" />
-                    Matters Present (Select attendees for this meeting)
+                    Matters Present (Stakeholders in Attendance)
                   </h4>
                   
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-3">
-                    {teamMembers.map((member) => (
-                      <label key={member.id} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                    {allStakeholders.map((stakeholder) => (
+                      <label key={stakeholder.id} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                         <input
                           type="checkbox"
-                          checked={meetingAttendees.some(a => a.id === member.id)}
+                          checked={meetingAttendees.some(a => a.id === stakeholder.id)}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setMeetingAttendees([...meetingAttendees, member]);
+                              setMeetingAttendees([...meetingAttendees, stakeholder]);
                             } else {
-                              setMeetingAttendees(meetingAttendees.filter(a => a.id !== member.id));
+                              setMeetingAttendees(meetingAttendees.filter(a => a.id !== stakeholder.id));
                             }
                           }}
                           className="rounded"
                         />
-                        {member.name} ({member.role})
+                        {stakeholder.name} ({stakeholder.role})
                       </label>
                     ))}
                   </div>
                   
                   {/* Absentees section */}
-                  {teamMembers.filter(m => !meetingAttendees.some(a => a.id === m.id)).length > 0 && (
+                  {allStakeholders.filter(s => !meetingAttendees.some(a => a.id === s.id)).length > 0 && (
                     <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
                       <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Absentees:</p>
                       <div className="flex flex-wrap gap-2 items-center">
-                        {teamMembers.filter(m => !meetingAttendees.some(a => a.id === m.id)).map(m => (
-                          <span key={m.id} className="text-sm text-gray-400 dark:text-gray-500">
-                            {m.name}
+                        {allStakeholders.filter(s => !meetingAttendees.some(a => a.id === s.id)).map(s => (
+                          <span key={s.id} className="text-sm text-gray-400 dark:text-gray-500">
+                            {s.name}
                           </span>
                         ))}
                         <button 
                           onClick={handleEmailAbsentees}
-                          disabled={sendingApologies}
-                          className="ml-auto text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50"
+                          className="ml-auto text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
                         >
-                          {sendingApologies ? 'Sending...' : 'Auto-email apology request'}
+                          Auto-email apology request
                         </button>
                       </div>
                     </div>
@@ -1583,7 +1530,7 @@ export function StakeholderProjectPortal() {
                           className="px-3 py-2 border rounded-lg text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white"
                         >
                           <option value="">Assign to...</option>
-                          {teamMembers.map((m) => (<option key={m.id} value={m.id}>{m.name}</option>))}
+                          {stakeholders.map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}
                         </select>
                         <input 
                           type="date" 
@@ -1666,6 +1613,23 @@ export function StakeholderProjectPortal() {
                   </button>
                   <button onClick={handleRejectMinutes} className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
                     Confirm Rejection
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Missing Features Alert Modal */}
+          {showMissingFeaturesAlert && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Coming Soon!</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  This feature is under development and will be available in the next release.
+                </p>
+                <div className="flex justify-end">
+                  <button onClick={() => setShowMissingFeaturesAlert(false)} className="px-4 py-2 bg-amber-500 text-white rounded-lg">
+                    OK
                   </button>
                 </div>
               </div>

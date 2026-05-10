@@ -72,82 +72,33 @@ async function sendInvitationCode(email, code, inviterName, companyName) {
   }
 }
 
-
-
-
-// ========== STAKEHOLDER INVITATION EMAIL ==========
-async function sendStakeholderInvitation(email, name, tempPassword, projectName, stakeholderType, inviterName, subdomain) {
-    try {
-        const transporter = getTransporter();
-        const loginUrl = `${process.env.FRONTEND_URL || 'https://bochi.ke'}/login?subdomain=${subdomain}`;
-        
-        const stakeholderTypeLabel = {
-            client: 'Client/Owner',
-            consultant: 'Consultant',
-            architect: 'Architect',
-            structural_engineer: 'Structural Engineer',
-            electrical_engineer: 'Electrical Engineer',
-            mechanical_engineer: 'Mechanical Engineer',
-            quantity_surveyor: 'Quantity Surveyor',
-            project_manager: 'Project Manager'
-        }[stakeholderType] || stakeholderType;
-        
-        const subject = `You've been invited to join ${projectName} on Bochi Construction Suite`;
-        const html = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-                <h2 style="color: #1a365d;">Welcome to Bochi Construction Suite!</h2>
-                <p>Dear ${name},</p>
-                <p><strong>${inviterName}</strong> has invited you to join the project <strong>${projectName}</strong> as a <strong>${stakeholderTypeLabel}</strong>.</p>
-                
-                <div style="background: #f0f7ff; padding: 15px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #4F46E5;">
-                    <h3 style="margin-top: 0; color: #1a365d;">Your Login Credentials</h3>
-                    <p><strong>Login URL:</strong> <a href="${loginUrl}" style="color: #4F46E5;">${loginUrl}</a></p>
-                    <p><strong>Email:</strong> ${email}</p>
-                    <p><strong>Temporary Password:</strong> <code style="background: #e5e7eb; padding: 2px 6px; border-radius: 4px;">${tempPassword}</code></p>
-                    <p><strong>Subdomain:</strong> ${subdomain}</p>
-                </div>
-                
-                <p><strong>Important Instructions:</strong></p>
-                <ol style="margin: 10px 0 20px 20px;">
-                    <li>Click the login URL above or go to ${process.env.FRONTEND_URL || 'https://bochi.ke'}</li>
-                    <li>Enter your email: <strong>${email}</strong></li>
-                    <li>Enter the temporary password: <strong>${tempPassword}</strong></li>
-                    <li>You will be prompted to change your password after first login</li>
-                    <li>Use the subdomain <strong>${subdomain}</strong> if prompted</li>
-                </ol>
-                
-                <div style="background: #fef3c7; padding: 12px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #f59e0b;">
-                    <p style="margin: 0; font-size: 14px;"><strong>⚠️ Security Note:</strong> This password is temporary. Please change it immediately after your first login.</p>
-                </div>
-                
-                <p>If you have any questions, please contact ${inviterName}.</p>
-                
-                <hr style="margin: 20px 0;">
-                <p style="font-size: 12px; color: #666; text-align: center;">
-                    Bochi Construction Suite - Construction Management System<br>
-                    <a href="${process.env.FRONTEND_URL}" style="color: #666;">${process.env.FRONTEND_URL || 'https://bochi.ke'}</a>
-                </p>
-            </div>
-        `;
-        
-        await transporter.sendMail({
-            from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
-            to: email,
-            subject: subject,
-            html: html
-        });
-        
-        console.log(`✅ Stakeholder invitation sent to ${email} for subdomain: ${subdomain}`);
-        return true;
-    } catch (error) {
-        console.error('Stakeholder invitation error:', error);
-        return false;
-    }
+async function sendStakeholderInvitation(email, name, tempPassword, projectName, stakeholderType, inviterName) {
+  try {
+    const transporter = getTransporter();
+    const subject = `You've been invited to join ${projectName} on Bochi Construction Suite`;
+    const html = `<div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+      <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
+      <p>Dear ${name},</p>
+      <p><strong>${inviterName}</strong> has invited you to join the project <strong>${projectName}</strong>.</p>
+      <p>Your temporary password is: <strong>${tempPassword}</strong></p>
+      <p>Please log in and change your password.</p>
+      <hr>
+      <p style="color: #999; font-size: 10px;">Bochi Construction Suite</p>
+    </div>`;
+    
+    await transporter.sendMail({
+      from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
+      to: email,
+      subject: subject,
+      html: html
+    });
+    console.log(`✅ Invitation sent to ${email}`);
+    return true;
+  } catch (error) {
+    console.error('Invitation error:', error);
+    return false;
+  }
 }
-
-
-
-
 
 async function sendBulkEmail(recipients, subject, message) {
   let successCount = 0;
@@ -185,13 +136,6 @@ async function sendEmail(to, subject, html) {
     return { success: false, error: error.message };
   }
 }
-
-
-
-
-
-
-
 
 // ========== DOCUMENT NOTIFICATION ==========
 async function sendDocumentNotification({ to, stakeholder_name, project_name, document, action, uploaded_by, revision_notes }) {
@@ -363,121 +307,6 @@ async function verifyTransporter() {
   }
 }
 
-// ========== APOLOGY REQUEST EMAIL ==========
-async function sendApologyRequest({ to, name, meetingTitle, meetingDate, minutesId }) {
-    try {
-        const transporter = getTransporter();
-        const subject = `Apology Request: ${meetingTitle}`;
-        const html = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-                <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
-                <p>Dear ${name},</p>
-                <p>You were marked as <strong>absent</strong> for the meeting:</p>
-                <div style="background: #f5f5f5; padding: 15px; margin: 15px 0; border-radius: 5px;">
-                    <p><strong>Meeting:</strong> ${meetingTitle}</p>
-                    <p><strong>Date:</strong> ${new Date(meetingDate).toLocaleDateString()}</p>
-                </div>
-                <p>Please provide an apology or explanation for your absence by clicking the button below:</p>
-                <p style="text-align: center;">
-                    <a href="${process.env.FRONTEND_URL}/stakeholder/minutes/${minutesId}/apology" 
-                       style="background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
-                        Submit Apology
-                    </a>
-                </p>
-                <p>If you believe this is an error, please contact the meeting chairperson.</p>
-                <hr>
-                <p style="font-size: 12px; color: #666;">Bochi Construction Suite - Construction Management System</p>
-            </div>
-        `;
-        
-        await transporter.sendMail({
-            from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
-            to: to,
-            subject: subject,
-            html: html
-        });
-        console.log(`✅ Apology request sent to ${to}`);
-        return true;
-    } catch (error) {
-        console.error('Apology request error:', error);
-        return false;
-    }
-}
-
-// ========== CALENDAR INVITE ==========
-async function sendCalendarInvite({ to, name, meetingTitle, meetingDate, location, minutesId }) {
-    try {
-        const transporter = getTransporter();
-        
-        const startDate = new Date(meetingDate);
-        const endDate = new Date(startDate);
-        endDate.setHours(endDate.getHours() + 2);
-        
-        const formatICSDate = (date) => {
-            return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-        };
-        
-        const icsContent = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Bochi Construction Suite//Meeting Calendar//EN
-CALSCALE:GREGORIAN
-METHOD:REQUEST
-BEGIN:VEVENT
-UID:${minutesId}-${Date.now()}@bochi.ke
-DTSTAMP:${formatICSDate(new Date())}
-DTSTART:${formatICSDate(startDate)}
-DTEND:${formatICSDate(endDate)}
-SUMMARY:${meetingTitle}
-DESCRIPTION:Meeting minutes and action items will be available in the stakeholder portal.
-LOCATION:${location || 'Virtual Meeting'}
-ORGANIZER:mailto:${process.env.EMAIL_USER}
-ATTENDEE;CN=${name};RSVP=TRUE:mailto:${to}
-BEGIN:VALARM
-TRIGGER:-PT24H
-ACTION:DISPLAY
-DESCRIPTION:Reminder: ${meetingTitle} tomorrow
-END:VALARM
-END:VEVENT
-END:VCALENDAR`;
-        
-        await transporter.sendMail({
-            from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
-            to: to,
-            subject: `Calendar Invite: ${meetingTitle}`,
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-                    <h2 style="color: #1a365d;">Meeting Calendar Invite</h2>
-                    <p>Dear ${name},</p>
-                    <p>You have been invited to the meeting:</p>
-                    <div style="background: #f5f5f5; padding: 15px; margin: 15px 0; border-radius: 5px;">
-                        <p><strong>Meeting:</strong> ${meetingTitle}</p>
-                        <p><strong>Date:</strong> ${new Date(meetingDate).toLocaleDateString()}</p>
-                        ${location ? `<p><strong>Location:</strong> ${location}</p>` : ''}
-                    </div>
-                    <p>You can add this meeting to your calendar by downloading the attached .ics file.</p>
-                    <hr>
-                    <p style="font-size: 12px; color: #666;">Bochi Construction Suite - Construction Management System</p>
-                </div>
-            `,
-            attachments: [
-                {
-                    filename: `${meetingTitle.replace(/[^a-z0-9]/gi, '_')}.ics`,
-                    content: icsContent,
-                    contentType: 'text/calendar'
-                }
-            ]
-        });
-        
-        console.log(`✅ Calendar invite sent to ${to}`);
-        return true;
-    } catch (error) {
-        console.error('Calendar invite error:', error);
-        return false;
-    }
-}
-
-
-
 module.exports = { 
     sendOTP, 
     sendInvitationCode, 
@@ -489,7 +318,5 @@ module.exports = {
     sendTaskReminder,
     sendApprovalRequest,
     sendMinutesRejection,
-    sendApologyRequest,
-    sendCalendarInvite,
     verifyTransporter
-};"// force deployment" 
+};
