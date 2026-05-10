@@ -103,23 +103,29 @@ const tenantsController = {
         INSERT INTO admin_communications (admin_id, subject, message, recipient_count, sent_at)
         VALUES ($1, $2, $3, $4, NOW())
       `, [req.user.id, subject, message, emails.length]);
-      
-      // Send emails (batch process)
-      const results = [];
-      for (const tenant of tenantsList) {
-        try {
-          // Pass the HTML message as the 6th parameter to prevent double wrapping
-          await sendBulkEmail(tenant.email, subject, message, tenant.name, tenant.company_name, message);
-          results.push({ email: tenant.email, status: 'sent', name: tenant.name });
-          console.log(`✅ Email sent to ${tenant.email}`);
-        } catch (error) {
-          results.push({ email: tenant.email, status: 'failed', error: error.message });
-          console.error(`❌ Failed to send to ${tenant.email}:`, error.message);
-        }
-        
-        // Small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
+
+
+
+
+// Send emails (batch process)
+const results = [];
+for (const tenant of tenantsList) {
+    try {
+        // Use sendEmail for single recipient
+        await sendEmail(tenant.email, subject, message);
+        results.push({ email: tenant.email, status: 'sent', name: tenant.name });
+        console.log(`✅ Email sent to ${tenant.email}`);
+    } catch (error) {
+        results.push({ email: tenant.email, status: 'failed', error: error.message });
+        console.error(`❌ Failed to send to ${tenant.email}:`, error.message);
+    }
+    
+    // Small delay to avoid rate limiting
+    await new Promise(resolve => setTimeout(resolve, 500));
+}
+
+
+
       
       const successCount = results.filter(r => r.status === 'sent').length;
       const failedCount = results.filter(r => r.status === 'failed').length;
