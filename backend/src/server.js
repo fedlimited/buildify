@@ -39,6 +39,8 @@ const stakeholderController = require('./controllers/stakeholderController');
 const { requireStakeholderAccess } = require('./middleware/stakeholderAccess');
 const projectTeamController = require('./controllers/projectTeamController');
 const projectLinkController = require('./controllers/projectLinkController');
+const documentController = require('./controllers/documentController');
+const minutesController = require('./controllers/minutesController');
 
 // FORCE RENDER REBUILD - Super Admin Implementation v2
 const PORT = process.env.PORT || 5000;
@@ -374,6 +376,22 @@ app.delete('/api/projects/:projectId/links/:linkId', authenticateToken, projectL
 
 // Stakeholder routes for viewing links
 app.get('/api/stakeholder/projects/:projectId/links/:type', authenticateToken, requireStakeholderAccess, projectLinkController.getLinksByType);
+
+
+// Document routes
+app.get('/api/stakeholder/projects/:projectId/documents', authenticateToken, requireStakeholderAccess, documentController.getProjectDocuments);
+app.post('/api/stakeholder/projects/:projectId/documents', authenticateToken, requireStakeholderAccess, documentController.uploadDocument);
+app.delete('/api/stakeholder/documents/:documentId', authenticateToken, documentController.deleteDocument);
+
+// Minutes routes
+app.get('/api/stakeholder/projects/:projectId/minutes', authenticateToken, requireStakeholderAccess, minutesController.getProjectMinutes);
+app.get('/api/stakeholder/minutes/:minutesId', authenticateToken, minutesController.getMinutesDetails);
+app.post('/api/stakeholder/projects/:projectId/minutes', authenticateToken, requireStakeholderAccess, minutesController.createMinutes);
+app.put('/api/stakeholder/minutes/:minutesId', authenticateToken, minutesController.updateMinutes);
+app.post('/api/stakeholder/minutes/:minutesId/action-items', authenticateToken, minutesController.addActionItem);
+app.patch('/api/stakeholder/tasks/:actionItemId', authenticateToken, minutesController.updateTaskStatus);
+app.get('/api/stakeholder/tasks/upcoming', authenticateToken, minutesController.getUpcomingTasks);
+
 
 
 // ========== MIGRATION ENDPOINT - Run once to add missing columns ==========
