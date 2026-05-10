@@ -65,13 +65,21 @@ const stakeholderController = {
         // Update stakeholder type if needed
         await db.query(`UPDATE users SET stakeholder_type = $1 WHERE id = $2`, [stakeholderType, userId]);
       }
+
+
+
+
+
       
-      // Add to project stakeholders
-      await db.query(`
-        INSERT INTO project_stakeholders (project_id, user_id, stakeholder_type, invite_status, invited_by)
-        VALUES ($1, $2, $3, 'pending', $4)
-        ON CONFLICT (project_id, user_id) DO NOTHING
-      `, [projectId, userId, stakeholderType, req.user.id]);
+// Add to project stakeholders
+await db.query(`
+    INSERT INTO project_stakeholders (project_id, user_id, stakeholder_type, invite_status, invited_by)
+    VALUES ($1, $2, $3, 'pending', $4)
+    ON CONFLICT (project_id, user_id) DO NOTHING
+`, [projectId, userId, stakeholderType, req.user.id]);
+
+
+
       
       // Get project details for email
       const project = await db.query(`SELECT name FROM projects WHERE id = $1`, [projectId]);
