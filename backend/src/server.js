@@ -116,6 +116,18 @@ app.post('/api/fix-database', async (req, res) => {
 });
 
 
+// Test email sending (PUBLIC - for debugging)
+app.post('/api/test-email', async (req, res) => {
+  try {
+    const { to, subject, message } = req.body;
+    const emailService = require('../emailService');
+    const result = await emailService.sendEmail(to, subject, message);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 
 // TEMPORARY FIX: Add missing 'active' column to subscription_plans (PUBLIC - no auth needed)

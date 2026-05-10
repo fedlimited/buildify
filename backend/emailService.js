@@ -34,7 +34,7 @@ async function sendOTP(email, code, purpose = 'login') {
     </div>`;
     
     await transporter.sendMail({
-      from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
+      from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
       to: email,
       subject: subject,
       html: html
@@ -60,7 +60,7 @@ async function sendInvitationCode(email, code, inviterName, companyName) {
     </div>`;
     
     await transporter.sendMail({
-      from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
+      from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
       to: email,
       subject: subject,
       html: html
@@ -88,7 +88,7 @@ async function sendStakeholderInvitation(email, name, tempPassword, projectName,
     </div>`;
     
     await transporter.sendMail({
-      from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
+      from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
       to: email,
       subject: subject,
       html: html
@@ -107,7 +107,7 @@ async function sendBulkEmail(recipients, subject, message) {
   for (const email of recipients) {
     try {
       await transporter.sendMail({
-        from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
+        from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
         to: email,
         subject: subject,
         html: message
@@ -124,7 +124,7 @@ async function sendBulkEmail(recipients, subject, message) {
 async function sendEmail(to, subject, html) {
   try {
     await transporter.sendMail({
-      from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
+      from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
       to: to,
       subject: subject,
       html: html
