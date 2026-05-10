@@ -771,7 +771,7 @@ class MinutesController {
           console.error('Send apology emails error:', error);
           res.status(500).json({ error: error.message });
       }
-  },
+  }
 
 }
 
