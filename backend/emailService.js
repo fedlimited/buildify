@@ -72,7 +72,6 @@ async function sendInvitationCode(email, code, inviterName, companyName) {
   }
 }
 
-// Simple stakeholder invitation
 async function sendStakeholderInvitation(email, name, tempPassword, projectName, stakeholderType, inviterName) {
   try {
     const transporter = getTransporter();
@@ -101,13 +100,12 @@ async function sendStakeholderInvitation(email, name, tempPassword, projectName,
   }
 }
 
-// For super admin bulk email
 async function sendBulkEmail(recipients, subject, message) {
   let successCount = 0;
   let failCount = 0;
   for (const email of recipients) {
     try {
-      const transporter = getTransporter();  // <-- Add this
+      const transporter = getTransporter();
       await transporter.sendMail({
         from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
         to: email,
@@ -123,11 +121,9 @@ async function sendBulkEmail(recipients, subject, message) {
   return { successCount, failCount };
 }
 
-
-
 async function sendEmail(to, subject, html) {
   try {
-    const transporter = getTransporter();  // <-- Call getTransporter() here
+    const transporter = getTransporter();
     await transporter.sendMail({
       from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
       to: to,
@@ -141,9 +137,163 @@ async function sendEmail(to, subject, html) {
   }
 }
 
+// ========== DOCUMENT NOTIFICATION ==========
+async function sendDocumentNotification({ to, stakeholder_name, project_name, document, action, uploaded_by, revision_notes }) {
+    try {
+        const transporter = getTransporter();
+        const actionText = action === 'upload' ? 'uploaded' : 'updated';
+        const subject = `[${project_name}] New Document ${actionText}: ${document.title}`;
+        const html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
+                <p>Dear ${stakeholder_name},</p>
+                <p><strong>${uploaded_by}</strong> has ${actionText} a new document for <strong>${project_name}</strong>.</p>
+                <div style="background: #f5f5f5; padding: 15px; margin: 15px 0;">
+                    <p><strong>Title:</strong> ${document.title}</p>
+                    <p><strong>Category:</strong> ${document.category}</p>
+                    <p><strong>Version:</strong> ${document.version}</p>
+                </div>
+                <hr>
+                <p style="font-size: 12px; color: #666;">Bochi Construction Suite</p>
+            </div>
+        `;
+        await transporter.sendMail({
+            from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
+            to: to,
+            subject: subject,
+            html: html
+        });
+        console.log(`✅ Document notification sent to ${to}`);
+        return true;
+    } catch (error) {
+        console.error('Document notification error:', error);
+        return false;
+    }
+}
 
+// ========== TASK ASSIGNMENT ==========
+async function sendTaskAssignment({ to, assignee_name, assigner_name, project_name, minutes_title, task, due_date, priority, action_item_id }) {
+    try {
+        const transporter = getTransporter();
+        const subject = `[Action Required] New Task Assigned: ${project_name}`;
+        const html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
+                <p>Dear ${assignee_name},</p>
+                <p><strong>${assigner_name}</strong> has assigned you a task for <strong>${project_name}</strong>.</p>
+                <div style="background: #f5f5f5; padding: 15px; margin: 15px 0;">
+                    <p><strong>Task:</strong> ${task}</p>
+                    <p><strong>Due Date:</strong> ${new Date(due_date).toLocaleDateString()}</p>
+                    <p><strong>Priority:</strong> ${priority.toUpperCase()}</p>
+                </div>
+                <hr>
+                <p style="font-size: 12px; color: #666;">Bochi Construction Suite</p>
+            </div>
+        `;
+        await transporter.sendMail({
+            from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
+            to: to,
+            subject: subject,
+            html: html
+        });
+        console.log(`✅ Task assignment sent to ${to}`);
+        return true;
+    } catch (error) {
+        console.error('Task assignment error:', error);
+        return false;
+    }
+}
 
+// ========== TASK REMINDER ==========
+async function sendTaskReminder({ to, assignee_name, task, due_date, priority, project_name, minutes_title, action_item_id }) {
+    try {
+        const transporter = getTransporter();
+        const daysLeft = Math.ceil((new Date(due_date) - new Date()) / (1000 * 60 * 60 * 24));
+        const urgency = daysLeft <= 1 ? 'URGENT' : 'Reminder';
+        const subject = `[${urgency}] Task Reminder: ${project_name}`;
+        const html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
+                <p>Dear ${assignee_name},</p>
+                <p>This is a reminder for your task:</p>
+                <div style="background: #f5f5f5; padding: 15px; margin: 15px 0;">
+                    <p><strong>Task:</strong> ${task}</p>
+                    <p><strong>Due Date:</strong> ${new Date(due_date).toLocaleDateString()}</p>
+                    <p><strong>Days Remaining:</strong> ${daysLeft}</p>
+                </div>
+                <hr>
+                <p style="font-size: 12px; color: #666;">Bochi Construction Suite</p>
+            </div>
+        `;
+        await transporter.sendMail({
+            from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
+            to: to,
+            subject: subject,
+            html: html
+        });
+        console.log(`✅ Task reminder sent to ${to}`);
+        return true;
+    } catch (error) {
+        console.error('Task reminder error:', error);
+        return false;
+    }
+}
 
+// ========== APPROVAL REQUEST ==========
+async function sendApprovalRequest({ to, name, minutesTitle, minutesId, frontendUrl }) {
+    try {
+        const transporter = getTransporter();
+        const subject = `[Action Required] Please review meeting minutes: ${minutesTitle}`;
+        const html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
+                <p>Dear ${name},</p>
+                <p>The minutes for <strong>${minutesTitle}</strong> are ready for your review.</p>
+                <p><a href="${frontendUrl || process.env.FRONTEND_URL}/stakeholder/minutes/${minutesId}" style="background: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Review Minutes</a></p>
+                <hr>
+                <p style="font-size: 12px; color: #666;">Bochi Construction Suite</p>
+            </div>
+        `;
+        await transporter.sendMail({
+            from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
+            to: to,
+            subject: subject,
+            html: html
+        });
+        return true;
+    } catch (error) {
+        console.error('Approval request error:', error);
+        return false;
+    }
+}
+
+// ========== MINUTES REJECTION ==========
+async function sendMinutesRejection({ to, name, minutesTitle, feedback, minutesId }) {
+    try {
+        const transporter = getTransporter();
+        const subject = `Meeting Minutes Need Revision: ${minutesTitle}`;
+        const html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
+                <p>Dear ${name},</p>
+                <p>The minutes for <strong>${minutesTitle}</strong> were not approved and need revision.</p>
+                ${feedback ? `<p><strong>Feedback:</strong> ${feedback}</p>` : ''}
+                <hr>
+                <p style="font-size: 12px; color: #666;">Bochi Construction Suite</p>
+            </div>
+        `;
+        await transporter.sendMail({
+            from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
+            to: to,
+            subject: subject,
+            html: html
+        });
+        return true;
+    } catch (error) {
+        console.error('Rejection error:', error);
+        return false;
+    }
+}
 
 async function verifyTransporter() {
   try {
@@ -158,10 +308,15 @@ async function verifyTransporter() {
 }
 
 module.exports = { 
-  sendOTP, 
-  sendInvitationCode, 
-  sendStakeholderInvitation,
-  sendBulkEmail,
-  sendEmail,
-  verifyTransporter
+    sendOTP, 
+    sendInvitationCode, 
+    sendStakeholderInvitation,
+    sendBulkEmail,
+    sendEmail,
+    sendDocumentNotification,
+    sendTaskAssignment,
+    sendTaskReminder,
+    sendApprovalRequest,
+    sendMinutesRejection,
+    verifyTransporter
 };
