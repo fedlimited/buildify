@@ -33,6 +33,13 @@ const stakeholderController = {
     }
   },
 
+
+
+
+
+
+
+
   // Invite stakeholder to project (CORRECT VERSION - ONLY ONE)
   inviteStakeholder: async (req, res) => {
     try {
@@ -40,10 +47,18 @@ const stakeholderController = {
       const { projectId } = req.params;
       const { email, name, stakeholderType } = req.body;
       const company_id = req.user?.companyId || req.user?.company_id;
-      
-      // Generate temporary password
-      const tempPassword = Math.random().toString(36).slice(-8);
-      const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+
+
+
+// Invite stakeholder to project (CORRECT VERSION - NO PASSWORD, OTP FLOW ONLY)
+inviteStakeholder: async (req, res) => {
+    try {
+      const db = await getDb();
+      const { projectId } = req.params;
+      const { email, name, stakeholderType } = req.body;
+      const company_id = req.user?.companyId || req.user?.company_id;
+      const subdomain = req.user?.subdomain || 'fedlimited';
       
       // Check if user already exists
       let user = await db.query(
@@ -52,71 +67,86 @@ const stakeholderController = {
       );
       
       let userId;
-      let userName = name;
+      let userName = name || email.split('@')[0];
       
       if (user.rows.length === 0) {
-        // Create new user with the provided name
+        // Create new user - NO PASSWORD, they will use OTP
         const newUser = await db.query(`
-          INSERT INTO users (name, email, password, role, stakeholder_type, temporary_password, password_changed, company_id, is_active)
-          VALUES ($1, $2, $3, 'stakeholder', $4, $5, false, $6, 1) RETURNING id, name
-        `, [name, email, hashedPassword, stakeholderType, tempPassword, company_id]);
+          INSERT INTO users (name, email, role, stakeholder_type, company_id, is_active, created_at)
+          VALUES ($1, $2, 'stakeholder', $3, $4, 1, NOW()) 
+          RETURNING id, name
+        `, [userName, email, stakeholderType, company_id]);
         userId = newUser.rows[0].id;
         userName = newUser.rows[0].name;
       } else {
         userId = user.rows[0].id;
-        userName = user.rows[0].name;
         // Update stakeholder type
         await db.query(`UPDATE users SET stakeholder_type = $1 WHERE id = $2`, [stakeholderType, userId]);
       }
       
       // Add to project stakeholders
       await db.query(`
-        INSERT INTO project_stakeholders (project_id, user_id, stakeholder_type, invite_status, invited_by)
-        VALUES ($1, $2, $3, 'pending', $4)
-        ON CONFLICT (project_id, user_id) DO NOTHING
+        INSERT INTO project_stakeholders (project_id, user_id, stakeholder_type, invite_status, invited_by, invitation_sent_at)
+        VALUES ($1, $2, $3, 'pending', $4, NOW())
+        ON CONFLICT (project_id, user_id) DO UPDATE SET
+        stakeholder_type = EXCLUDED.stakeholder_type,
+        invite_status = 'pending',
+        invitation_sent_at = NOW()
       `, [projectId, userId, stakeholderType, req.user.id]);
       
       // Get project details for email
       const project = await db.query(`SELECT name FROM projects WHERE id = $1`, [projectId]);
+      const projectName = project.rows[0]?.name || 'Project';
       
-      // Send invitation email WITH SUBDOMAIN
-      await sendStakeholderInvitation(
-        email, 
-        userName, 
-        tempPassword, 
-        project.rows[0].name, 
-        stakeholderType, 
-        req.user.name,
-        req.user.subdomain
-      );
+      // Get company name
+      const company = await db.query(`SELECT name FROM companies WHERE id = $1`, [company_id]);
+      const companyName = company.rows[0]?.name || 'Bochi Construction';
       
-      res.json({ success: true, message: 'Invitation sent successfully', user: { id: userId, name: userName } });
+      // Send invitation email - NO PASSWORD, USING OTP FLOW
+      const emailResult = await sendStakeholderInvitation({
+        to: email,
+        name: userName,
+        inviterName: req.user.name,
+        projectName: projectName,
+        role: stakeholderType,
+        subdomain: subdomain,
+        companyName: companyName
+      });
+      
+      if (emailResult.success) {
+        res.json({ 
+          success: true, 
+          message: 'Invitation sent successfully. User will log in with OTP.',
+          user: { id: userId, name: userName } 
+        });
+      } else {
+        res.json({ 
+          success: true, 
+          message: 'Stakeholder added but invitation email failed. Please check email settings.',
+          user: { id: userId, name: userName },
+          emailError: emailResult.error
+        });
+      }
+      
     } catch (error) {
       console.error('Error inviting stakeholder:', error);
       res.status(500).json({ error: error.message });
     }
   },
 
-  // Resend invitation to stakeholder
-  resendInvitation: async (req, res) => {
+
+// Resend invitation to stakeholder (NO PASSWORD)
+resendInvitation: async (req, res) => {
     try {
       const db = await getDb();
       const { projectId } = req.params;
       const { email, name } = req.body;
-      
-      // Generate new temporary password
-      const tempPassword = Math.random().toString(36).slice(-8);
-      const hashedPassword = await bcrypt.hash(tempPassword, 10);
-      
-      // Update user password
-      await db.query(`
-        UPDATE users 
-        SET password = $1, temporary_password = $2, password_changed = false 
-        WHERE email = $3
-      `, [hashedPassword, tempPassword, email]);
+      const subdomain = req.user?.subdomain || 'fedlimited';
+      const company_id = req.user?.companyId || req.user?.company_id;
       
       // Get project details
       const project = await db.query(`SELECT name FROM projects WHERE id = $1`, [projectId]);
+      const projectName = project.rows[0]?.name || 'Project';
       
       // Get stakeholder type
       const stakeholder = await db.query(`
@@ -128,23 +158,36 @@ const stakeholderController = {
       
       const stakeholderType = stakeholder.rows[0]?.stakeholder_type || 'consultant';
       
-      // Send invitation email with subdomain
-      await sendStakeholderInvitation(
-        email, 
-        name, 
-        tempPassword, 
-        project.rows[0].name, 
-        stakeholderType, 
-        req.user.name,
-        req.user.subdomain
-      );
+      // Get company name
+      const company = await db.query(`SELECT name FROM companies WHERE id = $1`, [company_id]);
+      const companyName = company.rows[0]?.name || 'Bochi Construction';
       
-      res.json({ success: true, message: 'Invitation resent successfully' });
+      // Send invitation email - NO PASSWORD
+      const emailResult = await sendStakeholderInvitation({
+        to: email,
+        name: name || email.split('@')[0],
+        inviterName: req.user.name,
+        projectName: projectName,
+        role: stakeholderType,
+        subdomain: subdomain,
+        companyName: companyName
+      });
+      
+      if (emailResult.success) {
+        res.json({ success: true, message: 'Invitation resent successfully' });
+      } else {
+        res.json({ success: true, message: 'Invitation resent but email failed', emailError: emailResult.error });
+      }
+      
     } catch (error) {
       console.error('Error resending invitation:', error);
       res.status(500).json({ error: error.message });
     }
   },
+
+
+
+
 
   // Remove stakeholder from project
   removeStakeholder: async (req, res) => {
