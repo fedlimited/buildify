@@ -1,5 +1,5 @@
 const { getDb } = require('../config/database');
-const emailService = require('../../emailService');
+const { sendStakeholderInvitation } = require('../../emailService');
 const bcrypt = require('bcryptjs');
 
 const stakeholderController = {
@@ -33,7 +33,7 @@ const stakeholderController = {
     }
   },
 
-  // Invite stakeholder to project (WORKING VERSION - WITH TEMPORARY PASSWORD)
+  // Invite stakeholder to project
   inviteStakeholder: async (req, res) => {
     try {
       const db = await getDb();
@@ -47,23 +47,22 @@ const stakeholderController = {
       
       // Check if user already exists
       let user = await db.query(
-        `SELECT id, name FROM users WHERE email = $1 AND company_id = $2`,
+        `SELECT id FROM users WHERE email = $1 AND company_id = $2`,
         [email, company_id]
       );
       
       let userId;
-      let userName = name;
       
       if (user.rows.length === 0) {
+        // Create new user
         const newUser = await db.query(`
           INSERT INTO users (name, email, password, role, stakeholder_type, temporary_password, password_changed, company_id, is_active)
-          VALUES ($1, $2, $3, 'stakeholder', $4, $5, false, $6, 1) RETURNING id, name
+          VALUES ($1, $2, $3, 'stakeholder', $4, $5, false, $6, 1) RETURNING id
         `, [name, email, hashedPassword, stakeholderType, tempPassword, company_id]);
         userId = newUser.rows[0].id;
-        userName = newUser.rows[0].name;
       } else {
         userId = user.rows[0].id;
-        userName = user.rows[0].name;
+        // Update stakeholder type if needed
         await db.query(`UPDATE users SET stakeholder_type = $1 WHERE id = $2`, [stakeholderType, userId]);
       }
       
@@ -77,22 +76,10 @@ const stakeholderController = {
       // Get project details for email
       const project = await db.query(`SELECT name FROM projects WHERE id = $1`, [projectId]);
       
-      // Get company subdomain
-      const company = await db.query(`SELECT subdomain FROM companies WHERE id = $1`, [company_id]);
-      const subdomain = company.rows[0]?.subdomain || 'bochi';
-      
       // Send invitation email
-      await emailService.sendStakeholderInvitation(
-        email, 
-        userName, 
-        tempPassword, 
-        project.rows[0].name, 
-        stakeholderType, 
-        req.user.name,
-        subdomain
-      );
+      await sendStakeholderInvitation(email, name, tempPassword, project.rows[0].name, stakeholderType, req.user.name);
       
-      res.json({ success: true, message: 'Invitation sent successfully', user: { id: userId, name: userName } });
+      res.json({ success: true, message: 'Invitation sent successfully' });
     } catch (error) {
       console.error('Error inviting stakeholder:', error);
       res.status(500).json({ error: error.message });
@@ -105,7 +92,6 @@ const stakeholderController = {
       const db = await getDb();
       const { projectId } = req.params;
       const { email, name } = req.body;
-      const company_id = req.user?.companyId || req.user?.company_id;
       
       // Generate new temporary password
       const tempPassword = Math.random().toString(36).slice(-8);
@@ -115,8 +101,8 @@ const stakeholderController = {
       await db.query(`
         UPDATE users 
         SET password = $1, temporary_password = $2, password_changed = false 
-        WHERE email = $3 AND company_id = $4
-      `, [hashedPassword, tempPassword, email, company_id]);
+        WHERE email = $3
+      `, [hashedPassword, tempPassword, email]);
       
       // Get project details
       const project = await db.query(`SELECT name FROM projects WHERE id = $1`, [projectId]);
@@ -131,20 +117,8 @@ const stakeholderController = {
       
       const stakeholderType = stakeholder.rows[0]?.stakeholder_type || 'consultant';
       
-      // Get company subdomain
-      const company = await db.query(`SELECT subdomain FROM companies WHERE id = $1`, [company_id]);
-      const subdomain = company.rows[0]?.subdomain || 'bochi';
-      
       // Send invitation email
-      await emailService.sendStakeholderInvitation(
-        email, 
-        name, 
-        tempPassword, 
-        project.rows[0].name, 
-        stakeholderType, 
-        req.user.name,
-        subdomain
-      );
+      await sendStakeholderInvitation(email, name, tempPassword, project.rows[0].name, stakeholderType, req.user.name);
       
       res.json({ success: true, message: 'Invitation resent successfully' });
     } catch (error) {
@@ -204,6 +178,7 @@ const stakeholderController = {
       const userId = req.user.id;
       const userRole = req.user.role;
       
+      // First, check if user has access
       let hasAccess = false;
       
       if (userRole === 'admin' || userRole === 'super_admin') {
@@ -220,6 +195,7 @@ const stakeholderController = {
         return res.status(403).json({ error: 'You do not have access to this project' });
       }
       
+      // Get project details
       const project = await db.query(`
         SELECT 
           p.id,
@@ -258,9 +234,7 @@ const stakeholderController = {
       
       await db.query(`
         UPDATE project_stakeholders 
-        SET invite_status = 'accepted', 
-            is_active = 1, 
-            last_active = NOW()
+        SET invite_status = 'accepted', last_active = NOW()
         WHERE project_id = $1 AND user_id = $2
       `, [projectId, userId]);
       
@@ -277,11 +251,13 @@ const stakeholderController = {
       const db = await getDb();
       const { projectId } = req.params;
       
+      // Get contract sum from project
       const project = await db.query(
         `SELECT contract_sum FROM projects WHERE id = $1`,
         [projectId]
       );
       
+      // Get total invoiced and paid from income table
       const financial = await db.query(`
         SELECT 
           COALESCE(SUM(gross_amount), 0) as total_invoiced,
@@ -334,19 +310,20 @@ const stakeholderController = {
       const db = getDb();
       const { projectId } = req.params;
       
-      const result = await db.query(`
-        SELECT id, title, meeting_date, location, meeting_type, status, created_at
-        FROM project_minutes 
-        WHERE project_id = $1 
-        ORDER BY meeting_date DESC
-      `, [projectId]);
+      const result = await db.query(
+        `SELECT id, title, meeting_date, location, meeting_type, status, created_at
+         FROM project_minutes 
+         WHERE project_id = $1 
+         ORDER BY meeting_date DESC`,
+        [projectId]
+      );
       
       res.json(result.rows);
     } catch (error) {
       console.error('Get meetings error:', error);
       res.status(500).json({ error: error.message });
     }
-  }
+  },
 };
 
 module.exports = stakeholderController;

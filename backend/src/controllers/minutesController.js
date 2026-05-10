@@ -732,47 +732,6 @@ class MinutesController {
             res.status(500).json({ error: error.message });
         }
     }
-
-  // Send apology request emails to absentees
-  async sendApologyEmails(req, res) {
-      try {
-          const db = getDb();
-          const { minutesId } = req.params;
-          const { absentees, meetingTitle, meetingDate } = req.body;
-          
-          if (!absentees || absentees.length === 0) {
-              return res.status(400).json({ error: 'No absentees specified' });
-          }
-          
-          const results = [];
-          
-          for (const absentee of absentees) {
-              try {
-                  await emailService.sendApologyRequest({
-                      to: absentee.email,
-                      name: absentee.name,
-                      meetingTitle: meetingTitle,
-                      meetingDate: meetingDate,
-                      minutesId: minutesId
-                  });
-                  results.push({ email: absentee.email, status: 'sent' });
-              } catch (err) {
-                  console.error(`Failed to send apology to ${absentee.email}:`, err);
-                  results.push({ email: absentee.email, status: 'failed', error: err.message });
-              }
-          }
-          
-          res.json({
-              success: true,
-              message: `Sent apology requests to ${results.filter(r => r.status === 'sent').length} absentees`,
-              results: results
-          });
-      } catch (error) {
-          console.error('Send apology emails error:', error);
-          res.status(500).json({ error: error.message });
-      }
-  }
-
 }
 
 module.exports = new MinutesController();
