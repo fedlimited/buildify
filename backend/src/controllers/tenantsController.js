@@ -1,5 +1,5 @@
 const { getDb } = require('../config/database');
-const { sendBulkEmail } = require('../services/emailService');
+const { sendBulkEmail, sendEmail } = require('../../emailService');
 
 const tenantsController = {
   // Get all tenants (users from all companies)
