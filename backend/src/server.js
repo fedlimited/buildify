@@ -392,6 +392,12 @@ app.post('/api/stakeholder/minutes/:minutesId/action-items', authenticateToken, 
 app.patch('/api/stakeholder/tasks/:actionItemId', authenticateToken, minutesController.updateTaskStatus);
 app.get('/api/stakeholder/tasks/upcoming', authenticateToken, minutesController.getUpcomingTasks);
 
+// Stakeholder meetings route
+app.get('/api/stakeholder/projects/:projectId/meetings', authenticateToken, requireStakeholderAccess, stakeholderController.getProjectMeetings);
+
+// Overdue tasks count
+app.get('/api/stakeholder/tasks/overdue-count', authenticateToken, minutesController.getOverdueActionsCount);
+
 
 
 // ========== MIGRATION ENDPOINT - Run once to add missing columns ==========
