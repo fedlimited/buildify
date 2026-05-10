@@ -157,6 +157,29 @@ app.post('/api/subscription/mpesa-callback', subscriptionPaymentController.handl
 app.get('/api/auth/me', authenticateToken, authController.getCurrentUser);
 
 // All other /api routes need company check
+
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Debug endpoint - check email functions (NO AUTH)
+app.get('/api/debug/email', (req, res) => {
+    try {
+        const emailService = require('../emailService');
+        res.json({
+            functions: Object.keys(emailService),
+            hasSendStakeholderInvitation: typeof emailService.sendStakeholderInvitation === 'function',
+            hasSendBulkEmail: typeof emailService.sendBulkEmail === 'function',
+            hasSendEmail: typeof emailService.sendEmail === 'function'
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+
 app.use('/api', authenticateToken, requireCompanyAccess);
 
 // Super Admin - Payment Management
