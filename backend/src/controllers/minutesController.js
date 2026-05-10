@@ -731,7 +731,7 @@ class MinutesController {
             console.error('Delete minutes error:', error);
             res.status(500).json({ error: error.message });
         }
-    },
+    }
 
   // Send apology request emails to absentees
   async sendApologyEmails(req, res) {
