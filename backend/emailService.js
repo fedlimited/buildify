@@ -104,8 +104,10 @@ async function sendStakeholderInvitation(email, name, tempPassword, projectName,
 // For super admin bulk email
 async function sendBulkEmail(recipients, subject, message) {
   let successCount = 0;
+  let failCount = 0;
   for (const email of recipients) {
     try {
+      const transporter = getTransporter();  // <-- Add this
       await transporter.sendMail({
         from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
         to: email,
@@ -115,14 +117,17 @@ async function sendBulkEmail(recipients, subject, message) {
       successCount++;
     } catch (error) {
       console.error(`Failed to send to ${email}:`, error.message);
+      failCount++;
     }
   }
-  return { successCount, failCount: recipients.length - successCount };
+  return { successCount, failCount };
 }
 
-// Generic send email
+
+
 async function sendEmail(to, subject, html) {
   try {
+    const transporter = getTransporter();  // <-- Call getTransporter() here
     await transporter.sendMail({
       from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
       to: to,
@@ -131,9 +136,14 @@ async function sendEmail(to, subject, html) {
     });
     return { success: true };
   } catch (error) {
+    console.error('Send email error:', error);
     return { success: false, error: error.message };
   }
 }
+
+
+
+
 
 async function verifyTransporter() {
   try {
