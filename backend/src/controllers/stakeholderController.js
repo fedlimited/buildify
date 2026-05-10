@@ -242,25 +242,33 @@ const stakeholderController = {
     }
   },
 
-  // Accept invitation
-  acceptInvitation: async (req, res) => {
+
+
+
+
+// Accept invitation
+acceptInvitation: async (req, res) => {
     try {
-      const db = await getDb();
-      const { projectId } = req.params;
-      const userId = req.user.id;
-      
-      await db.query(`
-        UPDATE project_stakeholders 
-        SET invite_status = 'accepted', last_active = NOW()
-        WHERE project_id = $1 AND user_id = $2
-      `, [projectId, userId]);
-      
-      res.json({ success: true, message: 'Invitation accepted' });
+        const db = await getDb();
+        const { projectId } = req.params;
+        const userId = req.user.id;
+        
+        await db.query(`
+            UPDATE project_stakeholders 
+            SET invite_status = 'accepted', 
+                is_active = 1, 
+                last_active = NOW()
+            WHERE project_id = $1 AND user_id = $2
+        `, [projectId, userId]);
+        
+        res.json({ success: true, message: 'Invitation accepted' });
     } catch (error) {
-      console.error('Error accepting invitation:', error);
-      res.status(500).json({ error: error.message });
+        console.error('Error accepting invitation:', error);
+        res.status(500).json({ error: error.message });
     }
-  },
+},
+
+
 
   // Get financial summary for stakeholder
   getFinancialSummary: async (req, res) => {
