@@ -110,4 +110,57 @@ async function sendInvitationCode(email, code, inviterName, companyName) {
   }
 }
 
+
+// ========== STAKEHOLDER INVITATION EMAIL ==========
+async function sendStakeholderInvitation(email, name, tempPassword, projectName, stakeholderType, inviterName) {
+    try {
+        const transporter = getTransporter();
+        const subject = `You've been invited to join ${projectName} on Bochi Construction Suite`;
+        
+        const stakeholderTypeLabel = {
+            client: 'Client/Owner',
+            consultant: 'Consultant',
+            architect: 'Architect',
+            structural_engineer: 'Structural Engineer',
+            electrical_engineer: 'Electrical Engineer',
+            mechanical_engineer: 'Mechanical Engineer',
+            quantity_surveyor: 'Quantity Surveyor',
+            project_manager: 'Project Manager'
+        }[stakeholderType] || stakeholderType;
+        
+        const html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
+                <p>Dear ${name},</p>
+                <p><strong>${inviterName}</strong> has invited you to join the project <strong>${projectName}</strong> as a <strong>${stakeholderTypeLabel}</strong>.</p>
+                <p>Your temporary login credentials are:</p>
+                <div style="background: #f5f5f5; padding: 15px; margin: 15px 0; border-radius: 5px;">
+                    <p><strong>Email:</strong> ${email}</p>
+                    <p><strong>Temporary Password:</strong> ${tempPassword}</p>
+                </div>
+                <p>Please log in and change your password immediately.</p>
+                <p><a href="${process.env.FRONTEND_URL || 'https://bochi.ke'}/login" style="background: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login to Your Account</a></p>
+                <hr>
+                <p style="font-size: 12px; color: #666;">Bochi Construction Suite - Construction Management System</p>
+            </div>
+        `;
+        
+        await transporter.sendMail({
+            from: `"Bochi Construction Suite" <${process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
+            to: email,
+            subject: subject,
+            html: html
+        });
+        
+        console.log(`✅ Stakeholder invitation sent to ${email}`);
+        return true;
+    } catch (error) {
+        console.error('Stakeholder invitation error:', error);
+        return false;
+    }
+}
+
+
+
+
 module.exports = { sendOTP, sendInvitationCode };
