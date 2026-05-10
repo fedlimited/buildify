@@ -55,8 +55,8 @@ app.use(cors({
     'https://buildify-frontend-rnwia68nf-fedlimiteds-projects.vercel.app',
     'https://www.bochi.ke',
     'https://bochi.ke',
-    'http://www.bochi.ke',      // Add this
-    'http://bochi.ke',          // Add this
+    'http://www.bochi.ke',
+    'http://bochi.ke',
     'https://bochi-buildify.netlify.app'
   ],
   credentials: true,
@@ -72,6 +72,20 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// DEBUG: Check email service exports (PUBLIC - no auth)
+app.get('/api/debug/email', (req, res) => {
+  try {
+    const emailService = require('../emailService');
+    res.json({
+      functions: Object.keys(emailService),
+      hasSendStakeholderInvitation: typeof emailService.sendStakeholderInvitation === 'function',
+      hasSendEmail: typeof emailService.sendEmail === 'function',
+      hasSendBulkEmail: typeof emailService.sendBulkEmail === 'function'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Public subscription plans (no login required)
 app.get('/api/subscription/plans', SubscriptionController.getPlans);
@@ -157,29 +171,6 @@ app.post('/api/subscription/mpesa-callback', subscriptionPaymentController.handl
 app.get('/api/auth/me', authenticateToken, authController.getCurrentUser);
 
 // All other /api routes need company check
-
-
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
-
-// Debug endpoint - check email functions (NO AUTH)
-app.get('/api/debug/email', (req, res) => {
-    try {
-        const emailService = require('../emailService');
-        res.json({
-            functions: Object.keys(emailService),
-            hasSendStakeholderInvitation: typeof emailService.sendStakeholderInvitation === 'function',
-            hasSendBulkEmail: typeof emailService.sendBulkEmail === 'function',
-            hasSendEmail: typeof emailService.sendEmail === 'function'
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-
-
 app.use('/api', authenticateToken, requireCompanyAccess);
 
 // Super Admin - Payment Management
@@ -672,6 +663,7 @@ async function startServer() {
       console.log(`📝 API endpoints available at http://localhost:${PORT}/api`);
       console.log(`\nPublic endpoints:`);
       console.log(`  GET    /api/health`);
+      console.log(`  GET    /api/debug/email`);
       console.log(`  POST   /api/auth/send-login-otp`);
       console.log(`  POST   /api/auth/verify-login-otp`);
       console.log(`  POST   /api/auth/send-registration-otp`);
@@ -706,4 +698,4 @@ async function startServer() {
   }
 }
 
-startServer();// FORCE DEPLOY v2 
+startServer();// FORCE DEPLOY v2
