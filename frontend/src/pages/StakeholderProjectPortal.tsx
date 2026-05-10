@@ -285,18 +285,38 @@ export function StakeholderProjectPortal() {
     }
   };
 
-  const fetchMeetings = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/meetings`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      if (response.ok) setMeetings(data);
-    } catch (error) {
-      console.error('Error fetching meetings:', error);
+
+
+
+
+
+const fetchMeetings = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    console.log('Fetching meetings for project:', projectId);
+    const response = await fetch(`${API_BASE_URL}/stakeholder/projects/${projectId}/meetings`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await response.json();
+    console.log('Meetings response:', data);
+    if (response.ok) {
+      setMeetings(data);
+      console.log('Set meetings count:', data.length);
+    } else {
+      console.error('Failed to fetch meetings:', data);
     }
-  };
+  } catch (error) {
+    console.error('Error fetching meetings:', error);
+  }
+};
+
+
+
+
+
+
+
+
 
   const fetchSiteDiaries = async () => {
     try {
