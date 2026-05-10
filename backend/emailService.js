@@ -163,4 +163,8 @@ async function sendStakeholderInvitation(email, name, tempPassword, projectName,
 
 
 
-module.exports = { sendOTP, sendInvitationCode };
+module.exports = { 
+    sendOTP, 
+    sendInvitationCode,
+    sendStakeholderInvitation
+};
