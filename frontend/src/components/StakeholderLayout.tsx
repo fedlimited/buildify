@@ -61,11 +61,13 @@ const getNavPath = (basePath: string) => {
 
 
 
-const navItems = [
-  { path: '/stakeholder/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/stakeholder/dashboard', label: 'My Projects', icon: FolderKanban },
-];
-
+  const navItems = [
+    { path: '/stakeholder/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/stakeholder/dashboard', label: 'My Projects', icon: FolderKanban },
+    { path: '/stakeholder/documents', label: 'Documents', icon: FileText },
+    { path: '/stakeholder/meetings', label: 'Meetings', icon: Calendar },
+    { path: '/stakeholder/comments', label: 'Discussions', icon: MessagesSquare },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

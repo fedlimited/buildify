@@ -39,8 +39,6 @@ const stakeholderController = require('./controllers/stakeholderController');
 const { requireStakeholderAccess } = require('./middleware/stakeholderAccess');
 const projectTeamController = require('./controllers/projectTeamController');
 const projectLinkController = require('./controllers/projectLinkController');
-const documentController = require('./controllers/documentController');
-const minutesController = require('./controllers/minutesController');
 
 // FORCE RENDER REBUILD - Super Admin Implementation v2
 const PORT = process.env.PORT || 5000;
@@ -301,9 +299,6 @@ app.post('/api/stakeholder/projects/:projectId/accept', authenticateToken, stake
 app.get('/api/stakeholder/projects/:projectId/financial-summary', authenticateToken, requireStakeholderAccess, stakeholderController.getFinancialSummary);
 app.get('/api/stakeholder/projects/:projectId/site-diaries', authenticateToken, requireStakeholderAccess, stakeholderController.getSiteDiaries);
 
-// Stakeholder meetings
-app.get('/api/stakeholder/projects/:projectId/meetings', authenticateToken, requireStakeholderAccess, stakeholderController.getProjectMeetings);
-
 
 // Project Team routes (for contractors to manage)
 app.get('/api/projects/:projectId/team', authenticateToken, projectTeamController.getProjectTeam);
@@ -322,52 +317,6 @@ app.delete('/api/projects/:projectId/links/:linkId', authenticateToken, projectL
 
 // Stakeholder routes for viewing links
 app.get('/api/stakeholder/projects/:projectId/links/:type', authenticateToken, requireStakeholderAccess, projectLinkController.getLinksByType);
-
-// ========== DOCUMENT MANAGEMENT ROUTES ==========
-app.get('/api/stakeholder/projects/:projectId/documents', 
-    authenticateToken, requireStakeholderAccess, 
-    documentController.getProjectDocuments);
-    
-app.get('/api/stakeholder/documents/:documentId', 
-    authenticateToken, 
-    documentController.getDocumentById);
-    
-app.post('/api/stakeholder/projects/:projectId/documents', 
-    authenticateToken, requireStakeholderAccess, 
-    documentController.uploadDocument);
-    
-app.delete('/api/stakeholder/documents/:documentId', 
-    authenticateToken, 
-    documentController.deleteDocument);
-
-// ========== MEETING MINUTES ROUTES ==========
-app.get('/api/stakeholder/projects/:projectId/minutes', 
-    authenticateToken, requireStakeholderAccess, 
-    minutesController.getProjectMinutes);
-    
-app.post('/api/stakeholder/projects/:projectId/minutes', 
-    authenticateToken, requireStakeholderAccess, 
-    minutesController.createMinutes);
-    
-app.get('/api/stakeholder/minutes/:minutesId', 
-    authenticateToken, 
-    minutesController.getMinutesDetails);
-    
-app.put('/api/stakeholder/minutes/:minutesId', 
-    authenticateToken, 
-    minutesController.updateMinutes);
-    
-app.post('/api/stakeholder/minutes/:minutesId/action-items', 
-    authenticateToken, 
-    minutesController.addActionItem);
-    
-app.patch('/api/stakeholder/tasks/:actionItemId', 
-    authenticateToken, 
-    minutesController.updateTaskStatus);
-    
-app.get('/api/stakeholder/tasks/upcoming', 
-    authenticateToken, 
-    minutesController.getUpcomingTasks);
 
 
 // ========== MIGRATION ENDPOINT - Run once to add missing columns ==========
@@ -423,32 +372,6 @@ app.delete('/api/invoices/:id', InvoiceController.deleteInvoice);
 
 // ========== SUPER ADMIN ROUTES ==========
 app.use('/api/super-admin', superAdminRoutes);
-
-// Additional Minutes routes
-app.get('/api/stakeholder/minutes/:minutesId/matters-arising', 
-    authenticateToken, 
-    minutesController.getMattersArising);
-    
-app.post('/api/stakeholder/minutes/:minutesId/publish', 
-    authenticateToken, 
-    minutesController.publishMinutes);
-    
-app.post('/api/stakeholder/minutes/:minutesId/approve', 
-    authenticateToken, 
-    minutesController.approveMinutes);
-    
-app.post('/api/stakeholder/minutes/:minutesId/reject', 
-    authenticateToken, 
-    minutesController.rejectMinutes);
-    
-app.delete('/api/stakeholder/minutes/:minutesId', 
-    authenticateToken, 
-    minutesController.deleteMinutes);
-    
-app.get('/api/stakeholder/tasks/overdue-count', 
-    authenticateToken, 
-    minutesController.getOverdueActionsCount);
-
 
 // ========== LOAD SAMPLE DATA ==========
 app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, res) => {
@@ -759,17 +682,5 @@ async function startServer() {
     process.exit(1);
   }
 }
-
-
-// Debug endpoint to check email service exports
-app.get('/api/debug/email-functions', (req, res) => {
-    const emailService = require('../emailService');
-    const functions = Object.keys(emailService);
-    res.json({ 
-        functions: functions,
-        hasSendStakeholderInvitation: typeof emailService.sendStakeholderInvitation === 'function'
-    });
-});
-
 
 startServer();// FORCE DEPLOY v2 

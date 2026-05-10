@@ -303,45 +303,6 @@ const stakeholderController = {
       console.error('Error fetching site diaries:', error);
       res.status(500).json({ error: error.message });
     }
-  },
-
-  // Get meetings for stakeholder
-  getProjectMeetings: async (req, res) => {
-    try {
-      const db = await getDb();
-      const { projectId } = req.params;
-      const userId = req.user.id;
-      
-      // Check if stakeholder has access to this project
-      const accessCheck = await db.query(`
-        SELECT 1 FROM project_stakeholders 
-        WHERE project_id = $1 AND user_id = $2 AND is_active = 1
-      `, [projectId, userId]);
-      
-      if (accessCheck.rows.length === 0 && req.user.role !== 'admin') {
-        return res.status(403).json({ error: 'Access denied' });
-      }
-      
-      // Get meetings from project_minutes table
-      const meetings = await db.query(`
-        SELECT 
-          id, 
-          title, 
-          meeting_date, 
-          location, 
-          meeting_type, 
-          status, 
-          created_at
-        FROM project_minutes 
-        WHERE project_id = $1 
-        ORDER BY meeting_date DESC
-      `, [projectId]);
-      
-      res.json(meetings.rows);
-    } catch (error) {
-      console.error('Error fetching meetings:', error);
-      res.status(500).json({ error: error.message });
-    }
   }
 };
 
