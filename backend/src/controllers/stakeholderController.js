@@ -1,6 +1,6 @@
 
 const { getDb } = require('../config/database');
-const { sendStakeholderInvitation } = require('../services/emailService');
+const { sendStakeholderInvitation } = require('../../emailService');
 const bcrypt = require('bcryptjs');
 
 const stakeholderController = {
