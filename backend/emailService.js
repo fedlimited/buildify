@@ -307,6 +307,121 @@ async function verifyTransporter() {
   }
 }
 
+// ========== APOLOGY REQUEST EMAIL ==========
+async function sendApologyRequest({ to, name, meetingTitle, meetingDate, minutesId }) {
+    try {
+        const transporter = getTransporter();
+        const subject = `Apology Request: ${meetingTitle}`;
+        const html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
+                <p>Dear ${name},</p>
+                <p>You were marked as <strong>absent</strong> for the meeting:</p>
+                <div style="background: #f5f5f5; padding: 15px; margin: 15px 0; border-radius: 5px;">
+                    <p><strong>Meeting:</strong> ${meetingTitle}</p>
+                    <p><strong>Date:</strong> ${new Date(meetingDate).toLocaleDateString()}</p>
+                </div>
+                <p>Please provide an apology or explanation for your absence by clicking the button below:</p>
+                <p style="text-align: center;">
+                    <a href="${process.env.FRONTEND_URL}/stakeholder/minutes/${minutesId}/apology" 
+                       style="background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                        Submit Apology
+                    </a>
+                </p>
+                <p>If you believe this is an error, please contact the meeting chairperson.</p>
+                <hr>
+                <p style="font-size: 12px; color: #666;">Bochi Construction Suite - Construction Management System</p>
+            </div>
+        `;
+        
+        await transporter.sendMail({
+            from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
+            to: to,
+            subject: subject,
+            html: html
+        });
+        console.log(`✅ Apology request sent to ${to}`);
+        return true;
+    } catch (error) {
+        console.error('Apology request error:', error);
+        return false;
+    }
+}
+
+// ========== CALENDAR INVITE ==========
+async function sendCalendarInvite({ to, name, meetingTitle, meetingDate, location, minutesId }) {
+    try {
+        const transporter = getTransporter();
+        
+        const startDate = new Date(meetingDate);
+        const endDate = new Date(startDate);
+        endDate.setHours(endDate.getHours() + 2);
+        
+        const formatICSDate = (date) => {
+            return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        };
+        
+        const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Bochi Construction Suite//Meeting Calendar//EN
+CALSCALE:GREGORIAN
+METHOD:REQUEST
+BEGIN:VEVENT
+UID:${minutesId}-${Date.now()}@bochi.ke
+DTSTAMP:${formatICSDate(new Date())}
+DTSTART:${formatICSDate(startDate)}
+DTEND:${formatICSDate(endDate)}
+SUMMARY:${meetingTitle}
+DESCRIPTION:Meeting minutes and action items will be available in the stakeholder portal.
+LOCATION:${location || 'Virtual Meeting'}
+ORGANIZER:mailto:${process.env.EMAIL_USER}
+ATTENDEE;CN=${name};RSVP=TRUE:mailto:${to}
+BEGIN:VALARM
+TRIGGER:-PT24H
+ACTION:DISPLAY
+DESCRIPTION:Reminder: ${meetingTitle} tomorrow
+END:VALARM
+END:VEVENT
+END:VCALENDAR`;
+        
+        await transporter.sendMail({
+            from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
+            to: to,
+            subject: `Calendar Invite: ${meetingTitle}`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                    <h2 style="color: #1a365d;">Meeting Calendar Invite</h2>
+                    <p>Dear ${name},</p>
+                    <p>You have been invited to the meeting:</p>
+                    <div style="background: #f5f5f5; padding: 15px; margin: 15px 0; border-radius: 5px;">
+                        <p><strong>Meeting:</strong> ${meetingTitle}</p>
+                        <p><strong>Date:</strong> ${new Date(meetingDate).toLocaleDateString()}</p>
+                        ${location ? `<p><strong>Location:</strong> ${location}</p>` : ''}
+                    </div>
+                    <p>You can add this meeting to your calendar by downloading the attached .ics file.</p>
+                    <hr>
+                    <p style="font-size: 12px; color: #666;">Bochi Construction Suite - Construction Management System</p>
+                </div>
+            `,
+            attachments: [
+                {
+                    filename: `${meetingTitle.replace(/[^a-z0-9]/gi, '_')}.ics`,
+                    content: icsContent,
+                    contentType: 'text/calendar'
+                }
+            ]
+        });
+        
+        console.log(`✅ Calendar invite sent to ${to}`);
+        return true;
+    } catch (error) {
+        console.error('Calendar invite error:', error);
+        return false;
+    }
+}
+
+
+
 module.exports = { 
     sendOTP, 
     sendInvitationCode, 
@@ -318,5 +433,7 @@ module.exports = {
     sendTaskReminder,
     sendApprovalRequest,
     sendMinutesRejection,
+    sendApologyRequest,
+    sendCalendarInvite,
     verifyTransporter
 };

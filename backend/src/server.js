@@ -392,6 +392,60 @@ app.post('/api/stakeholder/minutes/:minutesId/action-items', authenticateToken, 
 app.patch('/api/stakeholder/tasks/:actionItemId', authenticateToken, minutesController.updateTaskStatus);
 app.get('/api/stakeholder/tasks/upcoming', authenticateToken, minutesController.getUpcomingTasks);
 
+
+// Apology request endpoint
+app.post('/api/stakeholder/minutes/:minutesId/send-apologies', authenticateToken, minutesController.sendApologyEmails);
+
+// Calendar sync endpoint - download .ics file
+app.get('/api/stakeholder/minutes/:minutesId/calendar', authenticateToken, async (req, res) => {
+    try {
+        const db = getDb();
+        const { minutesId } = req.params;
+        
+        const minutes = await db.query(
+            'SELECT * FROM project_minutes WHERE id = $1',
+            [minutesId]
+        );
+        
+        if (minutes.rows.length === 0) {
+            return res.status(404).json({ error: 'Meeting not found' });
+        }
+        
+        const meeting = minutes.rows[0];
+        const startDate = new Date(meeting.meeting_date);
+        const endDate = new Date(startDate);
+        endDate.setHours(endDate.getHours() + 2);
+        
+        const formatICSDate = (date) => {
+            return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        };
+        
+        const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Bochi Construction Suite//Meeting Calendar//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:${minutesId}-${Date.now()}@bochi.ke
+DTSTAMP:${formatICSDate(new Date())}
+DTSTART:${formatICSDate(startDate)}
+DTEND:${formatICSDate(endDate)}
+SUMMARY:${meeting.title}
+DESCRIPTION:Meeting minutes will be available in the stakeholder portal.
+LOCATION:${meeting.location || 'Virtual Meeting'}
+ORGANIZER:mailto:${process.env.EMAIL_USER}
+END:VEVENT
+END:VCALENDAR`;
+        
+        res.setHeader('Content-Type', 'text/calendar');
+        res.setHeader('Content-Disposition', `attachment; filename="${meeting.title.replace(/[^a-z0-9]/gi, '_')}.ics"`);
+        res.send(icsContent);
+    } catch (error) {
+        console.error('Calendar export error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
 // Stakeholder meetings route
 app.get('/api/stakeholder/projects/:projectId/meetings', authenticateToken, requireStakeholderAccess, stakeholderController.getProjectMeetings);
 
