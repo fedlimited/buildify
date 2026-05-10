@@ -33,7 +33,7 @@ const stakeholderController = {
     }
   },
 
-  // Invite stakeholder to project
+  // Invite stakeholder to project (CORRECT VERSION - ONLY ONE)
   inviteStakeholder: async (req, res) => {
     try {
       const db = await getDb();
@@ -47,47 +47,50 @@ const stakeholderController = {
       
       // Check if user already exists
       let user = await db.query(
-        `SELECT id FROM users WHERE email = $1 AND company_id = $2`,
+        `SELECT id, name FROM users WHERE email = $1 AND company_id = $2`,
         [email, company_id]
       );
       
       let userId;
+      let userName = name;
       
       if (user.rows.length === 0) {
-        // Create new user
+        // Create new user with the provided name
         const newUser = await db.query(`
           INSERT INTO users (name, email, password, role, stakeholder_type, temporary_password, password_changed, company_id, is_active)
-          VALUES ($1, $2, $3, 'stakeholder', $4, $5, false, $6, 1) RETURNING id
+          VALUES ($1, $2, $3, 'stakeholder', $4, $5, false, $6, 1) RETURNING id, name
         `, [name, email, hashedPassword, stakeholderType, tempPassword, company_id]);
         userId = newUser.rows[0].id;
+        userName = newUser.rows[0].name;
       } else {
         userId = user.rows[0].id;
-        // Update stakeholder type if needed
+        userName = user.rows[0].name;
+        // Update stakeholder type
         await db.query(`UPDATE users SET stakeholder_type = $1 WHERE id = $2`, [stakeholderType, userId]);
       }
-
-
-
-
-
       
-// Add to project stakeholders
-await db.query(`
-    INSERT INTO project_stakeholders (project_id, user_id, stakeholder_type, invite_status, invited_by)
-    VALUES ($1, $2, $3, 'pending', $4)
-    ON CONFLICT (project_id, user_id) DO NOTHING
-`, [projectId, userId, stakeholderType, req.user.id]);
-
-
-
+      // Add to project stakeholders
+      await db.query(`
+        INSERT INTO project_stakeholders (project_id, user_id, stakeholder_type, invite_status, invited_by)
+        VALUES ($1, $2, $3, 'pending', $4)
+        ON CONFLICT (project_id, user_id) DO NOTHING
+      `, [projectId, userId, stakeholderType, req.user.id]);
       
       // Get project details for email
       const project = await db.query(`SELECT name FROM projects WHERE id = $1`, [projectId]);
       
-      // Send invitation email
-      await sendStakeholderInvitation(email, name, tempPassword, project.rows[0].name, stakeholderType, req.user.name);
+      // Send invitation email WITH SUBDOMAIN
+      await sendStakeholderInvitation(
+        email, 
+        userName, 
+        tempPassword, 
+        project.rows[0].name, 
+        stakeholderType, 
+        req.user.name,
+        req.user.subdomain
+      );
       
-      res.json({ success: true, message: 'Invitation sent successfully' });
+      res.json({ success: true, message: 'Invitation sent successfully', user: { id: userId, name: userName } });
     } catch (error) {
       console.error('Error inviting stakeholder:', error);
       res.status(500).json({ error: error.message });
@@ -125,8 +128,16 @@ await db.query(`
       
       const stakeholderType = stakeholder.rows[0]?.stakeholder_type || 'consultant';
       
-      // Send invitation email
-      await sendStakeholderInvitation(email, name, tempPassword, project.rows[0].name, stakeholderType, req.user.name);
+      // Send invitation email with subdomain
+      await sendStakeholderInvitation(
+        email, 
+        name, 
+        tempPassword, 
+        project.rows[0].name, 
+        stakeholderType, 
+        req.user.name,
+        req.user.subdomain
+      );
       
       res.json({ success: true, message: 'Invitation resent successfully' });
     } catch (error) {
@@ -186,7 +197,6 @@ await db.query(`
       const userId = req.user.id;
       const userRole = req.user.role;
       
-      // First, check if user has access
       let hasAccess = false;
       
       if (userRole === 'admin' || userRole === 'super_admin') {
@@ -203,7 +213,6 @@ await db.query(`
         return res.status(403).json({ error: 'You do not have access to this project' });
       }
       
-      // Get project details
       const project = await db.query(`
         SELECT 
           p.id,
@@ -259,13 +268,11 @@ await db.query(`
       const db = await getDb();
       const { projectId } = req.params;
       
-      // Get contract sum from project
       const project = await db.query(
         `SELECT contract_sum FROM projects WHERE id = $1`,
         [projectId]
       );
       
-      // Get total invoiced and paid from income table
       const financial = await db.query(`
         SELECT 
           COALESCE(SUM(gross_amount), 0) as total_invoiced,
@@ -318,13 +325,12 @@ await db.query(`
       const db = getDb();
       const { projectId } = req.params;
       
-      const result = await db.query(
-        `SELECT id, title, meeting_date, location, meeting_type, status, created_at
-         FROM project_minutes 
-         WHERE project_id = $1 
-         ORDER BY meeting_date DESC`,
-        [projectId]
-      );
+      const result = await db.query(`
+        SELECT id, title, meeting_date, location, meeting_type, status, created_at
+        FROM project_minutes 
+        WHERE project_id = $1 
+        ORDER BY meeting_date DESC
+      `, [projectId]);
       
       res.json(result.rows);
     } catch (error) {

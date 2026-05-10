@@ -72,33 +72,82 @@ async function sendInvitationCode(email, code, inviterName, companyName) {
   }
 }
 
-async function sendStakeholderInvitation(email, name, tempPassword, projectName, stakeholderType, inviterName) {
-  try {
-    const transporter = getTransporter();
-    const subject = `You've been invited to join ${projectName} on Bochi Construction Suite`;
-    const html = `<div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-      <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
-      <p>Dear ${name},</p>
-      <p><strong>${inviterName}</strong> has invited you to join the project <strong>${projectName}</strong>.</p>
-      <p>Your temporary password is: <strong>${tempPassword}</strong></p>
-      <p>Please log in and change your password.</p>
-      <hr>
-      <p style="color: #999; font-size: 10px;">Bochi Construction Suite</p>
-    </div>`;
-    
-    await transporter.sendMail({
-      from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
-      to: email,
-      subject: subject,
-      html: html
-    });
-    console.log(`✅ Invitation sent to ${email}`);
-    return true;
-  } catch (error) {
-    console.error('Invitation error:', error);
-    return false;
-  }
+
+
+
+// ========== STAKEHOLDER INVITATION EMAIL ==========
+async function sendStakeholderInvitation(email, name, tempPassword, projectName, stakeholderType, inviterName, subdomain) {
+    try {
+        const transporter = getTransporter();
+        const loginUrl = `${process.env.FRONTEND_URL || 'https://bochi.ke'}/login?subdomain=${subdomain}`;
+        
+        const stakeholderTypeLabel = {
+            client: 'Client/Owner',
+            consultant: 'Consultant',
+            architect: 'Architect',
+            structural_engineer: 'Structural Engineer',
+            electrical_engineer: 'Electrical Engineer',
+            mechanical_engineer: 'Mechanical Engineer',
+            quantity_surveyor: 'Quantity Surveyor',
+            project_manager: 'Project Manager'
+        }[stakeholderType] || stakeholderType;
+        
+        const subject = `You've been invited to join ${projectName} on Bochi Construction Suite`;
+        const html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <h2 style="color: #1a365d;">Welcome to Bochi Construction Suite!</h2>
+                <p>Dear ${name},</p>
+                <p><strong>${inviterName}</strong> has invited you to join the project <strong>${projectName}</strong> as a <strong>${stakeholderTypeLabel}</strong>.</p>
+                
+                <div style="background: #f0f7ff; padding: 15px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #4F46E5;">
+                    <h3 style="margin-top: 0; color: #1a365d;">Your Login Credentials</h3>
+                    <p><strong>Login URL:</strong> <a href="${loginUrl}" style="color: #4F46E5;">${loginUrl}</a></p>
+                    <p><strong>Email:</strong> ${email}</p>
+                    <p><strong>Temporary Password:</strong> <code style="background: #e5e7eb; padding: 2px 6px; border-radius: 4px;">${tempPassword}</code></p>
+                    <p><strong>Subdomain:</strong> ${subdomain}</p>
+                </div>
+                
+                <p><strong>Important Instructions:</strong></p>
+                <ol style="margin: 10px 0 20px 20px;">
+                    <li>Click the login URL above or go to ${process.env.FRONTEND_URL || 'https://bochi.ke'}</li>
+                    <li>Enter your email: <strong>${email}</strong></li>
+                    <li>Enter the temporary password: <strong>${tempPassword}</strong></li>
+                    <li>You will be prompted to change your password after first login</li>
+                    <li>Use the subdomain <strong>${subdomain}</strong> if prompted</li>
+                </ol>
+                
+                <div style="background: #fef3c7; padding: 12px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                    <p style="margin: 0; font-size: 14px;"><strong>⚠️ Security Note:</strong> This password is temporary. Please change it immediately after your first login.</p>
+                </div>
+                
+                <p>If you have any questions, please contact ${inviterName}.</p>
+                
+                <hr style="margin: 20px 0;">
+                <p style="font-size: 12px; color: #666; text-align: center;">
+                    Bochi Construction Suite - Construction Management System<br>
+                    <a href="${process.env.FRONTEND_URL}" style="color: #666;">${process.env.FRONTEND_URL || 'https://bochi.ke'}</a>
+                </p>
+            </div>
+        `;
+        
+        await transporter.sendMail({
+            from: `"Bochi Construction Suite" <${process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
+            to: email,
+            subject: subject,
+            html: html
+        });
+        
+        console.log(`✅ Stakeholder invitation sent to ${email} for subdomain: ${subdomain}`);
+        return true;
+    } catch (error) {
+        console.error('Stakeholder invitation error:', error);
+        return false;
+    }
 }
+
+
+
+
 
 async function sendBulkEmail(recipients, subject, message) {
   let successCount = 0;
@@ -136,6 +185,13 @@ async function sendEmail(to, subject, html) {
     return { success: false, error: error.message };
   }
 }
+
+
+
+
+
+
+
 
 // ========== DOCUMENT NOTIFICATION ==========
 async function sendDocumentNotification({ to, stakeholder_name, project_name, document, action, uploaded_by, revision_notes }) {
@@ -436,4 +492,4 @@ module.exports = {
     sendApologyRequest,
     sendCalendarInvite,
     verifyTransporter
-};
+};"// force deployment" 
