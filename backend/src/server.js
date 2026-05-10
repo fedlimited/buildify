@@ -68,9 +68,27 @@ app.use(morgan('dev'));
 
 
 
-// Add CORS headers for all responses
+// CORS configuration - allow frontend domains
+app.use(cors({
+  origin: [
+    'http://localhost:8080',
+    'http://localhost:5000',
+    'https://buildify-frontend-kohl.vercel.app',
+    'https://buildify-frontend-rnwia68nf-fedlimiteds-projects.vercel.app',
+    'https://www.bochi.ke',
+    'https://bochi.ke',
+    'http://www.bochi.ke',
+    'http://bochi.ke',
+    'https://bochi-buildify.netlify.app'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-master-password']
+}));
+
+// Additional manual CORS headers for all responses
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://bochi.ke');
+  res.header('Access-Control-Allow-Origin', req.headers.origin || 'https://bochi.ke');
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-master-password');
@@ -79,7 +97,6 @@ app.use((req, res, next) => {
   }
   next();
 });
-
 
 // ========== PUBLIC ROUTES ==========
 app.get('/api/health', (req, res) => {
