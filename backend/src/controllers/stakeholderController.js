@@ -391,4 +391,4 @@ acceptInvitation: async (req, res) => {
   },
 };
 
-module.exports = stakeholderController;
+module.exports = stakeholderController;"// Minor update to trigger redeploy" 
