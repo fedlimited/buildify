@@ -335,27 +335,43 @@ setTimeout(() => {
 
 
 
-  // Toggle fullscreen
-  const toggleFullscreen = () => {
-    if (!isFullscreen) {
-      if (fullscreenRef.current?.requestFullscreen) {
-        fullscreenRef.current.requestFullscreen();
-        addLog('Fullscreen enabled');
-        // Add delay to recalculate heights
-        setTimeout(() => {
-          window.dispatchEvent(new Event('resize'));
-        }, 100);
-      }
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-        addLog('Fullscreen exited');
-        setTimeout(() => {
-          window.dispatchEvent(new Event('resize'));
-        }, 100);
-      }
+// Toggle fullscreen
+const toggleFullscreen = () => {
+  if (!isFullscreen) {
+    if (fullscreenRef.current?.requestFullscreen) {
+      fullscreenRef.current.requestFullscreen();
+      addLog('Fullscreen enabled');
+      // Add delay to recalculate heights
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+        // Force Gantt container to recalculate its height
+        if (ganttContainerRef.current) {
+          ganttContainerRef.current.style.maxHeight = 'calc(100vh - 60px)';
+        }
+      }, 100);
+      // Additional recalculation after fullscreen animation completes
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 500);
     }
-  };
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+      addLog('Fullscreen exited');
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+        if (ganttContainerRef.current) {
+          ganttContainerRef.current.style.maxHeight = 'calc(100vh - 180px)';
+        }
+      }, 100);
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 500);
+    }
+  }
+};
+
+
 
 
   // Clear all tasks
@@ -1214,6 +1230,29 @@ setTimeout(() => {
   }, []);
 
 
+// Fullscreen change listener - detects when user presses ESC
+useEffect(() => {
+  const handleFullscreenChange = () => {
+    setIsFullscreen(!!document.fullscreenElement);
+    // Trigger resize to adjust layout
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+      // Force scroll position reset
+      if (ganttContainerRef.current) {
+        ganttContainerRef.current.style.maxHeight = document.fullscreenElement 
+          ? 'calc(100vh - 60px)' 
+          : 'calc(100vh - 180px)';
+      }
+    }, 100);
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 500);
+  };
+  
+  document.addEventListener('fullscreenchange', handleFullscreenChange);
+  return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+}, []);
+
 
   useEffect(() => {
     loadFromBackend();
@@ -1967,7 +2006,7 @@ const formatDate = (dateStr: string | undefined | null) => {
       {/* Gantt Chart Container */}
 <div 
   ref={ganttContainerRef} 
-  className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-auto shadow-md" 
+  className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-y-auto overflow-x-auto shadow-md" 
   style={{ 
     maxHeight: isFullscreen ? 'calc(100vh - 60px)' : 'calc(100vh - 180px)',
     minWidth: '100%',
