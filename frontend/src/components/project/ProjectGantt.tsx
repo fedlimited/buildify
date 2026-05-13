@@ -2061,7 +2061,9 @@ const formatDate = (dateStr: string | undefined | null) => {
                     <div className="absolute inset-0 flex">
                       {timelineHeaders.map((_, idx) => (<div key={idx} className="flex-1 border-r border-gray-200 dark:border-gray-700/50"></div>))}
                     </div>
-                    {task.isMilestone ? (
+
+
+                    {(task.isMilestone || task.duration === 0 || task.name.includes('🎉')) ? (
                       <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-purple-500 shadow-md" style={{ left: `calc(${left} - 6px)` }}>
                         <Star size={8} className="text-white absolute top-0.5 left-0.5" />
                       </div>
@@ -2074,7 +2076,8 @@ const formatDate = (dateStr: string | undefined | null) => {
                         </div>
                       </div>
                     )}
-                  </div>
+
+                 </div>
                 </div>
 
 
