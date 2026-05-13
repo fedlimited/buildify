@@ -1334,33 +1334,38 @@ useEffect(() => {
     }
   };
 
-  const loadFromBackend = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/projects/${projectId}/gantt`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.tasks && data.tasks.length > 0) {
-          setTasks(data.tasks);
-          setDependencies(data.dependencies || []);
-          const parentIds = new Set(data.tasks.filter((t: Task) => t.parentId === null).map((t: Task) => t.id));
-          setExpandedTasks(parentIds);
-          saveToHistory();
-        } else {
-          setTasks([]);
-          setDependencies([]);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
+const loadFromBackend = async () => {
+  try {
+    setLoading(true);
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/gantt`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (response.ok) {
+      const data = await response.json();
+      if (data.tasks && data.tasks.length > 0) {
+        // Convert cost from string to number for each task
+        const fixedTasks = data.tasks.map((task: Task) => ({
+          ...task,
+          cost: typeof task.cost === 'string' ? Number(task.cost) : (task.cost || 0)
+        }));
+        setTasks(fixedTasks);
+        setDependencies(data.dependencies || []);
+        const parentIds = new Set(data.tasks.filter((t: Task) => t.parentId === null).map((t: Task) => t.id));
+        setExpandedTasks(parentIds);
+        saveToHistory();
+      } else {
+        setTasks([]);
+        setDependencies([]);
+      }
+    }
+  } catch (error) {
+    console.error('Error loading:', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
 
 
