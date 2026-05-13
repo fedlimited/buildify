@@ -402,72 +402,55 @@ const toggleFullscreen = () => {
     }
   };
 
-
-
-
-// Get dynamic date range based on tasks - NO FIXED MINIMUM
-const getProjectDateRange = () => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  if (tasks.length === 0) {
-    const end = new Date(today);
-    end.setMonth(end.getMonth() + 1);
-    return { minDate: today, maxDate: end };
-  }
-  
-  const validDates: Date[] = [];
-  
-  tasks.forEach(t => {
-    try {
-      let startStr = t.startDate;
-      let endStr = t.endDate;
-      if (startStr && startStr.includes('T')) startStr = startStr.split('T')[0];
-      if (endStr && endStr.includes('T')) endStr = endStr.split('T')[0];
-      
-      const start = new Date(startStr);
-      const end = new Date(endStr);
-      
-      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-        validDates.push(start, end);
-      }
-    } catch (error) {
-      console.error('Error parsing date for task:', t.name);
+  // Get dynamic date range based on tasks (expands as needed)
+  const getProjectDateRange = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (tasks.length === 0) {
+      const end = new Date(today);
+      end.setMonth(end.getMonth() + 6);
+      return { minDate: today, maxDate: end };
     }
-  });
-  
-  if (validDates.length === 0) {
-    const end = new Date(today);
-    end.setMonth(end.getMonth() + 1);
-    return { minDate: today, maxDate: end };
-  }
-  
-  let minDate: Date, maxDate: Date;
-  try {
-    const timestamps = validDates.map(d => d.getTime());
-    const minTimestamp = Math.min(...timestamps);
-    const maxTimestamp = Math.max(...timestamps);
-    minDate = new Date(minTimestamp);
-    maxDate = new Date(maxTimestamp);
-  } catch (error) {
-    console.error('Error calculating date range:', error);
-    const end = new Date(today);
-    end.setMonth(end.getMonth() + 1);
-    return { minDate: today, maxDate: end };
-  }
-  
-  const projectDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
-  let paddingDays;
-  if (projectDays <= 7) paddingDays = 3;
-  else if (projectDays <= 30) paddingDays = Math.ceil(projectDays * 0.15);
-  else if (projectDays <= 90) paddingDays = Math.ceil(projectDays * 0.1);
-  else paddingDays = Math.min(Math.ceil(projectDays * 0.05), 30);
-  
-  minDate = new Date(minDate.getTime() - paddingDays * 24 * 60 * 60 * 1000);
-  maxDate = new Date(maxDate.getTime() + paddingDays * 24 * 60 * 60 * 1000);
-  
-  return { minDate, maxDate };
-};
+    
+    const validDates = tasks.flatMap(t => {
+      const start = new Date(t.startDate);
+      const end = new Date(t.endDate);
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        return [start, end];
+      }
+      return [];
+    });
+    
+    if (validDates.length === 0) {
+      const end = new Date(today);
+      end.setMonth(end.getMonth() + 6);
+      return { minDate: today, maxDate: end };
+    }
+    
+    let minDate = new Date(Math.min(...validDates.map(d => d.getTime())));
+    let maxDate = new Date(Math.max(...validDates.map(d => d.getTime())));
+    
+    // Add 30% padding on both sides for better visibility and future planning
+    const duration = maxDate.getTime() - minDate.getTime();
+    const padding = Math.max(duration * 0.3, 14 * 24 * 60 * 60 * 1000); // Min 14 days padding
+    
+    minDate = new Date(minDate.getTime() - padding);
+    maxDate = new Date(maxDate.getTime() + padding);
+    
+    // Ensure at least 3 months view
+    const minDuration = 90 * 24 * 60 * 60 * 1000;
+    if (maxDate.getTime() - minDate.getTime() < minDuration) {
+      maxDate = new Date(minDate.getTime() + minDuration);
+    }
+    
+    return { minDate, maxDate };
+  };
+
+
+
+
+
 
 
   // Professional Print Handler with full dynamic range and white background
@@ -1330,48 +1313,6 @@ useEffect(() => {
 }, [tasks]);
 
 
-// Recalculate bar positions when zoom level changes
-useEffect(() => {
-  const timer = setTimeout(() => {
-    window.dispatchEvent(new Event('resize'));
-  }, 50);
-  return () => clearTimeout(timer);
-}, [zoomLevel]);
-
-
-
-// Use ResizeObserver to maintain alignment when container changes size
-useEffect(() => {
-  if (!ganttContainerRef.current) return;
-  
-  const observer = new ResizeObserver(() => {
-    window.dispatchEvent(new Event('resize'));
-  });
-  
-  observer.observe(ganttContainerRef.current);
-  
-  return () => observer.disconnect();
-}, []);
-
-
-
-// Watch for DOM changes that might affect layout
-useEffect(() => {
-  if (!ganttContainerRef.current) return;
-  
-  const observer = new MutationObserver(() => {
-    window.dispatchEvent(new Event('resize'));
-  });
-  
-  observer.observe(ganttContainerRef.current, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ['style', 'class']
-  });
-  
-  return () => observer.disconnect();
-}, []);
 
 
 
@@ -1723,155 +1664,86 @@ const formatBudgetInMillions = (amount: number): string => {
     }
   };
 
+  const { minDate, maxDate } = getProjectDateRange();
 
+  // Timeline headers with dynamic sizing
+  const getTimelineUnit = () => {
+    const totalDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
+    if (zoomLevel <= 0.6) return { unit: 'month', label: 'Month', daysPerUnit: 30, width: 70 };
+    if (zoomLevel <= 1.0) return { unit: 'week', label: 'Week', daysPerUnit: 7, width: 55 };
+    return { unit: 'day', label: 'Day', daysPerUnit: 1, width: 40 };
+  };
 
+  const timelineUnit = getTimelineUnit();
+  const timelineHeaders: { date: Date; label: string; subLabel?: string }[] = [];
+  let currentDate = new Date(minDate);
 
-
-const { minDate, maxDate } = getProjectDateRange();
-
-// ✅ SAFETY CHECK - Ensure dates are valid before proceeding
-let safeMinDate = minDate;
-let safeMaxDate = maxDate;
-
-if (!safeMinDate || !safeMaxDate || isNaN(safeMinDate.getTime()) || isNaN(safeMaxDate.getTime())) {
-  console.error('Invalid date range detected, using fallback');
-  const today = new Date();
-  safeMinDate = new Date(today);
-  safeMaxDate = new Date(today);
-  safeMaxDate.setMonth(safeMaxDate.getMonth() + 1);
-}
-
-// Use safeMinDate and safeMaxDate for the rest of the component
-// Replace all minDate/maxDate with safeMinDate/safeMaxDate below
-
-
-
-const getTimelineUnit = () => {
-  const totalDays = Math.ceil((safeMaxDate.getTime() - safeMinDate.getTime()) / (1000 * 60 * 60 * 24));
-  if (totalDays <= 35) return { unit: 'day', label: 'Day', daysPerUnit: 1, width: 45 };
-  if (totalDays <= 120) return { unit: 'week', label: 'Week', daysPerUnit: 7, width: 60 };
-  return { unit: 'month', label: 'Month', daysPerUnit: 30, width: 75 };
-};
-
-
-
-
-const timelineUnit = getTimelineUnit();
-if (!timelineUnit) {
-  console.error('timelineUnit is undefined!');
-  
-} 
-
-
-
-
-// Generate timeline headers with proper alignment
-const timelineHeaders: { date: Date; label: string; width: number }[] = [];
-
-// Safety guard to prevent crashes
-if (!timelineUnit || !timelineUnit.unit) {
-  console.error('timelineUnit is invalid, using default');
-  // Generate simple day-based headers
-  let current = new Date(minDate);  // ← CHANGE THIS
-  const dayCount = 30;
-  const dayWidth = 100 / dayCount;
-  for (let i = 0; i < dayCount && current <= maxDate; i++) {  // ← CHANGE maxDate
-    timelineHeaders.push({ 
-      date: new Date(current), 
-      label: current.getDate().toString(), 
-      width: dayWidth 
-    });
-    current.setDate(current.getDate() + 1);
+  if (timelineUnit.unit === 'month') {
+    currentDate.setDate(1);
+    while (currentDate <= maxDate) {
+      timelineHeaders.push({ date: new Date(currentDate), label: currentDate.toLocaleDateString('en-US', { month: 'short' }) });
+      currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+  } else if (timelineUnit.unit === 'week') {
+    const day = currentDate.getDay();
+    const diff = day === 0 ? 6 : day - 1;
+    currentDate.setDate(currentDate.getDate() - diff);
+    while (currentDate <= maxDate) {
+      timelineHeaders.push({ date: new Date(currentDate), label: `W${Math.ceil((currentDate.getTime() - new Date(currentDate.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000))}` });
+      currentDate.setDate(currentDate.getDate() + 7);
+    }
+  } else {
+    while (currentDate <= maxDate) {
+      timelineHeaders.push({ date: new Date(currentDate), label: currentDate.getDate().toString() });
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
   }
-} else if (timelineUnit.unit === 'month') {
-  const startMonth = new Date(minDate);  // ← CHANGE THIS
-  startMonth.setDate(1);
-  let current = new Date(startMonth);
-  
-  while (current <= maxDate) {  // ← CHANGE maxDate
-    const nextMonth = new Date(current);
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-    
-    const monthStart = Math.max(current, minDate);  // ← CHANGE minDate
-    const monthEnd = Math.min(nextMonth, maxDate);  // ← CHANGE maxDate
-    const monthDuration = monthEnd.getTime() - monthStart.getTime();
-    const totalDuration = maxDate.getTime() - minDate.getTime();  // ← CHANGE BOTH
-    const widthPercent = (monthDuration / totalDuration) * 100;
-    
-    timelineHeaders.push({
-      date: new Date(current),
-      label: current.toLocaleDateString('en-US', { month: 'short' }),
-      width: widthPercent
-    });
-    current = nextMonth;
-  }
-} else if (timelineUnit.unit === 'week') {
-  const startWeek = new Date(minDate);  // ← CHANGE THIS
-  const dayOfWeek = startWeek.getDay();
-  const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  startWeek.setDate(startWeek.getDate() - daysToMonday);
-  
-  let current = new Date(startWeek);
-  
-  while (current <= maxDate) {  // ← CHANGE maxDate
-    const nextWeek = new Date(current);
-    nextWeek.setDate(nextWeek.getDate() + 7);
-    
-    const weekStart = Math.max(current, minDate);  // ← CHANGE minDate
-    const weekEnd = Math.min(nextWeek, maxDate);  // ← CHANGE maxDate
-    const weekDuration = weekEnd.getTime() - weekStart.getTime();
-    const totalDuration = maxDate.getTime() - minDate.getTime();  // ← CHANGE BOTH
-    const widthPercent = (weekDuration / totalDuration) * 100;
-    
-    const weekNumber = Math.ceil((current.getTime() - new Date(current.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
-    
-    timelineHeaders.push({
-      date: new Date(current),
-      label: `W${weekNumber}`,
-      width: widthPercent
-    });
-    current = nextWeek;
-  }
-} else {
-  let current = new Date(minDate);  // ← CHANGE THIS
-  current.setHours(0, 0, 0, 0);
-  const dayCount = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));  // ← CHANGE BOTH
-  const dayWidth = 100 / dayCount;
-  
-  for (let i = 0; i < dayCount && current <= maxDate; i++) {  // ← CHANGE maxDate
-    timelineHeaders.push({
-      date: new Date(current),
-      label: current.getDate().toString(),
-      width: dayWidth
-    });
-    current.setDate(current.getDate() + 1);
-  }
-}
 
 
 
 
 
-const calculateBarPosition = (startDateStr: string, endDateStr: string) => {
-  if (!startDateStr || !endDateStr) return { left: '0%', width: '0%' };
-  let cleanStart = startDateStr.includes('T') ? startDateStr.split('T')[0] : startDateStr;
-  let cleanEnd = endDateStr.includes('T') ? endDateStr.split('T')[0] : endDateStr;
-  const start = new Date(cleanStart);
-  const end = new Date(cleanEnd);
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) return { left: '0%', width: '0%' };
-  const totalMs = safeMaxDate.getTime() - safeMinDate.getTime();
-  if (totalMs <= 0) return { left: '0%', width: '10%' };
-  const startOffset = start.getTime() - safeMinDate.getTime();
-  const duration = end.getTime() - start.getTime();
-  let left = (startOffset / totalMs) * 100;
-  let width = (duration / totalMs) * 100;
-  const minWidth = 0.15;
-  if (width < minWidth && duration > 0) width = minWidth;
-  left = Math.max(0, Math.min(100, left));
-  width = Math.max(0, Math.min(100, width));
-  if (left + width > 100) width = 100 - left;
-  return { left: `${left}%`, width: `${width}%` };
-};
+
+  const calculateBarPosition = (startDateStr: string, endDateStr: string) => {
+    // Clean up date strings (remove time part if present)
+    let cleanStart = startDateStr;
+    let cleanEnd = endDateStr;
+    
+    if (cleanStart && cleanStart.includes('T')) {
+      cleanStart = cleanStart.split('T')[0];
+    }
+    if (cleanEnd && cleanEnd.includes('T')) {
+      cleanEnd = cleanEnd.split('T')[0];
+    }
+    
+    const start = new Date(cleanStart);
+    const end = new Date(cleanEnd);
+    
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return { left: '0%', width: '0%' };
+    }
+    
+    const totalDays = maxDate.getTime() - minDate.getTime();
+    
+    // If totalDays is 0 or invalid, return default
+    if (totalDays <= 0) {
+      return { left: '0%', width: '10%' };
+    }
+    
+    const startOffset = start.getTime() - minDate.getTime();
+    const duration = end.getTime() - start.getTime();
+    let left = (startOffset / totalDays) * 100;
+    let width = (duration / totalDays) * 100;
+    
+    // Ensure minimum visibility
+    if (width < 0.5 && duration > 0) width = 0.5;
+    if (left < 0) left = 0;
+    if (left > 100) left = 100;
+    if (width > 100) width = 100;
+    
+    return { left: `${left}%`, width: `${width}%` };
+  };
+
 
 
 
@@ -1958,19 +1830,19 @@ const calculateBarPosition = (startDateStr: string, endDateStr: string) => {
 
 
 
-if (loading) {
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <Loader2 size={48} className="animate-spin text-amber-500" />
+        <p className="ml-3 text-gray-500 dark:text-gray-400">Loading Professional Gantt Chart...</p>
+      </div>
+    );
+  }
+
+
+
   return (
-    <div className="flex justify-center items-center h-96">
-      <Loader2 size={48} className="animate-spin text-amber-500" />
-      <p className="ml-3 text-gray-500 dark:text-gray-400">Loading Professional Gantt Chart...</p>
-    </div>
-  );
-}
-
-// Ensure timelineUnit is defined before render
-const safeTimelineUnit = timelineUnit;
-
-return (
 
 <div 
   ref={fullscreenRef} 
@@ -2213,10 +2085,10 @@ return (
     maxHeight: isFullscreen ? 'calc(100vh - 60px)' : 'calc(100vh - 180px)',
     minWidth: '100%',
     width: '100%',
-    display: 'block',
-    position: 'relative'
+    display: 'block'
   }}
 >
+
 
         <div style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left' }}>
           {/* Header */}
@@ -2227,30 +2099,13 @@ return (
                 <div className="absolute right-0 top-0 w-0.5 h-full cursor-ew-resize hover:bg-amber-400" onMouseDown={(e) => startResize(col.id, e.clientX, col.width)} />
               </div>
             ))}
-
-
-
-
-
-
-
-<div className="flex-1 flex">
-  {timelineHeaders.map((header, idx) => (
-    <div 
-      key={idx} 
-      className="text-center py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 truncate"
-      style={{ width: `${header.width}%`, minWidth: '40px' }}
-      title={header.date.toLocaleDateString()}
-    >
-      {header.label}
-    </div>
-  ))}
-</div>
-
-
-
-
-
+            <div className="flex-1 flex">
+              {timelineHeaders.map((header, idx) => (
+                <div key={idx} className="flex-1 text-center py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700" style={{ minWidth: timelineUnit.width }}>
+                  {header.label}
+                </div>
+              ))}
+            </div>
             <div className="w-8 flex-shrink-0"></div>
           </div>
 
