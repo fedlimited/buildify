@@ -406,7 +406,6 @@ const toggleFullscreen = () => {
 
 
 // Get dynamic date range based on tasks - NO FIXED MINIMUM
-// Get dynamic date range based on tasks - NO FIXED MINIMUM
 const getProjectDateRange = () => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -417,36 +416,33 @@ const getProjectDateRange = () => {
     return { minDate: today, maxDate: end };
   }
   
-  // ✅ FIX: Validate dates before using them
   const validDates: Date[] = [];
   
   tasks.forEach(t => {
     try {
-      const start = new Date(t.startDate);
-      const end = new Date(t.endDate);
+      let startStr = t.startDate;
+      let endStr = t.endDate;
+      if (startStr && startStr.includes('T')) startStr = startStr.split('T')[0];
+      if (endStr && endStr.includes('T')) endStr = endStr.split('T')[0];
       
-      // Check if dates are valid
+      const start = new Date(startStr);
+      const end = new Date(endStr);
+      
       if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
         validDates.push(start, end);
-      } else {
-        console.warn('Invalid date found:', t.name, t.startDate, t.endDate);
       }
     } catch (error) {
-      console.error('Error parsing date for task:', t.name, error);
+      console.error('Error parsing date for task:', t.name);
     }
   });
   
   if (validDates.length === 0) {
-    console.warn('No valid dates found, using default range');
     const end = new Date(today);
     end.setMonth(end.getMonth() + 1);
     return { minDate: today, maxDate: end };
   }
   
-  // ✅ FIX: Properly get min and max from valid dates
-  let minDate: Date;
-  let maxDate: Date;
-  
+  let minDate: Date, maxDate: Date;
   try {
     const timestamps = validDates.map(d => d.getTime());
     const minTimestamp = Math.min(...timestamps);
@@ -460,27 +456,18 @@ const getProjectDateRange = () => {
     return { minDate: today, maxDate: end };
   }
   
-  // Calculate project duration in days
   const projectDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
-  
-  // Smart padding based on project length
   let paddingDays;
-  if (projectDays <= 7) {
-    paddingDays = 3;
-  } else if (projectDays <= 30) {
-    paddingDays = Math.ceil(projectDays * 0.15);
-  } else if (projectDays <= 90) {
-    paddingDays = Math.ceil(projectDays * 0.1);
-  } else {
-    paddingDays = Math.min(Math.ceil(projectDays * 0.05), 30);
-  }
+  if (projectDays <= 7) paddingDays = 3;
+  else if (projectDays <= 30) paddingDays = Math.ceil(projectDays * 0.15);
+  else if (projectDays <= 90) paddingDays = Math.ceil(projectDays * 0.1);
+  else paddingDays = Math.min(Math.ceil(projectDays * 0.05), 30);
   
   minDate = new Date(minDate.getTime() - paddingDays * 24 * 60 * 60 * 1000);
   maxDate = new Date(maxDate.getTime() + paddingDays * 24 * 60 * 60 * 1000);
   
   return { minDate, maxDate };
 };
-
 
 
   // Professional Print Handler with full dynamic range and white background
@@ -1736,7 +1723,11 @@ const formatBudgetInMillions = (amount: number): string => {
     }
   };
 
-  const { minDate, maxDate } = getProjectDateRange();
+
+
+
+
+const { minDate, maxDate } = getProjectDateRange();
 
 // ✅ SAFETY CHECK - Ensure dates are valid before proceeding
 let safeMinDate = minDate;
@@ -1751,66 +1742,60 @@ if (!safeMinDate || !safeMaxDate || isNaN(safeMinDate.getTime()) || isNaN(safeMa
 }
 
 // Use safeMinDate and safeMaxDate for the rest of the component
-// Replace all references to minDate/maxDate with safeMinDate/safeMaxDate from here onward
+// Replace all minDate/maxDate with safeMinDate/safeMaxDate below
 
 
 
 const getTimelineUnit = () => {
-  const totalDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
-  
-  if (totalDays <= 35) {
-    return { unit: 'day', label: 'Day', daysPerUnit: 1, width: 45 };
-  } else if (totalDays <= 120) {
-    return { unit: 'week', label: 'Week', daysPerUnit: 7, width: 60 };
-  } else {
-    return { unit: 'month', label: 'Month', daysPerUnit: 30, width: 75 };
-  }
+  const totalDays = Math.ceil((safeMaxDate.getTime() - safeMinDate.getTime()) / (1000 * 60 * 60 * 24));
+  if (totalDays <= 35) return { unit: 'day', label: 'Day', daysPerUnit: 1, width: 45 };
+  if (totalDays <= 120) return { unit: 'week', label: 'Week', daysPerUnit: 7, width: 60 };
+  return { unit: 'month', label: 'Month', daysPerUnit: 30, width: 75 };
 };
+
+
+
 
 const timelineUnit = getTimelineUnit();
 if (!timelineUnit) {
   console.error('timelineUnit is undefined!');
-  return { unit: 'day', label: 'Day', daysPerUnit: 1, width: 45 };
-}  // ← This line
+  
+} 
+
+
+
 
 // Generate timeline headers with proper alignment
 const timelineHeaders: { date: Date; label: string; width: number }[] = [];
 
-
-
 // Safety guard to prevent crashes
 if (!timelineUnit || !timelineUnit.unit) {
   console.error('timelineUnit is invalid, using default');
-  // Use a default valid value
-  const safeUnit = { unit: 'day', label: 'Day', daysPerUnit: 1, width: 45 };
   // Generate simple day-based headers
-  const safeHeaders: { date: Date; label: string; width: number }[] = [];
-  let current = new Date(minDate);
-  while (current <= maxDate) {
-    safeHeaders.push({ date: new Date(current), label: current.getDate().toString(), width: 100 / 30 });
+  let current = new Date(minDate);  // ← CHANGE THIS
+  const dayCount = 30;
+  const dayWidth = 100 / dayCount;
+  for (let i = 0; i < dayCount && current <= maxDate; i++) {  // ← CHANGE maxDate
+    timelineHeaders.push({ 
+      date: new Date(current), 
+      label: current.getDate().toString(), 
+      width: dayWidth 
+    });
     current.setDate(current.getDate() + 1);
   }
-  timelineHeaders = safeHeaders;
-} else {
-  // Original code here
-}
-
-
-if (timelineUnit.unit === 'month') {  // ← If timelineUnit is undefined, this crashes
-
-
-  const startMonth = new Date(minDate);
+} else if (timelineUnit.unit === 'month') {
+  const startMonth = new Date(minDate);  // ← CHANGE THIS
   startMonth.setDate(1);
   let current = new Date(startMonth);
   
-  while (current <= maxDate) {
+  while (current <= maxDate) {  // ← CHANGE maxDate
     const nextMonth = new Date(current);
     nextMonth.setMonth(nextMonth.getMonth() + 1);
     
-    const monthStart = Math.max(current, minDate);
-    const monthEnd = Math.min(nextMonth, maxDate);
+    const monthStart = Math.max(current, minDate);  // ← CHANGE minDate
+    const monthEnd = Math.min(nextMonth, maxDate);  // ← CHANGE maxDate
     const monthDuration = monthEnd.getTime() - monthStart.getTime();
-    const totalDuration = maxDate.getTime() - minDate.getTime();
+    const totalDuration = maxDate.getTime() - minDate.getTime();  // ← CHANGE BOTH
     const widthPercent = (monthDuration / totalDuration) * 100;
     
     timelineHeaders.push({
@@ -1821,21 +1806,21 @@ if (timelineUnit.unit === 'month') {  // ← If timelineUnit is undefined, this 
     current = nextMonth;
   }
 } else if (timelineUnit.unit === 'week') {
-  const startWeek = new Date(minDate);
+  const startWeek = new Date(minDate);  // ← CHANGE THIS
   const dayOfWeek = startWeek.getDay();
   const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
   startWeek.setDate(startWeek.getDate() - daysToMonday);
   
   let current = new Date(startWeek);
   
-  while (current <= maxDate) {
+  while (current <= maxDate) {  // ← CHANGE maxDate
     const nextWeek = new Date(current);
     nextWeek.setDate(nextWeek.getDate() + 7);
     
-    const weekStart = Math.max(current, minDate);
-    const weekEnd = Math.min(nextWeek, maxDate);
+    const weekStart = Math.max(current, minDate);  // ← CHANGE minDate
+    const weekEnd = Math.min(nextWeek, maxDate);  // ← CHANGE maxDate
     const weekDuration = weekEnd.getTime() - weekStart.getTime();
-    const totalDuration = maxDate.getTime() - minDate.getTime();
+    const totalDuration = maxDate.getTime() - minDate.getTime();  // ← CHANGE BOTH
     const widthPercent = (weekDuration / totalDuration) * 100;
     
     const weekNumber = Math.ceil((current.getTime() - new Date(current.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
@@ -1848,70 +1833,46 @@ if (timelineUnit.unit === 'month') {  // ← If timelineUnit is undefined, this 
     current = nextWeek;
   }
 } else {
-  let current = new Date(minDate);
+  let current = new Date(minDate);  // ← CHANGE THIS
   current.setHours(0, 0, 0, 0);
+  const dayCount = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));  // ← CHANGE BOTH
+  const dayWidth = 100 / dayCount;
   
-  while (current <= maxDate) {
-    const nextDay = new Date(current);
-    nextDay.setDate(nextDay.getDate() + 1);
-    
-    const dayDuration = Math.min(nextDay.getTime(), maxDate.getTime()) - Math.max(current.getTime(), minDate.getTime());
-    const totalDuration = maxDate.getTime() - minDate.getTime();
-    const widthPercent = (dayDuration / totalDuration) * 100;
-    
+  for (let i = 0; i < dayCount && current <= maxDate; i++) {  // ← CHANGE maxDate
     timelineHeaders.push({
       date: new Date(current),
       label: current.getDate().toString(),
-      width: widthPercent
+      width: dayWidth
     });
-    current = nextDay;
+    current.setDate(current.getDate() + 1);
   }
 }
 
 
 
+
+
 const calculateBarPosition = (startDateStr: string, endDateStr: string) => {
-  // Handle invalid or missing dates
-  if (!startDateStr || !endDateStr) {
-    return { left: '0%', width: '0%' };
-  }
-  
-  let cleanStart = startDateStr;
-  let cleanEnd = endDateStr;
-  
-  if (cleanStart.includes('T')) cleanStart = cleanStart.split('T')[0];
-  if (cleanEnd.includes('T')) cleanEnd = cleanEnd.split('T')[0];
-  
+  if (!startDateStr || !endDateStr) return { left: '0%', width: '0%' };
+  let cleanStart = startDateStr.includes('T') ? startDateStr.split('T')[0] : startDateStr;
+  let cleanEnd = endDateStr.includes('T') ? endDateStr.split('T')[0] : endDateStr;
   const start = new Date(cleanStart);
   const end = new Date(cleanEnd);
-  
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-    return { left: '0%', width: '0%' };
-  }
-  
-  const totalMs = maxDate.getTime() - minDate.getTime();
-  
-  if (totalMs <= 0) {
-    return { left: '0%', width: '10%' };
-  }
-  
-  const startOffset = start.getTime() - minDate.getTime();
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return { left: '0%', width: '0%' };
+  const totalMs = safeMaxDate.getTime() - safeMinDate.getTime();
+  if (totalMs <= 0) return { left: '0%', width: '10%' };
+  const startOffset = start.getTime() - safeMinDate.getTime();
   const duration = end.getTime() - start.getTime();
-  
   let left = (startOffset / totalMs) * 100;
   let width = (duration / totalMs) * 100;
-  
-  // Minimum width for visibility (at least 2px at current scale)
   const minWidth = 0.15;
   if (width < minWidth && duration > 0) width = minWidth;
-  
-  // Clamp values
   left = Math.max(0, Math.min(100, left));
   width = Math.max(0, Math.min(100, width));
   if (left + width > 100) width = 100 - left;
-  
   return { left: `${left}%`, width: `${width}%` };
 };
+
 
 
 
