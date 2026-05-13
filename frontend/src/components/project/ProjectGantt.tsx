@@ -1,3 +1,4 @@
+import { useAppStore } from '@/hooks/useAppStore';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Loader2, Plus, Save, Trash2, X, Calendar, Clock, Flag, ChevronDown, ChevronRight, 
@@ -11,6 +12,7 @@ import {
 import { API_BASE_URL } from '@/config/api';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+
 
 interface Task {
   id: number;
@@ -138,7 +140,8 @@ export function ProjectGantt({ projectId, isStakeholder = false }: ProjectGanttP
   const [zoomLevel, setZoomLevel] = useState(1);
   const [selectedTask, setSelectedTask] = useState<number | null>(null);
   const [projectName, setProjectName] = useState('');
-  const [currencySymbol, setCurrencySymbol] = useState('KES');
+  const { currencySettings } = useAppStore();
+  const currencySymbol = currencySettings?.currency_symbol || 'KES';
   const [printPaperSize, setPrintPaperSize] = useState<'A0' | 'A1' | 'A2' | 'A3' | 'A4'>('A2');
   const [printOrientation, setPrintOrientation] = useState<'portrait' | 'landscape'>('landscape');
   const [printScale, setPrintScale] = useState<'fit' | 'actual' | 'shrink'>('fit');
@@ -1258,7 +1261,6 @@ useEffect(() => {
 useEffect(() => {
   loadFromBackend();
   fetchProjectName();
-  fetchCurrencySettings();
 }, [projectId]);
 
   // Force recalculation when container becomes visible (fix for stakeholder refresh)
@@ -1340,22 +1342,6 @@ useEffect(() => {
   };
 
 
-const fetchCurrencySettings = async () => {
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE_URL}/settings`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (response.ok) {
-      const data = await response.json();
-      const symbol = data.currency_symbol || data.currency || 'KES';
-      setCurrencySymbol(symbol);
-      console.log('Currency loaded:', symbol);
-    }
-  } catch (error) {
-    console.error('Error fetching currency:', error);
-  }
-};
 
 
 const loadFromBackend = async () => {
