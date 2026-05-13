@@ -224,15 +224,14 @@ saveProjectGantt: async (req, res) => {
     }
 
 
-    console.log(`📊 Saving Gantt data for project ${projectId}: ${tasks?.length || 0} tasks, ${dependencies?.length || 0} dependencies`);
-    console.log(`👤 User role: ${req.user?.role}, User ID: ${req.user?.id}`);
-
     try {
       const db = await getDb();
       const { projectId } = req.params;
       const { tasks, dependencies } = req.body;
+
+    console.log(`📊 Saving Gantt data for project ${projectId}: ${tasks?.length || 0} tasks, ${dependencies?.length || 0} dependencies`);
+    console.log(`👤 User role: ${req.user?.role}, User ID: ${req.user?.id}`);
       
-      console.log(`Saving gantt data for project ${projectId}: ${tasks?.length || 0} tasks`);
       
       try {
         await db.query('BEGIN');
