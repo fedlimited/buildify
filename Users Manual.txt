@@ -1,0 +1,736 @@
+# Bochaberi Construction Suite - User Manual
+
+## Complete Guide for First-Time Users
+
+---
+
+## 📖 Table of Contents
+
+1. [What is Bochaberi?](#1-what-is-bochaberi)
+2. [Getting Started](#2-getting-started)
+3. [Dashboard Overview](#3-dashboard-overview)
+4. [Projects Management](#4-projects-management)
+5. [Financial Management](#5-financial-management)
+6. [Workers & Payroll](#6-workers--payroll)
+7. [Procurement & Supplies](#7-procurement--supplies)
+8. [Store Management](#8-store-management)
+9. [Site Diary](#9-site-diary)
+10. [Reports](#10-reports)
+11. [Settings](#11-settings)
+12. [FAQs & Troubleshooting](#12-faqs--troubleshooting)
+
+---
+
+## 1. What is Bochaberi?
+
+### 1.1 Overview
+
+**Bochaberi Construction Suite** is a comprehensive management system designed specifically for construction companies in Kenya and East Africa. It helps you manage:
+
+- ✅ Construction projects
+- ✅ Workers and payroll
+- ✅ Income and expenses
+- ✅ Suppliers and purchase orders
+- ✅ Store inventory
+- ✅ Daily site activities
+- ✅ Financial reports
+
+### 1.2 Key Features
+
+| Feature | What It Does |
+|---------|--------------|
+| **Multi-Project Management** | Track multiple construction projects simultaneously |
+| **Worker Management** | Manage payroll workers, casual workers, and subcontractors |
+| **Financial Tracking** | Record income from clients and expenses to suppliers |
+| **Procurement** | Create purchase orders, manage suppliers, track supplies |
+| **Store Inventory** | Track materials received, issued, and returned |
+| **Site Diary** | Daily records of workers, activities, deliveries, and incidents |
+| **Reports** | Profit & Loss, project summaries, expense analysis |
+| **Multi-Currency** | Support for KES, USD, UGX, TZS, and more |
+
+### 1.3 Who Is This For?
+
+- 🏗️ **Construction Companies** - Manage multiple sites
+- 👷 **Site Managers** - Daily site operations
+- 💰 **Accountants** - Track finances and payroll
+- 📊 **Project Managers** - Monitor project progress
+- 👔 **Company Owners** - Overview of all operations
+
+### 1.4 System Requirements
+
+| Requirement | Minimum |
+|-------------|---------|
+| **Internet** | Stable connection (2 Mbps+) |
+| **Browser** | Chrome, Firefox, Safari, Edge (latest versions) |
+| **Device** | Desktop, laptop, tablet (not optimized for mobile phones) |
+| **Screen** | 1280 x 720 or larger |
+
+---
+
+## 2. Getting Started
+
+### 2.1 Accessing the System
+
+**Step 1:** Open your web browser
+
+**Step 2:** Go to your company's URL:
+```
+https://[yourcompany].bochaberi.com
+```
+
+**Step 3:** You will see the login screen
+
+### 2.2 Creating Your Account
+
+If you're the first user from your company:
+
+1. Click **"Register"** or **"Sign Up"**
+2. Enter:
+   - Company name
+   - Your name
+   - Email address
+   - Password
+   - Choose a subdomain (e.g., `yourcompany`)
+3. Click **"Register"**
+4. Check your email for verification (if enabled)
+5. Login with your credentials
+
+### 2.3 Logging In
+
+```
+Email:    your.email@company.com
+Password: ********
+Subdomain: yourcompany
+```
+
+**Tip:** The subdomain is the unique name you chose during registration.
+
+### 2.4 First-Time Setup
+
+After logging in for the first time:
+
+1. **Load Sample Data** (optional)
+   - Go to Settings → Data Management
+   - Click "Load Sample Data"
+   - This creates demo projects and workers to explore
+
+2. **Configure Your Company**
+   - Go to Settings → Company Information
+   - Add your company logo
+   - Set your preferred currency (KES, USD, etc.)
+
+3. **Create Your First Project**
+   - Go to Projects
+   - Click "New Project"
+   - Enter project details
+
+---
+
+## 3. Dashboard Overview
+
+### 3.1 What You See
+
+When you log in, the dashboard shows:
+
+| Section | Information |
+|---------|-------------|
+| **Project Selector** | Choose which project to work on |
+| **Quick Stats** | Total projects, active workers, pending payments |
+| **Recent Activity** | Latest income, expenses, purchase orders |
+| **Financial Summary** | Total income, expenses, profit |
+
+### 3.2 Navigation Menu
+
+The main menu is on the left side:
+
+```
+📊 Dashboard
+🏗️ Projects
+💰 Income
+💸 Expenses
+👥 Workers
+📋 Payroll
+🛒 Procurement
+📦 Stores
+📝 Site Diary
+📈 Reports
+⚙️ Settings
+```
+
+### 3.3 Selecting a Project
+
+**Important:** Most modules filter data by project. Always select a project first:
+
+1. Look for the project dropdown at the top of the page
+2. Click to see all your projects
+3. Select the project you want to work on
+
+---
+
+## 4. Projects Management
+
+### 4.1 Creating a New Project
+
+**Step-by-step:**
+
+1. Click **"Projects"** in the left menu
+2. Click **"New Project"** button
+3. Fill in the form:
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| Project Name | Name of the project | "Westlands Office Tower" |
+| Client | Client/Customer name | "Pinnacle Developers" |
+| Contract Sum | Total contract value | KSh 45,000,000 |
+| Location | Site address | "Westlands, Nairobi" |
+| Start Date | When work begins | 2024-01-15 |
+| End Date | Expected completion | 2025-12-31 |
+| Project Manager | Person in charge | "James Mwangi" |
+| Status | Active/Completed/On Hold | "Active" |
+
+4. Click **"Save"**
+
+### 4.2 Editing a Project
+
+1. Find the project in the list
+2. Click the **pencil icon** (✏️)
+3. Update the information
+4. Click **"Save"**
+
+### 4.3 Deleting a Project
+
+⚠️ **Warning:** Deleting a project deletes ALL related data (workers, expenses, income, etc.)
+
+1. Find the project in the list
+2. Click the **trash icon** (🗑️)
+3. Confirm deletion
+
+### 4.4 Project Status
+
+| Status | Meaning |
+|--------|---------|
+| Active | Work is in progress |
+| Completed | Work is finished |
+| On Hold | Temporarily paused |
+| Cancelled | Project cancelled |
+
+---
+
+## 5. Financial Management
+
+### 5.1 Recording Income
+
+Income comes from client payments based on certificates/invoices.
+
+**To add income:**
+
+1. Click **"Income"** in the left menu
+2. Click **"New Income"**
+3. Fill in:
+
+| Field | Description |
+|-------|-------------|
+| Certificate No. | IPC/Invoice number |
+| Date | Date of certificate |
+| Gross Amount | Total value before retention |
+| Retention % | Percentage held (usually 5-10%) |
+| Amount Received | Actual payment received |
+| Payment Date | When money was received |
+| Payment Method | Bank Transfer, Cheque, Cash, M-Pesa |
+| Status | Paid, Partial, Pending |
+
+4. Click **"Save"**
+
+### 5.2 Recording Expenses
+
+Expenses include supplier payments, subcontractors, payroll, etc.
+
+**To add an expense:**
+
+1. Click **"Expenses"** in the left menu
+2. Click **"New Expense"**
+3. Fill in:
+
+| Field | Description |
+|-------|-------------|
+| Date | When expense occurred |
+| Category | Supplier, Subcontractor, Payroll, Equipment, Transport |
+| Description | What was purchased |
+| Amount | Cost excluding VAT |
+| VAT | 16% VAT (calculated automatically) |
+| Payment Method | How it was paid |
+| Status | Paid or Pending |
+| Reference | Invoice number or reference |
+
+4. Click **"Save"**
+
+### 5.3 Understanding VAT
+
+- VAT is automatically calculated at 16% (standard Kenyan rate)
+- You can override if different
+- VAT appears separately in reports
+
+---
+
+## 6. Workers & Payroll
+
+### 6.1 Worker Categories
+
+First, create worker categories (job roles):
+
+1. Go to **Procurement → Approved Items** (or Workers section)
+2. Add categories like:
+   - Foreman (KSh 2,500/day)
+   - Mason (KSh 1,800/day)
+   - Labourer (KSh 800/day)
+
+### 6.2 Adding Workers
+
+1. Click **"Workers"** in the left menu
+2. Click **"New Worker"**
+3. Fill in:
+
+| Field | Description |
+|-------|-------------|
+| Name | Worker's full name |
+| Phone | Contact number |
+| Category | Job role (from categories) |
+| Project | Which project they work on |
+| Day Rate | Daily wage |
+| Status | Active or Inactive |
+
+4. Click **"Save"**
+
+### 6.3 Processing Payroll
+
+**Weekly Payroll Process:**
+
+1. Click **"Payroll"** in the left menu
+2. Click **"New Payroll Record"**
+3. Select the week (start and end date)
+4. Select the project
+5. Mark attendance for each worker:
+
+   - ✅ Checked = Worked that day
+   - ❌ Unchecked = Absent
+
+6. System calculates:
+   - Days worked
+   - Gross pay (days × day rate)
+   - Total payroll amount
+
+7. Click **"Save"**
+8. Approve payroll when ready
+9. Mark as "Paid" after disbursement
+
+### 6.4 Casual Workers vs Payroll Workers
+
+| Type | How to Add | Payment |
+|------|------------|---------|
+| **Payroll Worker** | Added to Workers list | Weekly payroll |
+| **Casual Worker** | Added in Site Diary only | Daily rate, track separately |
+
+---
+
+## 7. Procurement & Supplies
+
+### 7.1 Approved Items (Price List)
+
+Create a list of approved materials with standard prices:
+
+1. Go to **Procurement → Approved Items**
+2. Click **"Add Item"**
+3. Enter:
+   - Item name (e.g., "Portland Cement 42.5")
+   - Category (e.g., "Cement")
+   - Unit (bag, tonne, piece, litre)
+   - Default price
+4. Click **"Save"**
+
+### 7.2 Suppliers
+
+Add your regular suppliers:
+
+1. Go to **Procurement → Suppliers**
+2. Click **"Add Supplier"**
+3. Enter:
+   - Supplier name
+   - KRA PIN
+   - Phone, email
+   - Contact person
+   - Payment terms
+4. Click **"Save"**
+
+### 7.3 Purchase Orders
+
+**Creating a Purchase Order (PO):**
+
+1. Go to **Procurement → Purchase Orders**
+2. Click **"New Order"**
+3. Select supplier and project
+4. Add items to order:
+
+   - Select item from Approved Items
+   - Enter quantity
+   - System calculates amount
+
+5. System calculates:
+   - Subtotal
+   - VAT (16%)
+   - Total
+
+6. Click **"Create Order"**
+
+**PO Status Workflow:**
+
+```
+Ordered → Supplied → Paid
+```
+
+- **Ordered:** PO created, waiting for delivery
+- **Supplied:** Materials received (creates store transactions)
+- **Paid:** Supplier payment completed (creates expense record)
+
+### 7.4 Supplies Tab
+
+The Supplies tab shows all materials received:
+
+- Date received
+- Supplier
+- Item and quantity
+- Unit price
+- Total amount
+- Paid status
+
+**To mark a supply as paid:**
+1. Find the supply record
+2. Click **"Mark Paid"** button
+3. System creates an expense record automatically
+
+---
+
+## 8. Store Management
+
+### 8.1 What is the Store?
+
+The Store tracks materials inventory:
+
+- **Stock Balances:** What materials you have in stock
+- **Transaction Ledger:** All movements (supplies, issues, returns)
+
+### 8.2 Stock Balances
+
+Shows for each material:
+
+| Column | Meaning |
+|--------|---------|
+| Supplied | Total received from purchase orders |
+| Issued | Total given to site teams |
+| Returned | Materials returned to store |
+| Balance | Current stock = Supplied - Issued + Returned |
+
+### 8.3 Issuing Materials
+
+When site teams need materials:
+
+1. Go to **Stores → Stock Balances**
+2. Find the item
+3. Click **"Issue"** button
+4. Enter:
+   - Quantity to issue
+   - Issued to (team/person)
+   - Reference (requisition number)
+5. Click **"Issue"**
+
+### 8.4 Returning Materials
+
+When unused materials are returned:
+
+1. Find the item in Stock Balances
+2. Click **"Return"** button
+3. Enter:
+   - Quantity returned
+   - Returned by (person)
+   - Reference
+4. Click **"Return"**
+
+### 8.5 Low Stock Alerts
+
+Items with balance ≤ 10 units show a warning icon (⚠️) to remind you to reorder.
+
+---
+
+## 9. Site Diary
+
+### 9.1 What is the Site Diary?
+
+A daily record of everything happening on site:
+
+- Workers present (payroll + casual)
+- Subcontractors on site
+- Activities performed
+- Deliveries received
+- Incidents or issues
+- Weather conditions
+
+### 9.2 Creating a Daily Entry
+
+1. Go to **Site Diary**
+2. Click **"New Entry"**
+3. Fill in each tab:
+
+**Basic Tab:**
+- Date (defaults to today)
+- Project
+- Weather (Sunny, Cloudy, Rainy, etc.)
+- Temperature
+
+**Workers Tab:**
+- Add payroll workers from your list
+- Add casual workers manually
+- Set check-in and check-out times
+
+**Subcontractors Tab:**
+- Add subcontractors on site
+- Specify task and number of workers
+
+**Activities Tab:**
+- Record work done
+- Location, time, supervisor
+- Number of workers for each activity
+
+**Deliveries Tab:**
+- Materials delivered
+- Quantity, supplier
+- Received by
+
+**Summary Tab:**
+- Today's work done (narrative)
+- Tomorrow's plan
+- Challenges/issues
+
+4. Click **"Save"**
+
+### 9.3 Editing an Entry
+
+1. Find the entry in the list
+2. Click the **pencil icon** (✏️)
+3. Make changes
+4. Click **"Update"**
+
+### 9.4 Printing a Site Diary
+
+1. Find the entry
+2. Click the **printer icon** (🖨️)
+3. Browser print dialog opens
+4. Print or save as PDF
+
+---
+
+## 10. Reports
+
+### 10.1 Available Reports
+
+| Report | What It Shows |
+|--------|---------------|
+| **Profit & Loss** | Income vs expenses by project |
+| **Project Summary** | Detailed project financials |
+| **Cash Flow** | Money in vs money out over time |
+| **Expense by Category** | Where money is spent |
+| **VAT Report** | VAT collected and paid |
+| **Payroll Summary** | Total payroll costs |
+
+### 10.2 Using Reports
+
+1. Click **"Reports"** in the left menu
+2. Select the report type
+3. Apply filters:
+   - Project (specific project or all)
+   - Date range
+4. View the data
+5. Click **"Export CSV"** to download
+
+### 10.3 Understanding Profit & Loss
+
+The P&L report shows:
+
+```
+Total Income:     KSh 10,000,000
+Total Expenses:   KSh 6,500,000
+Net Profit:       KSh 3,500,000
+Profit Margin:    35%
+```
+
+**Healthy margin targets:**
+- Excellent: > 30%
+- Good: 20-30%
+- Average: 10-20%
+- Poor: < 10%
+
+---
+
+## 11. Settings
+
+### 11.1 Company Information
+
+**To update your company details:**
+
+1. Go to **Settings**
+2. Update:
+   - Company name
+   - Address
+   - KRA PIN
+   - Logo (appears on invoices and POs)
+
+### 11.2 Currency Settings
+
+**To change your currency:**
+
+1. Go to **Settings → Company Information**
+2. Find the Currency Settings section
+3. Select your currency:
+   - KES (Kenyan Shilling) - Default
+   - USD (US Dollar)
+   - UGX (Ugandan Shilling)
+   - TZS (Tanzanian Shilling)
+4. All financial reports update automatically
+
+### 11.3 Data Management
+
+| Action | What It Does |
+|--------|---------------|
+| **Backup Data** | Downloads all your data as a JSON file |
+| **Restore Data** | Uploads a backup file to restore data |
+| **Load Sample Data** | Creates demo projects/workers for testing |
+| **Reset All Data** | ⚠️ Deletes EVERYTHING (use with caution) |
+
+### 11.4 User Management (Admin only)
+
+1. Go to **Settings → Users**
+2. Add new users:
+   - Name
+   - Email
+   - Role (Admin, User)
+   - Permissions (which modules they can access)
+
+---
+
+## 12. FAQs & Troubleshooting
+
+### 12.1 Frequently Asked Questions
+
+**Q: How do I switch between projects?**
+A: Use the project dropdown at the top of any page.
+
+**Q: Why can't I see any data?**
+A: Make sure you've selected a project first. Most modules filter by project.
+
+**Q: How do I fix incorrect calculations?**
+A: Check that you entered the correct amounts. VAT is automatically 16% - override if different.
+
+**Q: Can I undo a deletion?**
+A: No. Deleted data cannot be recovered unless you have a backup.
+
+**Q: How often should I backup?**
+A: Weekly, or before making major changes.
+
+**Q: What's the difference between Supplies and Store?**
+A: Supplies is procurement (what you ordered). Store is inventory (what you have in stock).
+
+### 12.2 Common Errors & Solutions
+
+| Error | Solution |
+|-------|----------|
+| "Module not exported" | Refresh the page. If persists, contact support. |
+| Data not showing | Check you selected the correct project. |
+| Cannot save | Fill all required fields (marked with *). |
+| Login failed | Check email, password, and subdomain are correct. |
+| Report shows "Project 102" | Wait a moment - projects are still loading. |
+
+### 12.3 Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl + S` | Save current form |
+| `Esc` | Close dialog/cancel |
+| `F5` | Refresh page |
+| `Ctrl + F` | Search within page |
+
+### 12.4 Getting Help
+
+**Email Support:** support@bochaberi.com
+
+**Response Time:** Within 24 hours
+
+**When contacting support, include:**
+- Your company name
+- Description of the issue
+- Screenshot (if possible)
+- Steps to reproduce
+
+---
+
+## 13. Glossary
+
+| Term | Definition |
+|------|------------|
+| **IPC** | Interim Payment Certificate - client payment request |
+| **KRA PIN** | Kenya Revenue Authority Tax Identification Number |
+| **LPO** | Local Purchase Order |
+| **M-Pesa** | Mobile money service in Kenya |
+| **PO** | Purchase Order |
+| **Retention** | Percentage held from payments as security |
+| **Subcontractor** | External company hired for specific work |
+| **VAT** | Value Added Tax (16% in Kenya) |
+
+---
+
+## 14. Quick Reference Card
+
+### Common Actions
+
+| What You Want | Where to Go |
+|---------------|-------------|
+| Add a project | Projects → New Project |
+| Record client payment | Income → New Income |
+| Record supplier payment | Expenses → New Expense |
+| Add a worker | Workers → New Worker |
+| Process payroll | Payroll → New Payroll Record |
+| Create purchase order | Procurement → Purchase Orders → New Order |
+| Issue materials | Stores → Stock Balances → Issue |
+| Daily site record | Site Diary → New Entry |
+| View profit | Reports → Profit & Loss |
+
+### Important Warnings
+
+⚠️ **Always backup before:**
+- Resetting data
+- Loading sample data
+- Major system changes
+
+⚠️ **Cannot undo:**
+- Deleting a project
+- Deleting a worker
+- Reset All Data
+
+---
+
+## 15. Version Information
+
+**Current Version:** 2.1.0
+
+**Last Updated:** April 2026
+
+**Compatible with:** Chrome, Firefox, Safari, Edge
+
+---
+
+**Thank you for choosing Bochaberi Construction Suite!**
+
+We're committed to helping you manage your construction projects efficiently and profitably.
+
+📧 **support@bochaberi.com** | 📞 **Support available within 24 hours**
+
+---
+
+*This manual is a living document. Updates will be provided as new features are added.*
