@@ -1718,7 +1718,6 @@ const formatBudgetInMillions = (amount: number): string => {
 const getTimelineUnit = () => {
   const totalDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
   
-  // Choose appropriate unit based on total timeline span
   if (totalDays <= 35) {
     return { unit: 'day', label: 'Day', daysPerUnit: 1, width: 45 };
   } else if (totalDays <= 120) {
@@ -1728,15 +1727,38 @@ const getTimelineUnit = () => {
   }
 };
 
-
-
-
-
+const timelineUnit = getTimelineUnit();
+if (!timelineUnit) {
+  console.error('timelineUnit is undefined!');
+  return { unit: 'day', label: 'Day', daysPerUnit: 1, width: 45 };
+}  // ← This line
 
 // Generate timeline headers with proper alignment
 const timelineHeaders: { date: Date; label: string; width: number }[] = [];
 
-if (timelineUnit.unit === 'month') {
+
+
+// Safety guard to prevent crashes
+if (!timelineUnit || !timelineUnit.unit) {
+  console.error('timelineUnit is invalid, using default');
+  // Use a default valid value
+  const safeUnit = { unit: 'day', label: 'Day', daysPerUnit: 1, width: 45 };
+  // Generate simple day-based headers
+  const safeHeaders: { date: Date; label: string; width: number }[] = [];
+  let current = new Date(minDate);
+  while (current <= maxDate) {
+    safeHeaders.push({ date: new Date(current), label: current.getDate().toString(), width: 100 / 30 });
+    current.setDate(current.getDate() + 1);
+  }
+  timelineHeaders = safeHeaders;
+} else {
+  // Original code here
+}
+
+
+if (timelineUnit.unit === 'month') {  // ← If timelineUnit is undefined, this crashes
+
+
   const startMonth = new Date(minDate);
   startMonth.setDate(1);
   let current = new Date(startMonth);
