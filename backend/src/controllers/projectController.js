@@ -192,6 +192,7 @@ getProjectGantt: async (req, res) => {
       } else {
         parentId = parseInt(parentId);
       }
+
       
       return {
         id: parseInt(task.id),
@@ -202,11 +203,12 @@ getProjectGantt: async (req, res) => {
         progress: Math.round((task.progress || 0) * 100),
         parentId: parentId,
         priority: priority,
-        isMilestone: task.isMilestone === 1,
+        isMilestone: task.isMilestone === true || task.isMilestone === 1 || task.isMilestone === 'true',
         assignedTo: task.assignedTo || '',
         cost: task.cost || 0
       };
     });
+
     
     // Log for debugging
     const parents = formattedTasks.filter(t => t.parentId === null);
