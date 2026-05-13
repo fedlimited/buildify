@@ -1935,19 +1935,19 @@ const calculateBarPosition = (startDateStr: string, endDateStr: string) => {
 
 
 
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-96">
-        <Loader2 size={48} className="animate-spin text-amber-500" />
-        <p className="ml-3 text-gray-500 dark:text-gray-400">Loading Professional Gantt Chart...</p>
-      </div>
-    );
-  }
-
-
-
+if (loading) {
   return (
+    <div className="flex justify-center items-center h-96">
+      <Loader2 size={48} className="animate-spin text-amber-500" />
+      <p className="ml-3 text-gray-500 dark:text-gray-400">Loading Professional Gantt Chart...</p>
+    </div>
+  );
+}
+
+// Ensure timelineUnit is defined before render
+const safeTimelineUnit = timelineUnit;
+
+return (
 
 <div 
   ref={fullscreenRef} 
