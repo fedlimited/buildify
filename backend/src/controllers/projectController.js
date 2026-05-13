@@ -152,65 +152,76 @@ const ProjectController = {
 
 
   // Get Gantt chart data for a project (PostgreSQL version)
-  getProjectGantt: async (req, res) => {
-    try {
-      const db = await getDb();
-      const { projectId } = req.params;
+getProjectGantt: async (req, res) => {
+  try {
+    const db = await getDb();
+    const { projectId } = req.params;
+    
+    console.log(`Fetching Gantt data for project ${projectId}`);
+    
+    const tasks = await db.query(
+      `SELECT 
+        id, 
+        name, 
+        start_date as "startDate", 
+        end_date as "endDate", 
+        duration, 
+        progress, 
+        parent_id as "parentId",
+        is_milestone as "isMilestone",
+        status as priority,
+        assigned_to_text as "assignedTo",
+        cost
+       FROM project_gantt_tasks 
+       WHERE project_id = $1 
+       ORDER BY parent_id NULLS FIRST, id`,
+      [projectId]
+    );
+    
+    const formattedTasks = (tasks.rows || tasks).map(task => {
+      let priority = 'medium';
+      if (task.priority === 'urgent') priority = 'urgent';
+      else if (task.priority === 'high') priority = 'high';
+      else if (task.priority === 'medium') priority = 'medium';
+      else if (task.priority === 'low') priority = 'low';
       
-      console.log(`Fetching Gantt data for project ${projectId}`);
+      // 🔧 FIX: Convert parent_id properly - 0 or null becomes null (root task)
+      let parentId = task.parentId;
+      if (parentId === 0 || parentId === null || parentId === '0') {
+        parentId = null;
+      } else {
+        parentId = parseInt(parentId);
+      }
       
-      const tasks = await db.query(
-        `SELECT 
-          id, 
-          name, 
-          start_date as "startDate", 
-          end_date as "endDate", 
-          duration, 
-          progress, 
-          parent_id as "parentId",
-          is_milestone as "isMilestone",
-          status as priority,
-          assigned_to_text as "assignedTo",
-          cost
-         FROM project_gantt_tasks 
-         WHERE project_id = $1 
-         ORDER BY parent_id, id`,
-        [projectId]
-      );
-      
-      // Map status to priority format
-      const formattedTasks = (tasks.rows || tasks).map(task => {
-        let priority = 'medium';
-        if (task.priority === 'urgent') priority = 'urgent';
-        else if (task.priority === 'high') priority = 'high';
-        else if (task.priority === 'medium') priority = 'medium';
-        else if (task.priority === 'low') priority = 'low';
-        
-        return {
-          id: task.id,
-          name: task.name,
-          startDate: task.startDate,
-          endDate: task.endDate,
-          duration: task.duration,
-          progress: Math.round((task.progress || 0) * 100),
-          parentId: task.parentId === 0 ? null : task.parentId,
-          priority: priority,
-          isMilestone: task.isMilestone === 1,
-          assignedTo: task.assignedTo || '',
-          cost: task.cost || 0
-        };
-      });
-      
-      res.json({
-        tasks: formattedTasks,
-        dependencies: []
-      });
-    } catch (error) {
-      console.error('Error fetching gantt data:', error);
-      res.json({ tasks: [], dependencies: [] });
-    }
-  },
-
+      return {
+        id: parseInt(task.id),
+        name: task.name,
+        startDate: task.startDate,
+        endDate: task.endDate,
+        duration: task.duration,
+        progress: Math.round((task.progress || 0) * 100),
+        parentId: parentId,
+        priority: priority,
+        isMilestone: task.isMilestone === 1,
+        assignedTo: task.assignedTo || '',
+        cost: task.cost || 0
+      };
+    });
+    
+    // Log for debugging
+    const parents = formattedTasks.filter(t => t.parentId === null);
+    const children = formattedTasks.filter(t => t.parentId !== null);
+    console.log(`✅ Gantt data: ${parents.length} parents, ${children.length} children`);
+    
+    res.json({
+      tasks: formattedTasks,
+      dependencies: []
+    });
+  } catch (error) {
+    console.error('Error fetching gantt data:', error);
+    res.json({ tasks: [], dependencies: [] });
+  }
+},
 
 
   // Save Gantt chart data for a project (PostgreSQL version - CORRECTED)
