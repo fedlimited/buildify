@@ -1,3 +1,4 @@
+import { useAppStore } from '@/hooks/useAppStore';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -153,6 +154,8 @@ export function StakeholderProjectPortal() {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const { setCurrentProjectName } = useProject();
+  const { currencySettings } = useAppStore();
+  const currencySymbol = currencySettings?.currency_symbol || 'KES';
 
   
   // Core data states
@@ -983,7 +986,9 @@ useEffect(() => {
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg"><DollarSign size={20} className="text-purple-500 dark:text-purple-400" /></div>
-            <div><p className="text-xs text-gray-500 dark:text-gray-400">Contract Sum</p><p className="text-lg font-bold text-gray-900 dark:text-white">KES {(project.contractSum || 0).toLocaleString()}</p></div>
+            <div><p className="text-xs text-gray-500 dark:text-gray-400">Contract Sum</p><p className="text-lg font-bold text-gray-900 dark:text-white">{currencySymbol} {(project.contractSum || 0).toLocaleString()}</p>
+
+</div>
           </div>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
@@ -1733,21 +1738,27 @@ useEffect(() => {
               <div className="space-y-3">
                 <div className="flex justify-between pb-2 border-b border-gray-200 dark:border-gray-700">
                   <span className="text-gray-600 dark:text-gray-400">Contract Sum</span>
-                  <span className="font-medium text-gray-900 dark:text-white">KES {financial.contractSum.toLocaleString()}</span>
+
+
+
+                  <span className="font-medium text-gray-900 dark:text-white">{currencySymbol} {financial.contractSum.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between pb-2 border-b border-gray-200 dark:border-gray-700">
                   <span className="text-gray-600 dark:text-gray-400">Total Invoiced</span>
-                  <span className="text-blue-600 dark:text-blue-400">KES {financial.totalInvoiced.toLocaleString()}</span>
+                  <span className="text-blue-600 dark:text-blue-400">{currencySymbol} {financial.totalInvoiced.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between pb-2 border-b border-gray-200 dark:border-gray-700">
                   <span className="text-gray-600 dark:text-gray-400">Total Paid</span>
-                  <span className="text-green-600 dark:text-green-400">KES {financial.totalPaid.toLocaleString()}</span>
+                  <span className="text-green-600 dark:text-green-400">{currencySymbol} {financial.totalPaid.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between pt-2">
                   <span className="font-semibold text-gray-900 dark:text-white">Outstanding Balance</span>
                   <span className={`font-bold ${financial.outstanding > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-                    KES {financial.outstanding.toLocaleString()}
+                    {currencySymbol} {financial.outstanding.toLocaleString()}
                   </span>
+
+
+
                 </div>
               </div>
             </div>
@@ -1803,4 +1814,4 @@ useEffect(() => {
       )}
     </div>
   );
-}// dummy change 
+}
