@@ -1,5 +1,8 @@
 import React from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+
+
+
 import { 
   LayoutDashboard, 
   FolderKanban, 
@@ -11,8 +14,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Building2,
-  ArrowLeft
+  ArrowLeft,
+  Sun,
+  Moon
 } from 'lucide-react';
+
+
 import { useAppStore } from '@/hooks/useAppStore';
 
 interface StakeholderLayoutProps {
@@ -24,6 +31,26 @@ export function StakeholderLayout({ children }: StakeholderLayoutProps) {
   const location = useLocation();
   const { authUser, logout } = useAppStore();
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+
+  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+  
+  // Dark mode state
+  const [isDarkMode, setIsDarkMode] = React.useState(() => {
+    const saved = localStorage.getItem('theme');
+    return saved === 'dark';
+  });
+
+  // Apply dark mode class
+  React.useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkMode]);
+
 
   // Check if we're on a project page and get project ID
   const isProjectPage = location.pathname.includes('/stakeholder/projects/');
@@ -195,12 +222,32 @@ const getNavPath = (basePath: string) => {
               {activeProjectId ? 'Project Portal' : `Welcome, ${authUser?.name?.split(' ')[0] || 'Guest'}`}
             </h1>
           </div>
+
+
+
           <div className="flex items-center gap-3">
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+              title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {isDarkMode ? (
+                <Sun size={18} className="text-yellow-500" />
+              ) : (
+                <Moon size={18} className="text-gray-600 dark:text-gray-300" />
+              )}
+            </button>
+            
+            {/* Bell Icon */}
             <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition relative">
               <Bell size={18} className="text-gray-600 dark:text-gray-300" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
           </div>
+
+
+
         </header>
 
         {/* Page Content */}
