@@ -405,7 +405,7 @@ const toggleFullscreen = () => {
 
 
 
-// Get dynamic date range based on tasks
+// Get dynamic date range based on tasks - NO FIXED MINIMUM
 const getProjectDateRange = () => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -434,18 +434,26 @@ const getProjectDateRange = () => {
   let minDate = new Date(Math.min(...validDates.map(d => d.getTime())));
   let maxDate = new Date(Math.max(...validDates.map(d => d.getTime())));
   
-  // Calculate how many days the project spans
+  // Calculate project duration in days
   const projectDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
   
-  // Add 20% padding on each side (not fixed 90 days)
-  const paddingDays = Math.max(7, Math.ceil(projectDays * 0.2));
+  // Smart padding based on project length
+  let paddingDays;
+  if (projectDays <= 7) {
+    paddingDays = 3; // Very short project: add 3 days on each side
+  } else if (projectDays <= 30) {
+    paddingDays = Math.ceil(projectDays * 0.15); // 15% padding
+  } else if (projectDays <= 90) {
+    paddingDays = Math.ceil(projectDays * 0.1); // 10% padding
+  } else {
+    paddingDays = Math.min(Math.ceil(projectDays * 0.05), 30); // 5% padding, max 30 days
+  }
   
   minDate = new Date(minDate.getTime() - paddingDays * 24 * 60 * 60 * 1000);
   maxDate = new Date(maxDate.getTime() + paddingDays * 24 * 60 * 60 * 1000);
   
   return { minDate, maxDate };
 };
-
 
 
 
@@ -1320,6 +1328,41 @@ useEffect(() => {
 
 
 
+// Use ResizeObserver to maintain alignment when container changes size
+useEffect(() => {
+  if (!ganttContainerRef.current) return;
+  
+  const observer = new ResizeObserver(() => {
+    window.dispatchEvent(new Event('resize'));
+  });
+  
+  observer.observe(ganttContainerRef.current);
+  
+  return () => observer.disconnect();
+}, []);
+
+
+
+// Watch for DOM changes that might affect layout
+useEffect(() => {
+  if (!ganttContainerRef.current) return;
+  
+  const observer = new MutationObserver(() => {
+    window.dispatchEvent(new Event('resize'));
+  });
+  
+  observer.observe(ganttContainerRef.current, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['style', 'class']
+  });
+  
+  return () => observer.disconnect();
+}, []);
+
+
+
   // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -1675,52 +1718,107 @@ const formatBudgetInMillions = (amount: number): string => {
 const getTimelineUnit = () => {
   const totalDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
   
-  // Adjust based on total days, not zoom level
-  if (totalDays <= 30) return { unit: 'day', label: 'Day', daysPerUnit: 1, width: 40 };
-  if (totalDays <= 90) return { unit: 'week', label: 'Week', daysPerUnit: 7, width: 60 };
-  return { unit: 'month', label: 'Month', daysPerUnit: 30, width: 80 };
+  // Choose appropriate unit based on total timeline span
+  if (totalDays <= 35) {
+    return { unit: 'day', label: 'Day', daysPerUnit: 1, width: 45 };
+  } else if (totalDays <= 120) {
+    return { unit: 'week', label: 'Week', daysPerUnit: 7, width: 60 };
+  } else {
+    return { unit: 'month', label: 'Month', daysPerUnit: 30, width: 75 };
+  }
 };
 
 
-  const timelineUnit = getTimelineUnit();
-  const timelineHeaders: { date: Date; label: string; subLabel?: string }[] = [];
-  let currentDate = new Date(minDate);
 
-  if (timelineUnit.unit === 'month') {
-    currentDate.setDate(1);
-    while (currentDate <= maxDate) {
-      timelineHeaders.push({ date: new Date(currentDate), label: currentDate.toLocaleDateString('en-US', { month: 'short' }) });
-      currentDate.setMonth(currentDate.getMonth() + 1);
-    }
-  } else if (timelineUnit.unit === 'week') {
-    const day = currentDate.getDay();
-    const diff = day === 0 ? 6 : day - 1;
-    currentDate.setDate(currentDate.getDate() - diff);
-    while (currentDate <= maxDate) {
-      timelineHeaders.push({ date: new Date(currentDate), label: `W${Math.ceil((currentDate.getTime() - new Date(currentDate.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000))}` });
-      currentDate.setDate(currentDate.getDate() + 7);
-    }
-  } else {
-    while (currentDate <= maxDate) {
-      timelineHeaders.push({ date: new Date(currentDate), label: currentDate.getDate().toString() });
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
+
+
+
+// Generate timeline headers with proper alignment
+const timelineHeaders: { date: Date; label: string; width: number }[] = [];
+
+if (timelineUnit.unit === 'month') {
+  const startMonth = new Date(minDate);
+  startMonth.setDate(1);
+  let current = new Date(startMonth);
+  
+  while (current <= maxDate) {
+    const nextMonth = new Date(current);
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    
+    const monthStart = Math.max(current, minDate);
+    const monthEnd = Math.min(nextMonth, maxDate);
+    const monthDuration = monthEnd.getTime() - monthStart.getTime();
+    const totalDuration = maxDate.getTime() - minDate.getTime();
+    const widthPercent = (monthDuration / totalDuration) * 100;
+    
+    timelineHeaders.push({
+      date: new Date(current),
+      label: current.toLocaleDateString('en-US', { month: 'short' }),
+      width: widthPercent
+    });
+    current = nextMonth;
   }
-
+} else if (timelineUnit.unit === 'week') {
+  const startWeek = new Date(minDate);
+  const dayOfWeek = startWeek.getDay();
+  const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  startWeek.setDate(startWeek.getDate() - daysToMonday);
+  
+  let current = new Date(startWeek);
+  
+  while (current <= maxDate) {
+    const nextWeek = new Date(current);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    
+    const weekStart = Math.max(current, minDate);
+    const weekEnd = Math.min(nextWeek, maxDate);
+    const weekDuration = weekEnd.getTime() - weekStart.getTime();
+    const totalDuration = maxDate.getTime() - minDate.getTime();
+    const widthPercent = (weekDuration / totalDuration) * 100;
+    
+    const weekNumber = Math.ceil((current.getTime() - new Date(current.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
+    
+    timelineHeaders.push({
+      date: new Date(current),
+      label: `W${weekNumber}`,
+      width: widthPercent
+    });
+    current = nextWeek;
+  }
+} else {
+  let current = new Date(minDate);
+  current.setHours(0, 0, 0, 0);
+  
+  while (current <= maxDate) {
+    const nextDay = new Date(current);
+    nextDay.setDate(nextDay.getDate() + 1);
+    
+    const dayDuration = Math.min(nextDay.getTime(), maxDate.getTime()) - Math.max(current.getTime(), minDate.getTime());
+    const totalDuration = maxDate.getTime() - minDate.getTime();
+    const widthPercent = (dayDuration / totalDuration) * 100;
+    
+    timelineHeaders.push({
+      date: new Date(current),
+      label: current.getDate().toString(),
+      width: widthPercent
+    });
+    current = nextDay;
+  }
+}
 
 
 
 const calculateBarPosition = (startDateStr: string, endDateStr: string) => {
-  // Clean up date strings (remove time part if present)
+  // Handle invalid or missing dates
+  if (!startDateStr || !endDateStr) {
+    return { left: '0%', width: '0%' };
+  }
+  
   let cleanStart = startDateStr;
   let cleanEnd = endDateStr;
   
-  if (cleanStart && cleanStart.includes('T')) {
-    cleanStart = cleanStart.split('T')[0];
-  }
-  if (cleanEnd && cleanEnd.includes('T')) {
-    cleanEnd = cleanEnd.split('T')[0];
-  }
+  if (cleanStart.includes('T')) cleanStart = cleanStart.split('T')[0];
+  if (cleanEnd.includes('T')) cleanEnd = cleanEnd.split('T')[0];
   
   const start = new Date(cleanStart);
   const end = new Date(cleanEnd);
@@ -1729,33 +1827,29 @@ const calculateBarPosition = (startDateStr: string, endDateStr: string) => {
     return { left: '0%', width: '0%' };
   }
   
-  const totalDays = maxDate.getTime() - minDate.getTime();
+  const totalMs = maxDate.getTime() - minDate.getTime();
   
-  // If totalDays is 0 or invalid, return default
-  if (totalDays <= 0) {
+  if (totalMs <= 0) {
     return { left: '0%', width: '10%' };
   }
   
-  // 🔧 FIX: Use same calculation method as timeline headers
   const startOffset = start.getTime() - minDate.getTime();
   const duration = end.getTime() - start.getTime();
   
-  // Calculate exact percentages
-  let left = (startOffset / totalDays) * 100;
-  let width = (duration / totalDays) * 100;
+  let left = (startOffset / totalMs) * 100;
+  let width = (duration / totalMs) * 100;
   
-  // Ensure minimum visibility (0.3% is about 3-4px minimum)
-  if (width < 0.3 && duration > 0) width = 0.3;
+  // Minimum width for visibility (at least 2px at current scale)
+  const minWidth = 0.15;
+  if (width < minWidth && duration > 0) width = minWidth;
   
-  // Clamp values to valid range
-  if (left < 0) left = 0;
-  if (left > 100) left = 100;
-  if (width > 100) width = 100;
+  // Clamp values
+  left = Math.max(0, Math.min(100, left));
+  width = Math.max(0, Math.min(100, width));
   if (left + width > 100) width = 100 - left;
   
   return { left: `${left}%`, width: `${width}%` };
 };
-
 
 
 
@@ -2110,13 +2204,30 @@ const calculateBarPosition = (startDateStr: string, endDateStr: string) => {
                 <div className="absolute right-0 top-0 w-0.5 h-full cursor-ew-resize hover:bg-amber-400" onMouseDown={(e) => startResize(col.id, e.clientX, col.width)} />
               </div>
             ))}
-            <div className="flex-1 flex">
-              {timelineHeaders.map((header, idx) => (
-                <div key={idx} className="flex-1 text-center py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700" style={{ minWidth: timelineUnit.width }}>
-                  {header.label}
-                </div>
-              ))}
-            </div>
+
+
+
+
+
+
+
+<div className="flex-1 flex">
+  {timelineHeaders.map((header, idx) => (
+    <div 
+      key={idx} 
+      className="text-center py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 truncate"
+      style={{ width: `${header.width}%`, minWidth: '40px' }}
+      title={header.date.toLocaleDateString()}
+    >
+      {header.label}
+    </div>
+  ))}
+</div>
+
+
+
+
+
             <div className="w-8 flex-shrink-0"></div>
           </div>
 
