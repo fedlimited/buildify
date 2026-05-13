@@ -1929,7 +1929,20 @@ const formatDate = (dateStr: string | undefined | null) => {
           <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Completed:</span> <strong className="text-emerald-600">{completedTasks}</strong></div>
           <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Overdue:</span> <strong className="text-red-600">{tasks.filter(t => getDaysRemaining(t.endDate) < 0 && t.progress < 100).length}</strong></div>
           <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Dependencies:</span> <strong className="dark:text-white">{dependencies.length}</strong></div>
-          <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Budget:</span> <strong className="text-cyan-600">KES {(totalCost / 1000000).toFixed(1)}M</strong></div>
+
+
+
+<span className="text-gray-500 dark:text-gray-400">Budget:</span> 
+<strong className="text-cyan-600">KES {(() => {
+  const millions = totalCost / 1000000;
+  if (isNaN(millions) || millions === 0) return '0';
+  if (millions >= 1000) return (millions / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 }) + 'B';
+  return millions.toLocaleString(undefined, { maximumFractionDigits: 1 }) + 'M';
+})()}</strong>
+
+
+
+
           <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Progress:</span> <strong className="text-emerald-600">{tasks.length ? Math.round((completedTasks / tasks.length) * 100) : 0}%</strong></div>
         </div>
       </div>
