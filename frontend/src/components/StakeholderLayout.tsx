@@ -31,9 +31,7 @@ export function StakeholderLayout({ children }: StakeholderLayoutProps) {
   const location = useLocation();
   const { authUser, logout } = useAppStore();
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
-
-  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
-  
+    
   // Dark mode state
   const [isDarkMode, setIsDarkMode] = React.useState(() => {
     const saved = localStorage.getItem('theme');
