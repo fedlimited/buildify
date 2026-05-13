@@ -403,50 +403,56 @@ const toggleFullscreen = () => {
   };
 
   // Get dynamic date range based on tasks (expands as needed)
-  const getProjectDateRange = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    if (tasks.length === 0) {
-      const end = new Date(today);
-      end.setMonth(end.getMonth() + 6);
-      return { minDate: today, maxDate: end };
+// Get dynamic date range based on tasks (expands as needed)
+const getProjectDateRange = () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  if (tasks.length === 0) {
+    const end = new Date(today);
+    end.setMonth(end.getMonth() + 6);
+    return { minDate: today, maxDate: end };
+  }
+  
+  const validDates = tasks.flatMap(t => {
+    const start = new Date(t.startDate);
+    const end = new Date(t.endDate);
+    if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+      return [start, end];
     }
-    
-    const validDates = tasks.flatMap(t => {
-      const start = new Date(t.startDate);
-      const end = new Date(t.endDate);
-      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-        return [start, end];
-      }
-      return [];
-    });
-    
-    if (validDates.length === 0) {
-      const end = new Date(today);
-      end.setMonth(end.getMonth() + 6);
-      return { minDate: today, maxDate: end };
-    }
-    
-    let minDate = new Date(Math.min(...validDates.map(d => d.getTime())));
-    let maxDate = new Date(Math.max(...validDates.map(d => d.getTime())));
-    
-    // Add 30% padding on both sides for better visibility and future planning
-    const duration = maxDate.getTime() - minDate.getTime();
-    const padding = Math.max(duration * 0.3, 14 * 24 * 60 * 60 * 1000); // Min 14 days padding
-    
-    minDate = new Date(minDate.getTime() - padding);
-    maxDate = new Date(maxDate.getTime() + padding);
-    
-    // Ensure at least 3 months view
-    const minDuration = 90 * 24 * 60 * 60 * 1000;
-    if (maxDate.getTime() - minDate.getTime() < minDuration) {
-      maxDate = new Date(minDate.getTime() + minDuration);
-    }
-    
-    return { minDate, maxDate };
-  };
-
+    return [];
+  });
+  
+  if (validDates.length === 0) {
+    const end = new Date(today);
+    end.setMonth(end.getMonth() + 6);
+    return { minDate: today, maxDate: end };
+  }
+  
+  let minDate = new Date(Math.min(...validDates.map(d => d.getTime())));
+  let maxDate = new Date(Math.max(...validDates.map(d => d.getTime())));
+  
+  // Calculate the total duration in days
+  const durationDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  // 🔧 FIX: Add padding based on project length, but DON'T force a minimum of 90 days
+  let paddingDays;
+  if (durationDays < 30) {
+    paddingDays = Math.max(14, durationDays * 0.5); // At least 14 days or 50% padding for short projects
+  } else if (durationDays < 180) {
+    paddingDays = Math.min(durationDays * 0.2, 30); // 20% padding or max 30 days
+  } else {
+    paddingDays = Math.min(durationDays * 0.1, 60); // 10% padding or max 60 days
+  }
+  
+  // Apply padding
+  minDate = new Date(minDate.getTime() - paddingDays * 24 * 60 * 60 * 1000);
+  maxDate = new Date(maxDate.getTime() + paddingDays * 24 * 60 * 60 * 1000);
+  
+  // REMOVED the 90-day minimum - let short projects have short timelines!
+  
+  return { minDate, maxDate };
+};
 
 
 
