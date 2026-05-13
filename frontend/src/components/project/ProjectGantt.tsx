@@ -1313,6 +1313,13 @@ useEffect(() => {
 }, [tasks]);
 
 
+// Recalculate bar positions when zoom level changes
+useEffect(() => {
+  const timer = setTimeout(() => {
+    window.dispatchEvent(new Event('resize'));
+  }, 50);
+  return () => clearTimeout(timer);
+}, [zoomLevel]);
 
 
 
@@ -1666,13 +1673,15 @@ const formatBudgetInMillions = (amount: number): string => {
 
   const { minDate, maxDate } = getProjectDateRange();
 
-  // Timeline headers with dynamic sizing
-  const getTimelineUnit = () => {
-    const totalDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
-    if (zoomLevel <= 0.6) return { unit: 'month', label: 'Month', daysPerUnit: 30, width: 70 };
-    if (zoomLevel <= 1.0) return { unit: 'week', label: 'Week', daysPerUnit: 7, width: 55 };
-    return { unit: 'day', label: 'Day', daysPerUnit: 1, width: 40 };
-  };
+
+const getTimelineUnit = () => {
+  const totalDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
+  // Adjust widths for better alignment
+  if (zoomLevel <= 0.6) return { unit: 'month', label: 'Month', daysPerUnit: 30, width: 80 };
+  if (zoomLevel <= 1.0) return { unit: 'week', label: 'Week', daysPerUnit: 7, width: 65 };
+  return { unit: 'day', label: 'Day', daysPerUnit: 1, width: 50 };
+};
+
 
   const timelineUnit = getTimelineUnit();
   const timelineHeaders: { date: Date; label: string; subLabel?: string }[] = [];
@@ -1702,48 +1711,51 @@ const formatBudgetInMillions = (amount: number): string => {
 
 
 
-
-
-  const calculateBarPosition = (startDateStr: string, endDateStr: string) => {
-    // Clean up date strings (remove time part if present)
-    let cleanStart = startDateStr;
-    let cleanEnd = endDateStr;
-    
-    if (cleanStart && cleanStart.includes('T')) {
-      cleanStart = cleanStart.split('T')[0];
-    }
-    if (cleanEnd && cleanEnd.includes('T')) {
-      cleanEnd = cleanEnd.split('T')[0];
-    }
-    
-    const start = new Date(cleanStart);
-    const end = new Date(cleanEnd);
-    
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      return { left: '0%', width: '0%' };
-    }
-    
-    const totalDays = maxDate.getTime() - minDate.getTime();
-    
-    // If totalDays is 0 or invalid, return default
-    if (totalDays <= 0) {
-      return { left: '0%', width: '10%' };
-    }
-    
-    const startOffset = start.getTime() - minDate.getTime();
-    const duration = end.getTime() - start.getTime();
-    let left = (startOffset / totalDays) * 100;
-    let width = (duration / totalDays) * 100;
-    
-    // Ensure minimum visibility
-    if (width < 0.5 && duration > 0) width = 0.5;
-    if (left < 0) left = 0;
-    if (left > 100) left = 100;
-    if (width > 100) width = 100;
-    
-    return { left: `${left}%`, width: `${width}%` };
-  };
-
+const calculateBarPosition = (startDateStr: string, endDateStr: string) => {
+  // Clean up date strings (remove time part if present)
+  let cleanStart = startDateStr;
+  let cleanEnd = endDateStr;
+  
+  if (cleanStart && cleanStart.includes('T')) {
+    cleanStart = cleanStart.split('T')[0];
+  }
+  if (cleanEnd && cleanEnd.includes('T')) {
+    cleanEnd = cleanEnd.split('T')[0];
+  }
+  
+  const start = new Date(cleanStart);
+  const end = new Date(cleanEnd);
+  
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    return { left: '0%', width: '0%' };
+  }
+  
+  const totalDays = maxDate.getTime() - minDate.getTime();
+  
+  // If totalDays is 0 or invalid, return default
+  if (totalDays <= 0) {
+    return { left: '0%', width: '10%' };
+  }
+  
+  // 🔧 FIX: Use same calculation method as timeline headers
+  const startOffset = start.getTime() - minDate.getTime();
+  const duration = end.getTime() - start.getTime();
+  
+  // Calculate exact percentages
+  let left = (startOffset / totalDays) * 100;
+  let width = (duration / totalDays) * 100;
+  
+  // Ensure minimum visibility (0.3% is about 3-4px minimum)
+  if (width < 0.3 && duration > 0) width = 0.3;
+  
+  // Clamp values to valid range
+  if (left < 0) left = 0;
+  if (left > 100) left = 100;
+  if (width > 100) width = 100;
+  if (left + width > 100) width = 100 - left;
+  
+  return { left: `${left}%`, width: `${width}%` };
+};
 
 
 
@@ -2085,10 +2097,10 @@ const formatBudgetInMillions = (amount: number): string => {
     maxHeight: isFullscreen ? 'calc(100vh - 60px)' : 'calc(100vh - 180px)',
     minWidth: '100%',
     width: '100%',
-    display: 'block'
+    display: 'block',
+    position: 'relative'
   }}
 >
-
 
         <div style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left' }}>
           {/* Header */}
