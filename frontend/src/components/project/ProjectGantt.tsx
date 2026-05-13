@@ -140,7 +140,7 @@ export function ProjectGantt({ projectId, isStakeholder = false }: ProjectGanttP
   const [zoomLevel, setZoomLevel] = useState(1);
   const [selectedTask, setSelectedTask] = useState<number | null>(null);
   const [projectName, setProjectName] = useState('');
-  const { currencySettings } = useAppStore();
+  const { currencySettings, fetchCurrencySettings } = useAppStore();
   const currencySymbol = currencySettings?.currency_symbol || 'KES';
 
 // DEBUG: Log currency settings
@@ -1270,33 +1270,49 @@ useEffect(() => {
 }, []);
 
 
+
+
+
 useEffect(() => {
   loadFromBackend();
   fetchProjectName();
+  // Force fetch currency settings when Gantt loads
+  if (!currencySettings) {
+    fetchCurrencySettings();
+  }
 }, [projectId]);
 
-  // Force recalculation when container becomes visible (fix for stakeholder refresh)
-  useEffect(() => {
-    const checkAndRecalculate = () => {
-      if (ganttContainerRef.current && ganttContainerRef.current.clientWidth > 0) {
-        console.log('Container is now visible, width:', ganttContainerRef.current.clientWidth);
-        window.dispatchEvent(new Event('resize'));
-        return true;
-      }
-      return false;
-    };
-    
-    // Check immediately
-    if (!checkAndRecalculate()) {
-      // Retry after short intervals
-      const intervals = [100, 200, 500, 1000];
-      intervals.forEach(delay => {
-        setTimeout(() => checkAndRecalculate(), delay);
-      });
+useEffect(() => {
+  if (currencySettings) {
+    console.log('✅ Currency settings loaded:', currencySettings);
+    window.dispatchEvent(new Event('resize'));
+  }
+}, [currencySettings]);
+
+// Force recalculation when container becomes visible (fix for stakeholder refresh)
+useEffect(() => {
+  const checkAndRecalculate = () => {
+    if (ganttContainerRef.current && ganttContainerRef.current.clientWidth > 0) {
+      console.log('Container is now visible, width:', ganttContainerRef.current.clientWidth);
+      window.dispatchEvent(new Event('resize'));
+      return true;
     }
-    
-    return () => {};
-  }, [tasks]);
+    return false;
+  };
+  
+  // Check immediately
+  if (!checkAndRecalculate()) {
+    // Retry after short intervals
+    const intervals = [100, 200, 500, 1000];
+    intervals.forEach(delay => {
+      setTimeout(() => checkAndRecalculate(), delay);
+    });
+  }
+  
+  return () => {};
+}, [tasks]);
+
+
 
 
 
