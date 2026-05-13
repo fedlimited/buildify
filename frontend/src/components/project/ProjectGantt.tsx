@@ -406,6 +406,7 @@ const toggleFullscreen = () => {
 
 
 // Get dynamic date range based on tasks - NO FIXED MINIMUM
+// Get dynamic date range based on tasks - NO FIXED MINIMUM
 const getProjectDateRange = () => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -416,23 +417,48 @@ const getProjectDateRange = () => {
     return { minDate: today, maxDate: end };
   }
   
-  const validDates = tasks.flatMap(t => {
-    const start = new Date(t.startDate);
-    const end = new Date(t.endDate);
-    if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-      return [start, end];
+  // ✅ FIX: Validate dates before using them
+  const validDates: Date[] = [];
+  
+  tasks.forEach(t => {
+    try {
+      const start = new Date(t.startDate);
+      const end = new Date(t.endDate);
+      
+      // Check if dates are valid
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        validDates.push(start, end);
+      } else {
+        console.warn('Invalid date found:', t.name, t.startDate, t.endDate);
+      }
+    } catch (error) {
+      console.error('Error parsing date for task:', t.name, error);
     }
-    return [];
   });
   
   if (validDates.length === 0) {
+    console.warn('No valid dates found, using default range');
     const end = new Date(today);
     end.setMonth(end.getMonth() + 1);
     return { minDate: today, maxDate: end };
   }
   
-  let minDate = new Date(Math.min(...validDates.map(d => d.getTime())));
-  let maxDate = new Date(Math.max(...validDates.map(d => d.getTime())));
+  // ✅ FIX: Properly get min and max from valid dates
+  let minDate: Date;
+  let maxDate: Date;
+  
+  try {
+    const timestamps = validDates.map(d => d.getTime());
+    const minTimestamp = Math.min(...timestamps);
+    const maxTimestamp = Math.max(...timestamps);
+    minDate = new Date(minTimestamp);
+    maxDate = new Date(maxTimestamp);
+  } catch (error) {
+    console.error('Error calculating date range:', error);
+    const end = new Date(today);
+    end.setMonth(end.getMonth() + 1);
+    return { minDate: today, maxDate: end };
+  }
   
   // Calculate project duration in days
   const projectDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -440,13 +466,13 @@ const getProjectDateRange = () => {
   // Smart padding based on project length
   let paddingDays;
   if (projectDays <= 7) {
-    paddingDays = 3; // Very short project: add 3 days on each side
+    paddingDays = 3;
   } else if (projectDays <= 30) {
-    paddingDays = Math.ceil(projectDays * 0.15); // 15% padding
+    paddingDays = Math.ceil(projectDays * 0.15);
   } else if (projectDays <= 90) {
-    paddingDays = Math.ceil(projectDays * 0.1); // 10% padding
+    paddingDays = Math.ceil(projectDays * 0.1);
   } else {
-    paddingDays = Math.min(Math.ceil(projectDays * 0.05), 30); // 5% padding, max 30 days
+    paddingDays = Math.min(Math.ceil(projectDays * 0.05), 30);
   }
   
   minDate = new Date(minDate.getTime() - paddingDays * 24 * 60 * 60 * 1000);
@@ -454,7 +480,6 @@ const getProjectDateRange = () => {
   
   return { minDate, maxDate };
 };
-
 
 
 
@@ -1712,6 +1737,21 @@ const formatBudgetInMillions = (amount: number): string => {
   };
 
   const { minDate, maxDate } = getProjectDateRange();
+
+// ✅ SAFETY CHECK - Ensure dates are valid before proceeding
+let safeMinDate = minDate;
+let safeMaxDate = maxDate;
+
+if (!safeMinDate || !safeMaxDate || isNaN(safeMinDate.getTime()) || isNaN(safeMaxDate.getTime())) {
+  console.error('Invalid date range detected, using fallback');
+  const today = new Date();
+  safeMinDate = new Date(today);
+  safeMaxDate = new Date(today);
+  safeMaxDate.setMonth(safeMaxDate.getMonth() + 1);
+}
+
+// Use safeMinDate and safeMaxDate for the rest of the component
+// Replace all references to minDate/maxDate with safeMinDate/safeMaxDate from here onward
 
 
 
