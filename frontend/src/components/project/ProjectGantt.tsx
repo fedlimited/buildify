@@ -1221,6 +1221,30 @@ setTimeout(() => {
   }, [projectId]);
 
 
+  // Force recalculation when container becomes visible (fix for stakeholder refresh)
+  useEffect(() => {
+    const checkAndRecalculate = () => {
+      if (ganttContainerRef.current && ganttContainerRef.current.clientWidth > 0) {
+        console.log('Container is now visible, width:', ganttContainerRef.current.clientWidth);
+        window.dispatchEvent(new Event('resize'));
+        return true;
+      }
+      return false;
+    };
+    
+    // Check immediately
+    if (!checkAndRecalculate()) {
+      // Retry after short intervals
+      const intervals = [100, 200, 500, 1000];
+      intervals.forEach(delay => {
+        setTimeout(() => checkAndRecalculate(), delay);
+      });
+    }
+    
+    return () => {};
+  }, [tasks]);
+
+
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -1567,24 +1591,54 @@ const formatDate = (dateStr: string | undefined | null) => {
     }
   }
 
+
+
+
+
+
   const calculateBarPosition = (startDateStr: string, endDateStr: string) => {
-    const start = new Date(startDateStr);
-    const end = new Date(endDateStr);
+    // Clean up date strings (remove time part if present)
+    let cleanStart = startDateStr;
+    let cleanEnd = endDateStr;
+    
+    if (cleanStart && cleanStart.includes('T')) {
+      cleanStart = cleanStart.split('T')[0];
+    }
+    if (cleanEnd && cleanEnd.includes('T')) {
+      cleanEnd = cleanEnd.split('T')[0];
+    }
+    
+    const start = new Date(cleanStart);
+    const end = new Date(cleanEnd);
+    
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return { left: '0%', width: '0%' };
     }
+    
     const totalDays = maxDate.getTime() - minDate.getTime();
+    
+    // If totalDays is 0 or invalid, return default
+    if (totalDays <= 0) {
+      return { left: '0%', width: '10%' };
+    }
+    
     const startOffset = start.getTime() - minDate.getTime();
     const duration = end.getTime() - start.getTime();
     let left = (startOffset / totalDays) * 100;
     let width = (duration / totalDays) * 100;
+    
     // Ensure minimum visibility
     if (width < 0.5 && duration > 0) width = 0.5;
     if (left < 0) left = 0;
     if (left > 100) left = 100;
     if (width > 100) width = 100;
+    
     return { left: `${left}%`, width: `${width}%` };
   };
+
+
+
+
 
   const getVisibleTasks = (): Task[] => {
     let filtered = [...tasks];
@@ -1914,7 +1968,12 @@ const formatDate = (dateStr: string | undefined | null) => {
 <div 
   ref={ganttContainerRef} 
   className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-auto shadow-md" 
-  style={{ maxHeight: isFullscreen ? 'calc(100vh - 60px)' : 'calc(100vh - 180px)' }}
+  style={{ 
+    maxHeight: isFullscreen ? 'calc(100vh - 60px)' : 'calc(100vh - 180px)',
+    minWidth: '100%',
+    width: '100%',
+    display: 'block'
+  }}
 >
 
 
