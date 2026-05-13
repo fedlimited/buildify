@@ -142,9 +142,21 @@ export function ProjectGantt({ projectId, isStakeholder = false }: ProjectGanttP
   const [projectName, setProjectName] = useState('');
   const { currencySettings } = useAppStore();
   const currencySymbol = currencySettings?.currency_symbol || 'KES';
+
+// DEBUG: Log currency settings
+console.log('🔍 [Gantt] currencySettings:', currencySettings);
+console.log('🔍 [Gantt] currencySymbol:', currencySymbol);
+
   const [printPaperSize, setPrintPaperSize] = useState<'A0' | 'A1' | 'A2' | 'A3' | 'A4'>('A2');
   const [printOrientation, setPrintOrientation] = useState<'portrait' | 'landscape'>('landscape');
   const [printScale, setPrintScale] = useState<'fit' | 'actual' | 'shrink'>('fit');
+
+// Debug currency changes - ADD THIS HERE
+useEffect(() => {
+    console.log('🔍 [Gantt] currencySettings changed:', currencySettings);
+    console.log('🔍 [Gantt] New currency symbol:', currencySettings?.currency_symbol);
+}, [currencySettings]);
+
   const [showCriticalPath, setShowCriticalPath] = useState(false);
   const [showBaseline, setShowBaseline] = useState(false);
   const [quickFilter, setQuickFilter] = useState<'all' | 'overdue' | 'this-week' | 'next-week' | 'milestones' | 'high-priority'>('all');
