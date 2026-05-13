@@ -214,7 +214,19 @@ const ProjectController = {
 
 
   // Save Gantt chart data for a project (PostgreSQL version - CORRECTED)
-  saveProjectGantt: async (req, res) => {
+saveProjectGantt: async (req, res) => {
+    // 🔒 SECURITY: Block stakeholders from saving/modifying Gantt data
+    if (req.user?.role === 'stakeholder') {
+      console.log('⛔ Stakeholder attempted to modify Gantt chart');
+      return res.status(403).json({ 
+        error: 'Stakeholders cannot modify Gantt chart data. View-only access.' 
+      });
+    }
+
+
+    console.log(`📊 Saving Gantt data for project ${projectId}: ${tasks?.length || 0} tasks, ${dependencies?.length || 0} dependencies`);
+    console.log(`👤 User role: ${req.user?.role}, User ID: ${req.user?.id}`);
+
     try {
       const db = await getDb();
       const { projectId } = req.params;
