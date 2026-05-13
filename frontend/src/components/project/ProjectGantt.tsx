@@ -138,6 +138,7 @@ export function ProjectGantt({ projectId, isStakeholder = false }: ProjectGanttP
   const [zoomLevel, setZoomLevel] = useState(1);
   const [selectedTask, setSelectedTask] = useState<number | null>(null);
   const [projectName, setProjectName] = useState('');
+  const [currencySymbol, setCurrencySymbol] = useState('KES');
   const [printPaperSize, setPrintPaperSize] = useState<'A0' | 'A1' | 'A2' | 'A3' | 'A4'>('A2');
   const [printOrientation, setPrintOrientation] = useState<'portrait' | 'landscape'>('landscape');
   const [printScale, setPrintScale] = useState<'fit' | 'actual' | 'shrink'>('fit');
@@ -1254,11 +1255,11 @@ useEffect(() => {
 }, []);
 
 
-  useEffect(() => {
-    loadFromBackend();
-    fetchProjectName();
-  }, [projectId]);
-
+useEffect(() => {
+  loadFromBackend();
+  fetchProjectName();
+  fetchCurrencySettings();
+}, [projectId]);
 
   // Force recalculation when container becomes visible (fix for stakeholder refresh)
   useEffect(() => {
@@ -1319,6 +1320,10 @@ useEffect(() => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedTask]);
 
+
+
+
+
   const fetchProjectName = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -1333,6 +1338,24 @@ useEffect(() => {
       console.error('Error fetching project name:', error);
     }
   };
+
+
+const fetchCurrencySettings = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/settings`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (response.ok) {
+      const data = await response.json();
+      const symbol = data.currency_symbol || data.currency || 'KES';
+      setCurrencySymbol(symbol);
+      console.log('Currency loaded:', symbol);
+    }
+  } catch (error) {
+    console.error('Error fetching currency:', error);
+  }
+};
 
 
 const loadFromBackend = async () => {
@@ -1585,6 +1608,33 @@ const formatDate = (dateStr: string | undefined | null) => {
     console.error(`[formatDate] Error formatting: ${dateStr}`, error);
     return '—';
   }
+};
+
+
+
+
+// Format currency based on company settings
+const formatCurrency = (amount: number): string => {
+  if (isNaN(amount) || amount === 0) return `${currencySymbol} 0`;
+  
+  return `${currencySymbol} ${amount.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  })}`;
+};
+
+// Format budget in millions
+const formatBudgetInMillions = (amount: number): string => {
+  if (isNaN(amount) || amount === 0) return `${currencySymbol} 0`;
+  
+  const millions = amount / 1000000;
+  
+  if (millions >= 1000) {
+    const billions = millions / 1000;
+    return `${currencySymbol} ${billions.toLocaleString(undefined, { maximumFractionDigits: 1 })}B`;
+  }
+  
+  return `${currencySymbol} ${millions.toLocaleString(undefined, { maximumFractionDigits: 1 })}M`;
 };
 
 
@@ -1927,29 +1977,21 @@ const formatDate = (dateStr: string | undefined | null) => {
             </div>
           </div>
         </div>
+
+
         
-        {/* Stats Dashboard */}
-        <div className="grid grid-cols-6 gap-2 p-2 text-xs bg-gray-50 dark:bg-gray-800/50">
-          <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Tasks:</span> <strong className="dark:text-white">{tasks.length}</strong></div>
-          <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Completed:</span> <strong className="text-emerald-600">{completedTasks}</strong></div>
-          <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Overdue:</span> <strong className="text-red-600">{tasks.filter(t => getDaysRemaining(t.endDate) < 0 && t.progress < 100).length}</strong></div>
-          <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Dependencies:</span> <strong className="dark:text-white">{dependencies.length}</strong></div>
+{/* Stats Dashboard */}
+<div className="grid grid-cols-6 gap-2 p-2 text-xs bg-gray-50 dark:bg-gray-800/50">
+  <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Tasks:</span> <strong className="dark:text-white">{tasks.length}</strong></div>
+  <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Completed:</span> <strong className="text-emerald-600">{completedTasks}</strong></div>
+  <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Overdue:</span> <strong className="text-red-600">{tasks.filter(t => getDaysRemaining(t.endDate) < 0 && t.progress < 100).length}</strong></div>
+  <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Dependencies:</span> <strong className="dark:text-white">{dependencies.length}</strong></div>
+  <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Budget:</span> <strong className="text-cyan-600">{formatBudgetInMillions(totalCost)}</strong></div>
+  <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Progress:</span> <strong className="text-emerald-600">{tasks.length ? Math.round((completedTasks / tasks.length) * 100) : 0}%</strong></div>
+</div>
 
 
 
-<span className="text-gray-500 dark:text-gray-400">Budget:</span> 
-<strong className="text-cyan-600">KES {(() => {
-  const millions = totalCost / 1000000;
-  if (isNaN(millions) || millions === 0) return '0';
-  if (millions >= 1000) return (millions / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 }) + 'B';
-  return millions.toLocaleString(undefined, { maximumFractionDigits: 1 }) + 'M';
-})()}</strong>
-
-
-
-
-          <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Progress:</span> <strong className="text-emerald-600">{tasks.length ? Math.round((completedTasks / tasks.length) * 100) : 0}%</strong></div>
-        </div>
       </div>
 
       {/* Print Dialog */}
@@ -2081,8 +2123,11 @@ const formatDate = (dateStr: string | undefined | null) => {
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${getPriorityColor(task.priority)}`}>
                         {task.priority}
                       </span>
-                    ) : col.id === 'cost' ? (
-                      <span className="font-mono dark:text-gray-300">KES {(task.cost || 0).toLocaleString()}</span>
+
+) : col.id === 'cost' ? (
+  <span className="font-mono dark:text-gray-300">{formatCurrency(task.cost || 0)}</span>
+
+
                     ) : col.id === 'progress' ? (
                       <div className="flex items-center gap-1">
                         {!isStakeholder ? (
