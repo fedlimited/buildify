@@ -402,15 +402,17 @@ const toggleFullscreen = () => {
     }
   };
 
-  // Get dynamic date range based on tasks (expands as needed)
-// Get dynamic date range based on tasks (expands as needed)
+
+
+
+// Get dynamic date range based on tasks
 const getProjectDateRange = () => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
   if (tasks.length === 0) {
     const end = new Date(today);
-    end.setMonth(end.getMonth() + 6);
+    end.setMonth(end.getMonth() + 1);
     return { minDate: today, maxDate: end };
   }
   
@@ -425,35 +427,24 @@ const getProjectDateRange = () => {
   
   if (validDates.length === 0) {
     const end = new Date(today);
-    end.setMonth(end.getMonth() + 6);
+    end.setMonth(end.getMonth() + 1);
     return { minDate: today, maxDate: end };
   }
   
   let minDate = new Date(Math.min(...validDates.map(d => d.getTime())));
   let maxDate = new Date(Math.max(...validDates.map(d => d.getTime())));
   
-  // Calculate the total duration in days
-  const durationDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
+  // Calculate how many days the project spans
+  const projectDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
   
-  // 🔧 FIX: Add padding based on project length, but DON'T force a minimum of 90 days
-  let paddingDays;
-  if (durationDays < 30) {
-    paddingDays = Math.max(14, durationDays * 0.5); // At least 14 days or 50% padding for short projects
-  } else if (durationDays < 180) {
-    paddingDays = Math.min(durationDays * 0.2, 30); // 20% padding or max 30 days
-  } else {
-    paddingDays = Math.min(durationDays * 0.1, 60); // 10% padding or max 60 days
-  }
+  // Add 20% padding on each side (not fixed 90 days)
+  const paddingDays = Math.max(7, Math.ceil(projectDays * 0.2));
   
-  // Apply padding
   minDate = new Date(minDate.getTime() - paddingDays * 24 * 60 * 60 * 1000);
   maxDate = new Date(maxDate.getTime() + paddingDays * 24 * 60 * 60 * 1000);
   
-  // REMOVED the 90-day minimum - let short projects have short timelines!
-  
   return { minDate, maxDate };
 };
-
 
 
 
@@ -1680,12 +1671,14 @@ const formatBudgetInMillions = (amount: number): string => {
   const { minDate, maxDate } = getProjectDateRange();
 
 
+
 const getTimelineUnit = () => {
   const totalDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
-  // Adjust widths for better alignment
-  if (zoomLevel <= 0.6) return { unit: 'month', label: 'Month', daysPerUnit: 30, width: 80 };
-  if (zoomLevel <= 1.0) return { unit: 'week', label: 'Week', daysPerUnit: 7, width: 65 };
-  return { unit: 'day', label: 'Day', daysPerUnit: 1, width: 50 };
+  
+  // Adjust based on total days, not zoom level
+  if (totalDays <= 30) return { unit: 'day', label: 'Day', daysPerUnit: 1, width: 40 };
+  if (totalDays <= 90) return { unit: 'week', label: 'Week', daysPerUnit: 7, width: 60 };
+  return { unit: 'month', label: 'Month', daysPerUnit: 30, width: 80 };
 };
 
 
