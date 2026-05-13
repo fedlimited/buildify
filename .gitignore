@@ -12,3 +12,6 @@ database.sqlite
 *.sqlite
 *.zip
 bun.lockb
+"backend/database.sqlite.backup" 
+"frontend/bun.lock" 
+"backend/package-lock.json" 
