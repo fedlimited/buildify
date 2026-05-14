@@ -44,8 +44,22 @@ const stakeholderController = {
       // Get company subdomain from authenticated user
       const companySubdomain = req.user?.companySubdomain || req.user?.subdomain || 'app';
       
-      // Get company name from authenticated user
-      const companyName = req.user?.companyName || req.user?.company || req.user?.company_name || 'BOCHI Construction Suite';
+      // 🔥 FIX: Get company name from company_settings table
+      let companyName = 'BOCHI Construction Suite'; // Default fallback
+      
+      if (company_id) {
+        const companyResult = await db.query(
+          `SELECT name FROM company_settings WHERE company_id = $1`,
+          [company_id]
+        );
+        
+        if (companyResult.rows[0] && companyResult.rows[0].name) {
+          companyName = companyResult.rows[0].name;
+          console.log(`✅ Company name found: ${companyName} for company_id: ${company_id}`);
+        } else {
+          console.log(`⚠️ No company settings found for company_id: ${company_id}, using default`);
+        }
+      }
       
       // Generate temporary password (stored in DB but NOT sent in email)
       const tempPassword = Math.random().toString(36).slice(-8);
@@ -90,7 +104,7 @@ const stakeholderController = {
         stakeholderType,          // role
         req.user.name,            // inviterName
         companySubdomain,         // subdomain
-        companyName               // companyName
+        companyName               // companyName - Now correctly "Finite Element Designs Limited"
       );
       
       res.json({ success: true, message: 'Invitation sent successfully' });
@@ -109,9 +123,21 @@ const stakeholderController = {
       
       // Get company subdomain from authenticated user
       const companySubdomain = req.user?.companySubdomain || req.user?.subdomain || 'app';
+      const company_id = req.user?.companyId || req.user?.company_id;
       
-      // Get company name from authenticated user
-      const companyName = req.user?.companyName || req.user?.company || req.user?.company_name || 'BOCHI Construction Suite';
+      // 🔥 FIX: Get company name from company_settings table
+      let companyName = 'BOCHI Construction Suite';
+      
+      if (company_id) {
+        const companyResult = await db.query(
+          `SELECT name FROM company_settings WHERE company_id = $1`,
+          [company_id]
+        );
+        
+        if (companyResult.rows[0] && companyResult.rows[0].name) {
+          companyName = companyResult.rows[0].name;
+        }
+      }
       
       // Generate new temporary password (stored in DB but NOT sent in email)
       const tempPassword = Math.random().toString(36).slice(-8);
@@ -139,13 +165,13 @@ const stakeholderController = {
       
       // Send invitation email - 7 parameters (NO tempPassword)
       await sendStakeholderInvitation(
-        email,                    // email
-        name,                     // name
-        project.rows[0].name,     // projectName
-        stakeholderType,          // role
-        req.user.name,            // inviterName
-        companySubdomain,         // subdomain
-        companyName               // companyName
+        email,
+        name,
+        project.rows[0].name,
+        stakeholderType,
+        req.user.name,
+        companySubdomain,
+        companyName
       );
       
       res.json({ success: true, message: 'Invitation resent successfully' });

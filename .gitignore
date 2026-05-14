@@ -15,3 +15,17 @@ bun.lockb
 "backend/database.sqlite.backup" 
 "frontend/bun.lock" 
 "backend/package-lock.json" 
+
+# Database backups
+*.sqlite.backup
+*.backup
+
+# Lock files (keep these ignored)
+package-lock.json
+bun.lock
+yarn.lock
+
+# Copy files
+* - Copy*.tsx
+* - Copy*.js
+* - Copy*.css

@@ -260,7 +260,7 @@ async function sendTaskReminder({ to, assignee_name, task, due_date, priority, p
 
 
 // ========== STAKEHOLDER INVITATION EMAIL (OTP ONLY - NO PASSWORD) ==========
-async function sendStakeholderInvitation(email, name, projectName, role, inviterName, subdomain) {
+async function sendStakeholderInvitation(email, name, projectName, role, inviterName, subdomain, companyName) {
     try {
         const transporter = getTransporter();
         if (!transporter) {
@@ -268,8 +268,10 @@ async function sendStakeholderInvitation(email, name, projectName, role, inviter
             return { success: false, error: 'Email service not configured' };
         }
         
-        const loginUrl = `https://${subdomain}.bochi.ke/login`;
+        // CORRECTED: Login URL is bochi.ke/login (not subdomain-specific)
+        const loginUrl = `https://bochi.ke/login`;
         const fullPortalUrl = `${subdomain}.bochi.ke`;
+        const displayCompanyName = companyName || 'BOCHI Construction Suite';
         
         // HTML Version with Amber Aesthetics
         const html = `
@@ -497,7 +499,7 @@ async function sendStakeholderInvitation(email, name, projectName, role, inviter
             <body>
                 <div class="container">
                     <div class="header">
-                        <h2>✨ BOCHI Construction Suite</h2>
+                        <h2>✨ ${escapeHtml(displayCompanyName)}</h2>
                         <p>You've been invited to collaborate!</p>
                     </div>
                     <div class="content">
@@ -518,7 +520,7 @@ async function sendStakeholderInvitation(email, name, projectName, role, inviter
                         <div style="text-align: center;">
                             <div class="url-wrapper">
                                 <span class="url-icon">🔐</span>
-                                <span class="url-text">https://${escapeHtml(subdomain)}.bochi.ke/login</span>
+                                <span class="url-text">https://bochi.ke/login</span>
                             </div>
                         </div>
                         
@@ -527,7 +529,7 @@ async function sendStakeholderInvitation(email, name, projectName, role, inviter
                                 <span>📋</span> LOGIN INSTRUCTIONS
                             </div>
                             <ol>
-                                <li>Click the <strong>amber button</strong> below or copy the URL above</li>
+                                <li>Click the <strong>amber button</strong> below or go to <strong>bochi.ke/login</strong></li>
                                 <li>Enter your subdomain: <strong>${escapeHtml(subdomain)}</strong></li>
                                 <li>Enter your email address: <strong>${escapeHtml(email)}</strong></li>
                                 <li>Click <strong>"Request OTP"</strong> to receive a one-time password</li>
@@ -536,7 +538,7 @@ async function sendStakeholderInvitation(email, name, projectName, role, inviter
                         </div>
                         
                         <div style="text-align: center;">
-                            <a href="${loginUrl}" class="button">
+                            <a href="https://bochi.ke/login" class="button">
                                 🚀 LOGIN TO YOUR PORTAL
                             </a>
                         </div>
@@ -548,7 +550,7 @@ async function sendStakeholderInvitation(email, name, projectName, role, inviter
                         </p>
                     </div>
                     <div class="footer">
-                        <p><strong>Admin:</strong> BOCHI Construction Suite</p>
+                        <p><strong>Admin:</strong> ${escapeHtml(displayCompanyName)}</p>
                         <p><a href="https://bochi.ke">🌐 bochi.ke</a></p>
                         <div class="badge">⚡ Powered by Bochi</div>
                     </div>
@@ -557,8 +559,8 @@ async function sendStakeholderInvitation(email, name, projectName, role, inviter
             </html>
         `;
         
-        // Plain Text Version (for email clients that don't support HTML)
-        const text = `✨ BOCHI Construction Suite - Invitation to Collaborate
+        // Plain Text Version
+        const text = `✨ ${displayCompanyName} - Invitation to Collaborate
 
 Dear ${name},
 
@@ -569,44 +571,33 @@ ${inviterName} has invited you to join ${projectName} as a ${role}.
 🔗 Portal URL: ${fullPortalUrl}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🔐 LOGIN URL: https://${subdomain}.bochi.ke/login
+🔐 LOGIN URL: https://bochi.ke/login
 
 📋 LOGIN INSTRUCTIONS:
-1. Go to https://${subdomain}.bochi.ke/login
+1. Go to https://bochi.ke/login
 2. Enter your subdomain: ${subdomain}
 3. Enter your email address: ${email}
 4. Click "Request OTP" to receive a one-time password
 5. Enter the OTP to complete login
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Admin: BOCHI Construction Suite | bochi.ke
+Admin: ${displayCompanyName} | bochi.ke
 ⚡ Powered by Bochi`;
         
         await transporter.sendMail({
-            from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
+            from: `"${displayCompanyName}" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
             to: email,
             subject: `✨ Invitation to collaborate on ${projectName}`,
             html: html,
             text: text
         });
         
-        console.log(`✅ Stakeholder invitation sent to ${email} for subdomain: ${subdomain}`);
+        console.log(`✅ Stakeholder invitation sent to ${email} for ${displayCompanyName} (${subdomain})`);
         return { success: true };
     } catch (error) {
         console.error('Stakeholder invitation error:', error);
         return { success: false, error: error.message };
     }
-}
-
-// Helper function to escape HTML special characters
-function escapeHtml(str) {
-    if (!str) return '';
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
 }
 
 
