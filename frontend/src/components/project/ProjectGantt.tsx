@@ -389,42 +389,6 @@ const toggleFullscreen = () => {
 
 
 
-// Fit to view - auto-zoom to show all tasks
-const fitToView = () => {
-  if (tasks.length === 0) {
-    alert('No tasks to fit to view');
-    return;
-  }
-  
-  // Get min and max dates from all tasks
-  let minTaskDate = new Date(tasks[0].startDate);
-  let maxTaskDate = new Date(tasks[0].endDate);
-  
-  tasks.forEach(task => {
-    const start = new Date(task.startDate);
-    const end = new Date(task.endDate);
-    if (start < minTaskDate) minTaskDate = start;
-    if (end > maxTaskDate) maxTaskDate = end;
-  });
-  
-  // Add 10% padding on each side
-  const duration = maxTaskDate.getTime() - minTaskDate.getTime();
-  const padding = duration * 0.1;
-  const displayMin = new Date(minTaskDate.getTime() - padding);
-  const displayMax = new Date(maxTaskDate.getTime() + padding);
-  
-  // Calculate zoom needed based on container width
-  const totalDays = Math.ceil((displayMax.getTime() - displayMin.getTime()) / (1000 * 60 * 60 * 24));
-  const containerWidth = ganttContainerRef.current?.clientWidth || 800;
-  
-  // Estimate: each day takes about 2-3 pixels at zoom=1
-  const neededZoom = Math.min(1.5, Math.max(0.5, containerWidth / (totalDays * 2.5)));
-  
-  setZoomLevel(neededZoom);
-  addLog(`Fit to view: ${Math.round(neededZoom * 100)}% zoom, ${totalDays} days range`);
-};
-
-
 
   // Clear all tasks
   const clearAllTasks = () => {
@@ -1306,30 +1270,7 @@ useEffect(() => {
 }, []);
 
 
-// Auto-zoom when tasks extend beyond current view
-useEffect(() => {
-  if (tasks.length === 0) return;
-  
-  // Get current task bounds
-  let minTaskDate = new Date(tasks[0].startDate);
-  let maxTaskDate = new Date(tasks[0].endDate);
-  
-  tasks.forEach(task => {
-    const start = new Date(task.startDate);
-    const end = new Date(task.endDate);
-    if (start < minTaskDate) minTaskDate = start;
-    if (end > maxTaskDate) maxTaskDate = end;
-  });
-  
-  // Check if any task is outside the visible range
-  const isOutsideView = minTaskDate < minDate || maxTaskDate > maxDate;
-  
-  if (isOutsideView && zoomLevel > 0.5) {
-    const newZoom = Math.max(0.5, zoomLevel * 0.85);
-    setZoomLevel(newZoom);
-    addLog(`Auto-zoomed to ${Math.round(newZoom * 100)}% to show extended task range`);
-  }
-}, [tasks, minDate, maxDate, zoomLevel]);
+
 
 
 useEffect(() => {
@@ -1723,112 +1664,85 @@ const formatBudgetInMillions = (amount: number): string => {
     }
   };
 
-
-
-
-
-
   const { minDate, maxDate } = getProjectDateRange();
 
   // Timeline headers with dynamic sizing
-  // IMPORTANT: getTimelineUnit MUST be defined BEFORE timelineHeaders useMemo
   const getTimelineUnit = () => {
     const totalDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
-    const effectiveDays = totalDays / zoomLevel;
-    
-    if (effectiveDays > 400) {
-      return { unit: 'year', label: 'Year', daysPerUnit: 365, width: 70, getLabel: (date: Date) => date.getFullYear().toString() };
-    } else if (effectiveDays > 150) {
-      return { unit: 'quarter', label: 'Quarter', daysPerUnit: 90, width: 65, getLabel: (date: Date) => `Q${Math.floor(date.getMonth() / 3) + 1}` };
-    } else if (effectiveDays > 60) {
-      return { unit: 'month', label: 'Month', daysPerUnit: 30, width: 60, getLabel: (date: Date) => date.toLocaleDateString('en-US', { month: 'short' }) };
-    } else if (effectiveDays > 21) {
-      return { unit: 'week', label: 'Week', daysPerUnit: 7, width: 55, getLabel: (date: Date) => {
-        const weekNum = Math.ceil((date.getTime() - new Date(date.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
-        return `W${weekNum}`;
-      } };
-    } else {
-      return { unit: 'day', label: 'Day', daysPerUnit: 1, width: 45, getLabel: (date: Date) => date.getDate().toString() };
-    }
+    if (zoomLevel <= 0.6) return { unit: 'month', label: 'Month', daysPerUnit: 30, width: 70 };
+    if (zoomLevel <= 1.0) return { unit: 'week', label: 'Week', daysPerUnit: 7, width: 55 };
+    return { unit: 'day', label: 'Day', daysPerUnit: 1, width: 40 };
   };
 
   const timelineUnit = getTimelineUnit();
-  
-  const timelineHeaders = useMemo(() => {
-    const headers: { date: Date; label: string; widthPercent: number }[] = [];
-    const totalMs = maxDate.getTime() - minDate.getTime();
-    if (totalMs <= 0) return headers;
+  const timelineHeaders: { date: Date; label: string; subLabel?: string }[] = [];
+  let currentDate = new Date(minDate);
+
+  if (timelineUnit.unit === 'month') {
+    currentDate.setDate(1);
+    while (currentDate <= maxDate) {
+      timelineHeaders.push({ date: new Date(currentDate), label: currentDate.toLocaleDateString('en-US', { month: 'short' }) });
+      currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+  } else if (timelineUnit.unit === 'week') {
+    const day = currentDate.getDay();
+    const diff = day === 0 ? 6 : day - 1;
+    currentDate.setDate(currentDate.getDate() - diff);
+    while (currentDate <= maxDate) {
+      timelineHeaders.push({ date: new Date(currentDate), label: `W${Math.ceil((currentDate.getTime() - new Date(currentDate.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000))}` });
+      currentDate.setDate(currentDate.getDate() + 7);
+    }
+  } else {
+    while (currentDate <= maxDate) {
+      timelineHeaders.push({ date: new Date(currentDate), label: currentDate.getDate().toString() });
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+  }
+
+
+
+
+
+
+  const calculateBarPosition = (startDateStr: string, endDateStr: string) => {
+    // Clean up date strings (remove time part if present)
+    let cleanStart = startDateStr;
+    let cleanEnd = endDateStr;
     
-    const unit = getTimelineUnit();
-    let current = new Date(minDate);
-    
-    if (unit.unit === 'year') {
-      current = new Date(minDate.getFullYear(), 0, 1);
-      while (current <= maxDate) {
-        const yearStart = Math.max(current.getTime(), minDate.getTime());
-        const yearEnd = Math.min(new Date(current.getFullYear() + 1, 0, 1).getTime(), maxDate.getTime());
-        const widthPercent = ((yearEnd - yearStart) / totalMs) * 100;
-        headers.push({ date: new Date(current), label: unit.getLabel(current), widthPercent: Math.max(3, widthPercent) });
-        current.setFullYear(current.getFullYear() + 1);
-      }
-    } 
-    else if (unit.unit === 'quarter') {
-      current = new Date(minDate);
-      current.setDate(1);
-      const startQuarter = Math.floor(current.getMonth() / 3);
-      current.setMonth(startQuarter * 3, 1);
-      while (current <= maxDate) {
-        const quarterStart = Math.max(current.getTime(), minDate.getTime());
-        const quarterEnd = Math.min(new Date(current.getFullYear(), current.getMonth() + 3, 1).getTime(), maxDate.getTime());
-        const widthPercent = ((quarterEnd - quarterStart) / totalMs) * 100;
-        headers.push({ date: new Date(current), label: unit.getLabel(current), widthPercent: Math.max(3, widthPercent) });
-        current.setMonth(current.getMonth() + 3);
-      }
+    if (cleanStart && cleanStart.includes('T')) {
+      cleanStart = cleanStart.split('T')[0];
     }
-    else if (unit.unit === 'month') {
-      current = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
-      while (current <= maxDate) {
-        const monthStart = Math.max(current.getTime(), minDate.getTime());
-        const monthEnd = Math.min(new Date(current.getFullYear(), current.getMonth() + 1, 1).getTime(), maxDate.getTime());
-        const widthPercent = ((monthEnd - monthStart) / totalMs) * 100;
-        headers.push({ date: new Date(current), label: unit.getLabel(current), widthPercent: Math.max(3, widthPercent) });
-        current.setMonth(current.getMonth() + 1);
-      }
-    }
-    else if (unit.unit === 'week') {
-      const dayOfWeek = current.getDay();
-      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-      current.setDate(current.getDate() - daysToMonday);
-      while (current <= maxDate) {
-        const weekStart = Math.max(current.getTime(), minDate.getTime());
-        const weekEnd = Math.min(current.getTime() + 7 * 24 * 60 * 60 * 1000, maxDate.getTime());
-        const widthPercent = ((weekEnd - weekStart) / totalMs) * 100;
-        headers.push({ date: new Date(current), label: unit.getLabel(current), widthPercent: Math.max(2, widthPercent) });
-        current.setDate(current.getDate() + 7);
-      }
-    }
-    else {
-      current = new Date(minDate);
-      current.setHours(0, 0, 0, 0);
-      while (current <= maxDate) {
-        const dayStart = current.getTime();
-        const dayEnd = Math.min(dayStart + 24 * 60 * 60 * 1000, maxDate.getTime());
-        const widthPercent = ((dayEnd - dayStart) / totalMs) * 100;
-        headers.push({ date: new Date(current), label: current.getDate().toString(), widthPercent: Math.max(1, widthPercent) });
-        current.setDate(current.getDate() + 1);
-      }
+    if (cleanEnd && cleanEnd.includes('T')) {
+      cleanEnd = cleanEnd.split('T')[0];
     }
     
-    return headers;
-  }, [minDate, maxDate, zoomLevel]);
-
-
-
-
-
-
-
-
+    const start = new Date(cleanStart);
+    const end = new Date(cleanEnd);
+    
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return { left: '0%', width: '0%' };
+    }
+    
+    const totalDays = maxDate.getTime() - minDate.getTime();
+    
+    // If totalDays is 0 or invalid, return default
+    if (totalDays <= 0) {
+      return { left: '0%', width: '10%' };
+    }
+    
+    const startOffset = start.getTime() - minDate.getTime();
+    const duration = end.getTime() - start.getTime();
+    let left = (startOffset / totalDays) * 100;
+    let width = (duration / totalDays) * 100;
+    
+    // Ensure minimum visibility
+    if (width < 0.5 && duration > 0) width = 0.5;
+    if (left < 0) left = 0;
+    if (left > 100) left = 100;
+    if (width > 100) width = 100;
+    
+    return { left: `${left}%`, width: `${width}%` };
+  };
 
 
 
@@ -2050,40 +1964,12 @@ const formatBudgetInMillions = (amount: number): string => {
             <button onClick={() => setShowColumnConfig(true)} className="px-2 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm flex items-center gap-1 transition">
               <Eye size={14} /> Columns
             </button>
-
-
-
-
-
-
-
-
-
-<div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-700 rounded p-0.5">
-  <button onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.1))} className="p-1.5 rounded hover:bg-white/50" title="Zoom Out"><ZoomOut size={14} /></button>
-  <span className="text-xs w-12 text-center dark:text-white">{Math.round(zoomLevel * 100)}%</span>
-  <button onClick={() => setZoomLevel(Math.min(1.5, zoomLevel + 0.1))} className="p-1.5 rounded hover:bg-white/50" title="Zoom In"><ZoomIn size={14} /></button>
-  <button onClick={toggleFullscreen} className="p-1.5 rounded hover:bg-white/50" title="Fullscreen">{isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}</button>
-</div>
-
-{/* Add Fit View Button here */}
-<button 
-  onClick={fitToView} 
-  className="px-2 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded text-sm flex items-center gap-1 transition ml-1"
-  title="Auto-zoom to show all tasks"
->
-  <Maximize2 size={14} /> Fit View
-</button>
-
-
-
-
-
-
-
-
-
-
+            
+            <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-700 rounded p-0.5">
+              <button onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.1))} className="p-1.5 rounded hover:bg-white/50"><ZoomOut size={14} /></button>
+              <span className="text-xs w-12 text-center dark:text-white">{Math.round(zoomLevel * 100)}%</span>
+              <button onClick={() => setZoomLevel(Math.min(1.5, zoomLevel + 0.1))} className="p-1.5 rounded hover:bg-white/50"><ZoomIn size={14} /></button>
+              <button onClick={toggleFullscreen} className="p-1.5 rounded hover:bg-white/50">{isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}</button>
             </div>
             
             <div className="flex gap-0.5">
@@ -2102,362 +1988,410 @@ const formatBudgetInMillions = (amount: number): string => {
               <button onClick={() => setQuickFilter('all')} className={`px-2 py-1 rounded ${quickFilter === 'all' ? 'bg-amber-500 text-white' : 'bg-gray-200 dark:bg-gray-700 dark:text-gray-300'}`}>All</button>
               <button onClick={() => setQuickFilter('overdue')} className={`px-2 py-1 rounded flex items-center gap-1 ${quickFilter === 'overdue' ? 'bg-red-500 text-white' : 'bg-gray-200 dark:bg-gray-700 dark:text-gray-300'}`}><AlertTriangle size={10} /> Overdue</button>
               <button onClick={() => setQuickFilter('milestones')} className={`px-2 py-1 rounded ${quickFilter === 'milestones' ? 'bg-purple-500 text-white' : 'bg-gray-200 dark:bg-gray-700 dark:text-gray-300'}`}><Star size={10} /> Milestones</button>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Dashboard */}
-      <div className="grid grid-cols-6 gap-2 p-2 text-xs bg-gray-50 dark:bg-gray-800/50">
-        <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Tasks:</span> <strong className="dark:text-white">{tasks.length}</strong></div>
-        <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Completed:</span> <strong className="text-emerald-600">{completedTasks}</strong></div>
-        <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Overdue:</span> <strong className="text-red-600">{tasks.filter(t => getDaysRemaining(t.endDate) < 0 && t.progress < 100).length}</strong></div>
-        <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Dependencies:</span> <strong className="dark:text-white">{dependencies.length}</strong></div>
-        <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Budget:</span> <strong className="text-cyan-600">{formatBudgetInMillions(totalCost)}</strong></div>
-        <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Progress:</span> <strong className="text-emerald-600">{tasks.length ? Math.round((completedTasks / tasks.length) * 100) : 0}%</strong></div>
-      </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div dangerouslySetInnerHTML={{ __html: ganttContainerRef.current?.outerHTML || '' }} />
-    {/* Print Dialog */}
-    {showPrintDialog && (
-      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-        <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md p-5 shadow-2xl">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold dark:text-white">Professional Print</h3>
-            <button onClick={() => setShowPrintDialog(false)} className="dark:text-gray-400"><X size={20} /></button>
-          </div>
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <select value={printPaperSize} onChange={(e) => setPrintPaperSize(e.target.value as any)} 
-                className="px-2 py-1.5 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
-                <option value="A0">A0 (Architectural)</option>
-                <option value="A1">A1 (Large Poster)</option>
-                <option value="A2">A2 (Medium)</option>
-                <option value="A3">A3 (Small)</option>
-                <option value="A4">A4 (Letter)</option>
-              </select>
-              <select value={printOrientation} onChange={(e) => setPrintOrientation(e.target.value as any)} 
-                className="px-2 py-1.5 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
-                <option value="landscape">Landscape</option>
-                <option value="portrait">Portrait</option>
-              </select>
             </div>
-            <select value={printScale} onChange={(e) => setPrintScale(e.target.value as any)} 
-              className="w-full px-2 py-1.5 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
-              <option value="fit">Fit to Page</option>
-              <option value="actual">Actual Size</option>
-              <option value="shrink">Shrink to Fit</option>
-            </select>
-            <button onClick={handlePrint} className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-semibold">
-              Generate Professional PDF
-            </button>
           </div>
         </div>
+
+
+        
+{/* Stats Dashboard */}
+<div className="grid grid-cols-6 gap-2 p-2 text-xs bg-gray-50 dark:bg-gray-800/50">
+  <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Tasks:</span> <strong className="dark:text-white">{tasks.length}</strong></div>
+  <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Completed:</span> <strong className="text-emerald-600">{completedTasks}</strong></div>
+  <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Overdue:</span> <strong className="text-red-600">{tasks.filter(t => getDaysRemaining(t.endDate) < 0 && t.progress < 100).length}</strong></div>
+  <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Dependencies:</span> <strong className="dark:text-white">{dependencies.length}</strong></div>
+  <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Budget:</span> <strong className="text-cyan-600">{formatBudgetInMillions(totalCost)}</strong></div>
+  <div className="text-center"><span className="text-gray-500 dark:text-gray-400">Progress:</span> <strong className="text-emerald-600">{tasks.length ? Math.round((completedTasks / tasks.length) * 100) : 0}%</strong></div>
+</div>
+
+
+
       </div>
-    )}
 
-    {/* Print Container - Hidden, used for capturing full chart */}
-    <div style={{ display: 'none' }}>
-      <div ref={printRef} className="print-container" style={{ padding: '20px', background: 'white', width: '100%' }}>
-        <div style={{ marginBottom: '20px', borderBottom: '2px solid #333', paddingBottom: '10px' }}>
-          <h1 style={{ fontSize: '22px', fontWeight: 'bold', margin: 0 }}>Project Gantt Chart</h1>
-          <p style={{ fontSize: '11px', color: '#666', marginTop: '5px' }}>Project: {projectName} | Generated: {new Date().toLocaleString()} | Paper: {printPaperSize} {printOrientation}</p>
-        </div>
-        <div dangerouslySetInnerHTML={{ __html: ganttContainerRef.current?.outerHTML || '' }} />
-      </div>
-    </div>
-
-
-
-
-    {/* Column Config Modal */}
-    {showColumnConfig && (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md p-5 shadow-2xl">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-semibold dark:text-white">Customize Columns</h3>
-            <button onClick={() => setShowColumnConfig(false)} className="dark:text-gray-400"><X size={18} /></button>
-          </div>
-          <div className="space-y-2 max-h-96 overflow-y-auto">
-            {[...columns].sort((a, b) => a.order - b.order).map(col => (
-              <div key={col.id} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
-                <div className="cursor-grab" onMouseDown={(e) => startDrag(col.id, e.clientX, col.order)}><GripVertical size={14} /></div>
-                <input type="checkbox" checked={col.visible} onChange={() => toggleColumnVisibility(col.id)} className="rounded" />
-                <span className="flex-1 text-sm dark:text-gray-300">{col.label}</span>
-                <div className="text-xs text-gray-400">{col.width}px</div>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-end gap-2 mt-4">
-            <button onClick={resetColumnLayout} className="px-3 py-1.5 border rounded text-sm">Reset</button>
-            <button onClick={() => setShowColumnConfig(false)} className="px-3 py-1.5 bg-amber-600 text-white rounded text-sm">Done</button>
-          </div>
-        </div>
-      </div>
-    )}
-
-
-
-
-    {/* Gantt Chart Container */}
-    <div 
-      ref={ganttContainerRef} 
-      className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-y-auto overflow-x-auto shadow-md" 
-      style={{ 
-        maxHeight: isFullscreen ? 'calc(100vh - 60px)' : 'calc(100vh - 180px)',
-        minWidth: '100%',
-        width: '100%',
-        display: 'block'
-      }}
-    >
-      <div style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left' }}>
-        {/* Header */}
-        <div className="flex border-b-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/90 sticky top-0 z-10">
-          {visibleColumns.map((col) => (
-            <div key={col.id} className="flex-shrink-0 px-2 py-2 font-semibold text-xs text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 relative" style={{ width: col.width }}>
-              {col.label}
-              <div className="absolute right-0 top-0 w-0.5 h-full cursor-ew-resize hover:bg-amber-400" onMouseDown={(e) => startResize(col.id, e.clientX, col.width)} />
+      {/* Print Dialog */}
+      {showPrintDialog && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md p-5 shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold dark:text-white">Professional Print</h3>
+              <button onClick={() => setShowPrintDialog(false)} className="dark:text-gray-400"><X size={20} /></button>
             </div>
-          ))}
-          <div className="flex-1 flex">
-            {timelineHeaders.map((header, idx) => (
-              <div 
-                key={idx} 
-                className="text-center py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 truncate"
-                style={{ width: `${header.widthPercent}%`, minWidth: '40px' }}
-                title={header.date.toLocaleDateString()}
-              >
-                {header.label}
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <select value={printPaperSize} onChange={(e) => setPrintPaperSize(e.target.value as any)} 
+                  className="px-2 py-1.5 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
+                  <option value="A0">A0 (Architectural)</option><option value="A1">A1 (Large Poster)</option>
+                  <option value="A2">A2 (Medium)</option><option value="A3">A3 (Small)</option><option value="A4">A4 (Letter)</option>
+                </select>
+                <select value={printOrientation} onChange={(e) => setPrintOrientation(e.target.value as any)} 
+                  className="px-2 py-1.5 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
+                  <option value="landscape">Landscape</option><option value="portrait">Portrait</option>
+                </select>
               </div>
-            ))}
+              <select value={printScale} onChange={(e) => setPrintScale(e.target.value as any)} 
+                className="w-full px-2 py-1.5 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
+                <option value="fit">Fit to Page</option><option value="actual">Actual Size</option><option value="shrink">Shrink to Fit</option>
+              </select>
+              <button onClick={handlePrint} className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-semibold">Generate Professional PDF</button>
+            </div>
           </div>
-          <div className="w-8 flex-shrink-0"></div>
         </div>
+      )}
 
-        {/* Task Rows */}
-        {visibleTasks.map((task) => {
-          const isParent = tasks.some(t => t.parentId === task.id);
-          const { left, width } = calculateBarPosition(task.startDate, task.endDate);
-          const isOverdue = getDaysRemaining(task.endDate) < 0 && task.progress < 100;
-          const barColor = getTaskBarColor(task);
-          
-          return (
-            <div key={task.id} 
-              className={`flex border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition cursor-pointer ${selectedTask === task.id ? 'bg-blue-50 dark:bg-blue-950/30' : ''}`} 
-              onClick={() => setSelectedTask(task.id)}>
-              {visibleColumns.map((col) => (
-                <div key={col.id} className="flex-shrink-0 px-2 py-1.5 text-xs border-r border-gray-100 dark:border-gray-800 truncate" style={{ width: col.width }}>
-                  {col.id === 'name' ? (
-                    <div className="flex items-center gap-1">
-                      {isParent && (
-                        <button onClick={(e) => { e.stopPropagation(); toggleExpand(task.id); }} className="text-gray-400 hover:text-amber-500">
-                          {expandedTasks.has(task.id) ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                        </button>
-                      )}
-                      <span className={`${task.parentId === null ? "font-semibold" : "ml-4"} truncate dark:text-gray-200`}>{task.name}</span>
-                      {task.isMilestone && <Star size={10} className="text-purple-400" />}
-                      {dependencies.some(d => d.toTaskId === task.id) && <Link2 size={10} className="text-indigo-400" />}
-                    </div>
-                  ) : col.id === 'priority' ? (
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${getPriorityColor(task.priority)}`}>
-                      {task.priority}
-                    </span>
-                  ) : col.id === 'cost' ? (
-                    <span className="font-mono dark:text-gray-300">{formatCurrency(task.cost || 0)}</span>
-                  ) : col.id === 'progress' ? (
-                    <div className="flex items-center gap-1">
-                      {!isStakeholder ? (
-                        <select value={task.progress} onChange={(e) => updateTaskProgress(task.id, parseInt(e.target.value))} 
-                          className="text-xs px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-700 dark:text-gray-200 w-full" onClick={(e) => e.stopPropagation()}>
-                          {[0, 25, 50, 75, 100].map(p => <option key={p} value={p}>{p}%</option>)}
-                        </select>
-                      ) : (
-                        <span className={`font-mono font-medium ${task.progress === 100 ? 'text-emerald-600' : 'text-gray-600'}`}>{task.progress}%</span>
-                      )}
-                    </div>
-                  ) : col.id === 'start' ? (
-                    <span className="dark:text-gray-300">{formatDate(task.startDate)}</span>
-                  ) : col.id === 'end' ? (
-                    <span className="dark:text-gray-300">{formatDate(task.endDate)}</span>
-                  ) : col.id === 'duration' ? (
-                    <span className="dark:text-gray-300">{task.duration}d</span>
-                  ) : col.id === 'wbs' ? (
-                    <span className="font-mono dark:text-gray-300">{task.wbs}</span>
-                  ) : col.id === 'assignedTo' ? (
-                    <span className="dark:text-gray-300">{task.assignedTo || '-'}</span>
-                  ) : (
-                    <span className="dark:text-gray-300">{task[col.id as keyof Task] as string}</span>
-                  )}
+      {/* Print Container - Hidden, used for capturing full chart */}
+      <div style={{ display: 'none' }}>
+        <div ref={printRef} className="print-container" style={{ padding: '20px', background: 'white', width: '100%' }}>
+          <div style={{ marginBottom: '20px', borderBottom: '2px solid #333', paddingBottom: '10px' }}>
+            <h1 style={{ fontSize: '22px', fontWeight: 'bold', margin: 0 }}>Project Gantt Chart</h1>
+            <p style={{ fontSize: '11px', color: '#666', marginTop: '5px' }}>Project: {projectName} | Generated: {new Date().toLocaleString()} | Paper: {printPaperSize} {printOrientation}</p>
+          </div>
+          <div dangerouslySetInnerHTML={{ __html: ganttContainerRef.current?.outerHTML || '' }} />
+        </div>
+      </div>
+
+      {/* Column Config Modal - Dark Mode */}
+      {showColumnConfig && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md p-5 shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-semibold dark:text-white">Customize Columns</h3>
+              <button onClick={() => setShowColumnConfig(false)} className="dark:text-gray-400"><X size={18} /></button>
+            </div>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {[...columns].sort((a, b) => a.order - b.order).map(col => (
+                <div key={col.id} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
+                  <div className="cursor-grab" onMouseDown={(e) => startDrag(col.id, e.clientX, col.order)}><GripVertical size={14} /></div>
+                  <input type="checkbox" checked={col.visible} onChange={() => toggleColumnVisibility(col.id)} className="rounded" />
+                  <span className="flex-1 text-sm dark:text-gray-300">{col.label}</span>
+                  <div className="text-xs text-gray-400">{col.width}px</div>
                 </div>
               ))}
-              <div className="flex-1 relative py-1">
-                <div className="relative h-7 bg-gray-100 dark:bg-gray-700/50 rounded overflow-hidden">
-                  <div className="absolute inset-0 flex">
-                    {timelineHeaders.map((header, idx) => (
-                      <div 
-                        key={idx} 
-                        className="border-r border-gray-200 dark:border-gray-700/50"
-                        style={{ width: `${header.widthPercent}%`, minWidth: '2px' }}
-                      />
-                    ))}
-                  </div>
-                  {(task.isMilestone || task.duration === 0 || task.name.includes('🎉')) ? (
-                    <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-purple-500 shadow-md" style={{ left: `calc(${left} - 6px)` }}>
-                      <Star size={8} className="text-white absolute top-0.5 left-0.5" />
-                    </div>
-                  ) : (
-                    <div className={`absolute top-0.5 h-6 rounded-md shadow-sm transition-all cursor-pointer ${barColor} ${isOverdue ? 'ring-2 ring-red-400' : ''}`} 
-                      style={{ left: left, width: width }} title={`${task.name}: ${formatDate(task.startDate)} - ${formatDate(task.endDate)}`}>
-                      <div className="absolute inset-0 bg-white/25 rounded-md" style={{ width: `${task.progress}%` }} />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-[9px] font-medium text-white drop-shadow-sm">{task.progress}%</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              {!isStakeholder && !task.isMilestone && (
-                <div className="w-16 flex-shrink-0 flex items-center justify-center gap-2">
-                  <button onClick={(e) => { e.stopPropagation(); editTask(task); }} className="text-gray-400 hover:text-blue-500 transition" title="Edit Task">
-                    <Edit size={12} />
-                  </button>
-                  <button onClick={(e) => deleteSingleTask(task.id, e)} className="text-gray-400 hover:text-red-500 transition" title="Delete Task">
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              )}
             </div>
-          );
-        })}
-         
-        {visibleTasks.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-gray-500 dark:text-gray-400 mb-3">No tasks yet. Get started below:</p>
-            <div className="flex gap-3 justify-center">
-              <button onClick={addNewTask} className="px-4 py-2 bg-amber-600 text-white rounded-lg flex items-center gap-2"><Plus size={16} /> Add First Task</button>
-              <button onClick={loadSampleData} className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2"><Sparkles size={16} /> Load Sample Project</button>
-              <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-emerald-600 text-white rounded-lg flex items-center gap-2"><Upload size={16} /> Import MS Project</button>
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={resetColumnLayout} className="px-3 py-1.5 border rounded text-sm">Reset</button>
+              <button onClick={() => setShowColumnConfig(false)} className="px-3 py-1.5 bg-amber-600 text-white rounded text-sm">Done</button>
             </div>
-          </div>
-        )}
-      </div>
-    </div>
-
-
-
-
-
-
-
-    {/* Task Modal */}
-    {showTaskModal && (
-      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-        <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md p-5 shadow-2xl">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-semibold dark:text-white">{editingTaskId !== null ? 'Edit Task' : 'Add New Task'}</h3>
-            <button onClick={() => { setShowTaskModal(false); setEditingTaskId(null); }} className="dark:text-gray-400 hover:dark:text-white">
-              <X size={18} />
-            </button>
-          </div>
-          <div className="space-y-3">
-            <input type="text" placeholder="e.g., Foundation Excavation, Steel Reinforcement, Roofing" value={taskForm.name} onChange={(e) => setTaskForm({...taskForm, name: e.target.value})} className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400" />
-            <div className="grid grid-cols-2 gap-3">
-              <input type="date" value={taskForm.startDate} onChange={(e) => setTaskForm({...taskForm, startDate: e.target.value})} className="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-              <input type="date" value={taskForm.endDate} onChange={(e) => setTaskForm({...taskForm, endDate: e.target.value})} className="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-            </div>
-            <select value={taskForm.parentId || ''} onChange={(e) => setTaskForm({...taskForm, parentId: e.target.value ? parseInt(e.target.value) : null})} className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-              <option value="">-- No Parent --</option>
-              {tasks.filter(t => t.parentId === null).map(task => (<option key={task.id} value={task.id}>{task.name}</option>))}
-            </select>
-            <select value={taskForm.priority} onChange={(e) => setTaskForm({...taskForm, priority: e.target.value as any})} className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-              <option value="urgent">Urgent</option>
-            </select>
-            <input type="number" placeholder="e.g., 50000, 150000, 500000" value={taskForm.cost} onChange={(e) => setTaskForm({...taskForm, cost: parseInt(e.target.value) || 0})} className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 focus:ring-2 focus:ring-amber-500" step="1000" min="0" />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">💡 Examples: 50,000 (materials), 150,000 (labor), 500,000 (equipment)</p>
-            <input type="text" placeholder="e.g., John M. - Site Manager, Sarah K. - Architect" value={taskForm.assignedTo} onChange={(e) => setTaskForm({...taskForm, assignedTo: e.target.value})} className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-          </div>
-          <div className="flex justify-end gap-3 mt-5">
-            <button onClick={() => { setShowTaskModal(false); setEditingTaskId(null); }} className="px-4 py-2 border rounded-lg dark:border-gray-600 dark:text-gray-300">Cancel</button>
-            <button onClick={handleSaveTask} className="px-4 py-2 bg-amber-600 text-white rounded-lg">{editingTaskId !== null ? 'Update Task' : 'Add Task'}</button>
           </div>
         </div>
-      </div>
-    )}
+      )}
 
 
 
+      {/* Gantt Chart Container */}
+<div 
+  ref={ganttContainerRef} 
+  className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-y-auto overflow-x-auto shadow-md" 
+  style={{ 
+    maxHeight: isFullscreen ? 'calc(100vh - 60px)' : 'calc(100vh - 180px)',
+    minWidth: '100%',
+    width: '100%',
+    display: 'block'
+  }}
+>
 
 
-   {/* Dependency Modal */}
-    {showDependencyModal && (
-      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-        <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md p-5 shadow-2xl">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-semibold dark:text-white">Add Dependency</h3>
-            <button onClick={() => setShowDependencyModal(false)} className="dark:text-gray-400"><X size={18} /></button>
-          </div>
-          <div className="space-y-3">
-            <select value={selectedDependency.fromTaskId || ''} onChange={(e) => setSelectedDependency({...selectedDependency, fromTaskId: parseInt(e.target.value)})} className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-              <option value="">Predecessor (must finish first)</option>
-              {tasks.map(task => (<option key={task.id} value={task.id}>{task.name}</option>))}
-            </select>
-            <select value={selectedDependency.toTaskId || ''} onChange={(e) => setSelectedDependency({...selectedDependency, toTaskId: parseInt(e.target.value)})} className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-              <option value="">Successor (depends on predecessor)</option>
-              {tasks.map(task => (<option key={task.id} value={task.id}>{task.name}</option>))}
-            </select>
-            <div className="bg-indigo-50 dark:bg-indigo-950/30 rounded-lg p-2">
-              <p className="text-xs text-indigo-700 dark:text-indigo-300"><strong>Finish to Start (FS)</strong> - Successor cannot start until predecessor finishes.</p>
+        <div style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left' }}>
+          {/* Header */}
+          <div className="flex border-b-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/90 sticky top-0 z-10">
+            {visibleColumns.map((col) => (
+              <div key={col.id} className="flex-shrink-0 px-2 py-2 font-semibold text-xs text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 relative" style={{ width: col.width }}>
+                {col.label}
+                <div className="absolute right-0 top-0 w-0.5 h-full cursor-ew-resize hover:bg-amber-400" onMouseDown={(e) => startResize(col.id, e.clientX, col.width)} />
+              </div>
+            ))}
+            <div className="flex-1 flex">
+              {timelineHeaders.map((header, idx) => (
+                <div key={idx} className="flex-1 text-center py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700" style={{ minWidth: timelineUnit.width }}>
+                  {header.label}
+                </div>
+              ))}
             </div>
+            <div className="w-8 flex-shrink-0"></div>
           </div>
-          <div className="flex justify-end gap-3 mt-5">
-            <button onClick={() => setShowDependencyModal(false)} className="px-4 py-2 border rounded-lg dark:border-gray-600 dark:text-gray-300">Cancel</button>
-            <button onClick={() => { 
-              if (selectedDependency.fromTaskId && selectedDependency.toTaskId) { 
-                addDependency(selectedDependency.fromTaskId, selectedDependency.toTaskId); 
-                setShowDependencyModal(false); 
-                setSelectedDependency({ fromTaskId: null, toTaskId: null });
-              } else { 
-                alert('Select both tasks'); 
-              } 
-            }} className="px-4 py-2 bg-indigo-600 text-white rounded-lg">Add Dependency</button>
-          </div>
-          {dependencies.length > 0 && (
-            <div className="mt-4 pt-3 border-t dark:border-gray-700">
-              <h4 className="text-xs font-medium mb-2 dark:text-white">Existing Dependencies ({dependencies.length})</h4>
-              <div className="max-h-40 overflow-y-auto space-y-1">
-                {dependencies.map(dep => {
-                  const from = tasks.find(t => t.id === dep.fromTaskId);
-                  const to = tasks.find(t => t.id === dep.toTaskId);
-                  return (
-                    <div key={dep.id} className="flex justify-between items-center p-1.5 bg-gray-50 dark:bg-gray-700/50 rounded text-xs">
-                      <span className="truncate dark:text-gray-300">{from?.name} → {to?.name}</span>
-                      <button onClick={() => removeDependency(dep.id)} className="text-red-500 hover:text-red-700"><Trash2 size={12} /></button>
-</div>
-                  );
-                })}
+
+          {/* Task Rows */}
+          {visibleTasks.map((task) => {
+            const isParent = tasks.some(t => t.parentId === task.id);
+            const { left, width } = calculateBarPosition(task.startDate, task.endDate);
+            const isOverdue = getDaysRemaining(task.endDate) < 0 && task.progress < 100;
+            const barColor = getTaskBarColor(task);
+            
+            return (
+              <div key={task.id} 
+                className={`flex border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition cursor-pointer ${selectedTask === task.id ? 'bg-blue-50 dark:bg-blue-950/30' : ''}`} 
+                onClick={() => setSelectedTask(task.id)}>
+                {visibleColumns.map((col) => (
+                  <div key={col.id} className="flex-shrink-0 px-2 py-1.5 text-xs border-r border-gray-100 dark:border-gray-800 truncate" style={{ width: col.width }}>
+                    {col.id === 'name' ? (
+                      <div className="flex items-center gap-1">
+                        {isParent && (
+                          <button onClick={(e) => { e.stopPropagation(); toggleExpand(task.id); }} className="text-gray-400 hover:text-amber-500">
+                            {expandedTasks.has(task.id) ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                          </button>
+                        )}
+                        <span className={`${task.parentId === null ? "font-semibold" : "ml-4"} truncate dark:text-gray-200`}>{task.name}</span>
+                        {task.isMilestone && <Star size={10} className="text-purple-400" />}
+                        {dependencies.some(d => d.toTaskId === task.id) && <Link2 size={10} className="text-indigo-400" />}
+                      </div>
+                    ) : col.id === 'priority' ? (
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${getPriorityColor(task.priority)}`}>
+                        {task.priority}
+                      </span>
+
+) : col.id === 'cost' ? (
+  <span className="font-mono dark:text-gray-300">{formatCurrency(task.cost || 0)}</span>
+
+
+                    ) : col.id === 'progress' ? (
+                      <div className="flex items-center gap-1">
+                        {!isStakeholder ? (
+                          <select value={task.progress} onChange={(e) => updateTaskProgress(task.id, parseInt(e.target.value))} 
+                            className="text-xs px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-700 dark:text-gray-200 w-full" onClick={(e) => e.stopPropagation()}>
+                            {[0, 25, 50, 75, 100].map(p => <option key={p} value={p}>{p}%</option>)}
+                          </select>
+                        ) : (
+                          <span className={`font-mono font-medium ${task.progress === 100 ? 'text-emerald-600' : 'text-gray-600'}`}>{task.progress}%</span>
+                        )}
+                      </div>
+
+
+                    ) : col.id === 'start' ? (
+                      <span className="dark:text-gray-300">{formatDate(task.startDate)}</span>
+                    ) : col.id === 'end' ? (
+                      <span className="dark:text-gray-300">{formatDate(task.endDate)}</span>
+                    ) : col.id === 'duration' ? (
+
+
+                      <span className="dark:text-gray-300">{task.duration}d</span>
+                    ) : col.id === 'wbs' ? (
+                      <span className="font-mono dark:text-gray-300">{task.wbs}</span>
+                    ) : col.id === 'assignedTo' ? (
+                      <span className="dark:text-gray-300">{task.assignedTo || '-'}</span>
+                    ) : (
+                      <span className="dark:text-gray-300">{task[col.id as keyof Task] as string}</span>
+                    )}
+                  </div>
+                ))}
+                <div className="flex-1 relative py-1">
+                  <div className="relative h-7 bg-gray-100 dark:bg-gray-700/50 rounded overflow-hidden">
+                    <div className="absolute inset-0 flex">
+                      {timelineHeaders.map((_, idx) => (<div key={idx} className="flex-1 border-r border-gray-200 dark:border-gray-700/50"></div>))}
+                    </div>
+
+
+                    {(task.isMilestone || task.duration === 0 || task.name.includes('🎉')) ? (
+                      <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-purple-500 shadow-md" style={{ left: `calc(${left} - 6px)` }}>
+                        <Star size={8} className="text-white absolute top-0.5 left-0.5" />
+                      </div>
+                    ) : (
+                      <div className={`absolute top-0.5 h-6 rounded-md shadow-sm transition-all cursor-pointer ${barColor} ${isOverdue ? 'ring-2 ring-red-400' : ''}`} 
+                        style={{ left: left, width: width }} title={`${task.name}: ${formatDate(task.startDate)} - ${formatDate(task.endDate)}`}>
+                        <div className="absolute inset-0 bg-white/25 rounded-md" style={{ width: `${task.progress}%` }} />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-[9px] font-medium text-white drop-shadow-sm">{task.progress}%</span>
+                        </div>
+                      </div>
+                    )}
+
+                 </div>
+                </div>
+
+
+
+
+                {!isStakeholder && !task.isMilestone && (
+                  <div className="w-16 flex-shrink-0 flex items-center justify-center gap-2">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); editTask(task); }} 
+                      className="text-gray-400 hover:text-blue-500 transition"
+                      title="Edit Task"
+                    >
+                      <Edit size={12} />
+                    </button>
+                    <button 
+                      onClick={(e) => deleteSingleTask(task.id, e)} 
+                      className="text-gray-400 hover:text-red-500 transition"
+                      title="Delete Task"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                )}
+
+              </div>
+            );
+          })}
+
+         
+          {visibleTasks.length === 0 && (
+            <div className="text-center py-16">
+              <p className="text-gray-500 dark:text-gray-400 mb-3">No tasks yet. Get started below:</p>
+              <div className="flex gap-3 justify-center">
+                <button onClick={addNewTask} className="px-4 py-2 bg-amber-600 text-white rounded-lg flex items-center gap-2"><Plus size={16} /> Add First Task</button>
+                <button onClick={loadSampleData} className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2"><Sparkles size={16} /> Load Sample Project</button>
+                <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-emerald-600 text-white rounded-lg flex items-center gap-2"><Upload size={16} /> Import MS Project</button>
               </div>
             </div>
           )}
         </div>
       </div>
-    )}
-  </div>
-);
-}
 
+
+
+
+
+      {/* Task Modal - Full Dark Mode */}
+      {showTaskModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md p-5 shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-semibold dark:text-white">{editingTaskId !== null ? 'Edit Task' : 'Add New Task'}</h3>
+              <button onClick={() => { setShowTaskModal(false); setEditingTaskId(null); }} className="dark:text-gray-400 hover:dark:text-white">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <input 
+                type="text" 
+                placeholder="e.g., Foundation Excavation, Steel Reinforcement, Roofing" 
+                value={taskForm.name} 
+                onChange={(e) => setTaskForm({...taskForm, name: e.target.value})} 
+                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400" 
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <input 
+                  type="date" 
+                  value={taskForm.startDate} 
+                  onChange={(e) => setTaskForm({...taskForm, startDate: e.target.value})} 
+                  className="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
+                />
+                <input 
+                  type="date" 
+                  value={taskForm.endDate} 
+                  onChange={(e) => setTaskForm({...taskForm, endDate: e.target.value})} 
+                  className="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
+                />
+              </div>
+              <select 
+                value={taskForm.parentId || ''} 
+                onChange={(e) => setTaskForm({...taskForm, parentId: e.target.value ? parseInt(e.target.value) : null})} 
+                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              >
+                <option value="">-- No Parent --</option>
+                {tasks.filter(t => t.parentId === null).map(task => (<option key={task.id} value={task.id}>{task.name}</option>))}
+              </select>
+              <select 
+                value={taskForm.priority} 
+                onChange={(e) => setTaskForm({...taskForm, priority: e.target.value as any})} 
+                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+
+
+
+
+
+<input 
+  type="number" 
+  placeholder="e.g., 50000, 150000, 500000" 
+  value={taskForm.cost} 
+  onChange={(e) => setTaskForm({...taskForm, cost: parseInt(e.target.value) || 0})} 
+  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 focus:ring-2 focus:ring-amber-500" 
+  step="1000"
+  min="0"
+/>
+
+<p className="text-xs text-gray-500 dark:text-gray-400 mt-1">💡 Examples: 50,000 (materials), 150,000 (labor), 500,000 (equipment)</p>
+
+
+              <input 
+                type="text" 
+                placeholder="e.g., John M. - Site Manager, Sarah K. - Architect" 
+                value={taskForm.assignedTo} 
+                onChange={(e) => setTaskForm({...taskForm, assignedTo: e.target.value})} 
+                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
+              />
+            </div>
+            <div className="flex justify-end gap-3 mt-5">
+              <button 
+                onClick={() => { setShowTaskModal(false); setEditingTaskId(null); }} 
+                className="px-4 py-2 border rounded-lg dark:border-gray-600 dark:text-gray-300"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveTask} 
+                className="px-4 py-2 bg-amber-600 text-white rounded-lg"
+              >
+                {editingTaskId !== null ? 'Update Task' : 'Add Task'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
+
+      {/* Dependency Modal - Full Dark Mode */}
+      {showDependencyModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md p-5 shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-semibold dark:text-white">Add Dependency</h3>
+              <button onClick={() => setShowDependencyModal(false)} className="dark:text-gray-400"><X size={18} /></button>
+            </div>
+            <div className="space-y-3">
+              <select value={selectedDependency.fromTaskId || ''} onChange={(e) => setSelectedDependency({...selectedDependency, fromTaskId: parseInt(e.target.value)})} 
+                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <option value="">Predecessor (must finish first)</option>
+                {tasks.map(task => (<option key={task.id} value={task.id}>{task.name}</option>))}
+              </select>
+              <select value={selectedDependency.toTaskId || ''} onChange={(e) => setSelectedDependency({...selectedDependency, toTaskId: parseInt(e.target.value)})} 
+                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <option value="">Successor (depends on predecessor)</option>
+                {tasks.map(task => (<option key={task.id} value={task.id}>{task.name}</option>))}
+              </select>
+              <div className="bg-indigo-50 dark:bg-indigo-950/30 rounded-lg p-2">
+                <p className="text-xs text-indigo-700 dark:text-indigo-300"><strong>Finish to Start (FS)</strong> - Successor cannot start until predecessor finishes.</p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-5">
+              <button onClick={() => setShowDependencyModal(false)} className="px-4 py-2 border rounded-lg dark:border-gray-600 dark:text-gray-300">Cancel</button>
+              <button onClick={() => { 
+                if (selectedDependency.fromTaskId && selectedDependency.toTaskId) { 
+                  addDependency(selectedDependency.fromTaskId, selectedDependency.toTaskId); 
+                  setShowDependencyModal(false); 
+                  setSelectedDependency({ fromTaskId: null, toTaskId: null });
+                } else { 
+                  alert('Select both tasks'); 
+                } 
+              }} className="px-4 py-2 bg-indigo-600 text-white rounded-lg">Add Dependency</button>
+            </div>
+            {dependencies.length > 0 && (
+              <div className="mt-4 pt-3 border-t dark:border-gray-700">
+                <h4 className="text-xs font-medium mb-2 dark:text-white">Existing Dependencies ({dependencies.length})</h4>
+                <div className="max-h-40 overflow-y-auto space-y-1">
+                  {dependencies.map(dep => {
+                    const from = tasks.find(t => t.id === dep.fromTaskId);
+                    const to = tasks.find(t => t.id === dep.toTaskId);
+                    return (
+                      <div key={dep.id} className="flex justify-between items-center p-1.5 bg-gray-50 dark:bg-gray-700/50 rounded text-xs">
+                        <span className="truncate dark:text-gray-300">{from?.name} → {to?.name}</span>
+                        <button onClick={() => removeDependency(dep.id)} className="text-red-500 hover:text-red-700"><Trash2 size={12} /></button>
+                      </div>
+                    );
+                  })}
+                </div>e
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
