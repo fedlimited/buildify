@@ -238,81 +238,206 @@ async function sendOTP(email, code, purpose = 'login') {
 
 
 
-async function sendInvitationCode(email, code, inviterName, companyName) {
+async function sendOTP(email, code, purpose = 'login') {
   try {
     const transporter = getTransporter();
     
     if (!transporter) {
+      console.error('❌ Email transporter not configured');
       return { success: false, error: 'Email service not configured' };
     }
-
-    const info = await transporter.sendMail({
-      from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
-      to: email,
-      subject: `Invitation to join ${companyName} on Bochi Construction Suite`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
-          <h3>You've Been Invited!</h3>
-          <p><strong>${inviterName}</strong> has invited you to join <strong>${companyName}</strong>.</p>
-          <p>Use the following code to complete your registration:</p>
-          <div style="font-size: 32px; font-weight: bold; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px; letter-spacing: 5px;">${code}</div>
-          <p style="color: #666; font-size: 12px; margin-top: 20px;">This code expires in 5 minutes.</p>
-          <hr style="margin: 20px 0;">
-          <p style="color: #999; font-size: 10px;">Bochi Construction Suite - Construction Management System</p>
+    
+    let subject = '';
+    let messageText = '';
+    
+    if (purpose === 'login') {
+      subject = `Your Login Code - BOCHI`;
+      messageText = 'Please use this code to log in to your account.';
+    } else if (purpose === 'registration') {
+      subject = `Verify Your Registration - BOCHI`;
+      messageText = 'Please use this code to complete your registration.';
+    } else if (purpose === 'invitation') {
+      subject = `You've Been Invited - BOCHI`;
+      messageText = 'Please use this code to complete your registration.';
+    }
+    
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+        <title>${subject}</title>
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.5;
+            background-color: #fef9f0;
+            margin: 0;
+            padding: 16px;
+          }
+          .container {
+            max-width: 450px;
+            width: 100%;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 35px -10px rgba(245, 158, 11, 0.15);
+            border: 1px solid #fde68a;
+          }
+          .content {
+            padding: 28px 20px;
+            background: #ffffff;
+          }
+          .greeting {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 8px;
+          }
+          .message {
+            color: #4b5563;
+            font-size: 15px;
+            margin-bottom: 25px;
+            line-height: 1.5;
+          }
+          .code-box {
+            background: linear-gradient(135deg, #fef3c7, #fffbeb);
+            border: 2px solid #fbbf24;
+            border-radius: 16px;
+            padding: 20px 16px;
+            text-align: center;
+            margin: 20px 0;
+          }
+          .code-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #92400e;
+            font-weight: 600;
+            margin-bottom: 12px;
+          }
+          .code {
+            font-size: 42px;
+            font-weight: 800;
+            font-family: 'Courier New', 'Monaco', monospace;
+            letter-spacing: 8px;
+            color: #b45309;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            display: inline-block;
+            border: 1px solid #fde68a;
+            word-break: keep-all;
+            white-space: nowrap;
+          }
+          .expiry {
+            font-size: 11px;
+            color: #78350f;
+            margin-top: 12px;
+          }
+          .divider {
+            margin: 25px 0 15px;
+            border: none;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #fde68a, #f59e0b, #fde68a, transparent);
+          }
+          .footer {
+            text-align: center;
+            padding: 18px 20px;
+            background: linear-gradient(135deg, #fef9f0, #fffbeb);
+            border-top: 1px solid #fde68a;
+          }
+          .footer p {
+            margin: 4px 0;
+            font-size: 11px;
+            color: #78350f;
+          }
+          .footer a {
+            color: #d97706;
+            text-decoration: none;
+            font-weight: 600;
+          }
+          .security-note {
+            background: #fef3c7;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 12px;
+            color: #92400e;
+            text-align: center;
+            margin-top: 20px;
+          }
+          /* Mobile responsive fixes */
+          @media only screen and (max-width: 480px) {
+            .content {
+              padding: 20px 16px;
+            }
+            .code {
+              font-size: 32px;
+              letter-spacing: 6px;
+              padding: 10px 12px;
+              white-space: nowrap;
+              overflow-x: auto;
+              display: block;
+              text-align: center;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="content">
+            <div class="greeting">
+              Hello!
+            </div>
+            <div class="message">
+              ${messageText}
+            </div>
+            
+            <div class="code-box">
+              <div class="code-label">🔐 VERIFICATION CODE</div>
+              <div class="code">${code}</div>
+              <div class="expiry">⏰ This code expires in 10 minutes</div>
+            </div>
+            
+            <div class="security-note">
+              🔒 For your security, never share this code with anyone.
+            </div>
+            
+            <div class="divider"></div>
+            
+            <p style="font-size: 11px; color: #78350f; text-align: center;">
+              If you didn't request this code, you can safely ignore this email.
+            </p>
+          </div>
+          
+          <div class="footer">
+            <p><strong>BOCHI Construction Suite</strong></p>
+            <p><a href="https://bochi.ke">🌐 bochi.ke</a></p>
+            <p style="font-size: 10px; opacity: 0.7;">© ${new Date().getFullYear()} All rights reserved</p>
+          </div>
         </div>
-      `
+      </body>
+      </html>
+    `;
+    
+    const info = await transporter.sendMail({
+      from: `"BOCHI" <${process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
+      to: email,
+      subject: subject,
+      html: htmlContent
     });
 
-    console.log(`✅ Invitation sent to ${email}`);
-    return { success: true };
+    console.log(`✅ OTP sent to ${email} for ${purpose}`);
+    return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('Invitation send error:', error);
+    console.error('Email send error:', error);
     return { success: false, error: error.message };
   }
 }
 
-// ========== DOCUMENT NOTIFICATION EMAIL ==========
-async function sendDocumentNotification({ to, stakeholder_name, project_name, document, action, uploaded_by, revision_notes }) {
-    try {
-        const transporter = getTransporter();
-        if (!transporter) return false;
-        
-        const actionText = action === 'upload' ? 'uploaded' : 'updated';
-        const subject = `[${project_name}] New Document ${actionText}: ${document.title}`;
-        
-        const html = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-                <h2 style="color: #1a365d;">Document Notification</h2>
-                <p>Dear ${stakeholder_name},</p>
-                <p><strong>${uploaded_by}</strong> has ${actionText} a new document for project <strong>${project_name}</strong>:</p>
-                <div style="background: #f5f5f5; padding: 15px; border-left: 4px solid #4F46E5; margin: 15px 0;">
-                    <p><strong>Title:</strong> ${document.title}</p>
-                    <p><strong>Category:</strong> ${document.category}</p>
-                    <p><strong>Version:</strong> ${document.version}</p>
-                    ${document.description ? `<p><strong>Description:</strong> ${document.description}</p>` : ''}
-                    ${revision_notes ? `<p><strong>Revision Notes:</strong> ${revision_notes}</p>` : ''}
-                </div>
-                <p><a href="${document.file_url}" style="background: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Document</a></p>
-                <hr style="margin: 20px 0;">
-                <p style="color: #999; font-size: 10px;">Bochi Construction Suite - Construction Management System</p>
-            </div>
-        `;
-        
-        await transporter.sendMail({
-            from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
-            to: to,
-            subject: subject,
-            html: html
-        });
-        
-        console.log(`✅ Document notification sent to ${to}`);
-        return true;
-    } catch (error) {
-        console.error('Document notification error:', error);
-        return false;
-    }
-}
+
 
 // ========== TASK ASSIGNMENT EMAIL ==========
 async function sendTaskAssignment({ to, assignee_name, assigner_name, project_name, minutes_title, task, due_date, priority, action_item_id }) {
