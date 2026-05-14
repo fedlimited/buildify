@@ -1669,36 +1669,71 @@ const formatBudgetInMillions = (amount: number): string => {
   // Timeline headers with dynamic sizing
   const getTimelineUnit = () => {
     const totalDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
-    if (zoomLevel <= 0.6) return { unit: 'month', label: 'Month', daysPerUnit: 30, width: 70 };
-    if (zoomLevel <= 1.0) return { unit: 'week', label: 'Week', daysPerUnit: 7, width: 55 };
-    return { unit: 'day', label: 'Day', daysPerUnit: 1, width: 40 };
+    const effectiveDays = totalDays / zoomLevel;
+    
+    // Show week numbers for most zoom levels
+    if (effectiveDays > 90) {
+      return { unit: 'month', label: 'Month', daysPerUnit: 30, width: 70, getLabel: (date: Date) => date.toLocaleDateString('en-US', { month: 'short' }) };
+    } else if (effectiveDays > 21) {
+      return { unit: 'week', label: 'Week', daysPerUnit: 7, width: 55, getLabel: (date: Date) => {
+        const weekNum = Math.ceil((date.getTime() - new Date(date.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
+        return `W${weekNum}`;
+      } };
+    } else {
+      return { unit: 'day', label: 'Day', daysPerUnit: 1, width: 40, getLabel: (date: Date) => date.getDate().toString() };
+    }
   };
 
+
   const timelineUnit = getTimelineUnit();
-  const timelineHeaders: { date: Date; label: string; subLabel?: string }[] = [];
-  let currentDate = new Date(minDate);
-
-  if (timelineUnit.unit === 'month') {
-    currentDate.setDate(1);
-    while (currentDate <= maxDate) {
-      timelineHeaders.push({ date: new Date(currentDate), label: currentDate.toLocaleDateString('en-US', { month: 'short' }) });
-      currentDate.setMonth(currentDate.getMonth() + 1);
+  
+  // Generate timeline headers with percentage widths for perfect alignment
+  const timelineHeaders = (() => {
+    const headers: { date: Date; label: string; widthPercent: number }[] = [];
+    const totalMs = maxDate.getTime() - minDate.getTime();
+    if (totalMs <= 0) return headers;
+    
+    const unit = getTimelineUnit();
+    let current = new Date(minDate);
+    
+    if (unit.unit === 'month') {
+      current = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+      while (current <= maxDate) {
+        const monthStart = Math.max(current.getTime(), minDate.getTime());
+        const monthEnd = Math.min(new Date(current.getFullYear(), current.getMonth() + 1, 1).getTime(), maxDate.getTime());
+        const widthPercent = ((monthEnd - monthStart) / totalMs) * 100;
+        headers.push({ date: new Date(current), label: unit.getLabel(current), widthPercent: Math.max(3, widthPercent) });
+        current.setMonth(current.getMonth() + 1);
+      }
+    } 
+    else if (unit.unit === 'week') {
+      // Start from Monday of the first week
+      const dayOfWeek = current.getDay();
+      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      current.setDate(current.getDate() - daysToMonday);
+      while (current <= maxDate) {
+        const weekStart = Math.max(current.getTime(), minDate.getTime());
+        const weekEnd = Math.min(current.getTime() + 7 * 24 * 60 * 60 * 1000, maxDate.getTime());
+        const widthPercent = ((weekEnd - weekStart) / totalMs) * 100;
+        headers.push({ date: new Date(current), label: unit.getLabel(current), widthPercent: Math.max(2, widthPercent) });
+        current.setDate(current.getDate() + 7);
+      }
     }
-  } else if (timelineUnit.unit === 'week') {
-    const day = currentDate.getDay();
-    const diff = day === 0 ? 6 : day - 1;
-    currentDate.setDate(currentDate.getDate() - diff);
-    while (currentDate <= maxDate) {
-      timelineHeaders.push({ date: new Date(currentDate), label: `W${Math.ceil((currentDate.getTime() - new Date(currentDate.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000))}` });
-      currentDate.setDate(currentDate.getDate() + 7);
+    else {
+      // Day unit
+      current = new Date(minDate);
+      current.setHours(0, 0, 0, 0);
+      while (current <= maxDate) {
+        const dayStart = current.getTime();
+        const dayEnd = Math.min(dayStart + 24 * 60 * 60 * 1000, maxDate.getTime());
+        const widthPercent = ((dayEnd - dayStart) / totalMs) * 100;
+        headers.push({ date: new Date(current), label: current.getDate().toString(), widthPercent: Math.max(1, widthPercent) });
+        current.setDate(current.getDate() + 1);
+      }
     }
-  } else {
-    while (currentDate <= maxDate) {
-      timelineHeaders.push({ date: new Date(currentDate), label: currentDate.getDate().toString() });
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-  }
-
+    
+    return headers;
+  })();
 
 
 
@@ -2099,13 +2134,26 @@ const formatBudgetInMillions = (amount: number): string => {
                 <div className="absolute right-0 top-0 w-0.5 h-full cursor-ew-resize hover:bg-amber-400" onMouseDown={(e) => startResize(col.id, e.clientX, col.width)} />
               </div>
             ))}
+
+
+
+
             <div className="flex-1 flex">
               {timelineHeaders.map((header, idx) => (
-                <div key={idx} className="flex-1 text-center py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700" style={{ minWidth: timelineUnit.width }}>
+                <div 
+                  key={idx} 
+                  className="text-center py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 truncate"
+                  style={{ width: `${header.widthPercent}%`, minWidth: '40px' }}
+                  title={header.date.toLocaleDateString()}
+                >
                   {header.label}
                 </div>
               ))}
             </div>
+
+
+
+
             <div className="w-8 flex-shrink-0"></div>
           </div>
 
@@ -2174,8 +2222,17 @@ const formatBudgetInMillions = (amount: number): string => {
                 ))}
                 <div className="flex-1 relative py-1">
                   <div className="relative h-7 bg-gray-100 dark:bg-gray-700/50 rounded overflow-hidden">
+
+
+
                     <div className="absolute inset-0 flex">
-                      {timelineHeaders.map((_, idx) => (<div key={idx} className="flex-1 border-r border-gray-200 dark:border-gray-700/50"></div>))}
+                      {timelineHeaders.map((header, idx) => (
+                        <div 
+                          key={idx} 
+                          className="border-r border-gray-200 dark:border-gray-700/50"
+                          style={{ width: `${header.widthPercent}%`, minWidth: '2px' }}
+                        />
+                      ))}
                     </div>
 
 
