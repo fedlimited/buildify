@@ -44,7 +44,7 @@ const stakeholderController = {
       // Get company subdomain from authenticated user
       const companySubdomain = req.user?.companySubdomain || req.user?.subdomain || 'app';
       
-      // 🔥 FIX: Get company name from company_settings table
+      // Get company name from company_settings table
       let companyName = 'BOCHI Construction Suite'; // Default fallback
       
       if (company_id) {
@@ -86,10 +86,10 @@ const stakeholderController = {
         await db.query(`UPDATE users SET stakeholder_type = $1 WHERE id = $2`, [stakeholderType, userId]);
       }
       
-      // Add to project stakeholders
+      // Add to project stakeholders with is_active = 1
       await db.query(`
-        INSERT INTO project_stakeholders (project_id, user_id, stakeholder_type, invite_status, invited_by)
-        VALUES ($1, $2, $3, 'pending', $4)
+        INSERT INTO project_stakeholders (project_id, user_id, stakeholder_type, invite_status, invited_by, is_active)
+        VALUES ($1, $2, $3, 'pending', $4, 1)
         ON CONFLICT (project_id, user_id) DO NOTHING
       `, [projectId, userId, stakeholderType, req.user.id]);
       
@@ -104,7 +104,7 @@ const stakeholderController = {
         stakeholderType,          // role
         req.user.name,            // inviterName
         companySubdomain,         // subdomain
-        companyName               // companyName - Now correctly "Finite Element Designs Limited"
+        companyName               // companyName
       );
       
       res.json({ success: true, message: 'Invitation sent successfully' });
@@ -125,7 +125,7 @@ const stakeholderController = {
       const companySubdomain = req.user?.companySubdomain || req.user?.subdomain || 'app';
       const company_id = req.user?.companyId || req.user?.company_id;
       
-      // 🔥 FIX: Get company name from company_settings table
+      // Get company name from company_settings table
       let companyName = 'BOCHI Construction Suite';
       
       if (company_id) {
@@ -181,13 +181,18 @@ const stakeholderController = {
     }
   },
 
-  // Remove stakeholder from project
+  // Remove stakeholder from project (soft delete)
   removeStakeholder: async (req, res) => {
     try {
       const db = await getDb();
       const { projectId, stakeholderId } = req.params;
       
-      await db.query(`DELETE FROM project_stakeholders WHERE project_id = $1 AND id = $2`, [projectId, stakeholderId]);
+      // Soft delete - set is_active = 0 instead of hard delete
+      await db.query(`
+        UPDATE project_stakeholders 
+        SET is_active = 0 
+        WHERE project_id = $1 AND id = $2
+      `, [projectId, stakeholderId]);
       
       res.json({ success: true, message: 'Stakeholder removed successfully' });
     } catch (error) {
@@ -196,37 +201,37 @@ const stakeholderController = {
     }
   },
 
-// Get projects for stakeholder dashboard
-getStakeholderProjects: async (req, res) => {
-  try {
-    const db = await getDb();
-    const userId = req.user.id;
-    
-    const projects = await db.query(`
-      SELECT 
-        p.id,
-        p.name,
-        p.client,
-        p.location,
-        p.progress,
-        p.status,
-        ps.stakeholder_type,
-        ps.invite_status
-      FROM project_stakeholders ps
-      JOIN projects p ON ps.project_id = p.id
-      WHERE ps.user_id = $1 
-        AND ps.is_active = 1 
-        AND ps.invite_status = 'accepted'
-    `, [userId]);
-    
-    console.log('Projects found for stakeholder:', projects.rows.length);
-    
-    res.json({ projects: projects.rows });
-  } catch (error) {
-    console.error('Error fetching stakeholder projects:', error);
-    res.status(500).json({ error: error.message });
-  }
-},
+  // Get projects for stakeholder dashboard
+  getStakeholderProjects: async (req, res) => {
+    try {
+      const db = await getDb();
+      const userId = req.user.id;
+      
+      const projects = await db.query(`
+        SELECT 
+          p.id,
+          p.name,
+          p.client,
+          p.location,
+          p.progress,
+          p.status,
+          ps.stakeholder_type,
+          ps.invite_status
+        FROM project_stakeholders ps
+        JOIN projects p ON ps.project_id = p.id
+        WHERE ps.user_id = $1 
+          AND ps.is_active = 1 
+          AND ps.invite_status = 'accepted'
+      `, [userId]);
+      
+      console.log('Projects found for stakeholder:', projects.rows.length);
+      
+      res.json({ projects: projects.rows });
+    } catch (error) {
+      console.error('Error fetching stakeholder projects:', error);
+      res.status(500).json({ error: error.message });
+    }
+  },
 
   // Get a single project (with access verification)
   getStakeholderProject: async (req, res) => {
@@ -244,7 +249,7 @@ getStakeholderProjects: async (req, res) => {
       } else if (userRole === 'stakeholder') {
         const accessCheck = await db.query(`
           SELECT 1 FROM project_stakeholders 
-          WHERE user_id = $1 AND project_id = $2 AND is_active = 1
+          WHERE user_id = $1 AND project_id = $2 AND is_active = 1 AND invite_status = 'accepted'
         `, [userId, projectId]);
         hasAccess = accessCheck.rows.length > 0;
       }
@@ -290,11 +295,16 @@ getStakeholderProjects: async (req, res) => {
       const { projectId } = req.params;
       const userId = req.user.id;
       
-      await db.query(`
+      const result = await db.query(`
         UPDATE project_stakeholders 
-        SET invite_status = 'accepted', last_active = NOW()
+        SET invite_status = 'accepted', last_active = NOW(), is_active = 1
         WHERE project_id = $1 AND user_id = $2
+        RETURNING *
       `, [projectId, userId]);
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Invitation not found' });
+      }
       
       res.json({ success: true, message: 'Invitation accepted' });
     } catch (error) {
