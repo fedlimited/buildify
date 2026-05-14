@@ -742,6 +742,171 @@ Admin: ${displayCompanyName} | bochi.ke
   }
 }
 
+// Send bulk email to tenants - with branding
+async function sendBulkEmail(email, subject, message, userName, companyName, htmlMessage = null) {
+  try {
+    const transporter = getTransporter();
+    if (!transporter) {
+      console.error('❌ Email transporter not configured');
+      return false;
+    }
+    
+    // If htmlMessage is provided from frontend, use it directly
+    const finalHtml = htmlMessage || `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #fef9f0;
+            margin: 0;
+            padding: 20px;
+          }
+          .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 35px -10px rgba(245, 158, 11, 0.15);
+            border: 1px solid #fde68a;
+          }
+          .header {
+            background: linear-gradient(135deg, #f59e0b, #d97706, #b45309);
+            padding: 30px 20px;
+            text-align: center;
+            position: relative;
+          }
+          .header::before {
+            content: "✦";
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #f59e0b;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          }
+          .header-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: -0.5px;
+          }
+          .tagline {
+            font-size: 12px;
+            color: rgba(255,255,255,0.9);
+            margin-top: 5px;
+          }
+          .content {
+            padding: 35px 30px;
+            background-color: #ffffff;
+          }
+          .greeting {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 20px;
+          }
+          .message {
+            font-size: 16px;
+            color: #374151;
+            margin-bottom: 25px;
+            line-height: 1.6;
+          }
+          .divider {
+            margin: 30px 0 20px;
+            border: none;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #fde68a, #f59e0b, #fde68a, transparent);
+          }
+          .footer {
+            background: linear-gradient(135deg, #fef9f0, #fffbeb);
+            padding: 25px;
+            text-align: center;
+            border-top: 1px solid #fde68a;
+          }
+          .footer-logo {
+            font-size: 24px;
+            font-weight: 800;
+            color: #d97706;
+            margin-bottom: 10px;
+          }
+          .footer-text {
+            font-size: 11px;
+            color: #78350f;
+            margin: 5px 0;
+          }
+          .footer a {
+            color: #d97706;
+            text-decoration: none;
+          }
+          .badge {
+            display: inline-block;
+            background: #fef3c7;
+            color: #b45309;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 12px;
+          }
+        </style>
+      </head>
+      <body style="margin: 0; padding: 20px; background-color: #fef9f0;">
+        <div class="email-container">
+          <div class="header">
+            <div class="header-title">🏗️ Bochi</div>
+            <div class="tagline">Construction Suite</div>
+          </div>
+          <div class="content">
+            <div class="greeting">Dear ${userName},</div>
+            <div class="message">${message.replace(/\n/g, '<br>')}</div>
+          </div>
+          <div class="footer">
+            <div class="footer-logo">Bochi</div>
+            <div class="footer-text">Construction Suite</div>
+            <div class="footer-text">© ${new Date().getFullYear()} All rights reserved</div>
+            <div class="footer-text"><a href="https://www.bochi.ke">🌐 www.bochi.ke</a></div>
+            <div class="badge">⚡ Powering Construction</div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    // Plain text version
+    const text = `Dear ${userName},\n\n${message.replace(/<[^>]*>/g, '')}\n\n---\nBochi Construction Suite\nwww.bochi.ke`;
+    
+    await transporter.sendMail({
+      from: `"Bochi Admin" <${process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
+      to: email,
+      subject: subject,
+      html: finalHtml,
+      text: text
+    });
+    
+    console.log(`✅ Bulk email sent to ${email}`);
+    return true;
+  } catch (error) {
+    console.error('Bulk email error:', error);
+    return false;
+  }
+}
+
+
 async function verifyTransporter() {
   try {
     const transporter = getTransporter();
@@ -762,5 +927,6 @@ module.exports = {
   sendTaskAssignment,
   sendTaskReminder,
   sendStakeholderInvitation,
+  sendBulkEmail,        // ADD THIS LINE
   verifyTransporter
 };
