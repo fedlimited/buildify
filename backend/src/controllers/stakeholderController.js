@@ -1,5 +1,6 @@
+
 const { getDb } = require('../config/database');
-const { sendStakeholderInvitation } = require('../../emailService');
+const { sendStakeholderInvitation } = require('../services/emailService');
 const bcrypt = require('bcryptjs');
 
 const stakeholderController = {
@@ -41,7 +42,10 @@ const stakeholderController = {
       const { email, name, stakeholderType } = req.body;
       const company_id = req.user?.companyId || req.user?.company_id;
       
-      // Generate temporary password
+      // Get company subdomain from authenticated user
+      const companySubdomain = req.user?.companySubdomain || req.user?.subdomain || 'app';
+      
+      // Generate temporary password (stored in DB but NOT sent in email)
       const tempPassword = Math.random().toString(36).slice(-8);
       const hashedPassword = await bcrypt.hash(tempPassword, 10);
       
@@ -76,8 +80,15 @@ const stakeholderController = {
       // Get project details for email
       const project = await db.query(`SELECT name FROM projects WHERE id = $1`, [projectId]);
       
-      // Send invitation email
-      await sendStakeholderInvitation(email, name, tempPassword, project.rows[0].name, stakeholderType, req.user.name);
+      // Send invitation email - NO tempPassword, ADD subdomain
+      await sendStakeholderInvitation(
+        email,                    // email
+        name,                     // name
+        project.rows[0].name,     // projectName
+        stakeholderType,          // role
+        req.user.name,            // inviterName
+        companySubdomain          // subdomain (NEW)
+      );
       
       res.json({ success: true, message: 'Invitation sent successfully' });
     } catch (error) {
@@ -93,7 +104,10 @@ const stakeholderController = {
       const { projectId } = req.params;
       const { email, name } = req.body;
       
-      // Generate new temporary password
+      // Get company subdomain from authenticated user
+      const companySubdomain = req.user?.companySubdomain || req.user?.subdomain || 'app';
+      
+      // Generate new temporary password (stored in DB but NOT sent in email)
       const tempPassword = Math.random().toString(36).slice(-8);
       const hashedPassword = await bcrypt.hash(tempPassword, 10);
       
@@ -117,8 +131,15 @@ const stakeholderController = {
       
       const stakeholderType = stakeholder.rows[0]?.stakeholder_type || 'consultant';
       
-      // Send invitation email
-      await sendStakeholderInvitation(email, name, tempPassword, project.rows[0].name, stakeholderType, req.user.name);
+      // Send invitation email - NO tempPassword, ADD subdomain
+      await sendStakeholderInvitation(
+        email,                    // email
+        name,                     // name
+        project.rows[0].name,     // projectName
+        stakeholderType,          // role
+        req.user.name,            // inviterName
+        companySubdomain          // subdomain (NEW)
+      );
       
       res.json({ success: true, message: 'Invitation resent successfully' });
     } catch (error) {

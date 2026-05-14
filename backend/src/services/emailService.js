@@ -268,50 +268,329 @@ async function sendStakeholderInvitation(email, name, projectName, role, inviter
             return { success: false, error: 'Email service not configured' };
         }
         
-        const loginUrl = `https://bochi.ke/login?subdomain=${subdomain}`;
+        const loginUrl = `https://${subdomain}.bochi.ke/login`;
+        const fullPortalUrl = `${subdomain}.bochi.ke`;
         
-        const message = `
-🏗️ Bochi Construction Suite
+        // HTML Version with Amber Aesthetics
+        const html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Invitation to Collaborate</title>
+                <style>
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                        line-height: 1.6;
+                        background-color: #fef9f0;
+                        margin: 0;
+                        padding: 20px;
+                    }
+                    .container {
+                        max-width: 600px;
+                        margin: 0 auto;
+                        background: #ffffff;
+                        border-radius: 20px;
+                        overflow: hidden;
+                        box-shadow: 0 20px 35px -10px rgba(245, 158, 11, 0.15);
+                        border: 1px solid #fde68a;
+                    }
+                    .header {
+                        background: linear-gradient(135deg, #f59e0b, #d97706, #b45309);
+                        padding: 40px 30px;
+                        text-align: center;
+                        color: white;
+                        position: relative;
+                    }
+                    .header::before {
+                        content: "✦";
+                        position: absolute;
+                        bottom: -15px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        background: white;
+                        width: 30px;
+                        height: 30px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: #f59e0b;
+                        font-size: 18px;
+                        font-weight: bold;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    }
+                    .header h2 {
+                        margin: 0;
+                        color: white;
+                        font-size: 28px;
+                        letter-spacing: -0.5px;
+                    }
+                    .header p {
+                        margin: 10px 0 0 0;
+                        opacity: 0.95;
+                        font-size: 14px;
+                    }
+                    .content {
+                        padding: 35px 30px;
+                        background: #ffffff;
+                    }
+                    .greeting {
+                        font-size: 16px;
+                        color: #374151;
+                        margin-bottom: 20px;
+                    }
+                    .greeting strong {
+                        color: #d97706;
+                    }
+                    .invitation-text {
+                        background: linear-gradient(135deg, #fffbeb, #fef3c7);
+                        padding: 20px;
+                        border-radius: 16px;
+                        margin: 20px 0;
+                        border-left: 4px solid #f59e0b;
+                        color: #374151;
+                    }
+                    .invitation-text strong {
+                        color: #d97706;
+                    }
+                    .subdomain-box {
+                        background: linear-gradient(135deg, #fef3c7, #fde68a);
+                        padding: 20px;
+                        border-radius: 16px;
+                        margin: 25px 0;
+                        text-align: center;
+                        border: 1px solid #fbbf24;
+                        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);
+                    }
+                    .subdomain-label {
+                        font-size: 13px;
+                        text-transform: uppercase;
+                        letter-spacing: 1.5px;
+                        color: #92400e;
+                        margin-bottom: 8px;
+                        font-weight: 600;
+                    }
+                    .subdomain-text {
+                        font-size: 32px;
+                        font-weight: 800;
+                        font-family: monospace;
+                        background: linear-gradient(135deg, #b45309, #d97706);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        background-clip: text;
+                        letter-spacing: 1px;
+                    }
+                    .subdomain-url {
+                        font-size: 13px;
+                        color: #78350f;
+                        margin-top: 8px;
+                        opacity: 0.8;
+                    }
+                    .url-wrapper {
+                        background: linear-gradient(135deg, #fef3c7, #fffbeb);
+                        padding: 10px 20px;
+                        border-radius: 50px;
+                        display: inline-block;
+                        margin: 15px 0;
+                        border: 2px solid #fbbf24;
+                        box-shadow: 0 4px 10px rgba(245, 158, 11, 0.15);
+                    }
+                    .url-text {
+                        font-size: 15px;
+                        font-weight: 600;
+                        font-family: monospace;
+                        color: #92400e;
+                        word-break: break-all;
+                    }
+                    .url-icon {
+                        color: #f59e0b;
+                        margin-right: 6px;
+                    }
+                    .instructions {
+                        background: #fef9f0;
+                        padding: 25px;
+                        border-radius: 16px;
+                        margin: 25px 0;
+                        border: 1px solid #fde68a;
+                    }
+                    .instructions-title {
+                        font-weight: 700;
+                        margin: 0 0 15px 0;
+                        color: #b45309;
+                        font-size: 16px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                    }
+                    .instructions ol {
+                        margin: 0;
+                        padding-left: 20px;
+                    }
+                    .instructions li {
+                        margin: 12px 0;
+                        color: #374151;
+                    }
+                    .instructions li strong {
+                        color: #d97706;
+                        background: #fef3c7;
+                        padding: 2px 6px;
+                        border-radius: 6px;
+                        font-size: 13px;
+                    }
+                    .button {
+                        display: inline-block;
+                        background: linear-gradient(135deg, #f59e0b, #d97706);
+                        color: white;
+                        padding: 14px 32px;
+                        text-decoration: none;
+                        border-radius: 50px;
+                        font-weight: 700;
+                        transition: all 0.3s ease;
+                        box-shadow: 0 6px 14px rgba(245, 158, 11, 0.3);
+                        border: none;
+                        margin: 10px 0;
+                    }
+                    .button:hover {
+                        background: linear-gradient(135deg, #d97706, #b45309);
+                        transform: translateY(-2px);
+                        box-shadow: 0 10px 20px rgba(245, 158, 11, 0.4);
+                    }
+                    .divider {
+                        margin: 30px 0 20px;
+                        border: none;
+                        height: 2px;
+                        background: linear-gradient(90deg, transparent, #fde68a, #f59e0b, #fde68a, transparent);
+                    }
+                    .footer {
+                        text-align: center;
+                        padding: 25px;
+                        background: linear-gradient(135deg, #fef9f0, #fffbeb);
+                        border-top: 1px solid #fde68a;
+                    }
+                    .footer p {
+                        margin: 5px 0;
+                        font-size: 12px;
+                        color: #78350f;
+                    }
+                    .footer a {
+                        color: #d97706;
+                        text-decoration: none;
+                        font-weight: 600;
+                    }
+                    .footer a:hover {
+                        text-decoration: underline;
+                    }
+                    .badge {
+                        display: inline-block;
+                        background: #fef3c7;
+                        color: #b45309;
+                        padding: 4px 12px;
+                        border-radius: 50px;
+                        font-size: 12px;
+                        font-weight: 600;
+                        margin-top: 10px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h2>✨ BOCHI Construction Suite</h2>
+                        <p>You've been invited to collaborate!</p>
+                    </div>
+                    <div class="content">
+                        <div class="greeting">
+                            Dear <strong>${escapeHtml(name)}</strong>,
+                        </div>
+                        
+                        <div class="invitation-text">
+                            📌 <strong>${escapeHtml(inviterName)}</strong> has invited you to join <strong>${escapeHtml(projectName)}</strong> as a <strong>${escapeHtml(role)}</strong>.
+                        </div>
+                        
+                        <div class="subdomain-box">
+                            <div class="subdomain-label">🏢 YOUR COMPANY SUBDOMAIN</div>
+                            <div class="subdomain-text">${escapeHtml(subdomain)}</div>
+                            <div class="subdomain-url">🔗 ${escapeHtml(fullPortalUrl)}</div>
+                        </div>
+                        
+                        <div style="text-align: center;">
+                            <div class="url-wrapper">
+                                <span class="url-icon">🔐</span>
+                                <span class="url-text">https://${escapeHtml(subdomain)}.bochi.ke/login</span>
+                            </div>
+                        </div>
+                        
+                        <div class="instructions">
+                            <div class="instructions-title">
+                                <span>📋</span> LOGIN INSTRUCTIONS
+                            </div>
+                            <ol>
+                                <li>Click the <strong>amber button</strong> below or copy the URL above</li>
+                                <li>Enter your subdomain: <strong>${escapeHtml(subdomain)}</strong></li>
+                                <li>Enter your email address: <strong>${escapeHtml(email)}</strong></li>
+                                <li>Click <strong>"Request OTP"</strong> to receive a one-time password</li>
+                                <li>Enter the OTP to complete login</li>
+                            </ol>
+                        </div>
+                        
+                        <div style="text-align: center;">
+                            <a href="${loginUrl}" class="button">
+                                🚀 LOGIN TO YOUR PORTAL
+                            </a>
+                        </div>
+                        
+                        <div class="divider"></div>
+                        
+                        <p style="font-size: 13px; color: #78350f; text-align: center; margin: 20px 0 0;">
+                            🔒 You will only have access to information related to this specific project.
+                        </p>
+                    </div>
+                    <div class="footer">
+                        <p><strong>Admin:</strong> BOCHI Construction Suite</p>
+                        <p><a href="https://bochi.ke">🌐 bochi.ke</a></p>
+                        <div class="badge">⚡ Powered by Bochi</div>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
+        
+        // Plain Text Version (for email clients that don't support HTML)
+        const text = `✨ BOCHI Construction Suite - Invitation to Collaborate
 
 Dear ${name},
 
-${inviterName} has invited you to join "${projectName}" as a ${role}.
+${inviterName} has invited you to join ${projectName} as a ${role}.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔐 HOW TO LOGIN
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏢 YOUR COMPANY SUBDOMAIN: ${subdomain}
+🔗 Portal URL: ${fullPortalUrl}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. Go to: ${loginUrl}
-2. Enter subdomain: ${subdomain}
-3. Enter your email: ${email}
-4. Click "Send OTP"
-5. Enter the OTP code you receive via email
+🔐 LOGIN URL: https://${subdomain}.bochi.ke/login
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 YOUR ACCESS DETAILS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 LOGIN INSTRUCTIONS:
+1. Go to https://${subdomain}.bochi.ke/login
+2. Enter your subdomain: ${subdomain}
+3. Enter your email address: ${email}
+4. Click "Request OTP" to receive a one-time password
+5. Enter the OTP to complete login
 
-🔗 Login: ${loginUrl}
-📧 Email: ${email}
-🏢 Subdomain: ${subdomain}
-📁 Project: ${projectName}
-👔 Role: ${role}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Questions? Contact ${inviterName}.
-
-© ${new Date().getFullYear()} Bochi Construction Suite
-        `;
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Admin: BOCHI Construction Suite | bochi.ke
+⚡ Powered by Bochi`;
         
         await transporter.sendMail({
             from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
             to: email,
-            subject: `Invitation to join ${projectName}`,
-            text: message
+            subject: `✨ Invitation to collaborate on ${projectName}`,
+            html: html,
+            text: text
         });
         
-        console.log(`✅ Stakeholder invitation sent to ${email}`);
+        console.log(`✅ Stakeholder invitation sent to ${email} for subdomain: ${subdomain}`);
         return { success: true };
     } catch (error) {
         console.error('Stakeholder invitation error:', error);
@@ -319,6 +598,16 @@ Questions? Contact ${inviterName}.
     }
 }
 
+// Helper function to escape HTML special characters
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 
 
 
