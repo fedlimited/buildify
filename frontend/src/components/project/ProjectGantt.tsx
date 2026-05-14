@@ -2086,12 +2086,9 @@ const timelineHeaders = useMemo(() => {
               <button onClick={() => setQuickFilter('all')} className={`px-2 py-1 rounded ${quickFilter === 'all' ? 'bg-amber-500 text-white' : 'bg-gray-200 dark:bg-gray-700 dark:text-gray-300'}`}>All</button>
               <button onClick={() => setQuickFilter('overdue')} className={`px-2 py-1 rounded flex items-center gap-1 ${quickFilter === 'overdue' ? 'bg-red-500 text-white' : 'bg-gray-200 dark:bg-gray-700 dark:text-gray-300'}`}><AlertTriangle size={10} /> Overdue</button>
               <button onClick={() => setQuickFilter('milestones')} className={`px-2 py-1 rounded ${quickFilter === 'milestones' ? 'bg-purple-500 text-white' : 'bg-gray-200 dark:bg-gray-700 dark:text-gray-300'}`}><Star size={10} /> Milestones</button>
-            </div>
           </div>
         </div>
-
-
-
+      </div>
 
       {/* Stats Dashboard */}
       <div className="grid grid-cols-6 gap-2 p-2 text-xs bg-gray-50 dark:bg-gray-800/50">
@@ -2104,6 +2101,20 @@ const timelineHeaders = useMemo(() => {
       </div>
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div dangerouslySetInnerHTML={{ __html: ganttContainerRef.current?.outerHTML || '' }} />
     {/* Print Dialog */}
     {showPrintDialog && (
       <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
@@ -2153,6 +2164,9 @@ const timelineHeaders = useMemo(() => {
       </div>
     </div>
 
+
+
+
     {/* Column Config Modal */}
     {showColumnConfig && (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -2178,6 +2192,9 @@ const timelineHeaders = useMemo(() => {
         </div>
       </div>
     )}
+
+
+
 
     {/* Gantt Chart Container */}
     <div 
@@ -2323,6 +2340,12 @@ const timelineHeaders = useMemo(() => {
       </div>
     </div>
 
+
+
+
+
+
+
     {/* Task Modal */}
     {showTaskModal && (
       <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
@@ -2361,7 +2384,11 @@ const timelineHeaders = useMemo(() => {
       </div>
     )}
 
-    {/* Dependency Modal */}
+
+
+
+
+   {/* Dependency Modal */}
     {showDependencyModal && (
       <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
         <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md p-5 shadow-2xl">
@@ -2414,8 +2441,7 @@ const timelineHeaders = useMemo(() => {
         </div>
       </div>
     )}
-
-    {/* Final closing tags for the main return statement */}
   </div>
 );
 }
+
