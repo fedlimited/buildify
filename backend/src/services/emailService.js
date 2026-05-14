@@ -260,6 +260,19 @@ async function sendTaskReminder({ to, assignee_name, task, due_date, priority, p
 
 
 // ========== STAKEHOLDER INVITATION EMAIL (OTP ONLY - NO PASSWORD) ==========
+
+
+// Helper function to escape HTML special characters
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 async function sendStakeholderInvitation(email, name, projectName, role, inviterName, subdomain, companyName) {
     try {
         const transporter = getTransporter();
