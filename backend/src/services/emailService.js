@@ -237,7 +237,6 @@ async function sendOTP(email, code, purpose = 'login') {
 
 
 
-
 async function sendOTP(email, code, purpose = 'login') {
   try {
     const transporter = getTransporter();
@@ -251,13 +250,13 @@ async function sendOTP(email, code, purpose = 'login') {
     let messageText = '';
     
     if (purpose === 'login') {
-      subject = `Your Login Code - BOCHI`;
+      subject = `Your login code - Bochi`;
       messageText = 'Please use this code to log in to your account.';
     } else if (purpose === 'registration') {
-      subject = `Verify Your Registration - BOCHI`;
+      subject = `Verify your registration - Bochi`;
       messageText = 'Please use this code to complete your registration.';
     } else if (purpose === 'invitation') {
-      subject = `You've Been Invited - BOCHI`;
+      subject = `You've been invited - Bochi`;
       messageText = 'Please use this code to complete your registration.';
     }
     
@@ -368,6 +367,15 @@ async function sendOTP(email, code, purpose = 'login') {
             text-align: center;
             margin-top: 20px;
           }
+          .website-link {
+            text-align: center;
+            margin-top: 10px;
+          }
+          .website-link a {
+            color: #d97706;
+            text-decoration: none;
+            font-size: 12px;
+          }
           /* Mobile responsive fixes */
           @media only screen and (max-width: 480px) {
             .content {
@@ -386,6 +394,9 @@ async function sendOTP(email, code, purpose = 'login') {
         </style>
       </head>
       <body>
+        <!-- Hidden plain text for phone notifications - this shows in the notification preview -->
+        <div style="display: none;">Your Bochi login code: ${code}</div>
+        
         <div class="container">
           <div class="content">
             <div class="greeting">
@@ -410,11 +421,15 @@ async function sendOTP(email, code, purpose = 'login') {
             <p style="font-size: 11px; color: #78350f; text-align: center;">
               If you didn't request this code, you can safely ignore this email.
             </p>
+            
+            <div class="website-link">
+              <a href="https://www.bochi.ke">www.bochi.ke</a>
+            </div>
           </div>
           
           <div class="footer">
-            <p><strong>BOCHI Construction Suite</strong></p>
-            <p><a href="https://bochi.ke">🌐 bochi.ke</a></p>
+            <p><strong>Bochi Construction Suite</strong></p>
+            <p><a href="https://www.bochi.ke">🌐 www.bochi.ke</a></p>
             <p style="font-size: 10px; opacity: 0.7;">© ${new Date().getFullYear()} All rights reserved</p>
           </div>
         </div>
@@ -423,7 +438,7 @@ async function sendOTP(email, code, purpose = 'login') {
     `;
     
     const info = await transporter.sendMail({
-      from: `"BOCHI" <${process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
+      from: `"Bochi" <${process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
       to: email,
       subject: subject,
       html: htmlContent
@@ -436,6 +451,8 @@ async function sendOTP(email, code, purpose = 'login') {
     return { success: false, error: error.message };
   }
 }
+
+
 
 
 
