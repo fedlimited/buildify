@@ -45,17 +45,14 @@ async function sendOTP(email, code, purpose = 'login') {
     
     if (purpose === 'login') {
       subject = `Your Login Code - BOCHI`;
-      messageText = 'You requested to log in to your BOCHI account.';
+      messageText = 'Please use this code to log in to your account.';
     } else if (purpose === 'registration') {
       subject = `Verify Your Registration - BOCHI`;
-      messageText = 'Thanks for registering with BOCHI!';
+      messageText = 'Please use this code to complete your registration.';
     } else if (purpose === 'invitation') {
       subject = `You've Been Invited - BOCHI`;
-      messageText = 'You have been invited to join BOCHI!';
+      messageText = 'Please use this code to complete your registration.';
     }
-    
-    // Use your logo from the frontend (update URL to your actual domain)
-    const logoUrl = 'https://bochi.ke/logo_small.PNG';
     
     const htmlContent = `
       <!DOCTYPE html>
@@ -66,7 +63,7 @@ async function sendOTP(email, code, purpose = 'login') {
         <title>${subject}</title>
         <style>
           body {
-            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.6;
             background-color: #fef9f0;
             margin: 0;
@@ -81,56 +78,8 @@ async function sendOTP(email, code, purpose = 'login') {
             box-shadow: 0 20px 35px -10px rgba(245, 158, 11, 0.15);
             border: 1px solid #fde68a;
           }
-          .header {
-            background: linear-gradient(135deg, #f59e0b, #d97706, #b45309);
-            padding: 30px 25px;
-            text-align: center;
-            position: relative;
-          }
-          .header::before {
-            content: "✦";
-            position: absolute;
-            bottom: -15px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: white;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #f59e0b;
-            font-size: 18px;
-            font-weight: bold;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          }
-          .logo {
-            text-align: center;
-            margin-bottom: 10px;
-          }
-          .logo img {
-            max-width: 60px;
-            height: auto;
-            filter: brightness(0) invert(1);
-          }
-          .brand-name {
-            font-family: 'Poppins', 'Segoe UI', sans-serif;
-            font-size: 28px;
-            font-weight: 700;
-            color: white;
-            margin: 10px 0 0;
-            letter-spacing: -0.5px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-          }
-          .tagline {
-            font-size: 12px;
-            color: rgba(255,255,255,0.9);
-            margin-top: 5px;
-            font-weight: 400;
-          }
           .content {
-            padding: 30px 25px;
+            padding: 35px 30px;
             background: #ffffff;
           }
           .greeting {
@@ -145,11 +94,26 @@ async function sendOTP(email, code, purpose = 'login') {
             margin-bottom: 25px;
             line-height: 1.5;
           }
+          .otp-plain {
+            text-align: center;
+            margin: 20px 0 10px;
+          }
+          .otp-plain-text {
+            font-size: 36px;
+            font-weight: 800;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 8px;
+            color: #b45309;
+            background: #fef3c7;
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 12px;
+          }
           .code-box {
             background: linear-gradient(135deg, #fef3c7, #fffbeb);
             border: 2px solid #fbbf24;
             border-radius: 16px;
-            padding: 20px;
+            padding: 25px;
             text-align: center;
             margin: 20px 0;
           }
@@ -162,28 +126,16 @@ async function sendOTP(email, code, purpose = 'login') {
             margin-bottom: 10px;
           }
           .code {
-            font-size: 36px;
+            font-size: 42px;
             font-weight: 800;
-            font-family: 'Courier New', 'Monaco', monospace;
-            letter-spacing: 6px;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 8px;
             color: #b45309;
             background: white;
-            padding: 12px 16px;
+            padding: 15px 20px;
             border-radius: 12px;
             display: inline-block;
             border: 1px solid #fde68a;
-          }
-          .code-raw {
-            font-size: 14px;
-            font-weight: 600;
-            font-family: monospace;
-            color: #d97706;
-            background: #fef3c7;
-            padding: 6px 12px;
-            border-radius: 8px;
-            display: inline-block;
-            margin-top: 12px;
-            letter-spacing: 1px;
           }
           .expiry {
             font-size: 11px;
@@ -214,9 +166,9 @@ async function sendOTP(email, code, purpose = 'login') {
           }
           .security-note {
             background: #fef3c7;
-            padding: 10px 14px;
+            padding: 12px 16px;
             border-radius: 12px;
-            font-size: 11px;
+            font-size: 12px;
             color: #92400e;
             text-align: center;
             margin-top: 20px;
@@ -234,14 +186,6 @@ async function sendOTP(email, code, purpose = 'login') {
       </head>
       <body>
         <div class="container">
-          <div class="header">
-            <div class="logo">
-              <img src="${logoUrl}" alt="BOCHI Logo" style="max-width: 55px;">
-            </div>
-            <div class="brand-name">BOCHI</div>
-            <div class="tagline">Construction Suite</div>
-          </div>
-          
           <div class="content">
             <div class="greeting">
               Hello!
@@ -250,10 +194,15 @@ async function sendOTP(email, code, purpose = 'login') {
               ${messageText}
             </div>
             
+            <!-- Plain text OTP outside wrapper -->
+            <div class="otp-plain">
+              <span class="otp-plain-text">${code}</span>
+            </div>
+            
+            <!-- Styled wrapper with OTP inside -->
             <div class="code-box">
               <div class="code-label">🔐 VERIFICATION CODE</div>
               <div class="code">${code}</div>
-              <div class="code-raw">📱 Quick copy: ${code}</div>
               <div class="expiry">⏰ This code expires in 10 minutes</div>
             </div>
             
@@ -297,7 +246,6 @@ async function sendOTP(email, code, purpose = 'login') {
     return { success: false, error: error.message };
   }
 }
-
 
 
 
