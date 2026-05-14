@@ -54,23 +54,27 @@ async function sendOTP(email, code, purpose = 'login') {
       messageText = 'Please use this code to complete your registration.';
     }
     
+    // Format code with spaces for better readability on mobile
+    const formattedCode = code.split('').join(' ');
+    
     const htmlContent = `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
         <title>${subject}</title>
         <style>
           body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
+            line-height: 1.5;
             background-color: #fef9f0;
             margin: 0;
-            padding: 20px;
+            padding: 16px;
           }
           .container {
-            max-width: 500px;
+            max-width: 450px;
+            width: 100%;
             margin: 0 auto;
             background: #ffffff;
             border-radius: 20px;
@@ -79,14 +83,14 @@ async function sendOTP(email, code, purpose = 'login') {
             border: 1px solid #fde68a;
           }
           .content {
-            padding: 35px 30px;
+            padding: 28px 20px;
             background: #ffffff;
           }
           .greeting {
             font-size: 18px;
             font-weight: 600;
             color: #1f2937;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
           }
           .message {
             color: #4b5563;
@@ -94,26 +98,11 @@ async function sendOTP(email, code, purpose = 'login') {
             margin-bottom: 25px;
             line-height: 1.5;
           }
-          .otp-plain {
-            text-align: center;
-            margin: 20px 0 10px;
-          }
-          .otp-plain-text {
-            font-size: 36px;
-            font-weight: 800;
-            font-family: 'Courier New', monospace;
-            letter-spacing: 8px;
-            color: #b45309;
-            background: #fef3c7;
-            display: inline-block;
-            padding: 8px 20px;
-            border-radius: 12px;
-          }
           .code-box {
             background: linear-gradient(135deg, #fef3c7, #fffbeb);
             border: 2px solid #fbbf24;
             border-radius: 16px;
-            padding: 25px;
+            padding: 20px 16px;
             text-align: center;
             margin: 20px 0;
           }
@@ -123,19 +112,23 @@ async function sendOTP(email, code, purpose = 'login') {
             letter-spacing: 2px;
             color: #92400e;
             font-weight: 600;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
           }
           .code {
-            font-size: 42px;
+            font-size: 28px;
             font-weight: 800;
-            font-family: 'Courier New', monospace;
-            letter-spacing: 8px;
+            font-family: 'Courier New', 'Monaco', monospace;
+            letter-spacing: 6px;
             color: #b45309;
             background: white;
-            padding: 15px 20px;
+            padding: 12px 8px;
             border-radius: 12px;
             display: inline-block;
             border: 1px solid #fde68a;
+            word-break: break-all;
+            white-space: normal;
+            max-width: 100%;
+            overflow-x: auto;
           }
           .expiry {
             font-size: 11px;
@@ -150,12 +143,12 @@ async function sendOTP(email, code, purpose = 'login') {
           }
           .footer {
             text-align: center;
-            padding: 20px;
+            padding: 18px 20px;
             background: linear-gradient(135deg, #fef9f0, #fffbeb);
             border-top: 1px solid #fde68a;
           }
           .footer p {
-            margin: 5px 0;
+            margin: 4px 0;
             font-size: 11px;
             color: #78350f;
           }
@@ -166,21 +159,26 @@ async function sendOTP(email, code, purpose = 'login') {
           }
           .security-note {
             background: #fef3c7;
-            padding: 12px 16px;
+            padding: 12px 14px;
             border-radius: 12px;
             font-size: 12px;
             color: #92400e;
             text-align: center;
             margin-top: 20px;
           }
-          .quick-tip {
-            background: #fff8ed;
-            border-left: 3px solid #f59e0b;
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-size: 12px;
-            color: #78350f;
-            margin-top: 15px;
+          /* Mobile responsive fixes */
+          @media only screen and (max-width: 480px) {
+            .content {
+              padding: 20px 16px;
+            }
+            .code {
+              font-size: 22px;
+              letter-spacing: 4px;
+              padding: 10px 6px;
+            }
+            .code-box {
+              padding: 16px 12px;
+            }
           }
         </style>
       </head>
@@ -194,25 +192,14 @@ async function sendOTP(email, code, purpose = 'login') {
               ${messageText}
             </div>
             
-            <!-- Plain text OTP outside wrapper -->
-            <div class="otp-plain">
-              <span class="otp-plain-text">${code}</span>
-            </div>
-            
-            <!-- Styled wrapper with OTP inside -->
             <div class="code-box">
               <div class="code-label">🔐 VERIFICATION CODE</div>
-              <div class="code">${code}</div>
+              <div class="code">${formattedCode}</div>
               <div class="expiry">⏰ This code expires in 10 minutes</div>
             </div>
             
             <div class="security-note">
-              🔒 For your security, never share this code with anyone.<br>
-              BOCHI will never ask for this code outside of the login page.
-            </div>
-            
-            <div class="quick-tip">
-              💡 <strong>Quick Tip:</strong> On your phone? Just remember or copy the 6-digit code above.
+              🔒 For your security, never share this code with anyone.
             </div>
             
             <div class="divider"></div>
@@ -246,6 +233,7 @@ async function sendOTP(email, code, purpose = 'login') {
     return { success: false, error: error.message };
   }
 }
+
 
 
 
