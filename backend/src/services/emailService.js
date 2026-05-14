@@ -41,30 +41,21 @@ async function sendOTP(email, code, purpose = 'login') {
     }
     
     let subject = '';
-    let title = '';
-    let subtitle = '';
-    let buttonText = '';
-    let buttonLink = 'https://bochi.ke/login';
+    let messageText = '';
     
     if (purpose === 'login') {
-      subject = `🔐 Your Login Code - BOCHI Construction Suite`;
-      title = 'Login Verification';
-      subtitle = 'Use the code below to complete your login';
-      buttonText = 'Login to Your Account';
-      buttonLink = 'https://bochi.ke/login';
+      subject = `Your Login Code - BOCHI`;
+      messageText = 'You requested to log in to your BOCHI account.';
     } else if (purpose === 'registration') {
-      subject = `📝 Verify Your Registration - BOCHI Construction Suite`;
-      title = 'Registration Verification';
-      subtitle = 'Use the code below to complete your registration';
-      buttonText = 'Complete Registration';
-      buttonLink = 'https://bochi.ke/register';
+      subject = `Verify Your Registration - BOCHI`;
+      messageText = 'Thanks for registering with BOCHI!';
     } else if (purpose === 'invitation') {
-      subject = `✨ You've Been Invited - BOCHI Construction Suite`;
-      title = 'Invitation to Join';
-      subtitle = 'Use the code below to complete your registration';
-      buttonText = 'Join Now';
-      buttonLink = 'https://bochi.ke/register';
+      subject = `You've Been Invited - BOCHI`;
+      messageText = 'You have been invited to join BOCHI!';
     }
+    
+    // Use your logo from the frontend (update URL to your actual domain)
+    const logoUrl = 'https://bochi.ke/logo_small.PNG';
     
     const htmlContent = `
       <!DOCTYPE html>
@@ -75,24 +66,24 @@ async function sendOTP(email, code, purpose = 'login') {
         <title>${subject}</title>
         <style>
           body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.6;
             background-color: #fef9f0;
             margin: 0;
             padding: 20px;
           }
           .container {
-            max-width: 550px;
+            max-width: 500px;
             margin: 0 auto;
             background: #ffffff;
-            border-radius: 24px;
+            border-radius: 20px;
             overflow: hidden;
             box-shadow: 0 20px 35px -10px rgba(245, 158, 11, 0.15);
             border: 1px solid #fde68a;
           }
           .header {
             background: linear-gradient(135deg, #f59e0b, #d97706, #b45309);
-            padding: 35px 30px;
+            padding: 30px 25px;
             text-align: center;
             position: relative;
           }
@@ -115,22 +106,31 @@ async function sendOTP(email, code, purpose = 'login') {
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
           }
           .logo {
-            font-size: 28px;
-            font-weight: 800;
-            color: white;
-            margin: 0;
-            letter-spacing: -0.5px;
+            text-align: center;
+            margin-bottom: 10px;
           }
-          .logo span {
-            font-size: 32px;
+          .logo img {
+            max-width: 60px;
+            height: auto;
+            filter: brightness(0) invert(1);
+          }
+          .brand-name {
+            font-family: 'Poppins', 'Segoe UI', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
+            margin: 10px 0 0;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
           }
           .tagline {
-            font-size: 13px;
+            font-size: 12px;
             color: rgba(255,255,255,0.9);
-            margin-top: 8px;
+            margin-top: 5px;
+            font-weight: 400;
           }
           .content {
-            padding: 35px 30px;
+            padding: 30px 25px;
             background: #ffffff;
           }
           .greeting {
@@ -143,18 +143,18 @@ async function sendOTP(email, code, purpose = 'login') {
             color: #4b5563;
             font-size: 15px;
             margin-bottom: 25px;
+            line-height: 1.5;
           }
           .code-box {
             background: linear-gradient(135deg, #fef3c7, #fffbeb);
             border: 2px solid #fbbf24;
             border-radius: 16px;
-            padding: 25px;
+            padding: 20px;
             text-align: center;
-            margin: 25px 0;
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);
+            margin: 20px 0;
           }
           .code-label {
-            font-size: 12px;
+            font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 2px;
             color: #92400e;
@@ -162,55 +162,49 @@ async function sendOTP(email, code, purpose = 'login') {
             margin-bottom: 10px;
           }
           .code {
-            font-size: 42px;
+            font-size: 36px;
             font-weight: 800;
-            font-family: 'Courier New', monospace;
-            letter-spacing: 8px;
+            font-family: 'Courier New', 'Monaco', monospace;
+            letter-spacing: 6px;
             color: #b45309;
             background: white;
-            padding: 15px 20px;
+            padding: 12px 16px;
             border-radius: 12px;
             display: inline-block;
             border: 1px solid #fde68a;
           }
+          .code-raw {
+            font-size: 14px;
+            font-weight: 600;
+            font-family: monospace;
+            color: #d97706;
+            background: #fef3c7;
+            padding: 6px 12px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 12px;
+            letter-spacing: 1px;
+          }
           .expiry {
-            font-size: 12px;
+            font-size: 11px;
             color: #78350f;
             margin-top: 12px;
           }
-          .button {
-            display: inline-block;
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: white;
-            padding: 14px 32px;
-            text-decoration: none;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            box-shadow: 0 6px 14px rgba(245, 158, 11, 0.3);
-            margin: 10px 0;
-          }
-          .button:hover {
-            background: linear-gradient(135deg, #d97706, #b45309);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(245, 158, 11, 0.4);
-          }
           .divider {
-            margin: 30px 0 20px;
+            margin: 25px 0 15px;
             border: none;
             height: 1px;
             background: linear-gradient(90deg, transparent, #fde68a, #f59e0b, #fde68a, transparent);
           }
           .footer {
             text-align: center;
-            padding: 25px;
+            padding: 20px;
             background: linear-gradient(135deg, #fef9f0, #fffbeb);
             border-top: 1px solid #fde68a;
           }
           .footer p {
             margin: 5px 0;
-            font-size: 12px;
+            font-size: 11px;
             color: #78350f;
           }
           .footer a {
@@ -218,17 +212,23 @@ async function sendOTP(email, code, purpose = 'login') {
             text-decoration: none;
             font-weight: 600;
           }
-          .footer a:hover {
-            text-decoration: underline;
-          }
           .security-note {
             background: #fef3c7;
-            padding: 12px 16px;
+            padding: 10px 14px;
             border-radius: 12px;
-            font-size: 12px;
+            font-size: 11px;
             color: #92400e;
             text-align: center;
             margin-top: 20px;
+          }
+          .quick-tip {
+            background: #fff8ed;
+            border-left: 3px solid #f59e0b;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #78350f;
+            margin-top: 15px;
           }
         </style>
       </head>
@@ -236,8 +236,9 @@ async function sendOTP(email, code, purpose = 'login') {
         <div class="container">
           <div class="header">
             <div class="logo">
-              <span>🏗️</span> BOCHI
+              <img src="${logoUrl}" alt="BOCHI Logo" style="max-width: 55px;">
             </div>
+            <div class="brand-name">BOCHI</div>
             <div class="tagline">Construction Suite</div>
           </div>
           
@@ -246,19 +247,14 @@ async function sendOTP(email, code, purpose = 'login') {
               Hello!
             </div>
             <div class="message">
-              ${purpose === 'login' ? 'You requested to log in to your BOCHI account.' : purpose === 'registration' ? 'Thanks for registering with BOCHI!' : 'You have been invited to join BOCHI!'}
+              ${messageText}
             </div>
             
             <div class="code-box">
               <div class="code-label">🔐 VERIFICATION CODE</div>
               <div class="code">${code}</div>
+              <div class="code-raw">📱 Quick copy: ${code}</div>
               <div class="expiry">⏰ This code expires in 10 minutes</div>
-            </div>
-            
-            <div style="text-align: center;">
-              <a href="${buttonLink}" class="button">
-                🚀 ${buttonText}
-              </a>
             </div>
             
             <div class="security-note">
@@ -266,9 +262,13 @@ async function sendOTP(email, code, purpose = 'login') {
               BOCHI will never ask for this code outside of the login page.
             </div>
             
+            <div class="quick-tip">
+              💡 <strong>Quick Tip:</strong> On your phone? Just remember or copy the 6-digit code above.
+            </div>
+            
             <div class="divider"></div>
             
-            <p style="font-size: 12px; color: #78350f; text-align: center;">
+            <p style="font-size: 11px; color: #78350f; text-align: center;">
               If you didn't request this code, you can safely ignore this email.
             </p>
           </div>
@@ -284,7 +284,7 @@ async function sendOTP(email, code, purpose = 'login') {
     `;
     
     const info = await transporter.sendMail({
-      from: `"BOCHI Construction Suite" <${process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
+      from: `"BOCHI" <${process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
       to: email,
       subject: subject,
       html: htmlContent
