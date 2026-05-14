@@ -402,6 +402,10 @@ const toggleFullscreen = () => {
     }
   };
 
+
+
+
+
   // Get dynamic date range based on tasks (expands as needed)
   const getProjectDateRange = () => {
     const today = new Date();
@@ -431,22 +435,37 @@ const toggleFullscreen = () => {
     let minDate = new Date(Math.min(...validDates.map(d => d.getTime())));
     let maxDate = new Date(Math.max(...validDates.map(d => d.getTime())));
     
-    // Add 30% padding on both sides for better visibility and future planning
-    const duration = maxDate.getTime() - minDate.getTime();
-    const padding = Math.max(duration * 0.3, 14 * 24 * 60 * 60 * 1000); // Min 14 days padding
+    // Calculate project duration in days
+    const durationMs = maxDate.getTime() - minDate.getTime();
+    const durationDays = durationMs / (1000 * 60 * 60 * 24);
     
-    minDate = new Date(minDate.getTime() - padding);
-    maxDate = new Date(maxDate.getTime() + padding);
+    // Dynamic padding based on project length
+    let paddingDays;
+    if (durationDays <= 30) {
+      paddingDays = 7; // 1 week padding for short projects
+    } else if (durationDays <= 90) {
+      paddingDays = 14; // 2 weeks padding
+    } else if (durationDays <= 180) {
+      paddingDays = 21; // 3 weeks padding
+    } else if (durationDays <= 365) {
+      paddingDays = 30; // 1 month padding for 1-year projects
+    } else {
+      paddingDays = Math.min(45, Math.ceil(durationDays * 0.05)); // 5% padding for long projects (max 45 days)
+    }
     
-    // Ensure at least 3 months view
-    const minDuration = 90 * 24 * 60 * 60 * 1000;
+    const paddingMs = paddingDays * 24 * 60 * 60 * 1000;
+    
+    minDate = new Date(minDate.getTime() - paddingMs);
+    maxDate = new Date(maxDate.getTime() + paddingMs);
+    
+    // Ensure at least 1 month view minimum
+    const minDuration = 30 * 24 * 60 * 60 * 1000;
     if (maxDate.getTime() - minDate.getTime() < minDuration) {
       maxDate = new Date(minDate.getTime() + minDuration);
     }
     
     return { minDate, maxDate };
   };
-
 
 
 
@@ -2292,8 +2311,6 @@ const formatBudgetInMillions = (amount: number): string => {
           )}
         </div>
       </div>
-
-
 
 
 
