@@ -197,32 +197,39 @@ const stakeholderController = {
   },
 
   // Get projects for stakeholder dashboard
-  getStakeholderProjects: async (req, res) => {
-    try {
-      const db = await getDb();
-      const userId = req.user.id;
+getStakeholderProjects: async (req, res) => {
+  try {
+    const db = await getDb();
+    const userId = req.user.id;
+    
+    // Only show projects where:
+    // 1. is_active = true (project relationship is active)
+    // 2. invite_status = 'accepted' (they accepted the invitation)
+    const projects = await db.query(`
+      SELECT 
+        p.id,
+        p.name,
+        p.client,
+        p.location,
+        p.progress,
+        p.status,
+        ps.stakeholder_type,
+        ps.invite_status
+      FROM project_stakeholders ps
+      JOIN projects p ON ps.project_id = p.id
+      WHERE ps.user_id = $1 
+        AND ps.is_active = true 
+        AND ps.invite_status = 'accepted'
+    `, [userId]);
+    
+    res.json({ projects: projects.rows });
+  } catch (error) {
+    console.error('Error fetching stakeholder projects:', error);
+    res.status(500).json({ error: error.message });
+  }
+},
 
-      const projects = await db.query(`
-        SELECT 
-          p.id,
-          p.name,
-          p.client,
-          p.location,
-          p.progress,
-          p.status,
-          ps.stakeholder_type,
-          ps.invite_status
-        FROM project_stakeholders ps
-        JOIN projects p ON ps.project_id = p.id
-        WHERE ps.user_id = $1 AND ps.is_active = 1
-      `, [userId]);
 
-      res.json({ projects: projects.rows });
-    } catch (error) {
-      console.error('Error fetching stakeholder projects:', error);
-      res.status(500).json({ error: error.message });
-    }
-  },
 
   // Get a single project (with access verification)
   getStakeholderProject: async (req, res) => {
