@@ -450,7 +450,7 @@ async function sendOTP(email, code, purpose = 'login') {
     console.error('Email send error:', error);
     return { success: false, error: error.message };
   }
-}
+},
 
 
 
