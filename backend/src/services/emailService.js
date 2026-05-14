@@ -408,6 +408,183 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+
+// ========== PROFESSIONAL EMAIL WRAPPER HELPER ==========
+// Helper function to wrap any content in professional amber-themed template
+function getProfessionalEmailWrapper(content, subject, userName) {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+      <title>${escapeHtml(subject)}</title>
+      <style>
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+          line-height: 1.6;
+          background: linear-gradient(135deg, #fef9f0 0%, #fff5e6 100%);
+          margin: 0;
+          padding: 30px 20px;
+        }
+        .email-container {
+          max-width: 580px;
+          width: 100%;
+          margin: 0 auto;
+          background: #ffffff;
+          border-radius: 28px;
+          overflow: hidden;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+          border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+        .header {
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+          padding: 35px 30px;
+          text-align: center;
+          position: relative;
+        }
+        .header::after {
+          content: '';
+          position: absolute;
+          bottom: -20px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 40px;
+          height: 40px;
+          background: white;
+          border-radius: 50%;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header::before {
+          content: "🏗️";
+          position: absolute;
+          bottom: -12px;
+          left: 50%;
+          transform: translateX(-50%);
+          font-size: 22px;
+          z-index: 1;
+        }
+        .logo {
+          font-size: 32px;
+          font-weight: 800;
+          color: white;
+          letter-spacing: -0.5px;
+          margin-bottom: 8px;
+          text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .tagline {
+          font-size: 13px;
+          color: rgba(255,255,255,0.9);
+          letter-spacing: 1px;
+        }
+        .content {
+          padding: 40px 35px;
+          background: #ffffff;
+        }
+        .divider {
+          margin: 30px 0;
+          border: none;
+          height: 2px;
+          background: linear-gradient(90deg, transparent, #fde68a, #f59e0b, #fde68a, transparent);
+        }
+        .footer {
+          background: linear-gradient(135deg, #fef9f0, #fff5e6);
+          padding: 30px 35px;
+          text-align: center;
+          border-top: 1px solid #fde68a;
+        }
+        .footer-logo {
+          font-size: 20px;
+          font-weight: 700;
+          color: #d97706;
+          margin-bottom: 12px;
+        }
+        .footer-text {
+          font-size: 12px;
+          color: #78350f;
+          margin: 8px 0;
+          line-height: 1.5;
+        }
+        .footer a {
+          color: #d97706;
+          text-decoration: none;
+          font-weight: 600;
+        }
+        .disclaimer {
+          background: #fff8ed;
+          padding: 16px 20px;
+          border-radius: 16px;
+          font-size: 11px;
+          color: #92400e;
+          margin-top: 20px;
+          border-left: 3px solid #f59e0b;
+          text-align: left;
+        }
+        .badge {
+          display: inline-block;
+          background: #fef3c7;
+          color: #b45309;
+          padding: 5px 14px;
+          border-radius: 50px;
+          font-size: 11px;
+          font-weight: 600;
+          margin-top: 15px;
+        }
+        @media only screen and (max-width: 480px) {
+          .content {
+            padding: 28px 20px;
+          }
+          .footer {
+            padding: 25px 20px;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="email-container">
+        <div class="header">
+          <div class="logo">Bochi</div>
+          <div class="tagline">Construction Suite</div>
+        </div>
+        
+        <div class="content">
+          ${content}
+          <div class="divider"></div>
+        </div>
+        
+        <div class="footer">
+          <div class="footer-logo">🏗️ Bochi Construction Suite</div>
+          <div class="footer-text">
+            <a href="https://www.bochi.ke">🌐 www.bochi.ke</a>
+          </div>
+          
+          <div class="disclaimer">
+            <strong>📧 Confidential Communication</strong><br><br>
+            This message is from <strong>Bochi Construction Suite</strong> (www.bochi.ke). 
+            If you received this email by mistake, please ignore it. No action is required from you.<br><br>
+            For any concerns, contact us at <a href="mailto:support@bochi.ke">support@bochi.ke</a>
+          </div>
+          
+          <div class="badge">⚡ Powering Construction Excellence</div>
+          <div class="footer-text" style="margin-top: 15px;">
+            © ${new Date().getFullYear()} Bochi Construction Suite. All rights reserved.
+          </div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+
+
+
+
 async function sendStakeholderInvitation(email, name, projectName, role, inviterName, subdomain, companyName) {
   try {
     const transporter = getTransporter();
@@ -742,7 +919,8 @@ Admin: ${displayCompanyName} | bochi.ke
   }
 }
 
-// Send bulk email to tenants - with branding
+
+// Send bulk email to tenants - Professional amber-themed design
 async function sendBulkEmail(email, subject, message, userName, companyName, htmlMessage = null) {
   try {
     const transporter = getTransporter();
@@ -751,160 +929,254 @@ async function sendBulkEmail(email, subject, message, userName, companyName, htm
       return false;
     }
     
-    // If htmlMessage is provided from frontend, use it directly
-    const finalHtml = htmlMessage || `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            background-color: #fef9f0;
-            margin: 0;
-            padding: 20px;
-          }
-          .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #ffffff;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 20px 35px -10px rgba(245, 158, 11, 0.15);
-            border: 1px solid #fde68a;
-          }
-          .header {
-            background: linear-gradient(135deg, #f59e0b, #d97706, #b45309);
-            padding: 30px 20px;
-            text-align: center;
-            position: relative;
-          }
-          .header::before {
-            content: "✦";
-            position: absolute;
-            bottom: -15px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: white;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #f59e0b;
-            font-size: 18px;
-            font-weight: bold;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          }
-          .header-title {
-            font-size: 28px;
-            font-weight: 800;
-            color: #ffffff;
-            letter-spacing: -0.5px;
-          }
-          .tagline {
-            font-size: 12px;
-            color: rgba(255,255,255,0.9);
-            margin-top: 5px;
-          }
-          .content {
-            padding: 35px 30px;
-            background-color: #ffffff;
-          }
-          .greeting {
-            font-size: 18px;
-            font-weight: 600;
-            color: #1f2937;
-            margin-bottom: 20px;
-          }
-          .message {
-            font-size: 16px;
-            color: #374151;
-            margin-bottom: 25px;
-            line-height: 1.6;
-          }
-          .divider {
-            margin: 30px 0 20px;
-            border: none;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #fde68a, #f59e0b, #fde68a, transparent);
-          }
-          .footer {
-            background: linear-gradient(135deg, #fef9f0, #fffbeb);
-            padding: 25px;
-            text-align: center;
-            border-top: 1px solid #fde68a;
-          }
-          .footer-logo {
-            font-size: 24px;
-            font-weight: 800;
-            color: #d97706;
-            margin-bottom: 10px;
-          }
-          .footer-text {
-            font-size: 11px;
-            color: #78350f;
-            margin: 5px 0;
-          }
-          .footer a {
-            color: #d97706;
-            text-decoration: none;
-          }
-          .badge {
-            display: inline-block;
-            background: #fef3c7;
-            color: #b45309;
-            padding: 4px 12px;
-            border-radius: 50px;
-            font-size: 11px;
-            font-weight: 600;
-            margin-top: 12px;
-          }
-        </style>
-      </head>
-      <body style="margin: 0; padding: 20px; background-color: #fef9f0;">
-        <div class="email-container">
-          <div class="header">
-            <div class="header-title">🏗️ Bochi</div>
-            <div class="tagline">Construction Suite</div>
-          </div>
-          <div class="content">
-            <div class="greeting">Dear ${userName},</div>
-            <div class="message">${message.replace(/\n/g, '<br>')}</div>
-          </div>
-          <div class="footer">
-            <div class="footer-logo">Bochi</div>
-            <div class="footer-text">Construction Suite</div>
-            <div class="footer-text">© ${new Date().getFullYear()} All rights reserved</div>
-            <div class="footer-text"><a href="https://www.bochi.ke">🌐 www.bochi.ke</a></div>
-            <div class="badge">⚡ Powering Construction</div>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+    // If custom htmlMessage is provided, wrap it with professional template
+    let finalHtml = '';
     
-    // Plain text version
-    const text = `Dear ${userName},\n\n${message.replace(/<[^>]*>/g, '')}\n\n---\nBochi Construction Suite\nwww.bochi.ke`;
+    if (htmlMessage) {
+      // Wrap custom HTML in professional template
+      finalHtml = getProfessionalEmailWrapper(htmlMessage, subject, userName);
+    } else {
+      // Use the professional template with the message
+      finalHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+          <title>${escapeHtml(subject)}</title>
+          <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+              line-height: 1.6;
+              background: linear-gradient(135deg, #fef9f0 0%, #fff5e6 100%);
+              margin: 0;
+              padding: 30px 20px;
+            }
+            .email-container {
+              max-width: 580px;
+              width: 100%;
+              margin: 0 auto;
+              background: #ffffff;
+              border-radius: 28px;
+              overflow: hidden;
+              box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+              border: 1px solid rgba(245, 158, 11, 0.2);
+            }
+            .header {
+              background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+              padding: 35px 30px;
+              text-align: center;
+              position: relative;
+            }
+            .header::after {
+              content: '';
+              position: absolute;
+              bottom: -20px;
+              left: 50%;
+              transform: translateX(-50%);
+              width: 40px;
+              height: 40px;
+              background: white;
+              border-radius: 50%;
+              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            .header::before {
+              content: "🏗️";
+              position: absolute;
+              bottom: -12px;
+              left: 50%;
+              transform: translateX(-50%);
+              font-size: 22px;
+              z-index: 1;
+            }
+            .logo {
+              font-size: 32px;
+              font-weight: 800;
+              color: white;
+              letter-spacing: -0.5px;
+              margin-bottom: 8px;
+              text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .tagline {
+              font-size: 13px;
+              color: rgba(255,255,255,0.9);
+              letter-spacing: 1px;
+            }
+            .content {
+              padding: 40px 35px;
+              background: #ffffff;
+            }
+            .greeting {
+              font-size: 20px;
+              font-weight: 600;
+              color: #1f2937;
+              margin-bottom: 20px;
+              border-left: 4px solid #f59e0b;
+              padding-left: 16px;
+            }
+            .message-box {
+              background: #fef9f0;
+              padding: 25px;
+              border-radius: 20px;
+              margin: 25px 0;
+              border: 1px solid #fde68a;
+            }
+            .message {
+              font-size: 16px;
+              color: #374151;
+              line-height: 1.7;
+              margin-bottom: 20px;
+            }
+            .message p {
+              margin: 15px 0;
+            }
+            .divider {
+              margin: 30px 0;
+              border: none;
+              height: 2px;
+              background: linear-gradient(90deg, transparent, #fde68a, #f59e0b, #fde68a, transparent);
+            }
+            .footer {
+              background: linear-gradient(135deg, #fef9f0, #fff5e6);
+              padding: 30px 35px;
+              text-align: center;
+              border-top: 1px solid #fde68a;
+            }
+            .footer-logo {
+              font-size: 20px;
+              font-weight: 700;
+              color: #d97706;
+              margin-bottom: 12px;
+            }
+            .footer-text {
+              font-size: 12px;
+              color: #78350f;
+              margin: 8px 0;
+              line-height: 1.5;
+            }
+            .footer a {
+              color: #d97706;
+              text-decoration: none;
+              font-weight: 600;
+            }
+            .footer a:hover {
+              text-decoration: underline;
+            }
+            .disclaimer {
+              background: #fff8ed;
+              padding: 16px 20px;
+              border-radius: 16px;
+              font-size: 11px;
+              color: #92400e;
+              margin-top: 20px;
+              border-left: 3px solid #f59e0b;
+              text-align: left;
+            }
+            .disclaimer strong {
+              color: #b45309;
+            }
+            .badge {
+              display: inline-block;
+              background: #fef3c7;
+              color: #b45309;
+              padding: 5px 14px;
+              border-radius: 50px;
+              font-size: 11px;
+              font-weight: 600;
+              margin-top: 15px;
+            }
+            @media only screen and (max-width: 480px) {
+              body {
+                padding: 15px;
+              }
+              .content {
+                padding: 28px 20px;
+              }
+              .message-box {
+                padding: 18px;
+              }
+              .footer {
+                padding: 25px 20px;
+              }
+              .greeting {
+                font-size: 18px;
+              }
+              .message {
+                font-size: 14px;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="email-container">
+            <div class="header">
+              <div class="logo">Bochi</div>
+              <div class="tagline">Construction Suite</div>
+            </div>
+            
+            <div class="content">
+              <div class="greeting">
+                Dear ${escapeHtml(userName)},
+              </div>
+              
+              <div class="message-box">
+                <div class="message">
+                  ${message.replace(/\n/g, '<br>')}
+                </div>
+              </div>
+              
+              <div class="divider"></div>
+            </div>
+            
+            <div class="footer">
+              <div class="footer-logo">🏗️ Bochi Construction Suite</div>
+              <div class="footer-text">
+                <a href="https://www.bochi.ke">🌐 www.bochi.ke</a>
+              </div>
+              
+              <div class="disclaimer">
+                <strong>📧 Confidential Communication</strong><br><br>
+                This message is from <strong>Bochi Construction Suite</strong> (www.bochi.ke). 
+                If you received this email by mistake, please ignore it. No action is required from you.<br><br>
+                If you believe this message was intended for someone else, please disregard and delete.
+                For any concerns, contact us at <a href="mailto:support@bochi.ke">support@bochi.ke</a>
+              </div>
+              
+              <div class="badge">⚡ Powering Construction Excellence</div>
+              <div class="footer-text" style="margin-top: 15px;">
+                © ${new Date().getFullYear()} Bochi Construction Suite. All rights reserved.
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+    }
+    
+    // Plain text version for email clients that don't support HTML
+    const text = `Dear ${userName},\n\n${message.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ')}\n\n---\nBochi Construction Suite\nwww.bochi.ke\n\nIMPORTANT: This message is from Bochi Construction Suite. If you received this email by mistake, please ignore it. No action is required.\n\n© ${new Date().getFullYear()} Bochi Construction Suite. All rights reserved.`;
     
     await transporter.sendMail({
-      from: `"Bochi Admin" <${process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
+      from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
       to: email,
       subject: subject,
       html: finalHtml,
       text: text
     });
     
-    console.log(`✅ Bulk email sent to ${email}`);
+    console.log(`✅ Professional bulk email sent to ${email}`);
     return true;
   } catch (error) {
     console.error('Bulk email error:', error);
     return false;
   }
 }
+
 
 
 async function verifyTransporter() {
@@ -920,6 +1192,8 @@ async function verifyTransporter() {
   }
 }
 
+
+
 module.exports = {
   sendOTP,
   sendInvitationCode,
@@ -927,6 +1201,8 @@ module.exports = {
   sendTaskAssignment,
   sendTaskReminder,
   sendStakeholderInvitation,
-  sendBulkEmail,        // ADD THIS LINE
-  verifyTransporter
+  sendBulkEmail,
+  verifyTransporter,
+  getProfessionalEmailWrapper,  // Export for custom use
+  escapeHtml
 };
