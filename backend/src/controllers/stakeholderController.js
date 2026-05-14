@@ -44,7 +44,7 @@ const stakeholderController = {
       // Get company subdomain from authenticated user
       const companySubdomain = req.user?.companySubdomain || req.user?.subdomain || 'app';
       
-      // Get company name from company_settings table
+      // 🔥 FIX: Get company name from company_settings table
       let companyName = 'BOCHI Construction Suite'; // Default fallback
       
       if (company_id) {
@@ -86,10 +86,10 @@ const stakeholderController = {
         await db.query(`UPDATE users SET stakeholder_type = $1 WHERE id = $2`, [stakeholderType, userId]);
       }
       
-      // Add to project stakeholders with is_active = 1
+      // Add to project stakeholders
       await db.query(`
-        INSERT INTO project_stakeholders (project_id, user_id, stakeholder_type, invite_status, invited_by, is_active)
-        VALUES ($1, $2, $3, 'pending', $4, 1)
+        INSERT INTO project_stakeholders (project_id, user_id, stakeholder_type, invite_status, invited_by)
+        VALUES ($1, $2, $3, 'pending', $4)
         ON CONFLICT (project_id, user_id) DO NOTHING
       `, [projectId, userId, stakeholderType, req.user.id]);
       
@@ -104,7 +104,7 @@ const stakeholderController = {
         stakeholderType,          // role
         req.user.name,            // inviterName
         companySubdomain,         // subdomain
-        companyName               // companyName
+        companyName               // companyName - Now correctly "Finite Element Designs Limited"
       );
       
       res.json({ success: true, message: 'Invitation sent successfully' });
@@ -125,7 +125,7 @@ const stakeholderController = {
       const companySubdomain = req.user?.companySubdomain || req.user?.subdomain || 'app';
       const company_id = req.user?.companyId || req.user?.company_id;
       
-      // Get company name from company_settings table
+      // 🔥 FIX: Get company name from company_settings table
       let companyName = 'BOCHI Construction Suite';
       
       if (company_id) {
@@ -181,18 +181,13 @@ const stakeholderController = {
     }
   },
 
-  // Remove stakeholder from project (soft delete)
+  // Remove stakeholder from project
   removeStakeholder: async (req, res) => {
     try {
       const db = await getDb();
       const { projectId, stakeholderId } = req.params;
       
-      // Soft delete - set is_active = 0 instead of hard delete
-      await db.query(`
-        UPDATE project_stakeholders 
-        SET is_active = 0 
-        WHERE project_id = $1 AND id = $2
-      `, [projectId, stakeholderId]);
+      await db.query(`DELETE FROM project_stakeholders WHERE project_id = $1 AND id = $2`, [projectId, stakeholderId]);
       
       res.json({ success: true, message: 'Stakeholder removed successfully' });
     } catch (error) {
@@ -206,7 +201,7 @@ const stakeholderController = {
     try {
       const db = await getDb();
       const userId = req.user.id;
-      
+
       const projects = await db.query(`
         SELECT 
           p.id,
@@ -219,13 +214,9 @@ const stakeholderController = {
           ps.invite_status
         FROM project_stakeholders ps
         JOIN projects p ON ps.project_id = p.id
-        WHERE ps.user_id = $1 
-          AND ps.is_active = 1 
-          AND ps.invite_status = 'accepted'
+        WHERE ps.user_id = $1 AND ps.is_active = 1
       `, [userId]);
-      
-      console.log('Projects found for stakeholder:', projects.rows.length);
-      
+
       res.json({ projects: projects.rows });
     } catch (error) {
       console.error('Error fetching stakeholder projects:', error);
@@ -249,7 +240,7 @@ const stakeholderController = {
       } else if (userRole === 'stakeholder') {
         const accessCheck = await db.query(`
           SELECT 1 FROM project_stakeholders 
-          WHERE user_id = $1 AND project_id = $2 AND is_active = 1 AND invite_status = 'accepted'
+          WHERE user_id = $1 AND project_id = $2 AND is_active = 1
         `, [userId, projectId]);
         hasAccess = accessCheck.rows.length > 0;
       }
@@ -295,16 +286,11 @@ const stakeholderController = {
       const { projectId } = req.params;
       const userId = req.user.id;
       
-      const result = await db.query(`
+      await db.query(`
         UPDATE project_stakeholders 
-        SET invite_status = 'accepted', last_active = NOW(), is_active = 1
+        SET invite_status = 'accepted', last_active = NOW()
         WHERE project_id = $1 AND user_id = $2
-        RETURNING *
       `, [projectId, userId]);
-      
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: 'Invitation not found' });
-      }
       
       res.json({ success: true, message: 'Invitation accepted' });
     } catch (error) {
