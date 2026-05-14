@@ -1723,97 +1723,113 @@ const formatBudgetInMillions = (amount: number): string => {
     }
   };
 
+
+
+
+
+
   const { minDate, maxDate } = getProjectDateRange();
 
   // Timeline headers with dynamic sizing
-const getTimelineUnit = () => {
-  const totalDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
-  const effectiveDays = totalDays / zoomLevel;
-  
-  if (effectiveDays > 400) {
-    return { unit: 'year', label: 'Year', daysPerUnit: 365, width: 70, getLabel: (date: Date) => date.getFullYear().toString() };
-  } else if (effectiveDays > 150) {
-    return { unit: 'quarter', label: 'Quarter', daysPerUnit: 90, width: 65, getLabel: (date: Date) => `Q${Math.floor(date.getMonth() / 3) + 1}` };
-  } else if (effectiveDays > 60) {
-    return { unit: 'month', label: 'Month', daysPerUnit: 30, width: 60, getLabel: (date: Date) => date.toLocaleDateString('en-US', { month: 'short' }) };
-  } else if (effectiveDays > 21) {
-    return { unit: 'week', label: 'Week', daysPerUnit: 7, width: 55, getLabel: (date: Date) => {
-      const weekNum = Math.ceil((date.getTime() - new Date(date.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
-      return `W${weekNum}`;
-    } };
-  } else {
-    return { unit: 'day', label: 'Day', daysPerUnit: 1, width: 45, getLabel: (date: Date) => date.getDate().toString() };
-  }
-};
+  // IMPORTANT: getTimelineUnit MUST be defined BEFORE timelineHeaders useMemo
+  const getTimelineUnit = () => {
+    const totalDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
+    const effectiveDays = totalDays / zoomLevel;
+    
+    if (effectiveDays > 400) {
+      return { unit: 'year', label: 'Year', daysPerUnit: 365, width: 70, getLabel: (date: Date) => date.getFullYear().toString() };
+    } else if (effectiveDays > 150) {
+      return { unit: 'quarter', label: 'Quarter', daysPerUnit: 90, width: 65, getLabel: (date: Date) => `Q${Math.floor(date.getMonth() / 3) + 1}` };
+    } else if (effectiveDays > 60) {
+      return { unit: 'month', label: 'Month', daysPerUnit: 30, width: 60, getLabel: (date: Date) => date.toLocaleDateString('en-US', { month: 'short' }) };
+    } else if (effectiveDays > 21) {
+      return { unit: 'week', label: 'Week', daysPerUnit: 7, width: 55, getLabel: (date: Date) => {
+        const weekNum = Math.ceil((date.getTime() - new Date(date.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
+        return `W${weekNum}`;
+      } };
+    } else {
+      return { unit: 'day', label: 'Day', daysPerUnit: 1, width: 45, getLabel: (date: Date) => date.getDate().toString() };
+    }
+  };
 
   const timelineUnit = getTimelineUnit();
-const timelineHeaders = useMemo(() => {
-  const headers: { date: Date; label: string; widthPercent: number }[] = [];
-  const totalMs = maxDate.getTime() - minDate.getTime();
-  if (totalMs <= 0) return headers;
   
-  const unit = getTimelineUnit();
-  let current = new Date(minDate);
-  
-  if (unit.unit === 'year') {
-    current = new Date(minDate.getFullYear(), 0, 1);
-    while (current <= maxDate) {
-      const yearStart = Math.max(current.getTime(), minDate.getTime());
-      const yearEnd = Math.min(new Date(current.getFullYear() + 1, 0, 1).getTime(), maxDate.getTime());
-      const widthPercent = ((yearEnd - yearStart) / totalMs) * 100;
-      headers.push({ date: new Date(current), label: unit.getLabel(current), widthPercent: Math.max(3, widthPercent) });
-      current.setFullYear(current.getFullYear() + 1);
+  const timelineHeaders = useMemo(() => {
+    const headers: { date: Date; label: string; widthPercent: number }[] = [];
+    const totalMs = maxDate.getTime() - minDate.getTime();
+    if (totalMs <= 0) return headers;
+    
+    const unit = getTimelineUnit();
+    let current = new Date(minDate);
+    
+    if (unit.unit === 'year') {
+      current = new Date(minDate.getFullYear(), 0, 1);
+      while (current <= maxDate) {
+        const yearStart = Math.max(current.getTime(), minDate.getTime());
+        const yearEnd = Math.min(new Date(current.getFullYear() + 1, 0, 1).getTime(), maxDate.getTime());
+        const widthPercent = ((yearEnd - yearStart) / totalMs) * 100;
+        headers.push({ date: new Date(current), label: unit.getLabel(current), widthPercent: Math.max(3, widthPercent) });
+        current.setFullYear(current.getFullYear() + 1);
+      }
+    } 
+    else if (unit.unit === 'quarter') {
+      current = new Date(minDate);
+      current.setDate(1);
+      const startQuarter = Math.floor(current.getMonth() / 3);
+      current.setMonth(startQuarter * 3, 1);
+      while (current <= maxDate) {
+        const quarterStart = Math.max(current.getTime(), minDate.getTime());
+        const quarterEnd = Math.min(new Date(current.getFullYear(), current.getMonth() + 3, 1).getTime(), maxDate.getTime());
+        const widthPercent = ((quarterEnd - quarterStart) / totalMs) * 100;
+        headers.push({ date: new Date(current), label: unit.getLabel(current), widthPercent: Math.max(3, widthPercent) });
+        current.setMonth(current.getMonth() + 3);
+      }
     }
-  } 
-  else if (unit.unit === 'quarter') {
-    current = new Date(minDate);
-    current.setDate(1);
-    const startQuarter = Math.floor(current.getMonth() / 3);
-    current.setMonth(startQuarter * 3, 1);
-    while (current <= maxDate) {
-      const quarterStart = Math.max(current.getTime(), minDate.getTime());
-      const quarterEnd = Math.min(new Date(current.getFullYear(), current.getMonth() + 3, 1).getTime(), maxDate.getTime());
-      const widthPercent = ((quarterEnd - quarterStart) / totalMs) * 100;
-      headers.push({ date: new Date(current), label: unit.getLabel(current), widthPercent: Math.max(3, widthPercent) });
-      current.setMonth(current.getMonth() + 3);
+    else if (unit.unit === 'month') {
+      current = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+      while (current <= maxDate) {
+        const monthStart = Math.max(current.getTime(), minDate.getTime());
+        const monthEnd = Math.min(new Date(current.getFullYear(), current.getMonth() + 1, 1).getTime(), maxDate.getTime());
+        const widthPercent = ((monthEnd - monthStart) / totalMs) * 100;
+        headers.push({ date: new Date(current), label: unit.getLabel(current), widthPercent: Math.max(3, widthPercent) });
+        current.setMonth(current.getMonth() + 1);
+      }
     }
-  }
-  else if (unit.unit === 'month') {
-    current = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
-    while (current <= maxDate) {
-      const monthStart = Math.max(current.getTime(), minDate.getTime());
-      const monthEnd = Math.min(new Date(current.getFullYear(), current.getMonth() + 1, 1).getTime(), maxDate.getTime());
-      const widthPercent = ((monthEnd - monthStart) / totalMs) * 100;
-      headers.push({ date: new Date(current), label: unit.getLabel(current), widthPercent: Math.max(3, widthPercent) });
-      current.setMonth(current.getMonth() + 1);
+    else if (unit.unit === 'week') {
+      const dayOfWeek = current.getDay();
+      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      current.setDate(current.getDate() - daysToMonday);
+      while (current <= maxDate) {
+        const weekStart = Math.max(current.getTime(), minDate.getTime());
+        const weekEnd = Math.min(current.getTime() + 7 * 24 * 60 * 60 * 1000, maxDate.getTime());
+        const widthPercent = ((weekEnd - weekStart) / totalMs) * 100;
+        headers.push({ date: new Date(current), label: unit.getLabel(current), widthPercent: Math.max(2, widthPercent) });
+        current.setDate(current.getDate() + 7);
+      }
     }
-  }
-  else if (unit.unit === 'week') {
-    const dayOfWeek = current.getDay();
-    const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    current.setDate(current.getDate() - daysToMonday);
-    while (current <= maxDate) {
-      const weekStart = Math.max(current.getTime(), minDate.getTime());
-      const weekEnd = Math.min(current.getTime() + 7 * 24 * 60 * 60 * 1000, maxDate.getTime());
-      const widthPercent = ((weekEnd - weekStart) / totalMs) * 100;
-      headers.push({ date: new Date(current), label: unit.getLabel(current), widthPercent: Math.max(2, widthPercent) });
-      current.setDate(current.getDate() + 7);
+    else {
+      current = new Date(minDate);
+      current.setHours(0, 0, 0, 0);
+      while (current <= maxDate) {
+        const dayStart = current.getTime();
+        const dayEnd = Math.min(dayStart + 24 * 60 * 60 * 1000, maxDate.getTime());
+        const widthPercent = ((dayEnd - dayStart) / totalMs) * 100;
+        headers.push({ date: new Date(current), label: current.getDate().toString(), widthPercent: Math.max(1, widthPercent) });
+        current.setDate(current.getDate() + 1);
+      }
     }
-  }
-  else {
-    current = new Date(minDate);
-    current.setHours(0, 0, 0, 0);
-    while (current <= maxDate) {
-      const dayStart = current.getTime();
-      const dayEnd = Math.min(dayStart + 24 * 60 * 60 * 1000, maxDate.getTime());
-      const widthPercent = ((dayEnd - dayStart) / totalMs) * 100;
-      headers.push({ date: new Date(current), label: current.getDate().toString(), widthPercent: Math.max(1, widthPercent) });
-      current.setDate(current.getDate() + 1);
-    }
-  }
-  
-  return headers;
-}, [minDate, maxDate, zoomLevel]);
+    
+    return headers;
+  }, [minDate, maxDate, zoomLevel]);
+
+
+
+
+
+
+
+
+
 
 
 
