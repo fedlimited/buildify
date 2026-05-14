@@ -27,6 +27,10 @@ function getTransporter() {
   return transporter;
 }
 
+
+
+
+
 async function sendOTP(email, code, purpose = 'login') {
   try {
     const transporter = getTransporter();
@@ -37,51 +41,250 @@ async function sendOTP(email, code, purpose = 'login') {
     }
     
     let subject = '';
-    let htmlContent = '';
-
+    let title = '';
+    let subtitle = '';
+    let buttonText = '';
+    let buttonLink = 'https://bochi.ke/login';
+    
     if (purpose === 'login') {
-      subject = `Your Login Code - Bochi Construction Suite`;
-      htmlContent = `
-        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
-          <h3>Your Login Code</h3>
-          <p>Use the following code to log in to your account:</p>
-          <div style="font-size: 32px; font-weight: bold; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px; letter-spacing: 5px;">${code}</div>
-          <p style="color: #666; font-size: 12px; margin-top: 20px;">This code expires in 5 minutes. Do not share this code with anyone.</p>
-          <hr style="margin: 20px 0;">
-          <p style="color: #999; font-size: 10px;">Bochi Construction Suite - Construction Management System</p>
-        </div>
-      `;
+      subject = `🔐 Your Login Code - BOCHI Construction Suite`;
+      title = 'Login Verification';
+      subtitle = 'Use the code below to complete your login';
+      buttonText = 'Login to Your Account';
+      buttonLink = 'https://bochi.ke/login';
     } else if (purpose === 'registration') {
-      subject = `Verify Your Registration - Bochi Construction Suite`;
-      htmlContent = `
-        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
-          <h3>Verify Your Registration</h3>
-          <p>Use the following code to complete your registration:</p>
-          <div style="font-size: 32px; font-weight: bold; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px; letter-spacing: 5px;">${code}</div>
-          <p style="color: #666; font-size: 12px; margin-top: 20px;">This code expires in 5 minutes.</p>
-          <hr style="margin: 20px 0;">
-          <p style="color: #999; font-size: 10px;">Bochi Construction Suite - Construction Management System</p>
-        </div>
-      `;
+      subject = `📝 Verify Your Registration - BOCHI Construction Suite`;
+      title = 'Registration Verification';
+      subtitle = 'Use the code below to complete your registration';
+      buttonText = 'Complete Registration';
+      buttonLink = 'https://bochi.ke/register';
     } else if (purpose === 'invitation') {
-      subject = `You've Been Invited - Bochi Construction Suite`;
-      htmlContent = `
-        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #1a365d;">Bochi Construction Suite</h2>
-          <h3>You've Been Invited!</h3>
-          <p>Use the following code to complete your registration:</p>
-          <div style="font-size: 32px; font-weight: bold; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px; letter-spacing: 5px;">${code}</div>
-          <p style="color: #666; font-size: 12px; margin-top: 20px;">This code expires in 5 minutes.</p>
-          <hr style="margin: 20px 0;">
-          <p style="color: #999; font-size: 10px;">Bochi Construction Suite - Construction Management System</p>
-        </div>
-      `;
+      subject = `✨ You've Been Invited - BOCHI Construction Suite`;
+      title = 'Invitation to Join';
+      subtitle = 'Use the code below to complete your registration';
+      buttonText = 'Join Now';
+      buttonLink = 'https://bochi.ke/register';
     }
-
+    
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #fef9f0;
+            margin: 0;
+            padding: 20px;
+          }
+          .container {
+            max-width: 550px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 35px -10px rgba(245, 158, 11, 0.15);
+            border: 1px solid #fde68a;
+          }
+          .header {
+            background: linear-gradient(135deg, #f59e0b, #d97706, #b45309);
+            padding: 35px 30px;
+            text-align: center;
+            position: relative;
+          }
+          .header::before {
+            content: "✦";
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #f59e0b;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          }
+          .logo {
+            font-size: 28px;
+            font-weight: 800;
+            color: white;
+            margin: 0;
+            letter-spacing: -0.5px;
+          }
+          .logo span {
+            font-size: 32px;
+          }
+          .tagline {
+            font-size: 13px;
+            color: rgba(255,255,255,0.9);
+            margin-top: 8px;
+          }
+          .content {
+            padding: 35px 30px;
+            background: #ffffff;
+          }
+          .greeting {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 10px;
+          }
+          .message {
+            color: #4b5563;
+            font-size: 15px;
+            margin-bottom: 25px;
+          }
+          .code-box {
+            background: linear-gradient(135deg, #fef3c7, #fffbeb);
+            border: 2px solid #fbbf24;
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+            margin: 25px 0;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);
+          }
+          .code-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #92400e;
+            font-weight: 600;
+            margin-bottom: 10px;
+          }
+          .code {
+            font-size: 42px;
+            font-weight: 800;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 8px;
+            color: #b45309;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            display: inline-block;
+            border: 1px solid #fde68a;
+          }
+          .expiry {
+            font-size: 12px;
+            color: #78350f;
+            margin-top: 12px;
+          }
+          .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            padding: 14px 32px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 14px rgba(245, 158, 11, 0.3);
+            margin: 10px 0;
+          }
+          .button:hover {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(245, 158, 11, 0.4);
+          }
+          .divider {
+            margin: 30px 0 20px;
+            border: none;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #fde68a, #f59e0b, #fde68a, transparent);
+          }
+          .footer {
+            text-align: center;
+            padding: 25px;
+            background: linear-gradient(135deg, #fef9f0, #fffbeb);
+            border-top: 1px solid #fde68a;
+          }
+          .footer p {
+            margin: 5px 0;
+            font-size: 12px;
+            color: #78350f;
+          }
+          .footer a {
+            color: #d97706;
+            text-decoration: none;
+            font-weight: 600;
+          }
+          .footer a:hover {
+            text-decoration: underline;
+          }
+          .security-note {
+            background: #fef3c7;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 12px;
+            color: #92400e;
+            text-align: center;
+            margin-top: 20px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div class="logo">
+              <span>🏗️</span> BOCHI
+            </div>
+            <div class="tagline">Construction Suite</div>
+          </div>
+          
+          <div class="content">
+            <div class="greeting">
+              Hello!
+            </div>
+            <div class="message">
+              ${purpose === 'login' ? 'You requested to log in to your BOCHI account.' : purpose === 'registration' ? 'Thanks for registering with BOCHI!' : 'You have been invited to join BOCHI!'}
+            </div>
+            
+            <div class="code-box">
+              <div class="code-label">🔐 VERIFICATION CODE</div>
+              <div class="code">${code}</div>
+              <div class="expiry">⏰ This code expires in 10 minutes</div>
+            </div>
+            
+            <div style="text-align: center;">
+              <a href="${buttonLink}" class="button">
+                🚀 ${buttonText}
+              </a>
+            </div>
+            
+            <div class="security-note">
+              🔒 For your security, never share this code with anyone.<br>
+              BOCHI will never ask for this code outside of the login page.
+            </div>
+            
+            <div class="divider"></div>
+            
+            <p style="font-size: 12px; color: #78350f; text-align: center;">
+              If you didn't request this code, you can safely ignore this email.
+            </p>
+          </div>
+          
+          <div class="footer">
+            <p><strong>BOCHI Construction Suite</strong></p>
+            <p><a href="https://bochi.ke">🌐 bochi.ke</a></p>
+            <p style="font-size: 10px; opacity: 0.7;">© ${new Date().getFullYear()} All rights reserved</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+    
     const info = await transporter.sendMail({
-      from: `"Bochi Construction Suite" <${process.env.EMAIL_FROM || 'noreply@bochi.ke'}>`,
+      from: `"BOCHI Construction Suite" <${process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@bochi.ke'}>`,
       to: email,
       subject: subject,
       html: htmlContent
@@ -94,6 +297,10 @@ async function sendOTP(email, code, purpose = 'login') {
     return { success: false, error: error.message };
   }
 }
+
+
+
+
 
 async function sendInvitationCode(email, code, inviterName, companyName) {
   try {
