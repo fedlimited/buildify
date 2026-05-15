@@ -6,7 +6,7 @@ import {
   Sparkles, Shield, CheckCircle2, ArrowRight, ArrowLeft,
   TrendingUp, Clock, Users, Award, Quote, HardHat,
   AlertCircle, CheckCircle, Info, HelpCircle, Eye,
-  ChevronRight, Rocket, Target, Briefcase, Calendar, DollarSign
+  ChevronRight, Rocket, Target, Briefcase, Calendar, DollarSign, Star
 } from 'lucide-react';
 import { API_BASE_URL } from '@/config/api';
 
@@ -134,47 +134,48 @@ export function Register({ onBackToLogin }: RegisterProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Hero Banner */}
-      <div className="relative bg-gradient-to-r from-amber-600 to-amber-700 overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-            <pattern id="dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-              <circle cx="2" cy="2" r="1.5" fill="white" />
-            </pattern>
-            <rect width="100%" height="100%" fill="url(#dots)" />
-          </svg>
-        </div>
-        <div className="relative max-w-7xl mx-auto px-4 py-12 text-center">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-1.5 mb-4"
-          >
-            <Rocket size={14} className="text-white" />
-            <span className="text-white text-xs font-medium">Start your 14-day free trial</span>
-          </motion.div>
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-4 py-12">
+        {/* Header Section - No yellow banner */}
+        <div className="text-center mb-10">
+          <div className="flex items-center justify-center mb-4">
+            <img 
+              src="/Bochi_logo_transparent.png" 
+              alt="BOCHI Logo" 
+              className="h-12 w-auto"
+            />
+          </div>
+          
           <motion.h1
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3"
+            transition={{ duration: 0.5 }}
+            className="text-3xl md:text-4xl font-bold text-white mb-3"
           >
-            Join the Future of Construction Management
+            Register Your Company
           </motion.h1>
+          
           <motion.p
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-amber-100 text-base md:text-lg max-w-2xl mx-auto"
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-slate-400 text-base max-w-2xl mx-auto"
           >
-            Join 500+ construction companies already streamlining their operations with BOCHI
+            Join the best construction management software trusted by 500+ companies across Kenya
           </motion.p>
-        </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 py-12">
+          {/* Trust Badge */}
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+            className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-amber-500/10 rounded-full border border-amber-500/20"
+          >
+            <Star size={14} className="text-amber-400 fill-amber-400" />
+            <span className="text-amber-400 text-xs font-medium">Rated 4.9/5 by Construction Professionals</span>
+          </motion.div>
+        </div>
+
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left Column - Form */}
           <div className="lg:col-span-2">
@@ -583,8 +584,35 @@ export function Register({ onBackToLogin }: RegisterProps) {
 
           {/* Right Column - Guidance & Benefits */}
           <div className="space-y-6">
+            {/* "Best Software" Message */}
+            <div className="bg-gradient-to-br from-amber-500/15 to-amber-600/5 rounded-2xl border border-amber-500/20 p-6 text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-500/20 mb-4">
+                <Sparkles size={24} className="text-amber-400" />
+              </div>
+              <h3 className="text-white font-bold text-lg mb-2">
+                Why BOCHI is the Best Construction Software in Kenya
+              </h3>
+              <p className="text-slate-300 text-sm mb-3">
+                Trusted by 500+ construction companies, BOCHI helps you:
+              </p>
+              <div className="text-left space-y-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle size={14} className="text-amber-400" />
+                  <span className="text-slate-300 text-sm">Save 20+ hours weekly on admin work</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle size={14} className="text-amber-400" />
+                  <span className="text-slate-300 text-sm">Reduce costs by up to 40%</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle size={14} className="text-amber-400" />
+                  <span className="text-slate-300 text-sm">Get real-time financial insights</span>
+                </div>
+              </div>
+            </div>
+
             {/* Quick Guide Card */}
-            <div className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 backdrop-blur-sm rounded-2xl border border-amber-500/20 p-6">
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
                   <HelpCircle size={16} className="text-amber-400" />
@@ -619,7 +647,7 @@ export function Register({ onBackToLogin }: RegisterProps) {
             {/* What You Get Card */}
             <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6">
               <div className="flex items-center gap-2 mb-4">
-                <Sparkles size={18} className="text-amber-400" />
+                <Rocket size={18} className="text-amber-400" />
                 <h3 className="text-white font-semibold">What's included in your trial</h3>
               </div>
               <div className="space-y-3">
@@ -661,18 +689,6 @@ export function Register({ onBackToLogin }: RegisterProps) {
                   <span className="text-xs text-slate-400">No credit card required</span>
                 </div>
                 <p className="text-xs text-slate-500 mt-1">Cancel anytime during trial</p>
-              </div>
-            </div>
-
-            {/* Testimonial */}
-            <div className="bg-gradient-to-br from-slate-800 to-slate-800/50 rounded-2xl border border-slate-700 p-6">
-              <Quote size={20} className="text-amber-400/50 mb-3" />
-              <p className="text-white text-sm leading-relaxed mb-3">
-                "BOCHI transformed how we manage our construction projects. The stakeholder portal alone saved us countless hours of client communication."
-              </p>
-              <div>
-                <p className="text-white font-medium text-sm">Michael Otieno</p>
-                <p className="text-slate-400 text-xs">Ace Developers</p>
               </div>
             </div>
           </div>
