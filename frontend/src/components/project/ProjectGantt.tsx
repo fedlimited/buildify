@@ -13,7 +13,6 @@ import { API_BASE_URL } from '@/config/api';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
-
 interface Task {
   id: number;
   name: string;
@@ -1427,6 +1426,12 @@ const loadFromBackend = async () => {
 
   // Edit existing task
   const editTask = (task: Task) => {
+// 🔒 BLOCK STAKEHOLDERS
+  if (isStakeholder) {
+    alert('⚠️ Stakeholders cannot edit tasks. Only tenants can modify the Gantt chart.');
+    return;
+  }
+
     setEditingTaskId(task.id);
     setTaskForm({
       name: task.name,
@@ -1442,6 +1447,12 @@ const loadFromBackend = async () => {
   };
 
   const addNewTask = () => {
+// 🔒 BLOCK STAKEHOLDERS
+  if (isStakeholder) {
+    alert('⚠️ Stakeholders cannot add tasks. Only tenants can modify the Gantt chart.');
+    return;
+  }
+
     setEditingTask(null);
     const today = new Date();
     const nextWeek = new Date();
@@ -1896,25 +1907,47 @@ const formatBudgetInMillions = (amount: number): string => {
 
 
 
-  return (
 
-<div 
-  ref={fullscreenRef} 
-  className="space-y-3" 
-  style={{ height: isFullscreen ? '100vh' : 'auto', overflow: isFullscreen ? 'hidden' : 'visible' }}
->
+return (
+  <div 
+    ref={fullscreenRef} 
+    className="space-y-3" 
+    style={{ height: isFullscreen ? '100vh' : 'auto', overflow: isFullscreen ? 'hidden' : 'visible' }}
+  >
+    {/* Stakeholder Warning Banner */}
+    {isStakeholder && (
+      <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-3 mx-2">
+        <div className="flex items-center gap-2">
+          <Eye size={18} className="text-blue-500" />
+          <span className="text-sm text-blue-700 dark:text-blue-300">
+            👁️ You are viewing this Gantt chart as a stakeholder. You can view all tasks but cannot add, edit, or delete tasks.
+          </span>
+        </div>
+      </div>
+    )}
+
+
 
 
       {/* Professional Toolbar */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-md sticky top-0 z-30">
         <div className="flex flex-wrap items-center justify-between p-2 gap-1 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-1 flex-wrap">
-            <button onClick={addNewTask} className="px-2 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-sm flex items-center gap-1 transition">
-              <Plus size={14} /> Task
-            </button>
-            <button onClick={() => setShowDependencyModal(true)} className="px-2 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm flex items-center gap-1 transition">
-              <Link size={14} /> Link
-            </button>
+
+
+{!isStakeholder && (
+  <button onClick={addNewTask} className="px-2 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-sm flex items-center gap-1 transition">
+    <Plus size={14} /> Task
+  </button>
+)}
+
+
+{!isStakeholder && (
+  <button onClick={() => setShowDependencyModal(true)} className="px-2 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm flex items-center gap-1 transition">
+    <Link size={14} /> Link
+  </button>
+)}
+
             
             {/* Auto-save Save Button */}
             <div className="relative">
@@ -1943,25 +1976,38 @@ const formatBudgetInMillions = (amount: number): string => {
             </div>
             
             {/* Auto-save Toggle */}
-            <button 
-              onClick={() => setAutoSaveEnabled(!autoSaveEnabled)}
-              className={`px-2 py-1.5 rounded text-sm flex items-center gap-1 transition ${
-                autoSaveEnabled 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                  : 'bg-gray-500 hover:bg-gray-600 text-white'
-              }`}
-              title={autoSaveEnabled ? 'Auto-save is ON' : 'Auto-save is OFF'}
-            >
-              <Sparkles size={14} />
-              Auto {autoSaveEnabled ? 'ON' : 'OFF'}
-            </button>
-            
-            <button onClick={clearAllTasks} className="px-2 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-sm flex items-center gap-1 transition">
-              <Eraser size={14} /> Clear
-            </button>
-            <button onClick={loadSampleData} className="px-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm flex items-center gap-1 transition">
-              <Sparkles size={14} /> Sample
-            </button>
+
+
+{!isStakeholder && (
+  <button 
+    onClick={() => setAutoSaveEnabled(!autoSaveEnabled)}
+    className={`px-2 py-1.5 rounded text-sm flex items-center gap-1 transition ${
+      autoSaveEnabled 
+        ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+        : 'bg-gray-500 hover:bg-gray-600 text-white'
+    }`}
+    title={autoSaveEnabled ? 'Auto-save is ON' : 'Auto-save is OFF'}
+  >
+    <Sparkles size={14} />
+    Auto {autoSaveEnabled ? 'ON' : 'OFF'}
+  </button>
+)}
+
+
+{!isStakeholder && (
+  <button onClick={clearAllTasks} className="px-2 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-sm flex items-center gap-1 transition">
+    <Eraser size={14} /> Clear
+  </button>
+)}
+
+
+{!isStakeholder && (
+  <button onClick={loadSampleData} className="px-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm flex items-center gap-1 transition">
+    <Sparkles size={14} /> Sample
+  </button>
+)}
+
+
             
             <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1"></div>
 
@@ -2298,19 +2344,44 @@ const formatBudgetInMillions = (amount: number): string => {
             );
           })}
 
+
          
-          {visibleTasks.length === 0 && (
-            <div className="text-center py-16">
-              <p className="text-gray-500 dark:text-gray-400 mb-3">No tasks yet. Get started below:</p>
-              <div className="flex gap-3 justify-center">
-                <button onClick={addNewTask} className="px-4 py-2 bg-amber-600 text-white rounded-lg flex items-center gap-2"><Plus size={16} /> Add First Task</button>
-                <button onClick={loadSampleData} className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2"><Sparkles size={16} /> Load Sample Project</button>
-                <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-emerald-600 text-white rounded-lg flex items-center gap-2"><Upload size={16} /> Import MS Project</button>
-              </div>
-            </div>
-          )}
+{visibleTasks.length === 0 && (
+  <div className="text-center py-16">
+    {!isStakeholder ? (
+      <>
+        <p className="text-gray-500 dark:text-gray-400 mb-3">No tasks yet. Get started below:</p>
+        <div className="flex gap-3 justify-center">
+          <button onClick={addNewTask} className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg flex items-center gap-2 transition">
+            <Plus size={16} /> Add First Task
+          </button>
+          <button onClick={loadSampleData} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 transition">
+            <Sparkles size={16} /> Load Sample Project
+          </button>
+          <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center gap-2 transition">
+            <Upload size={16} /> Import MS Project
+          </button>
+        </div>
+      </>
+    ) : (
+      <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-6 max-w-md mx-auto">
+        <p className="text-blue-700 dark:text-blue-300">
+          📋 No tasks have been added to this project yet.
+        </p>
+        <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
+          Only project tenants can add tasks.
+        </p>
+      </div>
+    )}
+  </div>
+)}
+
+
+
+
         </div>
       </div>
+
 
 
 
