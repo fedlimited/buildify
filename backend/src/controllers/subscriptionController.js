@@ -173,125 +173,122 @@ const SubscriptionController = {
     }
   },
   
-  // Check usage limits
-  checkLimit: async (req, res) => {
-    try {
-      const db = await getDb();
-      const company_id = req.user.companyId;
-      const { type } = req.query;
-      
-      let subscription;
+// Check usage limits
+checkLimit: async (req, res) => {
+  try {
+    const db = await getDb();
+    const company_id = req.user.companyId;
+    const { type } = req.query;
+    
+    let subscription;
+    if (process.env.NODE_ENV === 'production') {
+      const result = await db.query(`
+        SELECT sp.max_projects, sp.max_workers, sp.max_users, sp.max_income_records, sp.max_stakeholders
+        FROM company_subscriptions cs
+        JOIN subscription_plans sp ON cs.plan_id = sp.id
+        WHERE cs.company_id = $1 AND cs.status IN ('active', 'trial')
+        LIMIT 1
+      `, [company_id]);
+      subscription = result.rows[0];
+    } else {
+      subscription = await db.get(`
+        SELECT sp.max_projects, sp.max_workers, sp.max_users, sp.max_income_records, sp.max_stakeholders
+        FROM company_subscriptions cs
+        JOIN subscription_plans sp ON cs.plan_id = sp.id
+        WHERE cs.company_id = ? AND cs.status IN ('active', 'trial')
+        LIMIT 1
+      `, [company_id]);
+    }
+    
+    const limits = subscription || { 
+      max_projects: 1, 
+      max_workers: 10, 
+      max_users: 1, 
+      max_income_records: 10,
+      max_stakeholders: 0
+    };
+    
+    let currentCount = 0;
+    let allowed = true;
+    let max = 0;
+    
+    if (type === 'project') {
+      if (process.env.NODE_ENV === 'production') {
+        const result = await db.query("SELECT COUNT(*) as count FROM projects WHERE company_id = $1 AND status != 'Archived'", [company_id]);
+        currentCount = parseInt(result.rows[0].count);
+      } else {
+        const result = await db.get("SELECT COUNT(*) as count FROM projects WHERE company_id = ? AND status != 'Archived'", [company_id]);
+        currentCount = result.count;
+      }
+      max = limits.max_projects;
+      allowed = currentCount < max;
+    } else if (type === 'worker') {
+      if (process.env.NODE_ENV === 'production') {
+        const result = await db.query('SELECT COUNT(*) as count FROM workers WHERE company_id = $1 AND is_active = 1', [company_id]);
+        currentCount = parseInt(result.rows[0].count);
+      } else {
+        const result = await db.get('SELECT COUNT(*) as count FROM workers WHERE company_id = ? AND is_active = 1', [company_id]);
+        currentCount = result.count;
+      }
+      max = limits.max_workers;
+      allowed = currentCount < max;
+    } else if (type === 'user') {
+      if (process.env.NODE_ENV === 'production') {
+        const result = await db.query("SELECT COUNT(*) as count FROM users WHERE company_id = $1 AND role = 'admin'", [company_id]);
+        currentCount = parseInt(result.rows[0].count);
+      } else {
+        const result = await db.get("SELECT COUNT(*) as count FROM users WHERE company_id = ? AND role = 'admin'", [company_id]);
+        currentCount = result.count;
+      }
+      max = limits.max_users;
+      allowed = currentCount < max;
+    } else if (type === 'income') {
+      if (process.env.NODE_ENV === 'production') {
+        const result = await db.query("SELECT COUNT(*) as count FROM income WHERE company_id = $1 AND date >= DATE_TRUNC('month', CURRENT_DATE)", [company_id]);
+        currentCount = parseInt(result.rows[0].count);
+      } else {
+        const result = await db.get("SELECT COUNT(*) as count FROM income WHERE company_id = ? AND date >= date('now', 'start of month')", [company_id]);
+        currentCount = result.count;
+      }
+      max = limits.max_income_records;
+      allowed = currentCount < max;
+    } else if (type === 'stakeholder') {
       if (process.env.NODE_ENV === 'production') {
         const result = await db.query(`
-          SELECT sp.max_projects, sp.max_workers, sp.max_users, sp.max_income_records
-          FROM company_subscriptions cs
-          JOIN subscription_plans sp ON cs.plan_id = sp.id
-          WHERE cs.company_id = $1 AND cs.status IN ('active', 'trial')
-          LIMIT 1
+          SELECT COUNT(DISTINCT ps.user_id) as count 
+          FROM project_stakeholders ps 
+          JOIN projects p ON ps.project_id = p.id 
+          WHERE p.company_id = $1 AND ps.status = 'active'
         `, [company_id]);
-        subscription = result.rows[0];
+        currentCount = parseInt(result.rows[0].count);
       } else {
-        subscription = await db.get(`
-          SELECT sp.max_projects, sp.max_workers, sp.max_users, sp.max_income_records
-          FROM company_subscriptions cs
-          JOIN subscription_plans sp ON cs.plan_id = sp.id
-          WHERE cs.company_id = ? AND cs.status IN ('active', 'trial')
-          LIMIT 1
+        const result = await db.get(`
+          SELECT COUNT(DISTINCT ps.user_id) as count 
+          FROM project_stakeholders ps 
+          JOIN projects p ON ps.project_id = p.id 
+          WHERE p.company_id = ? AND ps.status = 'active'
         `, [company_id]);
+        currentCount = result.count;
       }
- 
-     
-const limits = subscription || { 
-  max_projects: 1, 
-  max_workers: 10, 
-  max_users: 1, 
-  max_income_records: 10,
-  max_stakeholders: 0
-};
-      
-      let currentCount = 0;
-      let allowed = true;
-      let max = 0;
-      
-      if (type === 'project') {
-        if (process.env.NODE_ENV === 'production') {
-          const result = await db.query("SELECT COUNT(*) as count FROM projects WHERE company_id = $1 AND status != 'Archived'", [company_id]);
-          currentCount = parseInt(result.rows[0].count);
-        } else {
-          const result = await db.get("SELECT COUNT(*) as count FROM projects WHERE company_id = ? AND status != 'Archived'", [company_id]);
-          currentCount = result.count;
-        }
-        max = limits.max_projects;
-        allowed = currentCount < max;
-      } else if (type === 'worker') {
-        if (process.env.NODE_ENV === 'production') {
-          const result = await db.query('SELECT COUNT(*) as count FROM workers WHERE company_id = $1 AND is_active = 1', [company_id]);
-          currentCount = parseInt(result.rows[0].count);
-        } else {
-          const result = await db.get('SELECT COUNT(*) as count FROM workers WHERE company_id = ? AND is_active = 1', [company_id]);
-          currentCount = result.count;
-        }
-        max = limits.max_workers;
-        allowed = currentCount < max;
-      } else if (type === 'user') {
-        if (process.env.NODE_ENV === 'production') {
-          const result = await db.query("SELECT COUNT(*) as count FROM users WHERE company_id = $1 AND role = 'admin'", [company_id]);
-          currentCount = parseInt(result.rows[0].count);
-        } else {
-          const result = await db.get("SELECT COUNT(*) as count FROM users WHERE company_id = ? AND role = 'admin'", [company_id]);
-          currentCount = result.count;
-        }
-        max = limits.max_users;
-        allowed = currentCount < max;
-      } else if (type === 'income') {
-        if (process.env.NODE_ENV === 'production') {
-          const result = await db.query("SELECT COUNT(*) as count FROM income WHERE company_id = $1 AND date >= DATE_TRUNC('month', CURRENT_DATE)", [company_id]);
-          currentCount = parseInt(result.rows[0].count);
-        } else {
-          const result = await db.get("SELECT COUNT(*) as count FROM income WHERE company_id = ? AND date >= date('now', 'start of month')", [company_id]);
-          currentCount = result.count;
-        }
-        max = limits.max_income_records;
-        allowed = currentCount < max;
-      }
-
-} else if (type === 'stakeholder') {
-  if (process.env.NODE_ENV === 'production') {
-    const result = await db.query(`
-      SELECT COUNT(DISTINCT ps.user_id) as count 
-      FROM project_stakeholders ps 
-      JOIN projects p ON ps.project_id = p.id 
-      WHERE p.company_id = $1 AND ps.status = 'active'
-    `, [company_id]);
-    currentCount = parseInt(result.rows[0].count);
-  } else {
-    const result = await db.get(`
-      SELECT COUNT(DISTINCT ps.user_id) as count 
-      FROM project_stakeholders ps 
-      JOIN projects p ON ps.project_id = p.id 
-      WHERE p.company_id = ? AND ps.status = 'active'
-    `, [company_id]);
-    currentCount = result.count;
-  }
-  max = limits.max_stakeholders || 0;
-  allowed = currentCount < max;
-}
-
-      
-      res.json({
-        type,
-        allowed,
-        current: currentCount,
-        max: max === 999999 ? 'Unlimited' : max,
-        remaining: max === 999999 ? 'Unlimited' : max - currentCount,
-        message: allowed ? `You can add ${max === 999999 ? 'unlimited' : max - currentCount} more ${type}(s)` : `${type.charAt(0).toUpperCase() + type.slice(1)} limit reached. Maximum ${max === 999999 ? 'unlimited' : max}.`,
-        isOverLimit: currentCount > max && max !== 999999
-      });
-    } catch (error) {
-      console.error('Error checking limit:', error);
-      res.status(500).json({ error: error.message });
+      max = limits.max_stakeholders || 0;
+      allowed = currentCount < max;
     }
-  },
+    
+    res.json({
+      type,
+      allowed,
+      current: currentCount,
+      max: max === 999999 ? 'Unlimited' : max,
+      remaining: max === 999999 ? 'Unlimited' : max - currentCount,
+      message: allowed ? `You can add ${max === 999999 ? 'unlimited' : max - currentCount} more ${type}(s)` : `${type.charAt(0).toUpperCase() + type.slice(1)} limit reached. Maximum ${max === 999999 ? 'unlimited' : max}.`,
+      isOverLimit: currentCount > max && max !== 999999
+    });
+  } catch (error) {
+    console.error('Error checking limit:', error);
+    res.status(500).json({ error: error.message });
+  }
+},
+
 
   // Check if company can downgrade to a target plan
   canDowngrade: async (req, res) => {
