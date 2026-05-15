@@ -44,7 +44,12 @@ export function Register({ onBackToLogin }: RegisterProps) {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+
+
+
+
+
+const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (form.admin_password !== form.confirm_password) {
@@ -66,37 +71,51 @@ export function Register({ onBackToLogin }: RegisterProps) {
     setError('');
     setSuccess('');
 
+    // Log what we're sending for debugging
+    const payload = {
+      name: form.name,
+      subdomain: form.subdomain,
+      email: form.email,
+      phone: form.phone,
+      address: form.address,
+      kra_pin: form.kra_pin.toUpperCase(),
+      admin_name: form.admin_name,
+      admin_email: form.admin_email,
+      admin_password: form.admin_password
+    };
+    
+    console.log('Sending registration payload:', payload);
+
     try {
       const response = await fetch(`${API_BASE_URL}/companies/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: form.name,
-          subdomain: form.subdomain,
-          email: form.email,
-          phone: form.phone,
-          address: form.address,
-          kra_pin: form.kra_pin.toUpperCase(),
-          admin_name: form.admin_name,
-          admin_email: form.admin_email,
-          admin_password: form.admin_password
-        })
+        body: JSON.stringify(payload)
       });
 
       const data = await response.json();
+      console.log('Response status:', response.status);
+      console.log('Response data:', data);
 
       if (!response.ok) {
-        const errorMsg = data.error || '';
-        if (errorMsg.includes('subdomain') || errorMsg.includes('exists')) {
-          throw new Error('Subdomain already taken');
-        } else if (errorMsg.includes('email')) {
-          throw new Error('Email already registered');
+        // Show detailed error from server
+        const errorMsg = data.error || data.message || JSON.stringify(data);
+        console.error('Registration error details:', errorMsg);
+        
+        if (errorMsg.includes('subdomain') || errorMsg.includes('already exists') || errorMsg.includes('taken')) {
+          throw new Error('Subdomain already taken. Please try another one.');
+        } else if (errorMsg.includes('email') && errorMsg.includes('exists')) {
+          throw new Error('This email is already registered. Please use a different email or login.');
+        } else if (errorMsg.includes('required')) {
+          throw new Error(`Missing required field: ${errorMsg}`);
+        } else if (errorMsg.includes('KRA') || errorMsg.includes('kra')) {
+          throw new Error('Invalid KRA PIN format. Please check and try again.');
         } else {
-          throw new Error('Check details and try again');
+          throw new Error(errorMsg || 'Registration failed. Please check all fields.');
         }
       }
 
-      setSuccess(`Welcome! Your company has been registered. Redirecting to login...`);
+      setSuccess(`Welcome! Your company "${form.name}" has been registered. Redirecting to login...`);
 
       setTimeout(() => {
         if (onBackToLogin) {
@@ -107,16 +126,21 @@ export function Register({ onBackToLogin }: RegisterProps) {
       }, 3000);
 
     } catch (err: any) {
+      console.error('Registration catch error:', err);
       const message = err.message || '';
       if (message.includes('network') || message.includes('fetch')) {
-        setError('Check your internet connection');
+        setError('Unable to connect. Please check your internet connection.');
       } else {
-        setError(message || 'Registration failed');
+        setError(message || 'Registration failed. Please try again.');
       }
     } finally {
       setIsLoading(false);
     }
   };
+
+
+
+
 
   const isStep1Valid = form.name && form.subdomain;
   const isStep2Valid = form.admin_name && form.admin_email && form.admin_password && form.confirm_password;
