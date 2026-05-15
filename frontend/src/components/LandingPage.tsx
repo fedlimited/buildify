@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HardHat, Check, ArrowRight, Sparkles, Shield, Building2, Users, Award, TrendingUp, Clock, Globe, Eye } from 'lucide-react';
-
+import { HardHat, Check, ArrowRight, Sparkles, Shield, Building2, Users, Award, TrendingUp, Clock, Globe, Eye, CheckCircle } from 'lucide-react';
 function TestimonialForm() {
   const [form, setForm] = useState({ name: '', role: '', company: '', text: '', rating: 5 });
   const [submitted, setSubmitted] = useState(false);
