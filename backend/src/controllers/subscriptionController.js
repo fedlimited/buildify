@@ -199,8 +199,15 @@ const SubscriptionController = {
           LIMIT 1
         `, [company_id]);
       }
-      
-      const limits = subscription || { max_projects: 1, max_workers: 10, max_users: 1, max_income_records: 10 };
+ 
+     
+const limits = subscription || { 
+  max_projects: 1, 
+  max_workers: 10, 
+  max_users: 1, 
+  max_income_records: 10,
+  max_stakeholders: 0
+};
       
       let currentCount = 0;
       let allowed = true;
@@ -247,6 +254,29 @@ const SubscriptionController = {
         max = limits.max_income_records;
         allowed = currentCount < max;
       }
+
+} else if (type === 'stakeholder') {
+  if (process.env.NODE_ENV === 'production') {
+    const result = await db.query(`
+      SELECT COUNT(DISTINCT ps.user_id) as count 
+      FROM project_stakeholders ps 
+      JOIN projects p ON ps.project_id = p.id 
+      WHERE p.company_id = $1 AND ps.status = 'active'
+    `, [company_id]);
+    currentCount = parseInt(result.rows[0].count);
+  } else {
+    const result = await db.get(`
+      SELECT COUNT(DISTINCT ps.user_id) as count 
+      FROM project_stakeholders ps 
+      JOIN projects p ON ps.project_id = p.id 
+      WHERE p.company_id = ? AND ps.status = 'active'
+    `, [company_id]);
+    currentCount = result.count;
+  }
+  max = limits.max_stakeholders || 0;
+  allowed = currentCount < max;
+}
+
       
       res.json({
         type,

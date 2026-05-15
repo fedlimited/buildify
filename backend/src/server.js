@@ -7,6 +7,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const { initializeDatabase, getDb } = require('./config/database');
 const { authenticateToken, requireAdmin, requireCompanyAccess } = require('./middleware/auth');
+const stakeholderLimitMiddleware = require('./middleware/stakeholderLimit');
 const authController = require('./controllers/authController');
 const projectController = require('./controllers/projectController');
 const userController = require('./controllers/userController');
@@ -347,7 +348,7 @@ app.get('/api/site-diary-entries/range', SiteDiaryController.getEntriesByDateRan
 // ========== STAKEHOLDER ROUTES ==========
 // Project stakeholder management (Contractor routes)
 app.get('/api/projects/:projectId/stakeholders', authenticateToken, stakeholderController.getProjectStakeholders);
-app.post('/api/projects/:projectId/stakeholders/invite', authenticateToken, stakeholderController.inviteStakeholder);
+app.post('/api/projects/:projectId/stakeholders/invite', authenticateToken, stakeholderLimitMiddleware, stakeholderController.inviteStakeholder);
 app.delete('/api/projects/:projectId/stakeholders/:stakeholderId', authenticateToken, stakeholderController.removeStakeholder);
 
 
