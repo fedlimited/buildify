@@ -256,32 +256,26 @@ finally {
         {/* Top Start Free Trial Button */}
         <div className="relative z-10 w-full px-8 pt-6">
           <div className="flex justify-end">
-            <button
-              onClick={() => navigate('/register')}
-              className="group flex items-center gap-2 px-4 py-2 bg-black/50 backdrop-blur-sm border border-amber-500/40 hover:border-amber-500 rounded-full text-amber-400 text-sm font-medium transition-all duration-300"
-            >
-              <Sparkles size={14} className="text-amber-400" />
-              Start Free Trial
-              <ArrowRight size={12} />
-            </button>
+
+
+<a
+  href="https://bochi.ke/register"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="group flex items-center gap-2 px-4 py-2 bg-black/50 backdrop-blur-sm border border-amber-500/40 hover:border-amber-500 rounded-full text-amber-400 text-sm font-medium transition-all duration-300"
+>
+  <Sparkles size={14} className="text-amber-400" />
+  Start Free Trial
+  <ArrowRight size={12} />
+</a>
+
           </div>
         </div>
-
-
-
-
-
 
 
         {/* OTP Login Card */}
 <div className="relative z-10 flex-1 flex flex-col justify-center px-8 py-8 -mt-24">
   <div className="w-full max-w-md mx-auto">
-
-
-
-
-
-
 
 
 <div className="text-center mb-6">
