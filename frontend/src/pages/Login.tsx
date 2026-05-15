@@ -274,7 +274,7 @@ finally {
 
 
         {/* OTP Login Card */}
-<div className="relative z-10 flex-1 flex flex-col justify-center px-8 pt-4 pb-8">
+<div className="relative z-10 flex-1 flex flex-col justify-center px-8 py-8 -mt-8">
   <div className="w-full max-w-md mx-auto">
 
 
