@@ -410,13 +410,19 @@ const faqs = [
 
 
 
+
+
+
 <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight">
   Manage Your Construction
   <span className="bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent block"> Projects Smarter</span>
 </h1>
-<p className="text-[17px] text-slate-300 max-w-2xl mx-auto mb-7">
+
+<p className="text-sm text-slate-300 max-w-2xl mx-auto mb-7">
   From subcontractors and payroll to stores and site diary — plus a dedicated <span className="text-amber-400 font-medium">Stakeholder Portal</span> for clients to track progress in real-time.
 </p>
+
+
 
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-5">
