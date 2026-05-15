@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HardHat, Check, ArrowRight, Sparkles, Shield, Building2, Users, Award, TrendingUp, Clock, Globe } from 'lucide-react';
-
+import { HardHat, Check, ArrowRight, Sparkles, Shield, Building2, Users, Award, TrendingUp, Clock, Globe, Eye } from 'lucide-react';
 
 function TestimonialForm() {
   const [form, setForm] = useState({ name: '', role: '', company: '', text: '', rating: 5 });
@@ -230,11 +229,12 @@ const loadTestimonials = async () => {
     '✓ Save 20+ hours weekly', '✓ Reduce costs by 40%', '✓ Real-time insights',
     '✓ KRA compliant', '✓ 99.9% uptime', '✓ 500+ happy clients'
   ];
-  const bottomMovingWords = [
-    '🚀 Streamline Projects', '💰 Save Money', '📊 Real-time Reports',
-    '👷 Subcontractors', '👥 Workforce', '📦 Inventory',
-    '🏗️ Construction', '📈 Grow Faster', '🔒 Secure Data'
-  ];
+const bottomMovingWords = [
+  '🚀 Streamline Projects', '💰 Save Money', '📊 Real-time Reports',
+  '👷 Subcontractors', '👥 Workforce', '📦 Inventory',
+  '🏗️ Construction', '📈 Grow Faster', '🔒 Secure Data',
+  '🌙 Dark Mode Ready', '📱 Collapsible Sidebar', '🔔 Smart Notifications'
+];
 
   const [currentHeroWordIndex, setCurrentHeroWordIndex] = useState(0);
   const [currentStatIndex, setCurrentStatIndex] = useState(0);
@@ -260,7 +260,11 @@ const loadTestimonials = async () => {
     { icon: '💰', title: 'Financial Tracking', description: 'Income, expenses, VAT, and profit/loss reporting at your fingertips.', benefits: 'Real-time financial visibility' },
     { icon: '📋', title: 'Site Diary', description: 'Daily site records, activities, workers, and incident logging for compliance.', benefits: 'Complete audit trail' },
     { icon: '📊', title: 'Comprehensive Reports', description: '12+ reports with filtering, search, and CSV export capabilities.', benefits: 'Data-driven decisions' },
-    { icon: '🧾', title: 'Invoice Management', description: 'Create and track client invoices with automatic 16% VAT calculations.', benefits: 'KRA compliant' }
+    { icon: '🧾', title: 'Invoice Management', description: 'Create and track client invoices with automatic 16% VAT calculations.', benefits: 'KRA compliant' },
+{ icon: '🌙', title: 'Dark Mode', description: 'Toggle between light and dark themes for comfortable viewing - perfect for evening project reviews.', benefits: 'Eye-friendly interface' },
+{ icon: '📱', title: 'Collapsible Sidebar', description: 'Expand or collapse the sidebar to maximize screen space for Gantt charts and documents.', benefits: 'More viewing area' },
+{ icon: '🔔', title: 'Smart Notifications', description: 'Real-time alerts for new documents, meeting invitations, and task assignments.', benefits: 'Never miss updates' },
+{ icon: '👁️', title: 'Stakeholder Portal', description: 'Give clients and consultants secure view-only access to project progress, documents, and Gantt charts.', benefits: 'Professional client collaboration without edit risks' }
   ];
 
   const defaultTestimonials = [
@@ -271,14 +275,22 @@ const loadTestimonials = async () => {
 
   const displayTestimonials = approvedTestimonials.length > 0 ? approvedTestimonials : defaultTestimonials;
 
-  const faqs = [
-    { question: 'How does the free trial work?', answer: 'Our 14-day free trial gives you full access to all Pro plan features. No credit card required. You can cancel anytime.' },
-    { question: 'Can I change my plan later?', answer: 'Yes, you can upgrade or downgrade your plan at any time from your billing page. Changes take effect immediately.' },
-    { question: 'Is my data secure?', answer: 'Absolutely. We use enterprise-grade encryption and follow industry best practices to keep your data safe.' },
-    { question: 'Do you offer training?', answer: 'Yes, we provide onboarding training for all paid plans. Premier plans include dedicated training sessions.' },
-    { question: 'Can I export my data?', answer: 'Yes, you can export all your data to CSV or PDF at any time.' },
-    { question: 'What payment methods do you accept?', answer: 'We accept M-Pesa and Visa/Mastercard for subscription payments.' }
-  ];
+
+
+const faqs = [
+  { question: 'How does the free trial work?', answer: 'Our 14-day free trial gives you full access to all Pro plan features. No credit card required. You can cancel anytime.' },
+  { question: 'Can I change my plan later?', answer: 'Yes, you can upgrade or downgrade your plan at any time from your billing page. Changes take effect immediately.' },
+  { question: 'Is my data secure?', answer: 'Absolutely. We use enterprise-grade encryption and follow industry best practices to keep your data safe.' },
+  { question: 'Do you offer training?', answer: 'Yes, we provide onboarding training for all paid plans. Premier plans include dedicated training sessions.' },
+  { question: 'Can I export my data?', answer: 'Yes, you can export all your data to CSV or PDF at any time.' },
+  { question: 'What payment methods do you accept?', answer: 'We accept M-Pesa and Visa/Mastercard for subscription payments.' },
+  { question: 'Does the stakeholder portal have dark mode?', answer: 'Yes! Stakeholders can toggle between light and dark mode for comfortable viewing, especially during evening project reviews. Their preference is saved automatically.' },
+  { question: 'Can I maximize the Gantt chart view?', answer: 'Absolutely! The sidebar is collapsible - click the chevron icon to collapse the navigation menu and get more horizontal space for viewing Gantt charts and documents.' },
+  { question: 'Will I get notifications about updates?', answer: 'Yes, the notification bell shows real-time alerts for new documents, meeting invitations, task assignments, and other important updates across your projects.' },
+  { question: 'Can my clients track project progress?', answer: 'Yes! Our Stakeholder Portal gives clients and consultants view-only access to Gantt charts, documents, meeting minutes, and financial summaries. They can track progress in real-time without any edit permissions.' },
+];
+
+
 
   const floatingStats = [
     { value: '500+', label: 'Active Companies', icon: '🏢' },
@@ -396,13 +408,18 @@ const loadTestimonials = async () => {
                 <HardHat size={14} className="text-amber-400" />
                 <span className="text-amber-400 text-xs font-medium">Trusted by 500+ Construction Companies</span>
               </motion.div>
-              <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight">
-                Manage Your Construction
-                <span className="bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent block"> Projects Smarter</span>
-              </h1>
-              <p className="text-[17px] text-slate-300 max-w-2xl mx-auto mb-7">
-                From subcontractors and payroll to stores and site diary — everything you need to run successful construction projects in one platform.
-              </p>
+
+
+
+<h1 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight">
+  Manage Your Construction
+  <span className="bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent block"> Projects Smarter</span>
+</h1>
+<p className="text-[17px] text-slate-300 max-w-2xl mx-auto mb-7">
+  From subcontractors and payroll to stores and site diary — plus a dedicated <span className="text-amber-400 font-medium">Stakeholder Portal</span> for clients to track progress in real-time.
+</p>
+
+
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-5">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -561,7 +578,295 @@ const loadTestimonials = async () => {
 </section>
 
 
+{/* Stakeholder Portal Section - NEW FEATURE HIGHLIGHT */}
+<section className="py-20 px-4 bg-gradient-to-r from-slate-800 to-slate-900">
+  <div className="max-w-7xl mx-auto">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      viewport={{ once: true }}
+      className="text-center mb-12"
+    >
+      <motion.div 
+        animate={{ scale: [1, 1.05, 1] }}
+        transition={{ duration: 3, repeat: Infinity }}
+        className="inline-flex items-center gap-2 bg-amber-500/10 backdrop-blur-sm rounded-full px-4 py-1.5 border border-amber-500/20 mb-4"
+      >
+        <Eye size={16} className="text-amber-400" />
+        <span className="text-amber-400 text-xs font-medium">NEW - Client Portal</span>
+      </motion.div>
+      <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
+        Stakeholder Portal
+        <span className="bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent block"> Real-Time Project Visibility</span>
+      </h2>
+      <p className="text-slate-300 max-w-2xl mx-auto">
+        Give your clients, consultants, and project stakeholders secure access to track progress without edit permissions.
+      </p>
+    </motion.div>
 
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+      {/* Left side - Features list */}
+      <motion.div
+        initial={{ opacity: 0, x: -30 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5 }}
+        viewport={{ once: true }}
+        className="space-y-4"
+      >
+
+
+{[
+  { icon: '📊', title: 'Live Gantt Charts', desc: 'View project timelines, task dependencies, and progress in real-time' },
+  { icon: '🌙', title: 'Dark/Light Mode', desc: 'Toggle themes with one click - saves your preference automatically' },
+  { icon: '📱', title: 'Collapsible Sidebar', desc: 'Expand or collapse navigation to maximize viewing space' },
+  { icon: '🔔', title: 'Smart Notifications', desc: 'Stay updated on new documents, meetings, and tasks' },
+  { icon: '📄', title: 'Document Library', desc: 'Securely access project documents, drawings, photos, and reports' },
+  { icon: '📝', title: 'Meeting Minutes', desc: 'Review agendas, decisions, action items, and approval status' },
+  { icon: '💰', title: 'Financial Summary', desc: 'Track contract sums, invoices, payments, and outstanding balances' },
+  { icon: '👥', title: 'Project Team', desc: 'See who\'s working on the project and their contact information' },
+  { icon: '📋', title: 'Site Progress', desc: 'Daily site diary entries with weather, workers, and activities' },
+  { icon: '🔒', title: 'View-Only Mode', desc: 'Complete visibility without edit permissions - your data stays safe' },
+  { icon: '📎', title: 'Export Capabilities', desc: 'Download reports, minutes, and Gantt charts as PDF or Excel' },
+].map((feature, idx) => (
+
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ delay: idx * 0.05 }}
+            viewport={{ once: true }}
+            className="flex items-start gap-4 p-3 bg-slate-800/50 rounded-xl border border-slate-700 hover:border-amber-500/30 transition-all"
+          >
+            <div className="text-2xl">{feature.icon}</div>
+            <div>
+              <h3 className="font-semibold text-white text-sm">{feature.title}</h3>
+              <p className="text-xs text-slate-400">{feature.desc}</p>
+            </div>
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {/* Right side - Portal Preview */}
+      <motion.div
+        initial={{ opacity: 0, x: 30 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        viewport={{ once: true }}
+        className="relative"
+      >
+        <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-slate-700 overflow-hidden shadow-2xl">
+          {/* Mock Portal Header */}
+          <div className="bg-slate-800/80 px-4 py-3 border-b border-slate-700 flex items-center gap-2">
+            <div className="flex gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-red-500"></div>
+              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            </div>
+            <div className="flex-1 text-center">
+              <span className="text-xs text-slate-400">Stakeholder Portal - Project Dashboard</span>
+            </div>
+            <Eye size={14} className="text-amber-400" />
+          </div>
+          
+          {/* Mock Content */}
+          <div className="p-5 space-y-4">
+            {/* Project Header */}
+            <div className="flex justify-between items-start">
+              <div>
+                <h4 className="text-white font-semibold">Nairobi Heights Tower</h4>
+                <p className="text-xs text-slate-400">Client: Heights Construction • Location: Westlands</p>
+              </div>
+              <div className="text-right">
+                <span className="text-xs text-slate-400">Progress</span>
+                <p className="text-lg font-bold text-amber-500">65%</p>
+              </div>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="w-full bg-slate-700 rounded-full h-2">
+              <div className="bg-amber-500 h-2 rounded-full" style={{ width: '65%' }}></div>
+            </div>
+            
+            {/* Stats Grid */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-slate-800/50 rounded-lg p-2 text-center border border-slate-700">
+                <p className="text-lg font-bold text-white">24</p>
+                <p className="text-xs text-slate-400">Documents</p>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-2 text-center border border-slate-700">
+                <p className="text-lg font-bold text-white">8</p>
+                <p className="text-xs text-slate-400">Meetings</p>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-2 text-center border border-slate-700">
+                <p className="text-lg font-bold text-white">KES 45.2M</p>
+                <p className="text-xs text-slate-400">Contract Sum</p>
+              </div>
+            </div>
+            
+            {/* Tabs Preview */}
+            <div className="flex gap-3 border-b border-slate-700 pb-2">
+              {['Overview', 'Documents', 'Meetings', 'Gantt', 'Financial'].map((tab) => (
+                <span key={tab} className={`text-xs px-2 py-1 rounded ${tab === 'Gantt' ? 'text-amber-400 border-b-2 border-amber-400' : 'text-slate-400'}`}>
+                  {tab}
+                </span>
+              ))}
+            </div>
+            
+            {/* Gantt Preview */}
+            <div className="bg-slate-800/30 rounded-lg p-3 border border-slate-700">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-medium text-slate-300">📊 Gantt Chart (View-Only)</span>
+                <span className="text-xs text-amber-400 ml-auto">🔒 Read Only</span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-28 text-xs text-slate-400">Foundation</div>
+                  <div className="flex-1 h-4 bg-amber-500/20 rounded overflow-hidden">
+                    <div className="w-full h-full bg-green-500 rounded"></div>
+                  </div>
+                  <span className="text-xs text-slate-400">100%</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-28 text-xs text-slate-400">Superstructure</div>
+                  <div className="flex-1 h-4 bg-amber-500/20 rounded overflow-hidden">
+                    <div className="w-3/4 h-full bg-amber-500 rounded"></div>
+                  </div>
+                  <span className="text-xs text-slate-400">75%</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-28 text-xs text-slate-400">Finishing</div>
+                  <div className="flex-1 h-4 bg-amber-500/20 rounded overflow-hidden">
+                    <div className="w-1/4 h-full bg-amber-500 rounded"></div>
+                  </div>
+                  <span className="text-xs text-slate-400">25%</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Badges */}
+            <div className="flex flex-wrap gap-2">
+              <span className="text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-400">✅ View Only</span>
+              <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400">📥 Download Reports</span>
+              <span className="text-xs px-2 py-1 rounded-full bg-purple-500/20 text-purple-400">🔒 Secure Access</span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Floating badge */}
+        <motion.div 
+          className="absolute -top-3 -right-3 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg"
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          NEW!
+        </motion.div>
+      </motion.div>
+    </div>
+
+    {/* Bullet points summary */}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.3 }}
+      viewport={{ once: true }}
+      className="flex flex-wrap justify-center gap-6 mt-10 pt-6 border-t border-slate-700"
+    >
+      <div className="flex items-center gap-2">
+        <CheckCircle size={16} className="text-green-400" />
+        <span className="text-sm text-slate-300">No edit permissions - safe for clients</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <CheckCircle size={16} className="text-green-400" />
+        <span className="text-sm text-slate-300">Real-time progress tracking</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <CheckCircle size={16} className="text-green-400" />
+        <span className="text-sm text-slate-300">Export reports as PDF/Excel</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <CheckCircle size={16} className="text-green-400" />
+        <span className="text-sm text-slate-300">Secure login-protected access</span>
+      </div>
+    </motion.div>
+
+    {/* CTA */}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.4 }}
+      viewport={{ once: true }}
+      className="text-center mt-10"
+    >
+      <button 
+        onClick={() => navigate('/register')}
+        className="px-8 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg font-semibold hover:from-amber-600 hover:to-amber-700 transition shadow-lg shadow-amber-500/25"
+      >
+        Start Free Trial
+      </button>
+      <p className="text-xs text-slate-500 mt-3">Invite stakeholders after signup • No credit card required</p>
+    </motion.div>
+  </div>
+</section>
+
+
+{/* Why Stakeholders Love It - Based on actual layout features */}
+<section className="py-16 px-4">
+  <div className="max-w-7xl mx-auto">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      viewport={{ once: true }}
+      className="text-center mb-10"
+    >
+      <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+        Built for <span className="text-amber-400">Real-World Use</span>
+      </h2>
+      <p className="text-slate-300 max-w-2xl mx-auto">
+        Features designed specifically for how stakeholders actually work
+      </p>
+    </motion.div>
+
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        viewport={{ once: true }}
+        className="bg-slate-800/50 rounded-xl p-6 text-center border border-slate-700 hover:border-amber-500/30 transition-all"
+      >
+        <div className="text-4xl mb-3">🌙</div>
+        <h3 className="text-lg font-semibold text-white mb-2">Dark Mode Toggle</h3>
+        <p className="text-sm text-slate-400">One-click theme switching with localStorage persistence. Your preference is remembered across sessions.</p>
+      </motion.div>
+      
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        viewport={{ once: true }}
+        className="bg-slate-800/50 rounded-xl p-6 text-center border border-slate-700 hover:border-amber-500/30 transition-all"
+      >
+        <div className="text-4xl mb-3">📱</div>
+        <h3 className="text-lg font-semibold text-white mb-2">Collapsible Sidebar</h3>
+        <p className="text-sm text-slate-400">Expand for navigation or collapse for more screen space. Perfect for viewing Gantt charts.</p>
+      </motion.div>
+      
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        viewport={{ once: true }}
+        className="bg-slate-800/50 rounded-xl p-6 text-center border border-slate-700 hover:border-amber-500/30 transition-all"
+      >
+        <div className="text-4xl mb-3">🔔</div>
+        <h3 className="text-lg font-semibold text-white mb-2">Smart Notifications</h3>
+        <p className="text-sm text-slate-400">Real-time alerts for new documents, meeting invites, and task assignments.</p>
+      </motion.div>
+    </div>
+  </div>
+</section>
 
       {/* Testimonials Section */}
       <section id="testimonials" className="py-20 px-4 bg-slate-800/30">
@@ -678,6 +983,7 @@ const loadTestimonials = async () => {
 
 
 
+
       {/* CTA Section */}
       <section className="py-20 px-4 bg-gradient-to-r from-amber-600 to-amber-700 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
@@ -689,40 +995,23 @@ const loadTestimonials = async () => {
           </svg>
         </div>
         <div className="max-w-4xl mx-auto text-center relative z-10">
-
-
-
-
-
-
-
-
-<motion.div
-  className="flex flex-col items-center justify-center gap-3 mb-4"
-  initial={{ scale: 0.9, opacity: 0 }}
-  whileInView={{ scale: 1, opacity: 1 }}
-  transition={{ duration: 0.5 }}
-  viewport={{ once: true }}
->
-  <img 
-    src="/Bochi_logo_transparent.png" 
-    alt="BOCHI Logo" 
-    className="h-16 w-auto"
-  />
-  <div className="text-center">
-    <span className="text-2xl font-bold bg-gradient-to-r from-white to-amber-200 bg-clip-text text-transparent">BOCHI</span>
-    <span className="text-sm text-amber-100/80 ml-2">Construction Suite</span>
-  </div>
-</motion.div>
-
-
-
-
-
-
-
-
-
+          <motion.div
+            className="flex flex-col items-center justify-center gap-3 mb-4"
+            initial={{ scale: 0.9, opacity: 0 }}
+            whileInView={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+          >
+            <img 
+              src="/Bochi_logo_transparent.png" 
+              alt="BOCHI Logo" 
+              className="h-16 w-auto"
+            />
+            <div className="text-center">
+              <span className="text-2xl font-bold bg-gradient-to-r from-white to-amber-200 bg-clip-text text-transparent">BOCHI</span>
+              <span className="text-sm text-amber-100/80 ml-2">Construction Suite</span>
+            </div>
+          </motion.div>
 
           <motion.h2
             className="text-3xl md:text-4xl font-bold text-white"
@@ -734,6 +1023,7 @@ const loadTestimonials = async () => {
             Ready to Transform Your Construction Management?
           </motion.h2>
 
+          {/* ADD THIS LINE - Stakeholder portal mention */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -741,7 +1031,7 @@ const loadTestimonials = async () => {
             viewport={{ once: true }}
             className="text-amber-100 mb-8 text-lg"
           >
-            Join thousands of construction professionals who trust BOCHI to manage their projects efficiently.
+            From subcontractor payments to client portals — everything you need to run successful construction projects.
           </motion.p>
 
           <motion.div
@@ -785,16 +1075,10 @@ const loadTestimonials = async () => {
 
 
 
-
-
-
-
       {/* Footer */}
       <footer className="bg-slate-900 border-t border-slate-800 py-12 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col items-center justify-center mb-8">
-
-
 
 
 
@@ -810,8 +1094,6 @@ const loadTestimonials = async () => {
   <span className="text-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">BOCHI</span>
   <span className="text-xs text-slate-400">Construction Suite</span>
 </motion.div>
-
-
 
 
           </div>
