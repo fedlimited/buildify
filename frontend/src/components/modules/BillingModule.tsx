@@ -16,6 +16,7 @@ interface Plan {
   max_projects: number;
   max_workers: number;
   max_users: number;
+  max_stakeholders: number;
   features: string[];
 }
 
@@ -527,6 +528,12 @@ if (paymentMethod === 'paystack') {
                 <span className="text-xs text-gray-500">/{selectedCycle}</span>
               </div>
 
+
+
+
+
+
+
               <ul className="space-y-2 mb-4 flex-grow">
                 <li className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
                   <Check size={14} className="text-green-500" />
@@ -539,8 +546,18 @@ if (paymentMethod === 'paystack') {
                 <li className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
                   <Check size={14} className="text-green-500" />
                   {plan.max_users === 999999 ? 'Unlimited' : plan.max_users} Users
+
+
+<li className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
+  <Check size={14} className="text-green-500" />
+  {plan.max_stakeholders === 0 ? 'No' : plan.max_stakeholders === 999999 ? 'Unlimited' : plan.max_stakeholders} Stakeholders
+</li>
+
                 </li>
               </ul>
+
+
+
 
               <button
                 onClick={() => handleUpgrade(plan)}

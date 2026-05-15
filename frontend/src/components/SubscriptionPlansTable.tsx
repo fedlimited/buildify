@@ -23,6 +23,7 @@ export function SubscriptionPlansTable({ currency }: { currency: 'KES' | 'USD' }
     { label: 'Projects', type: 'number', key: 'max_projects' },
     { label: 'Workers', type: 'number', key: 'max_workers' },
     { label: 'Users', type: 'number', key: 'max_users' },
+    { label: 'Stakeholders', type: 'number', key: 'max_stakeholders' },
     { section: 'Core Features' },
     { label: 'Basic Reports', type: 'feature', key: 'basic_reports' },
     { label: 'Expenses', type: 'feature', key: 'expenses' },
