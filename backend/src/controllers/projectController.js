@@ -40,41 +40,44 @@ const ProjectController = {
     }
   },
 
-  createProject: async (req, res) => {
-    try {
-      const db = await getDb();
-      const company_id = req.user?.companyId || req.user?.company_id;
-      const { 
-        name, client, contract_sum, location, start_date, end_date, 
-        status, project_manager, description, progress,
-        latitude, longitude, google_maps_url, location_address 
-      } = req.body;
-      
-      console.log('Creating project for company:', company_id);
-      
-      const result = await db.run(
-        `INSERT INTO projects (
-          company_id, name, client, contract_sum, location,
-          start_date, end_date, status, project_manager, description, progress,
-          latitude, longitude, google_maps_url, location_address, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now')) RETURNING id`,
-        [
-          company_id, name, client, contract_sum, location,
-          start_date, end_date, status, project_manager, description, progress || 0,
-          latitude || null, longitude || null, google_maps_url || null, location_address || null
-        ]
-      );
-      
-      const newProject = await db.get(
-        'SELECT * FROM projects WHERE id = ?',
-        [result.lastID]
-      );
-      res.status(201).json(newProject);
-    } catch (error) {
-      console.error('Create project error:', error);
-      res.status(500).json({ error: error.message });
-    }
-  },
+createProject: async (req, res) => {
+  try {
+    const db = await getDb();
+    const company_id = req.user?.companyId || req.user?.company_id;
+    const { 
+      name, client, contract_sum, location, start_date, end_date, 
+      status, project_manager, description, progress,
+      latitude, longitude, google_maps_url, location_address 
+    } = req.body;
+    
+    console.log('Creating project for company:', company_id);
+    
+    // ✅ FIXED: Use NOW() for PostgreSQL instead of datetime('now')
+    const result = await db.query(
+      `INSERT INTO projects (
+        company_id, name, client, contract_sum, location,
+        start_date, end_date, status, project_manager, description, progress,
+        latitude, longitude, google_maps_url, location_address, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
+      RETURNING id`,
+      [
+        company_id, name, client, contract_sum, location,
+        start_date, end_date, status, project_manager, description, progress || 0,
+        latitude || null, longitude || null, google_maps_url || null, location_address || null
+      ]
+    );
+    
+    // For PostgreSQL with pg, the returned id is in result.rows[0].id
+    const newProject = await db.query(
+      'SELECT * FROM projects WHERE id = $1',
+      [result.rows[0].id]
+    );
+    res.status(201).json(newProject.rows[0]);
+  } catch (error) {
+    console.error('Create project error:', error);
+    res.status(500).json({ error: error.message });
+  }
+},
 
   updateProject: async (req, res) => {
     try {
