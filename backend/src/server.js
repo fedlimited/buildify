@@ -195,6 +195,9 @@ app.post('/api/auth/resend-otp', otpController.resendOTP);
 app.post('/api/auth/login', authController.login);
 app.post('/api/companies/register', companyController.registerCompany);
 
+// Mobile-specific endpoint (no authentication required for testing)
+app.get('/api/mobile-stakeholder-projects', stakeholderController.getMobileStakeholderProjects);
+
 
 // Paystack Payment Routes
 app.post('/api/paystack/initialize', authenticateToken, paystackController.initializePayment);
@@ -358,10 +361,6 @@ app.get('/api/stakeholder/projects/:projectId', authenticateToken, requireStakeh
 app.post('/api/stakeholder/projects/:projectId/accept', authenticateToken, stakeholderController.acceptInvitation);
 app.get('/api/stakeholder/projects/:projectId/financial-summary', authenticateToken, requireStakeholderAccess, stakeholderController.getFinancialSummary);
 app.get('/api/stakeholder/projects/:projectId/site-diaries', authenticateToken, requireStakeholderAccess, stakeholderController.getSiteDiaries);
-
-
-// Mobile-specific endpoint (no authentication required for testing)
-app.get('/api/mobile-stakeholder-projects', stakeholderController.getMobileStakeholderProjects);
 
 
 // Project Team routes (for contractors to manage)
