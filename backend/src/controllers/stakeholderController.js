@@ -422,7 +422,7 @@ const stakeholderController = {
           ps.invite_status
         FROM project_stakeholders ps
         JOIN projects p ON ps.project_id = p.id
-        WHERE ps.user_id = $1 AND ps.is_active = 1 AND ps.invite_status = 'accepted'
+        WHERE ps.user_id = $1 AND ps.is_active = 1
       `, [userId]);
       
       console.log('Projects found:', projects.rows.length);
