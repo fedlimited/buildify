@@ -360,6 +360,10 @@ app.get('/api/stakeholder/projects/:projectId/financial-summary', authenticateTo
 app.get('/api/stakeholder/projects/:projectId/site-diaries', authenticateToken, requireStakeholderAccess, stakeholderController.getSiteDiaries);
 
 
+// Mobile-specific endpoint (no authentication required for testing)
+app.get('/api/mobile-stakeholder-projects', stakeholderController.getMobileStakeholderProjects);
+
+
 // Project Team routes (for contractors to manage)
 app.get('/api/projects/:projectId/team', authenticateToken, projectTeamController.getProjectTeam);
 app.post('/api/projects/:projectId/team', authenticateToken, projectTeamController.addTeamMember);

@@ -378,6 +378,71 @@ const stakeholderController = {
       res.status(500).json({ error: error.message });
     }
   },
+
+  // 📱 Mobile-specific endpoint - bypasses token for testing
+  getMobileStakeholderProjects: async (req, res) => {
+    console.log('=== 📱 MOBILE STAKEHOLDER ENDPOINT CALLED ===');
+    
+    try {
+      const db = await getDb();
+      // Get email from query parameter
+      const email = req.query.email;
+      
+      console.log('Email requested:', email);
+      
+      if (!email) {
+        return res.status(400).json({ error: 'Email parameter is required' });
+      }
+      
+      // Find the stakeholder user by email
+      const userResult = await db.query(
+        `SELECT id, name, email, role FROM users WHERE email = $1 AND role = 'stakeholder'`,
+        [email]
+      );
+      
+      console.log('User found:', userResult.rows.length > 0);
+      
+      if (userResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Stakeholder not found' });
+      }
+      
+      const userId = userResult.rows[0].id;
+      const userName = userResult.rows[0].name;
+      
+      // Get projects for this stakeholder
+      const projects = await db.query(`
+        SELECT 
+          p.id,
+          p.name,
+          p.client,
+          p.location,
+          p.progress,
+          p.status,
+          ps.stakeholder_type,
+          ps.invite_status
+        FROM project_stakeholders ps
+        JOIN projects p ON ps.project_id = p.id
+        WHERE ps.user_id = $1 AND ps.is_active = 1 AND ps.invite_status = 'accepted'
+      `, [userId]);
+      
+      console.log('Projects found:', projects.rows.length);
+      
+      res.json({
+        success: true,
+        user: {
+          id: userId,
+          name: userName,
+          email: email,
+          role: 'stakeholder'
+        },
+        projects: projects.rows
+      });
+      
+    } catch (error) {
+      console.error('Error in getMobileStakeholderProjects:', error);
+      res.status(500).json({ error: error.message });
+    }
+  },
 };
 
 module.exports = stakeholderController;
