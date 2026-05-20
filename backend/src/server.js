@@ -49,7 +49,7 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(helmet());
 
-// CORS configuration - allow Vercel frontend
+// CORS configuration - allow Vercel frontend and Expo Go
 app.use(cors({
   origin: [
     'http://localhost:8080',
@@ -60,33 +60,41 @@ app.use(cors({
     'https://bochi.ke',
     'http://www.bochi.ke',
     'http://bochi.ke',
-    'https://bochi-buildify.netlify.app'
+    'https://bochi-buildify.netlify.app',
+    // Add these for Expo Go
+    'exp://',
+    'exp.host',
+    '*.exp.direct',
+    '*.expo.io',
+    '*.expo.dev',
+    'http://localhost:19000',
+    'http://localhost:19001',
+    'http://localhost:19002',
+    'http://localhost:19006',
+    'http://192.168.1.%',  // Local network IPs
+    'http://10.0.0.%',      // Common local network ranges
+    'http://172.%',
+    'http://100.%'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
 app.use(express.json());
 app.use(morgan('dev'));
 
 
 
-// CORS configuration - allow frontend domains
+// CORS configuration - allow frontend domains and Expo
 app.use(cors({
-  origin: [
-    'http://localhost:8080',
-    'http://localhost:5000',
-    'https://buildify-frontend-kohl.vercel.app',
-    'https://buildify-frontend-rnwia68nf-fedlimiteds-projects.vercel.app',
-    'https://www.bochi.ke',
-    'https://bochi.ke',
-    'http://www.bochi.ke',
-    'http://bochi.ke',
-    'https://bochi-buildify.netlify.app'
-  ],
+  origin: function(origin, callback) {
+    // Allow all origins for development (Expo Go needs this)
+    // In production, you can restrict it
+    callback(null, true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-master-password']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-master-password', 'Accept', 'Origin']
 }));
 
 // Additional manual CORS headers for all responses
