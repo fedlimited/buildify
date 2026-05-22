@@ -990,43 +990,51 @@ const faqs = [
               </div>
             </motion.div>
           </div>
-          
-          {/* QR Code Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            viewport={{ once: true }}
-            className="mt-12 pt-8 border-t border-white/20 text-center"
-          >
-            <h3 className="text-xl font-bold text-white mb-4">Scan to Download</h3>
-            <p className="text-gray-300 mb-6">Scan this QR code with your phone camera to download the APK directly</p>
-            
-            <div className="bg-white p-4 rounded-2xl inline-block shadow-lg">
-              <div className="w-40 h-40 bg-gray-200 flex items-center justify-center rounded-xl">
-                <div className="text-center">
-                  <span className="text-6xl">📱</span>
-                  <p className="text-xs text-gray-500 mt-2">Scan QR</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="mt-6">
-              <a 
-                href="https://expo.dev/artifacts/eas/s1VCb81kpi966RzbGbxm7c.apk"
-                className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg transition"
-              >
-                <span>⬇️</span>
-                Direct Download Link
-              </a>
-            </div>
-            <p className="text-gray-400 text-xs mt-4">
-              Version 1.0.0 • Last updated: {new Date().toLocaleDateString()}
-            </p>
-          </motion.div>
-        </div>
-      </section>
 
+
+
+
+
+
+          
+{/* QR Code Section */}
+<motion.div
+  initial={{ opacity: 0, y: 20 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.5, delay: 0.3 }}
+  viewport={{ once: true }}
+  className="mt-12 pt-8 border-t border-white/20 text-center"
+>
+  <h3 className="text-xl font-bold text-white mb-4">Scan to Download</h3>
+  <p className="text-gray-300 mb-6">Scan this QR code with your phone camera to download the APK directly</p>
+  
+  <div className="bg-white p-4 rounded-2xl inline-block shadow-lg">
+    <img 
+      src="/qr-code.PNG" 
+      alt="Download BOCHI App QR Code" 
+      className="w-40 h-40 object-contain"
+    />
+  </div>
+  
+  <div className="mt-6">
+    <a 
+      href="https://buildify-backend-kye8.onrender.com/api/download-mobile-app"
+      className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg transition shadow-lg hover:shadow-xl"
+    >
+      <span>⬇️</span>
+      Download APK Directly
+    </a>
+  </div>
+  
+  <div className="mt-4">
+    <p className="text-gray-400 text-sm">
+      Version 1.0.0 • Last updated: {new Date().toLocaleDateString()}
+    </p>
+    <p className="text-gray-500 text-xs mt-2">
+      Android 8.0 or higher • 50MB free space
+    </p>
+  </div>
+</motion.div>
 
 
 
