@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+// Last updated: May 2026 - QR code addedimport React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HardHat, Check, ArrowRight, Sparkles, Shield, Building2, Users, Award, TrendingUp, Clock, Globe, Eye, CheckCircle } from 'lucide-react';
