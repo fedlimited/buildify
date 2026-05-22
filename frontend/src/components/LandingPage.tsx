@@ -1,4 +1,4 @@
-// Last updated: May 2026 - QR code addedimport React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HardHat, Check, ArrowRight, Sparkles, Shield, Building2, Users, Award, TrendingUp, Clock, Globe, Eye, CheckCircle } from 'lucide-react';
@@ -898,7 +898,7 @@ const faqs = [
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                 {/* Android Download Button */}
                 <motion.a 
-                  href="https://expo.dev/artifacts/eas/s1VCb81kpi966RzbGbxm7c.apk" 
+                  href="https://buildify-backend-kye8.onrender.com/api/download-mobile-app" 
                   download
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -1036,6 +1036,8 @@ const faqs = [
   </div>
 </motion.div>
 
+        </div>
+      </section>
 
 
       {/* Testimonials Section */}
@@ -1314,7 +1316,7 @@ const faqs = [
             <p className="mt-1 text-xs">Built with ❤️ by Finite Element Designs | Nairobi, Kenya</p>
           </motion.div>
         </div>
-      </footer>
+</footer>
 
       <style>{`
         @keyframes marquee {
