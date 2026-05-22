@@ -866,6 +866,170 @@ const faqs = [
   </div>
 </section>
 
+
+
+      {/* Mobile App Download Section */}
+      <section className="py-20 px-4 bg-gradient-to-r from-indigo-900 to-purple-900">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-12">
+            {/* Left side - Text */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+              className="text-center md:text-left md:w-1/2"
+            >
+              <motion.div 
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 mb-4"
+              >
+                <span className="text-xl">📱</span>
+                <span className="text-sm text-white">Mobile App Available</span>
+              </motion.div>
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                Manage Your Projects <span className="text-amber-400">On The Go</span>
+              </h2>
+              <p className="text-gray-300 text-lg mb-6">
+                Download the BOCHI mobile app to access your projects, track progress, 
+                view documents, and collaborate with your team from anywhere.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                {/* Android Download Button */}
+                <motion.a 
+                  href="https://expo.dev/artifacts/eas/s1VCb81kpi966RzbGbxm7c.apk" 
+                  download
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center justify-center gap-3 bg-black hover:bg-gray-900 text-white px-6 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
+                >
+                  <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zM14.5 12.71l-4.47 4.47 5.48-2.75 2.29-1.15-3.3-1.65zm-4.47-8.18l4.47 4.47 3.3-1.65-2.29-1.15-5.48-2.75z"/>
+                  </svg>
+                  <div>
+                    <div className="text-xs">Download for</div>
+                    <div className="text-xl font-bold">Android</div>
+                  </div>
+                </motion.a>
+                
+                {/* iOS Coming Soon */}
+                <div className="flex items-center justify-center gap-3 bg-gray-700 text-white px-6 py-3 rounded-xl opacity-60 cursor-not-allowed">
+                  <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.02.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.3 1.05-3.11z"/>
+                  </svg>
+                  <div>
+                    <div className="text-xs">Coming Soon</div>
+                    <div className="text-xl font-bold">iOS</div>
+                  </div>
+                </div>
+              </div>
+              <p className="text-gray-400 text-sm mt-4">
+                Android 8.0 or higher • 50MB free space • Free download
+              </p>
+            </motion.div>
+            
+            {/* Right side - Phone mockup */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              viewport={{ once: true }}
+              className="md:w-1/2 flex justify-center"
+            >
+              <div className="relative">
+                {/* Phone frame */}
+                <div className="w-64 h-[500px] bg-black rounded-3xl shadow-2xl overflow-hidden border-4 border-gray-800">
+                  <div className="bg-gradient-to-b from-gray-900 to-gray-800 h-full">
+                    {/* Status bar */}
+                    <div className="bg-gray-900 pt-2 px-4 flex justify-between text-white text-xs">
+                      <span>9:41</span>
+                      <span>📶 🔋 100%</span>
+                    </div>
+                    {/* App preview */}
+                    <div className="p-4">
+                      <div className="bg-amber-500 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+                        <span className="text-white text-2xl">🏗️</span>
+                      </div>
+                      <h3 className="text-white font-bold text-lg">BOCHI</h3>
+                      <p className="text-gray-400 text-sm mt-1">Construction Suite</p>
+                      
+                      {/* Demo UI elements */}
+                      <div className="mt-6 space-y-3">
+                        <div className="bg-gray-700 rounded-lg p-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-amber-500">📊</span>
+                            <span className="text-white text-sm">Dashboard</span>
+                          </div>
+                        </div>
+                        <div className="bg-gray-700 rounded-lg p-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-amber-500">📋</span>
+                            <span className="text-white text-sm">Projects</span>
+                          </div>
+                        </div>
+                        <div className="bg-gray-700 rounded-lg p-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-amber-500">💰</span>
+                            <span className="text-white text-sm">Finance</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Download badge floating */}
+                <motion.div 
+                  className="absolute -bottom-4 -right-4 bg-green-500 text-white rounded-full px-3 py-1 text-xs font-bold shadow-lg"
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  NEW!
+                </motion.div>
+              </div>
+            </motion.div>
+          </div>
+          
+          {/* QR Code Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            viewport={{ once: true }}
+            className="mt-12 pt-8 border-t border-white/20 text-center"
+          >
+            <h3 className="text-xl font-bold text-white mb-4">Scan to Download</h3>
+            <p className="text-gray-300 mb-6">Scan this QR code with your phone camera to download the APK directly</p>
+            
+            <div className="bg-white p-4 rounded-2xl inline-block shadow-lg">
+              <div className="w-40 h-40 bg-gray-200 flex items-center justify-center rounded-xl">
+                <div className="text-center">
+                  <span className="text-6xl">📱</span>
+                  <p className="text-xs text-gray-500 mt-2">Scan QR</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-6">
+              <a 
+                href="https://expo.dev/artifacts/eas/s1VCb81kpi966RzbGbxm7c.apk"
+                className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg transition"
+              >
+                <span>⬇️</span>
+                Direct Download Link
+              </a>
+            </div>
+            <p className="text-gray-400 text-xs mt-4">
+              Version 1.0.0 • Last updated: {new Date().toLocaleDateString()}
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+
+
+
       {/* Testimonials Section */}
       <section id="testimonials" className="py-20 px-4 bg-slate-800/30">
         <div className="max-w-7xl mx-auto">
