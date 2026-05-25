@@ -150,7 +150,7 @@ app.get('/api/mobile-app-info', (req, res) => {
   
   res.json({
     success: true,
-    version: '1.0.0',
+    version: '1.0.1',
     releaseDate: fileStats ? fileStats.birthtime.toISOString() : new Date().toISOString(),
     downloadUrl: `${req.protocol}://${req.get('host')}/api/download-mobile-app`,
     minAndroidVersion: '8.0',
