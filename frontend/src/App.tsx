@@ -21,6 +21,7 @@ import { StakeholderDashboard } from '@/pages/StakeholderDashboard';
 import { StakeholderProjectPortal } from '@/pages/StakeholderProjectPortal';
 import { StakeholderPreview } from '@/pages/StakeholderPreview';
 import { ProjectProvider } from '@/contexts/ProjectContext';
+import { ActivityDashboard } from '@/components/admin/ActivityDashboard'; // ✅ ADDED - Proper import
 
 // Admin components
 import './components/modules/admin-exports';
@@ -183,12 +184,14 @@ const App = () => {
               </AuthGate>
             } />
 
-
-import { ActivityDashboard } from './components/admin/ActivityDashboard';
-
-// Add route (inside your Router)
-<Route path="/admin/activities" element={<ActivityDashboard />} />
-
+            {/* ✅ Activities Route - CORRECTLY PLACED */}
+            <Route path="/admin/activities" element={
+              <AuthGate>
+                <AdminLayout>
+                  <ActivityDashboard />
+                </AdminLayout>
+              </AuthGate>
+            } />
 
             {/* Stakeholder Portal Routes with ProjectProvider */}
             <Route path="/stakeholder" element={
