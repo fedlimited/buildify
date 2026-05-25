@@ -231,91 +231,76 @@ export const BillingModule = () => {
       return;
     }
 
-// Handle Paystack Payment - Popup with multiple options
+
+
+
+
+
+// Handle Paystack Payment
 if (paymentMethod === 'paystack') {
   setPaystackLoading(true);
   setError('');
+
+  const amount = getPrice(selectedPlan);
   
-  // Get the price based on selected cycle
-  const amount = selectedCycle === 'monthly' 
-    ? (selectedPlan?.price_monthly_usd || selectedPlan?.price_monthly_kes)
-    : (selectedPlan?.price_yearly_usd || selectedPlan?.price_yearly_kes);
+  // Debug logging
+  console.log('=== PAYSTACK REQUEST ===');
+  console.log('Selected plan:', selectedPlan?.display_name);
+  console.log('Raw amount from getPrice:', amount);
+  console.log('Amount type:', typeof amount);
   
-  const currency = 'KES';
+  // Validate amount
+  if (!amount || amount <= 0) {
+    setError(`Invalid amount: ${amount}. Please select a valid plan.`);
+    setPaystackLoading(false);
+    return;
+  }
+  
+  // Convert to cents as required by backend (amount × 100)
   const amountInCents = Math.round(amount * 100);
   
-  // Generate unique transaction reference
+  console.log('Amount in cents to send:', amountInCents);
+  console.log('Plan ID:', selectedPlan?.id);
+  console.log('Selected cycle:', selectedCycle);
+  
   const reference = `BOCHI-${selectedPlan?.id}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-  
-  console.log('Opening Paystack popup with:', { amount, currency, reference });
-  
+
   try {
-    // Check if PaystackPop is available
-    if (typeof (window as any).PaystackPop === 'undefined') {
-      throw new Error('Paystack script not loaded. Please refresh the page.');
-    }
-    
-    // NEW SYNTAX - Use 'new PaystackPop()' instead of 'PaystackPop.setup()'
-    const handler = new (window as any).PaystackPop();
-    
-    handler.newTransaction({
-      key: 'pk_live_a6e7b8e964d31c439083d4c2c1a26d2bc1014e38',
-      email: userEmail || 'customer@example.com',
-      amount: amountInCents,
-      currency: currency,
-      ref: reference,
-      channels: ['card', 'mobile_money', 'bank_transfer'],
-      metadata: {
-        plan_id: selectedPlan?.id,
-        plan_name: selectedPlan?.display_name,
-        billing_cycle: selectedCycle
+    const response = await fetch(`${API_URL}/paystack/initialize`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
-      onSuccess: async (response: any) => {
-        console.log('Paystack success:', response);
-        
-        // Verify payment with backend
-        try {
-          const token = localStorage.getItem('token');
-          const verifyResponse = await fetch(`${API_BASE_URL}/paystack/verify?reference=${response.reference}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          const verifyData = await verifyResponse.json();
-          
-          if (verifyData.success) {
-            setStatus('completed');
-            setTimeout(() => {
-              setShowModal(false);
-              window.location.reload();
-            }, 2000);
-          } else {
-            setError('Payment verification pending. Please contact support.');
-          }
-        } catch (err) {
-          console.error('Verification error:', err);
-          setError('Payment completed but verification failed. Please contact support.');
-        }
-        
-        setPaystackLoading(false);
-        setShowModal(false);
-      },
-      onCancel: () => {
-        console.log('Paystack transaction cancelled');
-        setPaystackLoading(false);
-      },
-      onError: (error: any) => {
-        console.error('Paystack error:', error);
-        setError(error.message || 'Payment failed. Please try again.');
-        setPaystackLoading(false);
-      }
+      body: JSON.stringify({
+        planId: selectedPlan?.id,
+        billingCycle: selectedCycle,
+        email: userEmail,
+        amount: amountInCents,  // Send cents (2500 × 100 = 250000)
+        currency: 'KES',
+        reference: reference
+      })
     });
-    
-  } catch (err: any) {
+
+    const data = await response.json();
+    console.log('Paystack response:', data);
+
+    if (data.success && data.authorization_url) {
+      setPaystackUrl(data.authorization_url);
+      setShowPaystack(true);
+      setPaystackLoading(false);
+    } else {
+      setError(data.error || data.message || 'Payment initialization failed');
+      setPaystackLoading(false);
+    }
+  } catch (err) {
     console.error('Paystack error:', err);
-    setError(err.message || 'Failed to initialize payment');
+    setError(err.message || 'Payment failed');
     setPaystackLoading(false);
   }
   return;
 }
+
 
 
 

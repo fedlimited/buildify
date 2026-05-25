@@ -526,7 +526,7 @@ export function LegalModule() {
                   <li><strong>Company Name:</strong> Finite Element Designs Ltd</li>
                   <li><strong>Business Permit:</strong> Valid and in good standing</li>
                   <li><strong>Physical Address:</strong> Deep Blue Building, Thika Road, Nairobi, Kenya</li>
-                  <li><strong>Email:</strong> finiteelementdesignsltd@gmail.com</li>
+                  <li><strong>Email:</strong> fedlimited@bochi.ke</li>
                   <li><strong>Phone:</strong> +254 772 041 005</li>
                 </ul>
               </div>
