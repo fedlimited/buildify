@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@/hooks/useAppStore';
 import api from '@/services/api';
+import { ActivityDashboard } from '@/components/admin/ActivityDashboard';
 import { 
   Users, 
   UserCheck,
@@ -16,7 +17,8 @@ import {
   Calendar,
   Building2,
   ToggleLeft,
-  ToggleRight
+  ToggleRight,
+  Activity
 } from 'lucide-react';
 
 interface SystemUser {
@@ -43,6 +45,7 @@ export function AdminUsers() {
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>('all');
   const [superAdminFilter, setSuperAdminFilter] = useState<'all' | 'super' | 'regular'>('all');
   const [togglingUserId, setTogglingUserId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<'users' | 'activities'>('users');
 
   // Redirect if not super admin
   useEffect(() => {
@@ -188,13 +191,46 @@ export function AdminUsers() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
+
+
+
+
+      {/* Header with Tabs */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2">Users</h1>
-        <p className="text-muted-foreground">
-          Manage all users across the entire system
-        </p>
+        <div className="flex justify-between items-center mb-2">
+          <h1 className="text-2xl font-bold">User Management</h1>
+        </div>
+        
+        {/* Tab Buttons */}
+        <div className="flex gap-2 border-b border-gray-200 mt-4">
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all border-b-2 ${
+              activeTab === 'users'
+                ? 'border-amber-500 text-amber-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <Users size={16} />
+            Users
+          </button>
+          <button
+            onClick={() => setActiveTab('activities')}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all border-b-2 ${
+              activeTab === 'activities'
+                ? 'border-amber-500 text-amber-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <Activity size={16} />
+            Recent Activities
+          </button>
+        </div>
       </div>
+
+      {activeTab === 'users' ? (
+        <>
+
 
       {/* Stats Summary */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -395,6 +431,7 @@ export function AdminUsers() {
         </div>
       </div>
 
+
       {/* Info Note */}
       <div className="mt-6 p-4 bg-blue-500/5 border border-blue-500/20 rounded-lg">
         <h3 className="font-medium mb-2 flex items-center gap-2">
@@ -407,7 +444,13 @@ export function AdminUsers() {
           <li>• You cannot remove your own super admin privileges</li>
           <li>• Be careful when granting super admin access - it provides full system control</li>
         </ul>
+
+
       </div>
+        </>
+      ) : (
+        <ActivityDashboard />
+      )}
     </div>
   );
 }

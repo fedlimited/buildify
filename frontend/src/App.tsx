@@ -183,6 +183,13 @@ const App = () => {
               </AuthGate>
             } />
 
+
+import { ActivityDashboard } from './components/admin/ActivityDashboard';
+
+// Add route (inside your Router)
+<Route path="/admin/activities" element={<ActivityDashboard />} />
+
+
             {/* Stakeholder Portal Routes with ProjectProvider */}
             <Route path="/stakeholder" element={
               <AuthGate>
