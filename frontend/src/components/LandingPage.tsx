@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HardHat, Check, ArrowRight, Sparkles, Shield, Building2, Users, Award, TrendingUp, Clock, Globe, Eye, CheckCircle } from 'lucide-react';
-
 function TestimonialForm() {
   const [form, setForm] = useState({ name: '', role: '', company: '', text: '', rating: 5 });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [hoveredStar, setHoveredStar] = useState(0);
+
+// Last updated: April 2026 - Logo animation enhancements
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,6 +172,14 @@ function TestimonialForm() {
   );
 }
 
+
+
+
+
+
+
+
+
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
@@ -187,10 +196,13 @@ const LandingPage: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+
+
 const loadTestimonials = async () => {
   try {
     const response = await fetch('https://buildify-backend-kye8.onrender.com/api/testimonials/approved?location=landing');
     const data = await response.json();
+    // Fix: API returns { success: true, testimonials: [...] }
     if (data.success && data.testimonials && data.testimonials.length > 0) {
       const mappedTestimonials = data.testimonials.map(t => ({
         name: t.name,
@@ -198,7 +210,7 @@ const loadTestimonials = async () => {
         company: t.company || '',
         text: t.text,
         rating: t.rating || 5,
-        image: '👤'
+        image: '👤' // Default icon
       }));
       setApprovedTestimonials(mappedTestimonials);
     }
@@ -207,6 +219,11 @@ const loadTestimonials = async () => {
   }
 };
 
+
+
+
+
+  // Moving text animation words
   const heroMovingWords = [
     '✓ Save 20+ hours weekly', '✓ Reduce costs by 40%', '✓ Real-time insights',
     '✓ KRA compliant', '✓ 99.9% uptime', '✓ 500+ happy clients'
@@ -257,6 +274,8 @@ const bottomMovingWords = [
 
   const displayTestimonials = approvedTestimonials.length > 0 ? approvedTestimonials : defaultTestimonials;
 
+
+
 const faqs = [
   { question: 'How does the free trial work?', answer: 'Our 14-day free trial gives you full access to all Pro plan features. No credit card required. You can cancel anytime.' },
   { question: 'Can I change my plan later?', answer: 'Yes, you can upgrade or downgrade your plan at any time from your billing page. Changes take effect immediately.' },
@@ -269,6 +288,8 @@ const faqs = [
   { question: 'Will I get notifications about updates?', answer: 'Yes, the notification bell shows real-time alerts for new documents, meeting invitations, task assignments, and other important updates across your projects.' },
   { question: 'Can my clients track project progress?', answer: 'Yes! Our Stakeholder Portal gives clients and consultants view-only access to Gantt charts, documents, meeting minutes, and financial summaries. They can track progress in real-time without any edit permissions.' },
 ];
+
+
 
   const floatingStats = [
     { value: '500+', label: 'Active Companies', icon: '🏢' },
@@ -289,53 +310,7 @@ const faqs = [
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-x-hidden relative">
-      {/* Animated Background Gradients - Light Effects */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        {/* Floating gradient orbs */}
-        <motion.div 
-          className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-amber-500/20 rounded-full blur-3xl"
-          animate={{ 
-            x: [0, 100, 0, -100, 0],
-            y: [0, 50, 0, -50, 0],
-            scale: [1, 1.2, 1, 0.8, 1]
-          }}
-          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-        />
-        
-        <motion.div 
-          className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-purple-500/15 rounded-full blur-3xl"
-          animate={{ 
-            x: [0, -80, 0, 80, 0],
-            y: [0, -60, 0, 60, 0],
-            scale: [1, 0.8, 1.2, 1, 1]
-          }}
-          transition={{ duration: 25, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-        />
-        
-        <motion.div 
-          className="absolute top-1/2 left-1/2 w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-3xl"
-          animate={{ 
-            scale: [1, 1.3, 1, 0.7, 1],
-            x: [0, 50, 0, -50, 0],
-          }}
-          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut", delay: 4 }}
-        />
-        
-        <motion.div 
-          className="absolute top-1/3 right-1/3 w-[350px] h-[350px] bg-emerald-500/10 rounded-full blur-3xl"
-          animate={{ 
-            scale: [1, 1.1, 0.9, 1.2, 1],
-            x: [0, -30, 0, 30, 0],
-          }}
-          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-        />
-
-        {/* Light rays effect */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-amber-500/5 to-transparent rotate-45"></div>
-        <div className="absolute inset-0 bg-gradient-to-bl from-transparent via-purple-500/5 to-transparent -rotate-12"></div>
-      </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-x-hidden">
       {/* Navigation */}
       <motion.nav
         initial={{ y: -100 }}
@@ -345,28 +320,44 @@ const faqs = [
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <motion.div
-              className="flex items-center cursor-pointer group"
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              whileHover={{ scale: 1.02 }}
-            >
-              <motion.img 
-                src="/Bochi_logo_transparent.png" 
-                alt="BOCHI Logo" 
-                className="h-8 w-auto mr-2 group-hover:scale-105 transition-transform"
-                animate={{ rotateY: [0, 180, 360] }}
-                transition={{ 
-                  duration: 3,
-                  times: [0, 0.5, 1],
-                  ease: "easeInOut",
-                  repeat: Infinity,
-                  repeatDelay: 4
-                }}
-                style={{ transformStyle: "preserve-3d" }}
-              />
-              <span className="text-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">BOCHI</span>
-              <span className="ml-1 text-xs text-slate-400">Construction Suite</span>
-            </motion.div>
+
+
+
+<motion.div
+  className="flex items-center cursor-pointer group"
+  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+  whileHover={{ scale: 1.02 }}
+>
+
+
+
+
+<motion.img 
+  src="/Bochi_logo_transparent.png" 
+  alt="BOCHI Logo" 
+  className="h-8 w-auto mr-2 group-hover:scale-105 transition-transform"
+  animate={{ rotateY: [0, 180, 360] }}
+  transition={{ 
+    duration: 3,
+    times: [0, 0.5, 1],
+    ease: "easeInOut",
+    repeat: Infinity,
+    repeatDelay: 4
+  }}
+  style={{ transformStyle: "preserve-3d" }}
+/>
+
+
+
+
+  <span className="text-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">BOCHI</span>
+  <span className="ml-1 text-xs text-slate-400">Construction Suite</span>
+</motion.div>
+
+
+
+
+
             <div className="hidden md:flex items-center gap-6">
               {['features', 'testimonials', 'faq'].map((item) => (
                 <motion.a
@@ -400,109 +391,82 @@ const faqs = [
       </motion.nav>
 
       {/* Hero Section */}
-      <section className="pt-24 pb-10 px-4 relative z-10">
+      <section className="pt-24 pb-10 px-4 relative">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col lg:flex-row items-center gap-12">
-            {/* Left side - Text content */}
-            <div className="flex-1 text-center lg:text-left">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-              >
-                <motion.div
-                  className="inline-flex items-center gap-3 bg-amber-500/10 backdrop-blur-sm rounded-full px-4 py-1.5 border border-amber-500/20 mb-5"
-                  animate={{ scale: [1, 1.02, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <HardHat size={14} className="text-amber-400" />
-                  <span className="text-amber-400 text-xs font-medium">Trusted by 500+ Construction Companies</span>
-                </motion.div>
-
-                <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight">
-                  Manage Your Construction
-                  <span className="bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent block"> Projects Smarter</span>
-                </h1>
-
-                <p className="text-[17px] text-slate-300 max-w-2xl mx-auto lg:mx-0 mb-7">
-                  From subcontractors and payroll to stores and site diary — plus a dedicated <span className="text-amber-400 font-medium">Stakeholder Portal</span> for clients to track progress in real-time.
-                </p>
-
-                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-5">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    animate={{ y: [0, -3, 0] }}
-                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-                    onClick={() => navigate('/register')}
-                    className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-amber-600 rounded-md hover:from-amber-600 hover:to-amber-700 shadow-lg shadow-amber-500/25 transition-all duration-200"
-                  >
-                    Start Free Trial
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-                    className="px-6 py-3 text-sm font-semibold text-slate-300 border border-slate-600 rounded-md hover:bg-slate-800 transition-all duration-200"
-                  >
-                    Learn More
-                  </motion.button>
-                </div>
-                <p className="text-xs text-slate-400 mb-4">No credit card required • 14-day free trial • Cancel anytime</p>
-
-                <motion.div
-                  className="py-2 px-5 bg-slate-800/50 rounded-full inline-block"
-                  whileHover={{ scale: 1.02 }}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-400 text-xs">✨ What you get:</span>
-                    <AnimatePresence mode="wait">
-                      <motion.span
-                        key={currentHeroWordIndex}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.5 }}
-                        className="text-amber-400 font-medium text-xs"
-                      >
-                        {heroMovingWords[currentHeroWordIndex]}
-                      </motion.span>
-                    </AnimatePresence>
-                  </div>
-                </motion.div>
-              </motion.div>
-            </div>
-
-            {/* Right side - Image with glow effect */}
+          <div className="text-center">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="flex-1 flex justify-center"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
             >
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-amber-500/30 via-orange-500/20 to-transparent rounded-2xl blur-3xl"></div>
-                <div className="absolute -inset-4 bg-gradient-to-tr from-amber-500/10 to-purple-500/10 rounded-2xl blur-2xl"></div>
-                <img 
-                  src="/construction-management-dashboard.png" 
-                  alt="BOCHI Construction Management Dashboard" 
-                  className="relative w-full max-w-md lg:max-w-lg rounded-2xl shadow-2xl border border-slate-700"
-                />
-                <motion.div 
-                  className="absolute -top-3 -right-3 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg"
-                  animate={{ scale: [1, 1.05, 1], rotate: [0, 5, 0] }}
-                  transition={{ duration: 2, repeat: Infinity }}
+              <motion.div
+                className="inline-flex items-center gap-3 bg-amber-500/10 backdrop-blur-sm rounded-full px-4 py-1.5 border border-amber-500/20 mb-5"
+                animate={{ scale: [1, 1.02, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <HardHat size={14} className="text-amber-400" />
+                <span className="text-amber-400 text-xs font-medium">Trusted by 500+ Construction Companies</span>
+              </motion.div>
+
+
+<h1 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight">
+  Manage Your Construction
+  <span className="bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent block"> Projects Smarter</span>
+</h1>
+
+<p className="text-[17px] text-slate-300 max-w-2xl mx-auto mb-7">
+  From subcontractors and payroll to stores and site diary — plus a dedicated <span className="text-amber-400 font-medium">Stakeholder Portal</span> for clients to track progress in real-time.
+</p>
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-5">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  animate={{ y: [0, -3, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                  onClick={() => navigate('/register')}
+                  className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-amber-600 rounded-md hover:from-amber-600 hover:to-amber-700 shadow-lg shadow-amber-500/25 transition-all duration-200"
                 >
-                  LIVE DEMO
-                </motion.div>
+                  Start Free Trial
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="px-6 py-3 text-sm font-semibold text-slate-300 border border-slate-600 rounded-md hover:bg-slate-800 transition-all duration-200"
+                >
+                  Learn More
+                </motion.button>
               </div>
+              <p className="text-xs text-slate-400 mb-4">No credit card required • 14-day free trial • Cancel anytime</p>
+
+              <motion.div
+                className="py-2 px-5 bg-slate-800/50 rounded-full inline-block"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-400 text-xs">✨ What you get:</span>
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={currentHeroWordIndex}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.5 }}
+                      className="text-amber-400 font-medium text-xs"
+                    >
+                      {heroMovingWords[currentHeroWordIndex]}
+                    </motion.span>
+                  </AnimatePresence>
+                </div>
+              </motion.div>
             </motion.div>
           </div>
         </div>
       </section>
 
       {/* Stats Section */}
-      <section className="py-8 bg-slate-800/30 border-y border-slate-700 relative z-10">
+      <section className="py-8 bg-slate-800/30 border-y border-slate-700">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {floatingStats.map((stat, idx) => (
@@ -529,7 +493,7 @@ const faqs = [
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-4 relative z-10">
+      <section id="features" className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -577,316 +541,338 @@ const faqs = [
         </div>
       </section>
 
-      {/* Submit Testimonial Form */}
-      <section className="py-16 px-4 relative z-10">
-        <div className="max-w-2xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-8"
-          >
-            <motion.div 
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ duration: 3, repeat: Infinity }}
-              className="text-4xl mb-3"
-            >
-              🌟
-            </motion.div>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Share Your Experience</h2>
-            <p className="text-slate-400 text-sm">We'd love to hear how BOCHI has helped your construction business</p>
-          </motion.div>
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="bg-gradient-to-br from-slate-800/80 to-slate-800/40 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-slate-700/50 shadow-xl"
-          >
-            <TestimonialForm />
-          </motion.div>
-        </div>
-      </section>
 
-      {/* Stakeholder Portal Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-slate-800 to-slate-900 relative z-10">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <motion.div 
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ duration: 3, repeat: Infinity }}
-              className="inline-flex items-center gap-2 bg-amber-500/10 backdrop-blur-sm rounded-full px-4 py-1.5 border border-amber-500/20 mb-4"
-            >
-              <Eye size={16} className="text-amber-400" />
-              <span className="text-amber-400 text-xs font-medium">NEW - Client Portal</span>
-            </motion.div>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
-              Stakeholder Portal
-              <span className="bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent block"> Real-Time Project Visibility</span>
-            </h2>
-            <p className="text-slate-300 max-w-2xl mx-auto">
-              Give your clients, consultants, and project stakeholders secure access to track progress without edit permissions.
-            </p>
-          </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            {/* Left side - Features list */}
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-              className="space-y-4"
-            >
-              {[
-                { icon: '📊', title: 'Live Gantt Charts', desc: 'View project timelines, task dependencies, and progress in real-time' },
-                { icon: '🌙', title: 'Dark/Light Mode', desc: 'Toggle themes with one click - saves your preference automatically' },
-                { icon: '📱', title: 'Collapsible Sidebar', desc: 'Expand or collapse navigation to maximize viewing space' },
-                { icon: '🔔', title: 'Smart Notifications', desc: 'Stay updated on new documents, meetings, and tasks' },
-                { icon: '📄', title: 'Document Library', desc: 'Securely access project documents, drawings, photos, and reports' },
-                { icon: '📝', title: 'Meeting Minutes', desc: 'Review agendas, decisions, action items, and approval status' },
-                { icon: '💰', title: 'Financial Summary', desc: 'Track contract sums, invoices, payments, and outstanding balances' },
-                { icon: '👥', title: 'Project Team', desc: 'See who\'s working on the project and their contact information' },
-                { icon: '📋', title: 'Site Progress', desc: 'Daily site diary entries with weather, workers, and activities' },
-                { icon: '🔒', title: 'View-Only Mode', desc: 'Complete visibility without edit permissions - your data stays safe' },
-                { icon: '📎', title: 'Export Capabilities', desc: 'Download reports, minutes, and Gantt charts as PDF or Excel' },
-              ].map((feature, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  viewport={{ once: true }}
-                  className="flex items-start gap-4 p-3 bg-slate-800/50 rounded-xl border border-slate-700 hover:border-amber-500/30 transition-all"
-                >
-                  <div className="text-2xl">{feature.icon}</div>
-                  <div>
-                    <h3 className="font-semibold text-white text-sm">{feature.title}</h3>
-                    <p className="text-xs text-slate-400">{feature.desc}</p>
-                  </div>
-                </motion.div>
+
+{/* Submit Testimonial Form */}
+<section className="py-16 px-4">
+  <div className="max-w-2xl mx-auto">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      className="text-center mb-8"
+    >
+      <motion.div 
+        animate={{ scale: [1, 1.05, 1] }}
+        transition={{ duration: 3, repeat: Infinity }}
+        className="text-4xl mb-3"
+      >
+        🌟
+      </motion.div>
+      <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Share Your Experience</h2>
+      <p className="text-slate-400 text-sm">We'd love to hear how BOCHI has helped your construction business</p>
+    </motion.div>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: 0.1 }}
+      className="bg-gradient-to-br from-slate-800/80 to-slate-800/40 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-slate-700/50 shadow-xl"
+    >
+      <TestimonialForm />
+    </motion.div>
+  </div>
+</section>
+
+
+{/* Stakeholder Portal Section - NEW FEATURE HIGHLIGHT */}
+<section className="py-20 px-4 bg-gradient-to-r from-slate-800 to-slate-900">
+  <div className="max-w-7xl mx-auto">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      viewport={{ once: true }}
+      className="text-center mb-12"
+    >
+      <motion.div 
+        animate={{ scale: [1, 1.05, 1] }}
+        transition={{ duration: 3, repeat: Infinity }}
+        className="inline-flex items-center gap-2 bg-amber-500/10 backdrop-blur-sm rounded-full px-4 py-1.5 border border-amber-500/20 mb-4"
+      >
+        <Eye size={16} className="text-amber-400" />
+        <span className="text-amber-400 text-xs font-medium">NEW - Client Portal</span>
+      </motion.div>
+      <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
+        Stakeholder Portal
+        <span className="bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent block"> Real-Time Project Visibility</span>
+      </h2>
+      <p className="text-slate-300 max-w-2xl mx-auto">
+        Give your clients, consultants, and project stakeholders secure access to track progress without edit permissions.
+      </p>
+    </motion.div>
+
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+      {/* Left side - Features list */}
+      <motion.div
+        initial={{ opacity: 0, x: -30 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5 }}
+        viewport={{ once: true }}
+        className="space-y-4"
+      >
+
+
+{[
+  { icon: '📊', title: 'Live Gantt Charts', desc: 'View project timelines, task dependencies, and progress in real-time' },
+  { icon: '🌙', title: 'Dark/Light Mode', desc: 'Toggle themes with one click - saves your preference automatically' },
+  { icon: '📱', title: 'Collapsible Sidebar', desc: 'Expand or collapse navigation to maximize viewing space' },
+  { icon: '🔔', title: 'Smart Notifications', desc: 'Stay updated on new documents, meetings, and tasks' },
+  { icon: '📄', title: 'Document Library', desc: 'Securely access project documents, drawings, photos, and reports' },
+  { icon: '📝', title: 'Meeting Minutes', desc: 'Review agendas, decisions, action items, and approval status' },
+  { icon: '💰', title: 'Financial Summary', desc: 'Track contract sums, invoices, payments, and outstanding balances' },
+  { icon: '👥', title: 'Project Team', desc: 'See who\'s working on the project and their contact information' },
+  { icon: '📋', title: 'Site Progress', desc: 'Daily site diary entries with weather, workers, and activities' },
+  { icon: '🔒', title: 'View-Only Mode', desc: 'Complete visibility without edit permissions - your data stays safe' },
+  { icon: '📎', title: 'Export Capabilities', desc: 'Download reports, minutes, and Gantt charts as PDF or Excel' },
+].map((feature, idx) => (
+
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ delay: idx * 0.05 }}
+            viewport={{ once: true }}
+            className="flex items-start gap-4 p-3 bg-slate-800/50 rounded-xl border border-slate-700 hover:border-amber-500/30 transition-all"
+          >
+            <div className="text-2xl">{feature.icon}</div>
+            <div>
+              <h3 className="font-semibold text-white text-sm">{feature.title}</h3>
+              <p className="text-xs text-slate-400">{feature.desc}</p>
+            </div>
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {/* Right side - Portal Preview */}
+      <motion.div
+        initial={{ opacity: 0, x: 30 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        viewport={{ once: true }}
+        className="relative"
+      >
+        <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-slate-700 overflow-hidden shadow-2xl">
+          {/* Mock Portal Header */}
+          <div className="bg-slate-800/80 px-4 py-3 border-b border-slate-700 flex items-center gap-2">
+            <div className="flex gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-red-500"></div>
+              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            </div>
+            <div className="flex-1 text-center">
+              <span className="text-xs text-slate-400">Stakeholder Portal - Project Dashboard</span>
+            </div>
+            <Eye size={14} className="text-amber-400" />
+          </div>
+          
+          {/* Mock Content */}
+          <div className="p-5 space-y-4">
+            {/* Project Header */}
+            <div className="flex justify-between items-start">
+              <div>
+                <h4 className="text-white font-semibold">Nairobi Heights Tower</h4>
+                <p className="text-xs text-slate-400">Client: Heights Construction • Location: Westlands</p>
+              </div>
+              <div className="text-right">
+                <span className="text-xs text-slate-400">Progress</span>
+                <p className="text-lg font-bold text-amber-500">65%</p>
+              </div>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="w-full bg-slate-700 rounded-full h-2">
+              <div className="bg-amber-500 h-2 rounded-full" style={{ width: '65%' }}></div>
+            </div>
+            
+            {/* Stats Grid */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-slate-800/50 rounded-lg p-2 text-center border border-slate-700">
+                <p className="text-lg font-bold text-white">24</p>
+                <p className="text-xs text-slate-400">Documents</p>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-2 text-center border border-slate-700">
+                <p className="text-lg font-bold text-white">8</p>
+                <p className="text-xs text-slate-400">Meetings</p>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-2 text-center border border-slate-700">
+                <p className="text-lg font-bold text-white">KES 45.2M</p>
+                <p className="text-xs text-slate-400">Contract Sum</p>
+              </div>
+            </div>
+            
+            {/* Tabs Preview */}
+            <div className="flex gap-3 border-b border-slate-700 pb-2">
+              {['Overview', 'Documents', 'Meetings', 'Gantt', 'Financial'].map((tab) => (
+                <span key={tab} className={`text-xs px-2 py-1 rounded ${tab === 'Gantt' ? 'text-amber-400 border-b-2 border-amber-400' : 'text-slate-400'}`}>
+                  {tab}
+                </span>
               ))}
-            </motion.div>
-
-            {/* Right side - Portal Preview */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              viewport={{ once: true }}
-              className="relative"
-            >
-              <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-slate-700 overflow-hidden shadow-2xl">
-                <div className="bg-slate-800/80 px-4 py-3 border-b border-slate-700 flex items-center gap-2">
-                  <div className="flex gap-1.5">
-                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            </div>
+            
+            {/* Gantt Preview */}
+            <div className="bg-slate-800/30 rounded-lg p-3 border border-slate-700">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-medium text-slate-300">📊 Gantt Chart (View-Only)</span>
+                <span className="text-xs text-amber-400 ml-auto">🔒 Read Only</span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-28 text-xs text-slate-400">Foundation</div>
+                  <div className="flex-1 h-4 bg-amber-500/20 rounded overflow-hidden">
+                    <div className="w-full h-full bg-green-500 rounded"></div>
                   </div>
-                  <div className="flex-1 text-center">
-                    <span className="text-xs text-slate-400">Stakeholder Portal - Project Dashboard</span>
-                  </div>
-                  <Eye size={14} className="text-amber-400" />
+                  <span className="text-xs text-slate-400">100%</span>
                 </div>
-                
-                <div className="p-5 space-y-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="text-white font-semibold">Nairobi Heights Tower</h4>
-                      <p className="text-xs text-slate-400">Client: Heights Construction • Location: Westlands</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-xs text-slate-400">Progress</span>
-                      <p className="text-lg font-bold text-amber-500">65%</p>
-                    </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-28 text-xs text-slate-400">Superstructure</div>
+                  <div className="flex-1 h-4 bg-amber-500/20 rounded overflow-hidden">
+                    <div className="w-3/4 h-full bg-amber-500 rounded"></div>
                   </div>
-                  
-                  <div className="w-full bg-slate-700 rounded-full h-2">
-                    <div className="bg-amber-500 h-2 rounded-full" style={{ width: '65%' }}></div>
+                  <span className="text-xs text-slate-400">75%</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-28 text-xs text-slate-400">Finishing</div>
+                  <div className="flex-1 h-4 bg-amber-500/20 rounded overflow-hidden">
+                    <div className="w-1/4 h-full bg-amber-500 rounded"></div>
                   </div>
-                  
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="bg-slate-800/50 rounded-lg p-2 text-center border border-slate-700">
-                      <p className="text-lg font-bold text-white">24</p>
-                      <p className="text-xs text-slate-400">Documents</p>
-                    </div>
-                    <div className="bg-slate-800/50 rounded-lg p-2 text-center border border-slate-700">
-                      <p className="text-lg font-bold text-white">8</p>
-                      <p className="text-xs text-slate-400">Meetings</p>
-                    </div>
-                    <div className="bg-slate-800/50 rounded-lg p-2 text-center border border-slate-700">
-                      <p className="text-lg font-bold text-white">KES 45.2M</p>
-                      <p className="text-xs text-slate-400">Contract Sum</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-3 border-b border-slate-700 pb-2">
-                    {['Overview', 'Documents', 'Meetings', 'Gantt', 'Financial'].map((tab) => (
-                      <span key={tab} className={`text-xs px-2 py-1 rounded ${tab === 'Gantt' ? 'text-amber-400 border-b-2 border-amber-400' : 'text-slate-400'}`}>
-                        {tab}
-                      </span>
-                    ))}
-                  </div>
-                  
-                  <div className="bg-slate-800/30 rounded-lg p-3 border border-slate-700">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs font-medium text-slate-300">📊 Gantt Chart (View-Only)</span>
-                      <span className="text-xs text-amber-400 ml-auto">🔒 Read Only</span>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-28 text-xs text-slate-400">Foundation</div>
-                        <div className="flex-1 h-4 bg-amber-500/20 rounded overflow-hidden">
-                          <div className="w-full h-full bg-green-500 rounded"></div>
-                        </div>
-                        <span className="text-xs text-slate-400">100%</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-28 text-xs text-slate-400">Superstructure</div>
-                        <div className="flex-1 h-4 bg-amber-500/20 rounded overflow-hidden">
-                          <div className="w-3/4 h-full bg-amber-500 rounded"></div>
-                        </div>
-                        <span className="text-xs text-slate-400">75%</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-28 text-xs text-slate-400">Finishing</div>
-                        <div className="flex-1 h-4 bg-amber-500/20 rounded overflow-hidden">
-                          <div className="w-1/4 h-full bg-amber-500 rounded"></div>
-                        </div>
-                        <span className="text-xs text-slate-400">25%</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-2">
-                    <span className="text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-400">✅ View Only</span>
-                    <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400">📥 Download Reports</span>
-                    <span className="text-xs px-2 py-1 rounded-full bg-purple-500/20 text-purple-400">🔒 Secure Access</span>
-                  </div>
+                  <span className="text-xs text-slate-400">25%</span>
                 </div>
               </div>
-              
-              <motion.div 
-                className="absolute -top-3 -right-3 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg"
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                NEW!
-              </motion.div>
-            </motion.div>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            viewport={{ once: true }}
-            className="flex flex-wrap justify-center gap-6 mt-10 pt-6 border-t border-slate-700"
-          >
-            <div className="flex items-center gap-2">
-              <CheckCircle size={16} className="text-green-400" />
-              <span className="text-sm text-slate-300">No edit permissions - safe for clients</span>
             </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle size={16} className="text-green-400" />
-              <span className="text-sm text-slate-300">Real-time progress tracking</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle size={16} className="text-green-400" />
-              <span className="text-sm text-slate-300">Export reports as PDF/Excel</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle size={16} className="text-green-400" />
-              <span className="text-sm text-slate-300">Secure login-protected access</span>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            viewport={{ once: true }}
-            className="text-center mt-10"
-          >
-            <button 
-              onClick={() => navigate('/register')}
-              className="px-8 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg font-semibold hover:from-amber-600 hover:to-amber-700 transition shadow-lg shadow-amber-500/25"
-            >
-              Start Free Trial
-            </button>
-            <p className="text-xs text-slate-500 mt-3">Invite stakeholders after signup • No credit card required</p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Why Stakeholders Love It */}
-      <section className="py-16 px-4 relative z-10">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            viewport={{ once: true }}
-            className="text-center mb-10"
-          >
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
-              Built for <span className="text-amber-400">Real-World Use</span>
-            </h2>
-            <p className="text-slate-300 max-w-2xl mx-auto">
-              Features designed specifically for how stakeholders actually work
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              viewport={{ once: true }}
-              className="bg-slate-800/50 rounded-xl p-6 text-center border border-slate-700 hover:border-amber-500/30 transition-all"
-            >
-              <div className="text-4xl mb-3">🌙</div>
-              <h3 className="text-lg font-semibold text-white mb-2">Dark Mode Toggle</h3>
-              <p className="text-sm text-slate-400">One-click theme switching with localStorage persistence. Your preference is remembered across sessions.</p>
-            </motion.div>
             
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              viewport={{ once: true }}
-              className="bg-slate-800/50 rounded-xl p-6 text-center border border-slate-700 hover:border-amber-500/30 transition-all"
-            >
-              <div className="text-4xl mb-3">📱</div>
-              <h3 className="text-lg font-semibold text-white mb-2">Collapsible Sidebar</h3>
-              <p className="text-sm text-slate-400">Expand for navigation or collapse for more screen space. Perfect for viewing Gantt charts.</p>
-            </motion.div>
-            
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              viewport={{ once: true }}
-              className="bg-slate-800/50 rounded-xl p-6 text-center border border-slate-700 hover:border-amber-500/30 transition-all"
-            >
-              <div className="text-4xl mb-3">🔔</div>
-              <h3 className="text-lg font-semibold text-white mb-2">Smart Notifications</h3>
-              <p className="text-sm text-slate-400">Real-time alerts for new documents, meeting invites, and task assignments.</p>
-            </motion.div>
+            {/* Badges */}
+            <div className="flex flex-wrap gap-2">
+              <span className="text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-400">✅ View Only</span>
+              <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400">📥 Download Reports</span>
+              <span className="text-xs px-2 py-1 rounded-full bg-purple-500/20 text-purple-400">🔒 Secure Access</span>
+            </div>
           </div>
         </div>
-      </section>
+        
+        {/* Floating badge */}
+        <motion.div 
+          className="absolute -top-3 -right-3 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg"
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          NEW!
+        </motion.div>
+      </motion.div>
+    </div>
+
+    {/* Bullet points summary */}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.3 }}
+      viewport={{ once: true }}
+      className="flex flex-wrap justify-center gap-6 mt-10 pt-6 border-t border-slate-700"
+    >
+      <div className="flex items-center gap-2">
+        <CheckCircle size={16} className="text-green-400" />
+        <span className="text-sm text-slate-300">No edit permissions - safe for clients</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <CheckCircle size={16} className="text-green-400" />
+        <span className="text-sm text-slate-300">Real-time progress tracking</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <CheckCircle size={16} className="text-green-400" />
+        <span className="text-sm text-slate-300">Export reports as PDF/Excel</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <CheckCircle size={16} className="text-green-400" />
+        <span className="text-sm text-slate-300">Secure login-protected access</span>
+      </div>
+    </motion.div>
+
+    {/* CTA */}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.4 }}
+      viewport={{ once: true }}
+      className="text-center mt-10"
+    >
+      <button 
+        onClick={() => navigate('/register')}
+        className="px-8 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg font-semibold hover:from-amber-600 hover:to-amber-700 transition shadow-lg shadow-amber-500/25"
+      >
+        Start Free Trial
+      </button>
+      <p className="text-xs text-slate-500 mt-3">Invite stakeholders after signup • No credit card required</p>
+    </motion.div>
+  </div>
+</section>
+
+
+{/* Why Stakeholders Love It - Based on actual layout features */}
+<section className="py-16 px-4">
+  <div className="max-w-7xl mx-auto">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      viewport={{ once: true }}
+      className="text-center mb-10"
+    >
+      <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+        Built for <span className="text-amber-400">Real-World Use</span>
+      </h2>
+      <p className="text-slate-300 max-w-2xl mx-auto">
+        Features designed specifically for how stakeholders actually work
+      </p>
+    </motion.div>
+
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        viewport={{ once: true }}
+        className="bg-slate-800/50 rounded-xl p-6 text-center border border-slate-700 hover:border-amber-500/30 transition-all"
+      >
+        <div className="text-4xl mb-3">🌙</div>
+        <h3 className="text-lg font-semibold text-white mb-2">Dark Mode Toggle</h3>
+        <p className="text-sm text-slate-400">One-click theme switching with localStorage persistence. Your preference is remembered across sessions.</p>
+      </motion.div>
+      
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        viewport={{ once: true }}
+        className="bg-slate-800/50 rounded-xl p-6 text-center border border-slate-700 hover:border-amber-500/30 transition-all"
+      >
+        <div className="text-4xl mb-3">📱</div>
+        <h3 className="text-lg font-semibold text-white mb-2">Collapsible Sidebar</h3>
+        <p className="text-sm text-slate-400">Expand for navigation or collapse for more screen space. Perfect for viewing Gantt charts.</p>
+      </motion.div>
+      
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        viewport={{ once: true }}
+        className="bg-slate-800/50 rounded-xl p-6 text-center border border-slate-700 hover:border-amber-500/30 transition-all"
+      >
+        <div className="text-4xl mb-3">🔔</div>
+        <h3 className="text-lg font-semibold text-white mb-2">Smart Notifications</h3>
+        <p className="text-sm text-slate-400">Real-time alerts for new documents, meeting invites, and task assignments.</p>
+      </motion.div>
+    </div>
+  </div>
+</section>
+
+
 
       {/* Mobile App Download Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-indigo-900 to-purple-900 relative z-10">
+      <section className="py-20 px-4 bg-gradient-to-r from-indigo-900 to-purple-900">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-12">
+            {/* Left side - Text */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -910,6 +896,7 @@ const faqs = [
                 view documents, and collaborate with your team from anywhere.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                {/* Android Download Button */}
                 <motion.a 
                   href="https://buildify-backend-kye8.onrender.com/api/download-mobile-app" 
                   download
@@ -926,6 +913,7 @@ const faqs = [
                   </div>
                 </motion.a>
                 
+                {/* iOS Coming Soon */}
                 <div className="flex items-center justify-center gap-3 bg-gray-700 text-white px-6 py-3 rounded-xl opacity-60 cursor-not-allowed">
                   <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.02.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.3 1.05-3.11z"/>
@@ -941,6 +929,7 @@ const faqs = [
               </p>
             </motion.div>
             
+            {/* Right side - Phone mockup */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -949,12 +938,15 @@ const faqs = [
               className="md:w-1/2 flex justify-center"
             >
               <div className="relative">
+                {/* Phone frame */}
                 <div className="w-64 h-[500px] bg-black rounded-3xl shadow-2xl overflow-hidden border-4 border-gray-800">
                   <div className="bg-gradient-to-b from-gray-900 to-gray-800 h-full">
+                    {/* Status bar */}
                     <div className="bg-gray-900 pt-2 px-4 flex justify-between text-white text-xs">
                       <span>9:41</span>
                       <span>📶 🔋 100%</span>
                     </div>
+                    {/* App preview */}
                     <div className="p-4">
                       <div className="bg-amber-500 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
                         <span className="text-white text-2xl">🏗️</span>
@@ -962,6 +954,7 @@ const faqs = [
                       <h3 className="text-white font-bold text-lg">BOCHI</h3>
                       <p className="text-gray-400 text-sm mt-1">Construction Suite</p>
                       
+                      {/* Demo UI elements */}
                       <div className="mt-6 space-y-3">
                         <div className="bg-gray-700 rounded-lg p-2">
                           <div className="flex items-center gap-2">
@@ -986,6 +979,7 @@ const faqs = [
                   </div>
                 </div>
                 
+                {/* Download badge floating */}
                 <motion.div 
                   className="absolute -bottom-4 -right-4 bg-green-500 text-white rounded-full px-3 py-1 text-xs font-bold shadow-lg"
                   animate={{ scale: [1, 1.1, 1] }}
@@ -996,50 +990,58 @@ const faqs = [
               </div>
             </motion.div>
           </div>
+
+
+
+
+
+
           
-          {/* QR Code Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            viewport={{ once: true }}
-            className="mt-12 pt-8 border-t border-white/20 text-center"
-          >
-            <h3 className="text-xl font-bold text-white mb-4">Scan to Download</h3>
-            <p className="text-gray-300 mb-6">Scan this QR code with your phone camera to download the APK directly</p>
-            
-            <div className="bg-white p-4 rounded-2xl inline-block shadow-lg">
-              <img 
-                src="/qr-code.PNG" 
-                alt="Download BOCHI App QR Code" 
-                className="w-40 h-40 object-contain"
-              />
-            </div>
-            
-            <div className="mt-6">
-              <a 
-                href="https://buildify-backend-kye8.onrender.com/api/download-mobile-app"
-                className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg transition shadow-lg hover:shadow-xl"
-              >
-                <span>⬇️</span>
-                Download APK Directly
-              </a>
-            </div>
-            
-            <div className="mt-4">
-              <p className="text-gray-400 text-sm">
-                Version 1.0.0 • Last updated: {new Date().toLocaleDateString()}
-              </p>
-              <p className="text-gray-500 text-xs mt-2">
-                Android 8.0 or higher • 50MB free space
-              </p>
-            </div>
-          </motion.div>
+{/* QR Code Section */}
+<motion.div
+  initial={{ opacity: 0, y: 20 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.5, delay: 0.3 }}
+  viewport={{ once: true }}
+  className="mt-12 pt-8 border-t border-white/20 text-center"
+>
+  <h3 className="text-xl font-bold text-white mb-4">Scan to Download</h3>
+  <p className="text-gray-300 mb-6">Scan this QR code with your phone camera to download the APK directly</p>
+  
+  <div className="bg-white p-4 rounded-2xl inline-block shadow-lg">
+    <img 
+      src="/qr-code.PNG" 
+      alt="Download BOCHI App QR Code" 
+      className="w-40 h-40 object-contain"
+    />
+  </div>
+  
+  <div className="mt-6">
+    <a 
+      href="https://buildify-backend-kye8.onrender.com/api/download-mobile-app"
+      className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg transition shadow-lg hover:shadow-xl"
+    >
+      <span>⬇️</span>
+      Download APK Directly
+    </a>
+  </div>
+  
+  <div className="mt-4">
+    <p className="text-gray-400 text-sm">
+      Version 1.0.0 • Last updated: {new Date().toLocaleDateString()}
+    </p>
+    <p className="text-gray-500 text-xs mt-2">
+      Android 8.0 or higher • 50MB free space
+    </p>
+  </div>
+</motion.div>
+
         </div>
       </section>
 
+
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-20 px-4 bg-slate-800/30 relative z-10">
+      <section id="testimonials" className="py-20 px-4 bg-slate-800/30">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1098,7 +1100,7 @@ const faqs = [
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="py-20 px-4 relative z-10">
+      <section id="faq" className="py-20 px-4">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1136,7 +1138,7 @@ const faqs = [
       </section>
 
       {/* Bottom Moving Text Banner */}
-      <div className="py-4 bg-amber-500/10 backdrop-blur-sm border-y border-amber-500/20 overflow-hidden relative z-10">
+      <div className="py-4 bg-amber-500/10 backdrop-blur-sm border-y border-amber-500/20 overflow-hidden">
         <div className="flex animate-marquee whitespace-nowrap">
           {[...bottomMovingWords, ...bottomMovingWords].map((word, idx) => (
             <motion.span
@@ -1150,8 +1152,12 @@ const faqs = [
         </div>
       </div>
 
+
+
+
+
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-amber-600 to-amber-700 relative overflow-hidden z-10">
+      <section className="py-20 px-4 bg-gradient-to-r from-amber-600 to-amber-700 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
             <pattern id="dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -1189,6 +1195,7 @@ const faqs = [
             Ready to Transform Your Construction Management?
           </motion.h2>
 
+          {/* ADD THIS LINE - Stakeholder portal mention */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -1238,22 +1245,29 @@ const faqs = [
         </div>
       </section>
 
+
+
       {/* Footer */}
-      <footer className="bg-slate-900 border-t border-slate-800 py-12 px-4 relative z-10">
+      <footer className="bg-slate-900 border-t border-slate-800 py-12 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col items-center justify-center mb-8">
-            <motion.div
-              className="flex items-center gap-2 mb-4"
-              whileHover={{ scale: 1.02 }}
-            >
-              <img 
-                src="/Bochi_logo_transparent.png" 
-                alt="BOCHI Logo" 
-                className="h-10 w-auto"
-              />
-              <span className="text-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">BOCHI</span>
-              <span className="text-xs text-slate-400">Construction Suite</span>
-            </motion.div>
+
+
+
+<motion.div
+  className="flex items-center gap-2 mb-4"
+  whileHover={{ scale: 1.02 }}
+>
+  <img 
+    src="/Bochi_logo_transparent.png" 
+    alt="BOCHI Logo" 
+    className="h-10 w-auto"
+  />
+  <span className="text-xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">BOCHI</span>
+  <span className="text-xs text-slate-400">Construction Suite</span>
+</motion.div>
+
+
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-8 mb-8">
             {['Product', 'Company', 'Legal'].map((section, idx) => (
@@ -1302,7 +1316,7 @@ const faqs = [
             <p className="mt-1 text-xs">Built with ❤️ by Finite Element Designs | Nairobi, Kenya</p>
           </motion.div>
         </div>
-      </footer>
+</footer>
 
       <style>{`
         @keyframes marquee {
