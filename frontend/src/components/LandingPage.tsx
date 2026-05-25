@@ -599,7 +599,7 @@ const LandingPage: React.FC = () => {
                 { icon: '📄', title: 'Document Library', desc: 'Securely access project files' },
                 { icon: '📝', title: 'Meeting Minutes', desc: 'Review agendas and decisions' },
                 { icon: '💰', title: 'Financial Summary', desc: 'Track invoices and payments' },
-                { icon: '👥', title: 'Project Team', desc: 'See who's working on the project' },
+                { icon: '👥', title: 'Project Team', desc: 'See who\'s working on the project' },
               ].map((feature, idx) => (
                 <motion.div
                   key={idx}
