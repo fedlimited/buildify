@@ -524,21 +524,6 @@ app.post('/api/projects/:projectId/gantt', authenticateToken, projectController.
 // ========== SUPER ADMIN ROUTES ==========
 app.use('/api/super-admin', superAdminRoutes);
 
-
-// ========== ACTIVITY ROUTES ==========
-const activityController = require('./controllers/activityController');
-
-// Get activities with filters
-app.get('/api/activities', authenticateToken, activityController.getActivities);
-
-// Get user activity summary
-app.get('/api/activities/summary', authenticateToken, activityController.getUserActivitySummary);
-
-// Get activity types for filters
-app.get('/api/activities/types', authenticateToken, activityController.getActivityTypes);
-
-
-
 // ========== LOAD SAMPLE DATA ==========
 app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, res) => {
   try {
