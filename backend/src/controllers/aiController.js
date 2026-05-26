@@ -1,6 +1,32 @@
 const AIService = require('../services/aiService');
 
 const aiController = {
+  // Ask AI general questions (no specific project)
+  askGeneral: async (req, res) => {
+    try {
+      const { question } = req.body;
+      const userId = req.user.id;
+      const companyId = req.user.companyId || req.user.company_id;
+      
+      if (!question) {
+        return res.status(400).json({ error: 'Question is required' });
+      }
+      
+      const answer = await AIService.answerGeneralQuestion(question, userId, companyId);
+      
+      res.json({ 
+        success: true, 
+        answer,
+        question,
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error('AI general ask error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+
   // Ask AI about a project (Full access for tenants/admins)
   askProject: async (req, res) => {
     try {
@@ -22,7 +48,7 @@ const aiController = {
       });
       
     } catch (error) {
-      console.error('AI ask error:', error);
+      console.error('AI project ask error:', error);
       res.status(500).json({ error: error.message });
     }
   },

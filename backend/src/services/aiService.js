@@ -7,7 +7,39 @@ const openai = new OpenAI({
 
 class AIService {
   /**
-   * Answer questions about a specific project
+   * Answer general questions (no specific project context)
+   */
+  static async answerGeneralQuestion(question, userId, companyId) {
+    try {
+      const prompt = `
+You are an AI assistant for Bochi Construction Suite, helping construction professionals manage their projects.
+
+USER QUESTION: "${question}"
+
+Provide a helpful, professional answer about construction project management, Bochi features, or general guidance.
+
+If the question asks about specific project data (budget, tasks, progress, timeline), politely explain that the user needs to select a specific project first.
+
+Keep answers concise, practical, and actionable.
+`;
+
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 500
+      });
+      
+      return response.choices[0].message.content;
+      
+    } catch (error) {
+      console.error('General AI error:', error);
+      return "I'm having trouble answering that right now. Please try again.";
+    }
+  }
+
+  /**
+   * Answer questions about a specific project (Full access for tenants/admins)
    */
   static async answerProjectQuestion(projectId, question, userId) {
     try {
@@ -59,7 +91,7 @@ Please provide a helpful, professional answer based ONLY on the project data abo
 
       // 3. Call OpenAI API
       const response = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo', // or 'gpt-4' for better quality
+        model: 'gpt-4o-mini',
         messages: [
           { 
             role: 'system', 
@@ -80,7 +112,142 @@ Please provide a helpful, professional answer based ONLY on the project data abo
   }
   
   /**
-   * Get all project context data
+   * Answer questions about a project (Limited access for stakeholders)
+   */
+  static async answerStakeholderQuestion(projectId, question, userId) {
+    try {
+      const context = await this.getStakeholderProjectContext(projectId, userId);
+      
+      if (!context) {
+        return "I couldn't find that project. Please make sure you have access to it.";
+      }
+      
+      const prompt = `
+You are an AI assistant for project stakeholders (clients, consultants) in Bochi Construction Suite.
+
+PROJECT INFORMATION (Limited Access):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 Project: ${context.name}
+📊 Progress: ${context.progress}%
+📅 Timeline: ${context.start_date || 'Not set'} to ${context.end_date || 'Not set'}
+✅ Completed Tasks: ${context.completed_tasks}/${context.total_tasks}
+📄 Documents: ${context.document_count || 0}
+📝 Meetings: ${context.meeting_count || 0}
+📋 Recent Updates: ${context.recent_updates || 'No recent updates'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+USER QUESTION: "${question}"
+
+Provide a helpful answer. DO NOT share financial details (costs, budget, payments).
+Focus on progress, timeline, documents, meetings, and task completion.
+Be professional, transparent, and reassuring.
+`;
+
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 500
+      });
+      
+      return response.choices[0].message.content;
+      
+    } catch (error) {
+      console.error('Stakeholder AI error:', error);
+      return "I'm having trouble accessing project information right now.";
+    }
+  }
+
+  /**
+   * Verify stakeholder has access to a project
+   */
+  static async verifyStakeholderAccess(projectId, userId) {
+    const { getDb } = require('../config/database');
+    const db = await getDb();
+    
+    try {
+      const result = await db.query(`
+        SELECT 1 FROM project_stakeholders 
+        WHERE user_id = $1 AND project_id = $2 AND is_active = 1 AND invite_status = 'accepted'
+      `, [userId, projectId]);
+      
+      return result.rows.length > 0;
+    } catch (error) {
+      console.error('Error verifying stakeholder access:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get limited project context for stakeholders (no financial data)
+   */
+  static async getStakeholderProjectContext(projectId, userId) {
+    const { getDb } = require('../config/database');
+    const db = await getDb();
+    
+    try {
+      const projectResult = await db.query(`
+        SELECT 
+          p.id,
+          p.name,
+          p.progress,
+          p.status,
+          p.start_date,
+          p.end_date,
+          COUNT(DISTINCT pg.id) as total_tasks,
+          COUNT(DISTINCT CASE WHEN pg.status = 'completed' THEN pg.id END) as completed_tasks
+        FROM projects p
+        LEFT JOIN project_gantt_tasks pg ON p.id = pg.project_id
+        WHERE p.id = $1
+        GROUP BY p.id
+      `, [projectId]);
+      
+      if (projectResult.rows.length === 0) return null;
+      
+      const project = projectResult.rows[0];
+      
+      // Get document count
+      const docsResult = await db.query(`
+        SELECT COUNT(*) as count FROM project_documents WHERE project_id = $1
+      `, [projectId]);
+      
+      // Get meeting count
+      const meetingsResult = await db.query(`
+        SELECT COUNT(*) as count FROM meeting_minutes WHERE project_id = $1
+      `, [projectId]);
+      
+      // Get recent updates
+      const updatesResult = await db.query(`
+        SELECT action, created_at FROM user_activities 
+        WHERE entity_type = 'project' AND entity_id = $1
+        ORDER BY created_at DESC LIMIT 3
+      `, [projectId]);
+      
+      const recentUpdates = updatesResult.rows.map(u => 
+        `• ${u.action} on ${new Date(u.created_at).toLocaleDateString()}`
+      ).join('\n');
+      
+      return {
+        name: project.name,
+        progress: project.progress || 0,
+        status: project.status,
+        start_date: project.start_date,
+        end_date: project.end_date,
+        total_tasks: parseInt(project.total_tasks) || 0,
+        completed_tasks: parseInt(project.completed_tasks) || 0,
+        document_count: parseInt(docsResult.rows[0]?.count) || 0,
+        meeting_count: parseInt(meetingsResult.rows[0]?.count) || 0,
+        recent_updates: recentUpdates || 'No recent updates'
+      };
+      
+    } catch (error) {
+      console.error('Error fetching stakeholder project context:', error);
+      return null;
+    }
+  }
+  
+  /**
+   * Get all project context data (Full access)
    */
   static async getProjectContext(projectId, userId) {
     const { getDb } = require('../config/database');
@@ -182,7 +349,7 @@ Overdue Tasks: ${context.overdue_tasks}
 Summary:`;
 
       const response = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.5,
         max_tokens: 150
@@ -192,7 +359,7 @@ Summary:`;
       
     } catch (error) {
       console.error('Error generating summary:', error);
-      return null;
+      return "Unable to generate summary at this time.";
     }
   }
   
@@ -214,7 +381,7 @@ Budget Remaining: KES ${(context.budget - context.spent).toLocaleString()}
 List 3 specific, actionable recommendations:`;
 
       const response = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
         max_tokens: 200
@@ -224,7 +391,40 @@ List 3 specific, actionable recommendations:`;
       
     } catch (error) {
       console.error('Error generating suggestions:', error);
-      return null;
+      return "Unable to generate suggestions at this time.";
+    }
+  }
+  
+  /**
+   * Get stakeholder-friendly suggestions
+   */
+  static async suggestStakeholderActions(projectId, userId) {
+    try {
+      const context = await this.getStakeholderProjectContext(projectId, userId);
+      
+      const prompt = `
+Based on this project data, suggest 3 helpful updates for a project stakeholder (client/consultant):
+
+Project: ${context.name}
+Progress: ${context.progress}%
+Completed Tasks: ${context.completed_tasks}/${context.total_tasks}
+Documents Available: ${context.document_count}
+Meetings Held: ${context.meeting_count}
+
+List 3 positive, reassuring updates about project progress and what to expect next:`;
+
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 200
+      });
+      
+      return response.choices[0].message.content;
+      
+    } catch (error) {
+      console.error('Error generating stakeholder suggestions:', error);
+      return "Check the project dashboard for the latest updates.";
     }
   }
 }

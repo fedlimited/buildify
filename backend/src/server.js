@@ -537,6 +537,8 @@ app.get('/api/ai/project/:projectId/suggestions', authenticateToken, aiControlle
 app.post('/api/ai/stakeholder/project/:projectId/ask', authenticateToken, aiController.askStakeholder);
 app.get('/api/ai/stakeholder/project/:projectId/suggestions', authenticateToken, aiController.suggestStakeholderActions);
 
+// General AI questions (no project context)
+app.post('/api/ai/ask', authenticateToken, aiController.askGeneral);
 
 
 // ========== LOAD SAMPLE DATA ==========
