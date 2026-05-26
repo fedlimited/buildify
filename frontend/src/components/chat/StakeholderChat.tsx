@@ -1,3 +1,4 @@
+// Updated: May 2026 - Stakeholder Chatbot v2
 import React, { useState, useEffect } from 'react';
 import { 
   Send, Loader2, X, Sparkles, 
@@ -145,7 +146,7 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
       
       {!isMinimized && (
         <>
-          {/* Messages Area */}
+          {/* Messages Area - Reduced height by 10% (350px -> 315px) */}
           <div className="h-[315px] overflow-y-auto p-3 bg-gray-50 dark:bg-gray-800/50 space-y-3">
             {messages.map((message) => (
               <div
