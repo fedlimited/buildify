@@ -1355,11 +1355,36 @@ INSTRUCTIONS:
       return "Having trouble accessing project data. Please try again.";
     }
   }
-  
+
+
+
+
+
+
+
   static async answerStakeholderQuestion(projectId, question, userId) {
     try {
+      // First, try to get data-driven answer (limited access) for general questions
+      const db = await getDb();
+      
+      // Get stakeholder's company ID
+      const userResult = await db.query(
+        `SELECT company_id FROM users WHERE id = $1`,
+        [userId]
+      );
+      const companyId = userResult.rows[0]?.company_id;
+      
+      // Try to answer general stakeholder questions
+      const dataAnswer = await this.getStakeholderDataDrivenAnswer(question, companyId, userId);
+      if (dataAnswer) {
+        return dataAnswer;
+      }
+      
+      // If no general answer, get project context for specific project questions
       const context = await this.getStakeholderProjectContext(projectId, userId);
-      if (!context) return "Project not found.";
+      if (!context) {
+        return "I couldn't find that project. Please make sure you have access to it.";
+      }
       
       const prompt = `PROJECT: ${context.name}\nProgress: ${context.progress}%\nTimeline: ${context.start_date || 'N/A'} to ${context.end_date || 'N/A'}\nTasks: ${context.completed_tasks}/${context.total_tasks} completed\nDocuments: ${context.document_count}\nMeetings: ${context.meeting_count}\n\nUSER QUESTION: "${question}"\n\nFocus ONLY on progress, timeline, documents, and meetings. DO NOT share financial details. Be positive and reassuring.`;
       
@@ -1372,7 +1397,125 @@ INSTRUCTIONS:
       return response.choices[0].message.content;
     } catch (error) {
       console.error('Stakeholder AI error:', error);
-      return "Having trouble accessing project information.";
+      return "Having trouble accessing project information. Please try again.";
+    }
+  }
+
+  // Add this NEW method for stakeholder data-driven answers
+  static async getStakeholderDataDrivenAnswer(question, companyId, userId) {
+    const db = await getDb();
+    const q = question.toLowerCase();
+    
+    try {
+      const isListRequest = this.isRequestType(question, 'list');
+      const isSummaryRequest = this.isRequestType(question, 'summary');
+      
+      // Check if stakeholder has any projects
+      const stakeholderProjects = await db.query(
+        `SELECT COUNT(*) as count FROM project_stakeholders 
+         WHERE user_id = $1 AND is_active = 1 AND invite_status = 'accepted'`,
+        [userId]
+      );
+      
+      // Answer about stakeholder portal
+      if (q.includes('stakeholder portal') || (q.includes('portal') && q.includes('stakeholder'))) {
+        return `📋 **Stakeholder Portal**\n\nAs a stakeholder, you can:\n✅ View project progress and timelines\n✅ Access project documents and files\n✅ Review meeting minutes and action items\n✅ Track task completion status\n✅ See project updates and activities\n\nYou cannot view financial details (costs, budgets, payments).\n\n💡 To see your projects, ask "show me my projects" or click on a project from your dashboard.`;
+      }
+      
+      // Answer about my projects
+      if ((q.includes('my projects') || q.includes('my project')) && (isListRequest || isSummaryRequest)) {
+        const projects = await db.query(
+          `SELECT p.id, p.name, p.progress, p.status, ps.stakeholder_type
+           FROM project_stakeholders ps
+           JOIN projects p ON ps.project_id = p.id
+           WHERE ps.user_id = $1 AND ps.is_active = 1 AND ps.invite_status = 'accepted'
+           ORDER BY p.created_at DESC`,
+          [userId]
+        );
+        
+        if (projects.rows.length === 0) {
+          if (stakeholderProjects.rows[0].count === 0) {
+            return "You haven't been added to any projects yet. Once a contractor adds you to a project, you'll see it here.";
+          }
+          return "You don't have any projects yet. When added to a project, it will appear here.";
+        }
+        
+        let response = `📋 **Your Projects** (${projects.rows.length} total)\n\n`;
+        projects.rows.forEach((p, i) => {
+          response += `${i+1}. **${p.name}**\n`;
+          response += `   📊 Progress: ${p.progress}%\n`;
+          response += `   📍 Status: ${p.status}\n`;
+          response += `   👔 Your Role: ${p.stakeholder_type}\n\n`;
+        });
+        return response;
+      }
+      
+      // Answer about project count
+      if ((q.includes('how many') || q.includes('count')) && q.includes('project')) {
+        const count = await db.query(
+          `SELECT COUNT(*) as count FROM project_stakeholders 
+           WHERE user_id = $1 AND is_active = 1 AND invite_status = 'accepted'`,
+          [userId]
+        );
+        return `You have ${count.rows[0].count} project${count.rows[0].count !== 1 ? 's' : ''} that you have access to.`;
+      }
+      
+      // Answer about documents
+      if (q.includes('document') || q.includes('documents')) {
+        const docs = await db.query(
+          `SELECT COUNT(*) as count FROM project_documents 
+           WHERE project_id IN (SELECT project_id FROM project_stakeholders WHERE user_id = $1)`,
+          [userId]
+        );
+        if (docs.rows[0].count === 0) {
+          return "No documents have been shared with you yet. Documents will appear here when uploaded to your projects.";
+        }
+        return `📄 You have access to ${docs.rows[0].count} document${docs.rows[0].count !== 1 ? 's' : ''} across your projects.`;
+      }
+      
+      // Answer about meetings
+      if (q.includes('meeting') || q.includes('minutes')) {
+        const meetings = await db.query(
+          `SELECT COUNT(*) as count FROM meeting_minutes 
+           WHERE project_id IN (SELECT project_id FROM project_stakeholders WHERE user_id = $1)`,
+          [userId]
+        );
+        if (meetings.rows[0].count === 0) {
+          return "No meeting minutes have been shared with you yet. Meetings will appear here when added to your projects.";
+        }
+        return `📅 You have access to ${meetings.rows[0].count} meeting minute${meetings.rows[0].count !== 1 ? 's' : ''} across your projects.`;
+      }
+      
+      // Answer about tasks
+      if (q.includes('task') || q.includes('action item')) {
+        const tasks = await db.query(
+          `SELECT COUNT(*) as count,
+                  COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed
+           FROM project_gantt_tasks 
+           WHERE project_id IN (SELECT project_id FROM project_stakeholders WHERE user_id = $1)`,
+          [userId]
+        );
+        if (tasks.rows[0].count === 0) {
+          return "No tasks have been added to your projects yet.";
+        }
+        return `📋 Across your projects: ${tasks.rows[0].count} total tasks, ${tasks.rows[0].completed} completed.`;
+      }
+      
+      // General help for stakeholders
+      if (q.includes('help') || q.includes('what can i do') || q.includes('how to')) {
+        return `📖 **Stakeholder Help**\n\nYou can ask me:\n• "Show me my projects"\n• "What documents are available?"\n• "Show me recent meetings"\n• "What's the progress on [project name]?"\n• "How many projects do I have?"\n\n💡 You can only see information from projects you've been invited to.`;
+      }
+      
+      // Handle simple greetings
+      if (q === 'hi' || q === 'hello' || q === 'hey' || q === 'hello there') {
+        return `Hello! I'm your project assistant. 👋\n\nYou can ask me about:\n• Your projects\n• Documents and files\n• Meeting minutes\n• Task progress\n\nWhat would you like to know?`;
+      }
+      
+      return null;
+      
+    } catch (error) {
+      console.error('Stakeholder data answer error:', error);
+      return null;
     }
   }
 
@@ -1410,7 +1553,13 @@ INSTRUCTIONS:
       meeting_count: parseInt(meetings.rows[0]?.count) || 0
     };
   }
-  
+
+
+
+
+
+
+
   static async getProjectContext(projectId, userId) {
     const db = await getDb();
     const project = await db.query(
