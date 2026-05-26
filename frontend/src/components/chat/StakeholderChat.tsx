@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  MessageCircle, Send, Loader2, X, Sparkles, 
-  ChevronDown, ChevronUp, Eye
+  Send, Loader2, X, Sparkles, 
+  ChevronDown, Eye
 } from 'lucide-react';
 import { API_BASE_URL } from '@/config/api';
 
@@ -42,21 +42,6 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
     "Any upcoming meetings?",
     "What's the next milestone?"
   ]);
-
-  // Detect dark mode
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  useEffect(() => {
-    const checkDarkMode = () => {
-      setIsDarkMode(document.documentElement.classList.contains('dark'));
-    };
-    
-    checkDarkMode();
-    const observer = new MutationObserver(checkDarkMode);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    
-    return () => observer.disconnect();
-  }, []);
 
   const askQuestion = async () => {
     if (!question.trim() || loading) return;
@@ -128,15 +113,16 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
 
   return (
     <div className="fixed bottom-6 right-6 w-[380px] max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-3 text-white flex justify-between items-center cursor-pointer"
-           onClick={() => setIsMinimized(!isMinimized)}>
-        <div className="flex items-center gap-2">
+      {/* Header - Click to minimize, buttons to close */}
+      <div 
+        className="bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-3 text-white flex justify-between items-center"
+      >
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsMinimized(!isMinimized)}>
           <Eye size={18} />
           <h3 className="font-semibold text-sm">Project Assistant</h3>
           <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Stakeholder AI</span>
         </div>
-        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1">
           <button
             onClick={() => setIsMinimized(!isMinimized)}
             className="p-1 hover:bg-white/20 rounded transition"
