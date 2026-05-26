@@ -9,26 +9,23 @@ const groq = new Groq({
 });
 
 class AIService {
-  /**
-   * Answer general questions (no specific project context)
-   * Fetches real data from database when possible
-   * Uses knowledge base and training data for accuracy
-   */
+  // Helper function for progress bar
+  static getProgressBar(progress) {
+    const filled = Math.floor(progress / 10);
+    const empty = 10 - filled;
+    return '█'.repeat(filled) + '░'.repeat(empty);
+  }
+
   static async answerGeneralQuestion(question, userId, companyId) {
     try {
-      // 1. First, try to answer from real database data
       const dataAnswer = await this.getDataDrivenAnswer(question, companyId);
       if (dataAnswer) {
         return dataAnswer;
       }
       
-      // 2. Check knowledge base for app-specific information
       const knowledge = KnowledgeBase.getFormattedKnowledge(question);
-      
-      // 3. Check similar past questions from training data
       const similarQuestions = await TrainingDataService.getSimilarQuestions(question);
       
-      // 4. Build comprehensive prompt with all available context
       let prompt = `
 You are an AI assistant for Bochi Construction Suite, a comprehensive construction management platform.
 
@@ -39,13 +36,11 @@ ${similarQuestions && similarQuestions.length > 0 ? `\n📖 SIMILAR QUESTIONS AN
 USER QUESTION: "${question}"
 
 INSTRUCTIONS:
-1. If knowledge base has relevant information, prioritize it for accurate answers
-2. If similar questions exist, learn from those answers
-3. Be specific about Bochi modules and features (Projects, Income, Expenses, Payroll, Procurement, Stores, etc.)
-4. Include step-by-step instructions when applicable
-5. For financial questions, use real data from the database
-6. Keep answers concise, practical, and actionable (3-5 sentences max)
-7. If unsure, say so politely and suggest contacting support
+1. If knowledge base has relevant information, prioritize it
+2. Be specific about Bochi modules and features
+3. Include step-by-step instructions when applicable
+4. Keep answers concise (3-5 sentences)
+5. If unsure, say so politely
 `;
 
       const response = await groq.chat.completions.create({
@@ -59,283 +54,439 @@ INSTRUCTIONS:
       
     } catch (error) {
       console.error('General AI error:', error);
-      return "I'm having trouble answering that right now. Please try again or contact support.";
+      return "I'm having trouble answering that right now. Please try again.";
     }
   }
 
-  /**
-   * Answer questions using real database data
-   */
   static async getDataDrivenAnswer(question, companyId) {
     const db = await getDb();
     const lowerQuestion = question.toLowerCase();
     
-    console.log('🔍 getDataDrivenAnswer - CompanyId:', companyId);
-    console.log('🔍 getDataDrivenAnswer - Question:', question);
+    console.log('🔍 AI Query:', question);
+    console.log('🏢 Company:', companyId);
     
     try {
-      // 1. Financial Questions - USING CORRECT COLUMN NAMES
-      const isProfitQuestion = lowerQuestion.includes('profit') || 
-                               lowerQuestion.includes('total profit') || 
-                               lowerQuestion.includes('how much profit') ||
-                               lowerQuestion.includes('profit?');
+      // ========== PROJECTS MODULE ==========
       
-      const isIncomeQuestion = lowerQuestion.includes('income') || 
-                               lowerQuestion.includes('revenue') || 
-                               lowerQuestion.includes('total income') ||
-                               lowerQuestion.includes('how much income');
-      
-      const isExpenseQuestion = lowerQuestion.includes('expense') || 
-                                lowerQuestion.includes('expenses') || 
-                                lowerQuestion.includes('total expense') ||
-                                lowerQuestion.includes('how much expense') ||
-                                lowerQuestion.includes('costs') ||
-                                lowerQuestion.includes('spending');
-      
-      if (isProfitQuestion || isIncomeQuestion || isExpenseQuestion) {
-        console.log('📊 Financial question detected');
+      // LIST PROJECTS
+      if ((lowerQuestion.includes('list') || lowerQuestion.includes('show me')) && 
+          (lowerQuestion.includes('project') || lowerQuestion.includes('projects')) &&
+          !lowerQuestion.includes('how') && !lowerQuestion.includes('count')) {
         
-        // FIXED: Use gross_amount for income table
-        const income = await db.query(
-          `SELECT COALESCE(SUM(gross_amount), 0) as total FROM income WHERE company_id = $1`,
+        const projects = await db.query(
+          `SELECT id, name, client, location, progress, status, contract_sum, start_date, end_date 
+           FROM projects WHERE company_id = $1 ORDER BY created_at DESC LIMIT 20`,
           [companyId]
         );
         
-        // FIXED: Use amount for expenses table
-        const expenses = await db.query(
-          `SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE company_id = $1`,
-          [companyId]
-        );
-        
-        const totalIncome = parseFloat(income.rows[0].total) || 0;
-        const totalExpenses = parseFloat(expenses.rows[0].total) || 0;
-        const profit = totalIncome - totalExpenses;
-        
-        console.log(`💰 Income: ${totalIncome}, Expenses: ${totalExpenses}, Profit: ${profit}`);
-        
-        if (isProfitQuestion) {
-          if (profit === 0 && totalIncome === 0 && totalExpenses === 0) {
-            return "You don't have any income or expense records yet. Add your income and expenses first to see your profit calculation.";
-          }
-          return `Your total profit is KES ${profit.toLocaleString()}. (Income: KES ${totalIncome.toLocaleString()}, Expenses: KES ${totalExpenses.toLocaleString()})`;
+        if (projects.rows.length === 0) {
+          return "You don't have any projects yet. Click 'Add Project' in the Projects module to get started.";
         }
-        if (isIncomeQuestion) {
-          if (totalIncome === 0) {
-            return "You don't have any income records yet. Add income in the Income module to track your revenue.";
-          }
-          return `Your total income is KES ${totalIncome.toLocaleString()}.`;
-        }
-        if (isExpenseQuestion) {
-          if (totalExpenses === 0) {
-            return "You don't have any expense records yet. Add expenses in the Expenses module to track your spending.";
-          }
-          return `Your total expenses are KES ${totalExpenses.toLocaleString()}.`;
-        }
+        
+        let response = `📋 **Your Projects** (${projects.rows.length} total)\n\n`;
+        projects.rows.forEach((p, i) => {
+          const progressBar = this.getProgressBar(p.progress);
+          response += `${i + 1}. **${p.name}**\n`;
+          response += `   ${progressBar} ${p.progress}%\n`;
+          response += `   📍 Status: ${p.status} | Client: ${p.client}\n`;
+          if (p.location) response += `   📍 Location: ${p.location}\n`;
+          if (p.contract_sum) response += `   💰 Contract: KES ${p.contract_sum.toLocaleString()}\n`;
+          response += `\n`;
+        });
+        return response;
       }
       
-      // 2. Project Questions
-      const isProjectCountQuestion = (lowerQuestion.includes('project') || lowerQuestion.includes('projects')) && 
-                                     (lowerQuestion.includes('count') || lowerQuestion.includes('how many') || 
-                                      lowerQuestion.includes('total') || lowerQuestion.includes('number of'));
-      
-      if (isProjectCountQuestion) {
+      // PROJECT COUNT
+      if ((lowerQuestion.includes('how many') || lowerQuestion.includes('count')) && 
+          (lowerQuestion.includes('project') || lowerQuestion.includes('projects'))) {
         const projects = await db.query(
-          `SELECT COUNT(*) as count, 
+          `SELECT COUNT(*) as total,
                   COUNT(CASE WHEN status = 'Active' THEN 1 END) as active,
                   COUNT(CASE WHEN progress = 100 THEN 1 END) as completed
            FROM projects WHERE company_id = $1`,
           [companyId]
         );
         
-        const totalProjects = parseInt(projects.rows[0].count) || 0;
-        const activeProjects = parseInt(projects.rows[0].active) || 0;
-        const completedProjects = parseInt(projects.rows[0].completed) || 0;
-        
-        if (totalProjects === 0) {
-          return "You don't have any projects yet. Click 'Add Project' in the Projects module to get started.";
-        }
-        
-        return `You have ${totalProjects} total projects. ${activeProjects} are currently active, and ${completedProjects} are completed.`;
+        return `You have ${projects.rows[0].total} total projects. ${projects.rows[0].active} are active, and ${projects.rows[0].completed} are completed.`;
       }
       
-      // 3. Worker Questions
-      if (lowerQuestion.includes('worker') || lowerQuestion.includes('employee') || lowerQuestion.includes('staff')) {
+      // PROJECT STATUSES
+      if ((lowerQuestion.includes('status') || lowerQuestion.includes('statuses')) && 
+          (lowerQuestion.includes('project') || lowerQuestion.includes('projects'))) {
+        const projects = await db.query(
+          `SELECT name, status, progress FROM projects WHERE company_id = $1 ORDER BY status`,
+          [companyId]
+        );
+        
+        const active = projects.rows.filter(p => p.status === 'Active');
+        const completed = projects.rows.filter(p => p.progress === 100);
+        
+        let response = `📊 **Project Statuses**\n\n`;
+        if (active.length > 0) {
+          response += `✅ Active (${active.length}): ${active.map(p => p.name).join(', ')}\n\n`;
+        }
+        if (completed.length > 0) {
+          response += `🏆 Completed (${completed.length}): ${completed.map(p => p.name).join(', ')}\n`;
+        }
+        return response;
+      }
+      
+      // ========== INCOME MODULE ==========
+      
+      // LIST INCOMES
+      if ((lowerQuestion.includes('list') || lowerQuestion.includes('show me')) && 
+          (lowerQuestion.includes('income') || lowerQuestion.includes('incomes'))) {
+        const incomes = await db.query(
+          `SELECT certificate_no, date, gross_amount, amount_received, payment_method, status
+           FROM income WHERE company_id = $1 ORDER BY date DESC LIMIT 10`,
+          [companyId]
+        );
+        
+        const total = await db.query(
+          `SELECT COALESCE(SUM(gross_amount), 0) as total FROM income WHERE company_id = $1`,
+          [companyId]
+        );
+        
+        if (incomes.rows.length === 0) {
+          return "You don't have any income records yet. Add income in the Income module.";
+        }
+        
+        let response = `💰 **Your Income Records**\n\n`;
+        response += `📊 Total Income: KES ${total.rows[0].total.toLocaleString()}\n\n`;
+        incomes.rows.forEach((i, idx) => {
+          response += `${idx + 1}. **Certificate: ${i.certificate_no || 'N/A'}**\n`;
+          response += `   💰 Gross: KES ${i.gross_amount.toLocaleString()}\n`;
+          response += `   💵 Received: KES ${i.amount_received.toLocaleString()}\n`;
+          response += `   📅 Date: ${new Date(i.date).toLocaleDateString()}\n`;
+          response += `   💳 Method: ${i.payment_method}\n`;
+          response += `   📋 Status: ${i.status}\n\n`;
+        });
+        return response;
+      }
+      
+      // TOTAL INCOME
+      if ((lowerQuestion.includes('total income') || lowerQuestion.includes('how much income')) ||
+          (lowerQuestion.includes('income total'))) {
+        const total = await db.query(
+          `SELECT COALESCE(SUM(gross_amount), 0) as total FROM income WHERE company_id = $1`,
+          [companyId]
+        );
+        return `Your total income is KES ${total.rows[0].total.toLocaleString()}.`;
+      }
+      
+      // ========== EXPENSES MODULE ==========
+      
+      // LIST EXPENSES
+      if ((lowerQuestion.includes('list') || lowerQuestion.includes('show me')) && 
+          (lowerQuestion.includes('expense') || lowerQuestion.includes('expenses'))) {
+        const expenses = await db.query(
+          `SELECT date, category, description, amount, vat, status
+           FROM expenses WHERE company_id = $1 ORDER BY date DESC LIMIT 10`,
+          [companyId]
+        );
+        
+        const total = await db.query(
+          `SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE company_id = $1`,
+          [companyId]
+        );
+        
+        if (expenses.rows.length === 0) {
+          return "You don't have any expenses yet. Add expenses in the Expenses module.";
+        }
+        
+        let response = `💸 **Your Recent Expenses**\n\n`;
+        response += `📊 Total Expenses: KES ${total.rows[0].total.toLocaleString()}\n\n`;
+        expenses.rows.forEach((e, idx) => {
+          response += `${idx + 1}. **${e.category}** - KES ${e.amount.toLocaleString()}\n`;
+          response += `   📅 Date: ${new Date(e.date).toLocaleDateString()}\n`;
+          if (e.description) response += `   📝 ${e.description}\n`;
+          response += `   📋 Status: ${e.status}\n\n`;
+        });
+        return response;
+      }
+      
+      // TOTAL EXPENSES
+      if ((lowerQuestion.includes('total expense') || lowerQuestion.includes('how much expense')) ||
+          (lowerQuestion.includes('expenses total'))) {
+        const total = await db.query(
+          `SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE company_id = $1`,
+          [companyId]
+        );
+        return `Your total expenses are KES ${total.rows[0].total.toLocaleString()}.`;
+      }
+      
+      // PROFIT
+      if (lowerQuestion.includes('profit') || lowerQuestion.includes('profit and loss')) {
+        const income = await db.query(
+          `SELECT COALESCE(SUM(gross_amount), 0) as total FROM income WHERE company_id = $1`,
+          [companyId]
+        );
+        const expenses = await db.query(
+          `SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE company_id = $1`,
+          [companyId]
+        );
+        const profit = income.rows[0].total - expenses.rows[0].total;
+        return `Your total profit is KES ${profit.toLocaleString()}. (Income: KES ${income.rows[0].total.toLocaleString()}, Expenses: KES ${expenses.rows[0].total.toLocaleString()})`;
+      }
+      
+      // ========== WORKERS MODULE ==========
+      
+      // LIST WORKERS
+      if ((lowerQuestion.includes('list') || lowerQuestion.includes('show me')) && 
+          (lowerQuestion.includes('worker') || lowerQuestion.includes('workers'))) {
+        const workers = await db.query(
+          `SELECT w.name, w.phone, w.day_rate, wc.name as category
+           FROM workers w
+           JOIN worker_categories wc ON w.category_id = wc.id
+           WHERE w.company_id = $1 AND w.is_active = 1
+           ORDER BY w.name LIMIT 20`,
+          [companyId]
+        );
+        
+        if (workers.rows.length === 0) {
+          return "You don't have any workers yet. Add workers in the Workers module.";
+        }
+        
+        let response = `👥 **Your Workers** (${workers.rows.length} total)\n\n`;
+        workers.rows.forEach((w, i) => {
+          response += `${i + 1}. **${w.name}**\n`;
+          response += `   📞 Phone: ${w.phone || 'N/A'}\n`;
+          response += `   💰 Day Rate: KES ${w.day_rate.toLocaleString()}\n`;
+          response += `   📋 Category: ${w.category}\n\n`;
+        });
+        return response;
+      }
+      
+      // WORKER COUNT
+      if ((lowerQuestion.includes('how many') || lowerQuestion.includes('count')) && 
+          (lowerQuestion.includes('worker') || lowerQuestion.includes('workers') || lowerQuestion.includes('employees'))) {
         const workers = await db.query(
           `SELECT COUNT(*) as count FROM workers WHERE company_id = $1 AND is_active = 1`,
           [companyId]
         );
         
-        const workerCount = parseInt(workers.rows[0].count) || 0;
-        
-        if (workerCount === 0) {
-          return "You don't have any workers added yet. Go to the Workers module to add your team members.";
-        }
-        
-        // Get workers by category - FIXED: join with worker_categories
-        const workerCategories = await db.query(
-          `SELECT wc.name as category, COUNT(*) as count 
+        const byCategory = await db.query(
+          `SELECT wc.name as category, COUNT(*) as count
            FROM workers w
            JOIN worker_categories wc ON w.category_id = wc.id
-           WHERE w.company_id = $1 AND w.is_active = 1 
+           WHERE w.company_id = $1 AND w.is_active = 1
            GROUP BY wc.name`,
           [companyId]
         );
         
-        let response = `You have ${workerCount} active workers.`;
-        if (workerCategories.rows.length > 0) {
-          response += ` By category: ${workerCategories.rows.map(w => `${w.category}: ${w.count}`).join(', ')}.`;
+        let response = `You have ${workers.rows[0].count} active workers.`;
+        if (byCategory.rows.length > 0) {
+          response += ` By category: ${byCategory.rows.map(c => `${c.category}: ${c.count}`).join(', ')}.`;
         }
         return response;
       }
       
-      // 4. Payroll Questions
+      // ========== PAYROLL MODULE ==========
+      
       if (lowerQuestion.includes('payroll')) {
-        const payroll = await db.query(`
-          SELECT 
-            COUNT(*) as count,
-            COALESCE(SUM(gross_pay), 0) as total
-          FROM payroll_records pr
-          JOIN workers w ON pr.worker_id = w.id
-          WHERE w.company_id = $1 AND pr.status = 'paid'
-        `, [companyId]);
-        
-        const payrollCount = parseInt(payroll.rows[0].count) || 0;
-        const payrollTotal = parseFloat(payroll.rows[0].total) || 0;
-        
-        if (payrollCount === 0) {
-          return "You haven't processed any payroll records yet. Go to the Payroll module to process payroll for your workers.";
-        }
-        
-        let response = `You have processed payroll for ${payrollCount} workers totaling KES ${payrollTotal.toLocaleString()}.`;
-        
-        const pendingPayroll = await db.query(`
-          SELECT COUNT(*) as count, COALESCE(SUM(gross_pay), 0) as total
-          FROM payroll_records pr
-          JOIN workers w ON pr.worker_id = w.id
-          WHERE w.company_id = $1 AND pr.status = 'pending'
-        `, [companyId]);
-        
-        if (pendingPayroll.rows[0].count > 0) {
-          response += ` Pending payroll: ${pendingPayroll.rows[0].count} workers totaling KES ${pendingPayroll.rows[0].total?.toLocaleString()}.`;
-        }
-        return response;
-      }
-      
-      // 5. Procurement / Purchase Order Questions - RETURNS REAL DATA
-      if (lowerQuestion.includes('procurement') || lowerQuestion.includes('purchase order') || lowerQuestion.includes('po')) {
-        console.log('📦 Purchase order question detected');
-        
-        const orders = await db.query(
-          `SELECT 
-             COUNT(*) as count,
-             COALESCE(SUM(total_amount), 0) as total,
-             COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending,
-             COUNT(CASE WHEN status = 'supplied' THEN 1 END) as supplied
-           FROM purchase_orders 
-           WHERE company_id = $1`,
+        const payroll = await db.query(
+          `SELECT COUNT(*) as count, COALESCE(SUM(total_gross_pay), 0) as total
+           FROM payroll_records WHERE company_id = $1`,
           [companyId]
         );
         
-        const orderCount = parseInt(orders.rows[0].count) || 0;
-        const orderTotal = parseFloat(orders.rows[0].total) || 0;
+        if (payroll.rows[0].count === 0) {
+          return "You haven't processed any payroll records yet. Go to the Payroll module to process payroll.";
+        }
         
-        if (orderCount === 0) {
+        return `You have processed payroll for ${payroll.rows[0].count} pay periods totaling KES ${payroll.rows[0].total.toLocaleString()}.`;
+      }
+      
+      // ========== PROCUREMENT / PURCHASE ORDERS ==========
+      
+      if ((lowerQuestion.includes('purchase order') || lowerQuestion.includes('purchase orders') || lowerQuestion.includes('po'))) {
+        const orders = await db.query(
+          `SELECT COUNT(*) as count, COALESCE(SUM(total), 0) as total,
+                  COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending
+           FROM purchase_orders WHERE company_id = $1`,
+          [companyId]
+        );
+        
+        if (orders.rows[0].count === 0) {
           return "You don't have any purchase orders yet. Create one in the Procurement module.";
         }
         
-        // Get recent purchase orders
-        const recentOrders = await db.query(
-          `SELECT order_number, supplier_name, total_amount, status 
-           FROM purchase_orders 
-           WHERE company_id = $1 
-           ORDER BY order_date DESC 
-           LIMIT 5`,
-          [companyId]
-        );
-        
-        let response = `You have ${orderCount} purchase orders totaling KES ${orderTotal.toLocaleString()}.`;
-        response += ` ${orders.rows[0].supplied || 0} supplied, ${orders.rows[0].pending || 0} pending.`;
-        
-        if (recentOrders.rows.length > 0) {
-          response += ` Recent orders: ${recentOrders.rows.map(o => `${o.order_number} (${o.supplier_name}): KES ${o.total_amount?.toLocaleString()}`).join('; ')}.`;
-        }
-        
-        return response;
-      }
-      
-      // 6. Stores/Inventory Questions
-      if (lowerQuestion.includes('stock') || lowerQuestion.includes('inventory') || 
-          lowerQuestion.includes('supplies') || lowerQuestion.includes('store')) {
-        const supplies = await db.query(
-          `SELECT COUNT(*) as count, 
-                  COALESCE(SUM(current_stock), 0) as stock
-           FROM supplies 
-           WHERE company_id = $1 AND is_active = 1`,
-          [companyId]
-        );
-        
-        const itemCount = parseInt(supplies.rows[0].count) || 0;
-        
-        if (itemCount === 0) {
-          return "You don't have any supplies added yet. Add items in the Stores module to track inventory.";
-        }
-        
-        let response = `You have ${itemCount} supply items in your inventory.`;
-        
-        const lowStock = await db.query(
-          `SELECT COUNT(*) as count FROM supplies 
-           WHERE company_id = $1 AND current_stock < reorder_level AND is_active = 1`,
-          [companyId]
-        );
-        
-        if (lowStock.rows[0].count > 0) {
-          response += ` ${lowStock.rows[0].count} items are below reorder level and need restocking.`;
+        let response = `You have ${orders.rows[0].count} purchase orders totaling KES ${orders.rows[0].total.toLocaleString()}.`;
+        if (orders.rows[0].pending > 0) {
+          response += ` ${orders.rows[0].pending} orders are pending approval.`;
         }
         return response;
       }
       
-      // 7. User/Team Questions
-      if (lowerQuestion.includes('user') || lowerQuestion.includes('team member')) {
+      // ========== SUPPLIERS ==========
+      
+      if ((lowerQuestion.includes('list') || lowerQuestion.includes('show me')) && 
+          (lowerQuestion.includes('supplier') || lowerQuestion.includes('suppliers'))) {
+        const suppliers = await db.query(
+          `SELECT name, phone, email, kra_pin, payment_terms
+           FROM suppliers WHERE company_id = $1 AND is_active = 1
+           ORDER BY name LIMIT 20`,
+          [companyId]
+        );
+        
+        if (suppliers.rows.length === 0) {
+          return "You don't have any suppliers yet. Add suppliers in the Procurement module.";
+        }
+        
+        let response = `📋 **Your Suppliers** (${suppliers.rows.length} total)\n\n`;
+        suppliers.rows.forEach((s, i) => {
+          response += `${i + 1}. **${s.name}**\n`;
+          if (s.phone) response += `   📞 Phone: ${s.phone}\n`;
+          if (s.email) response += `   📧 Email: ${s.email}\n`;
+          if (s.kra_pin) response += `   🆔 KRA PIN: ${s.kra_pin}\n`;
+          if (s.payment_terms) response += `   📅 Terms: ${s.payment_terms}\n\n`;
+        });
+        return response;
+      }
+      
+      // ========== SUBCONTRACTORS ==========
+      
+      if ((lowerQuestion.includes('list') || lowerQuestion.includes('show me')) && 
+          (lowerQuestion.includes('subcontractor') || lowerQuestion.includes('subcontractors'))) {
+        const subs = await db.query(
+          `SELECT name, phone, email, specialization, contact_person
+           FROM subcontractors WHERE company_id = $1 AND is_active = 1
+           ORDER BY name LIMIT 20`,
+          [companyId]
+        );
+        
+        if (subs.rows.length === 0) {
+          return "You don't have any subcontractors yet. Add subcontractors in the Subcontractors module.";
+        }
+        
+        let response = `🔧 **Your Subcontractors** (${subs.rows.length} total)\n\n`;
+        subs.rows.forEach((s, i) => {
+          response += `${i + 1}. **${s.name}**\n`;
+          if (s.specialization) response += `   🔧 Specialization: ${s.specialization}\n`;
+          if (s.contact_person) response += `   👤 Contact: ${s.contact_person}\n`;
+          if (s.phone) response += `   📞 Phone: ${s.phone}\n`;
+          if (s.email) response += `   📧 Email: ${s.email}\n\n`;
+        });
+        return response;
+      }
+      
+      // ========== USERS / TEAM ==========
+      
+      if ((lowerQuestion.includes('team') || lowerQuestion.includes('users') || lowerQuestion.includes('members')) &&
+          (lowerQuestion.includes('how many') || lowerQuestion.includes('count'))) {
         const users = await db.query(
-          `SELECT COUNT(*) as count, 
+          `SELECT COUNT(*) as count,
                   COUNT(CASE WHEN role = 'admin' THEN 1 END) as admins,
                   COUNT(CASE WHEN role = 'project_manager' THEN 1 END) as pms
-           FROM users 
-           WHERE company_id = $1 AND is_active = 1`,
+           FROM users WHERE company_id = $1 AND is_active = 1`,
           [companyId]
         );
         
-        const userCount = parseInt(users.rows[0].count) || 0;
-        
-        if (userCount === 0) {
-          return "You don't have any users added yet. Invite users from the Users module.";
-        }
-        
-        return `Your team has ${userCount} active users, including ${users.rows[0].admins} administrators and ${users.rows[0].pms} project managers.`;
+        return `Your team has ${users.rows[0].count} active users. ${users.rows[0].admins} administrators, ${users.rows[0].pms} project managers.`;
       }
       
-      // 8. Subscription/Billing Questions
-      if (lowerQuestion.includes('subscription') || lowerQuestion.includes('plan') || 
-          lowerQuestion.includes('billing') || lowerQuestion.includes('trial')) {
-        const sub = await db.query(`
-          SELECT sp.plan_name, cs.status, cs.end_date, cs.is_trial, cs.start_date
-          FROM company_subscriptions cs
-          JOIN subscription_plans sp ON cs.plan_id = sp.id
-          WHERE cs.company_id = $1 AND cs.status = 'active'
-          ORDER BY cs.created_at DESC LIMIT 1
-        `, [companyId]);
+      // ========== SUBSCRIPTION ==========
+      
+      if (lowerQuestion.includes('subscription') || lowerQuestion.includes('plan')) {
+        const sub = await db.query(
+          `SELECT sp.name as plan_name, cs.status, cs.end_date, cs.is_trial
+           FROM company_subscriptions cs
+           JOIN subscription_plans sp ON cs.plan_id = sp.id
+           WHERE cs.company_id = $1 AND cs.status = 'active'
+           ORDER BY cs.created_at DESC LIMIT 1`,
+          [companyId]
+        );
         
         if (sub.rows[0]) {
           let response = `You are on the ${sub.rows[0].plan_name} plan.`;
           if (sub.rows[0].is_trial) {
-            const daysLeft = Math.ceil((new Date(sub.rows[0].end_date) - new Date()) / (1000 * 60 * 60 * 24));
-            response += ` Your trial ends on ${new Date(sub.rows[0].end_date).toLocaleDateString()} (${daysLeft} days remaining).`;
-          } else {
-            response += ` Your subscription is active and in good standing.`;
+            response += ` Your trial is active.`;
           }
           return response;
         }
-        return "You don't have an active subscription. Please contact sales@bochi.ke to set up a plan.";
+        return "You don't have an active subscription. Please contact sales@bochi.ke.";
+      }
+      
+      // ========== SITE DIARY ==========
+      
+      if (lowerQuestion.includes('site diary') || (lowerQuestion.includes('site') && lowerQuestion.includes('entry'))) {
+        const entries = await db.query(
+          `SELECT date, summary, weather, total_workers
+           FROM site_diary_entries 
+           WHERE company_id = $1 
+           ORDER BY date DESC 
+           LIMIT 5`,
+          [companyId]
+        );
+        
+        if (entries.rows.length === 0) {
+          return "You don't have any site diary entries yet. Add entries in the Site Diary module.";
+        }
+        
+        let response = `📔 **Recent Site Diary Entries**\n\n`;
+        entries.rows.forEach((e, i) => {
+          response += `${i + 1}. **${new Date(e.date).toLocaleDateString()}**\n`;
+          response += `   ☁️ Weather: ${e.weather || 'N/A'}\n`;
+          response += `   👥 Workers: ${e.total_workers || 0}\n`;
+          if (e.summary) response += `   📝 ${e.summary.substring(0, 100)}...\n`;
+          response += `\n`;
+        });
+        return response;
+      }
+      
+      // ========== MEETINGS ==========
+      
+      if (lowerQuestion.includes('meeting') || lowerQuestion.includes('minutes')) {
+        const meetings = await db.query(
+          `SELECT title, meeting_date, location
+           FROM meeting_minutes 
+           WHERE project_id IN (SELECT id FROM projects WHERE company_id = $1)
+           ORDER BY meeting_date DESC 
+           LIMIT 5`,
+          [companyId]
+        );
+        
+        if (meetings.rows.length === 0) {
+          return "You don't have any meeting minutes recorded yet.";
+        }
+        
+        let response = `📅 **Recent Meetings**\n\n`;
+        meetings.rows.forEach((m, i) => {
+          response += `${i + 1}. **${m.title}**\n`;
+          response += `   📅 Date: ${new Date(m.meeting_date).toLocaleDateString()}\n`;
+          if (m.location) response += `   📍 Location: ${m.location}\n\n`;
+        });
+        return response;
+      }
+      
+      // ========== STORES / INVENTORY ==========
+      
+      if (lowerQuestion.includes('stock') || lowerQuestion.includes('inventory') || lowerQuestion.includes('supplies')) {
+        const supplies = await db.query(
+          `SELECT COUNT(*) as count FROM supplies WHERE company_id = $1 AND is_active = 1`,
+          [companyId]
+        );
+        
+        if (supplies.rows[0].count === 0) {
+          return "You don't have any supplies added yet. Add items in the Stores module.";
+        }
+        
+        return `You have ${supplies.rows[0].count} supply items in your inventory.`;
+      }
+      
+      // ========== DOCUMENTS ==========
+      
+      if (lowerQuestion.includes('document') || lowerQuestion.includes('documents')) {
+        const docs = await db.query(
+          `SELECT COUNT(*) as count FROM project_documents WHERE company_id = $1`,
+          [companyId]
+        );
+        
+        if (docs.rows[0].count === 0) {
+          return "You don't have any documents uploaded yet. Upload documents in the Documents module.";
+        }
+        
+        return `You have ${docs.rows[0].count} documents stored in the system.`;
       }
       
       return null;
@@ -346,16 +497,6 @@ INSTRUCTIONS:
     }
   }
 
-  /**
-   * Submit feedback for training
-   */
-  static async submitFeedback(question, answer, isCorrect, userId) {
-    return await TrainingDataService.saveTrainingExample(question, answer, isCorrect, userId);
-  }
-
-  /**
-   * Answer questions about a specific project (Full access for tenants/admins)
-   */
   static async answerProjectQuestion(projectId, question, userId) {
     try {
       const projectContext = await this.getProjectContext(projectId, userId);
@@ -424,9 +565,6 @@ Please provide a helpful, professional answer based on the project data above.
     }
   }
   
-  /**
-   * Answer questions about a project (Limited access for stakeholders)
-   */
   static async answerStakeholderQuestion(projectId, question, userId) {
     try {
       const context = await this.getStakeholderProjectContext(projectId, userId);
@@ -468,9 +606,6 @@ Provide a helpful answer. DO NOT share financial details. Focus on progress, tim
     }
   }
 
-  /**
-   * Verify stakeholder has access to a project
-   */
   static async verifyStakeholderAccess(projectId, userId) {
     const db = await getDb();
     
@@ -487,9 +622,6 @@ Provide a helpful answer. DO NOT share financial details. Focus on progress, tim
     }
   }
 
-  /**
-   * Get limited project context for stakeholders (no financial data)
-   */
   static async getStakeholderProjectContext(projectId, userId) {
     const db = await getDb();
     
@@ -540,9 +672,6 @@ Provide a helpful answer. DO NOT share financial details. Focus on progress, tim
     }
   }
   
-  /**
-   * Get all project context data (Full access)
-   */
   static async getProjectContext(projectId, userId) {
     const db = await getDb();
     
@@ -554,7 +683,7 @@ Provide a helpful answer. DO NOT share financial details. Focus on progress, tim
           p.client,
           p.location,
           p.progress,
-          p.budget,
+          p.contract_sum as budget,
           p.status,
           p.start_date,
           p.end_date,
@@ -620,9 +749,6 @@ Provide a helpful answer. DO NOT share financial details. Focus on progress, tim
     }
   }
   
-  /**
-   * Generate project summary
-   */
   static async generateProjectSummary(projectId, userId) {
     try {
       const context = await this.getProjectContext(projectId, userId);
@@ -655,6 +781,10 @@ Summary:`;
       console.error('Error generating summary:', error);
       return "Unable to generate summary at this time.";
     }
+  }
+  
+  static async submitFeedback(question, answer, isCorrect, userId) {
+    return await TrainingDataService.saveTrainingExample(question, answer, isCorrect, userId);
   }
 }
 
