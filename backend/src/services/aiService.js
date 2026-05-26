@@ -1,7 +1,9 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const Groq = require('groq-sdk');
 
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// Initialize Groq
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY
+});
 
 class AIService {
   /**
@@ -9,8 +11,6 @@ class AIService {
    */
   static async answerGeneralQuestion(question, userId, companyId) {
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-      
       const prompt = `
 You are an AI assistant for Bochi Construction Suite, helping construction professionals manage their projects.
 
@@ -23,10 +23,14 @@ If the question asks about specific project data (budget, tasks, progress, timel
 Keep answers concise, practical, and actionable (2-4 sentences max).
 `;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
+      const response = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 500
+      });
       
-      return response.text();
+      return response.choices[0].message.content;
       
     } catch (error) {
       console.error('General AI error:', error);
@@ -45,8 +49,6 @@ Keep answers concise, practical, and actionable (2-4 sentences max).
       if (!projectContext) {
         return "I couldn't find that project. Please make sure you have access to it.";
       }
-      
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
       
       // 2. Build the prompt
       const prompt = `
@@ -86,10 +88,20 @@ Please provide a helpful, professional answer based ONLY on the project data abo
 - If the question asks about something not in the data, say so politely
 `;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
+      const response = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { 
+            role: 'system', 
+            content: 'You are a helpful construction project management assistant. Answer questions accurately based on the project data provided.' 
+          },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 500
+      });
       
-      return response.text();
+      return response.choices[0].message.content;
       
     } catch (error) {
       console.error('AI Service Error:', error);
@@ -107,8 +119,6 @@ Please provide a helpful, professional answer based ONLY on the project data abo
       if (!context) {
         return "I couldn't find that project. Please make sure you have access to it.";
       }
-      
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
       
       const prompt = `
 You are an AI assistant for project stakeholders (clients, consultants) in Bochi Construction Suite.
@@ -131,10 +141,14 @@ Focus on progress, timeline, documents, meetings, and task completion.
 Be professional, transparent, and reassuring (2-4 sentences).
 `;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
+      const response = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 500
+      });
       
-      return response.text();
+      return response.choices[0].message.content;
       
     } catch (error) {
       console.error('Stakeholder AI error:', error);
@@ -321,8 +335,6 @@ Be professional, transparent, and reassuring (2-4 sentences).
     try {
       const context = await this.getProjectContext(projectId, userId);
       
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-      
       const prompt = `
 Based on this project data, write a brief executive summary (2-3 sentences):
 
@@ -334,10 +346,14 @@ Overdue Tasks: ${context.overdue_tasks}
 
 Summary:`;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
+      const response = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.5,
+        max_tokens: 150
+      });
       
-      return response.text();
+      return response.choices[0].message.content;
       
     } catch (error) {
       console.error('Error generating summary:', error);
@@ -352,8 +368,6 @@ Summary:`;
     try {
       const context = await this.getProjectContext(projectId, userId);
       
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-      
       const prompt = `
 Based on this project data, suggest 3 actionable next steps for the project manager:
 
@@ -364,10 +378,14 @@ Budget Remaining: KES ${(context.budget - context.spent).toLocaleString()}
 
 List 3 specific, actionable recommendations:`;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
+      const response = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 200
+      });
       
-      return response.text();
+      return response.choices[0].message.content;
       
     } catch (error) {
       console.error('Error generating suggestions:', error);
@@ -382,8 +400,6 @@ List 3 specific, actionable recommendations:`;
     try {
       const context = await this.getStakeholderProjectContext(projectId, userId);
       
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-      
       const prompt = `
 Based on this project data, suggest 3 helpful updates for a project stakeholder (client/consultant):
 
@@ -395,10 +411,14 @@ Meetings Held: ${context.meeting_count}
 
 List 3 positive, reassuring updates about project progress and what to expect next:`;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
+      const response = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 200
+      });
       
-      return response.text();
+      return response.choices[0].message.content;
       
     } catch (error) {
       console.error('Error generating stakeholder suggestions:', error);
