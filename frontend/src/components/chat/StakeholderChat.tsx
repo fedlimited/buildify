@@ -39,6 +39,39 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
     "Any upcoming meetings?",
     "What's the next milestone?"
   ]);
+  const [feedbackStatus, setFeedbackStatus] = useState<Record<string, boolean>>({});
+
+  // Send feedback to the backend for training
+  const sendFeedback = async (messageId: string, answer: string, isHelpful: boolean) => {
+    try {
+      const token = localStorage.getItem('token');
+      // Find the corresponding question (the previous message)
+      const messageIndex = messages.findIndex(m => m.id === messageId);
+      const questionMessage = messageIndex > 0 ? messages[messageIndex - 1] : null;
+      
+      if (!questionMessage) return;
+      
+      const response = await fetch(`${API_BASE_URL}/ai/feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          question: questionMessage.content,
+          answer: answer,
+          isCorrect: isHelpful
+        })
+      });
+      
+      if (response.ok) {
+        setFeedbackStatus(prev => ({ ...prev, [messageId]: true }));
+        console.log(`Feedback submitted: ${isHelpful ? 'Helpful' : 'Not helpful'}`);
+      }
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+    }
+  };
 
   const askQuestion = async () => {
     if (!question.trim() || loading) return;
@@ -57,8 +90,12 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
     try {
       const token = localStorage.getItem('token');
       
-      // Always use general endpoint
-      const endpoint = `${API_BASE_URL}/ai/ask`;
+      let endpoint;
+      if (projectId) {
+        endpoint = `${API_BASE_URL}/ai/stakeholder/project/${projectId}/ask`;
+      } else {
+        endpoint = `${API_BASE_URL}/ai/ask`;
+      }
       
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -114,7 +151,7 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
 
   return (
     <div className="fixed bottom-6 right-6 w-[380px] max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
-      {/* Header - Amber theme */}
+      {/* Header - Amber theme (same as Tenant) */}
       <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-3 text-white">
         <div className="flex justify-between items-center w-full">
           <div 
@@ -146,25 +183,52 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
       
       {!isMinimized && (
         <>
-          {/* Messages Area - Height 280px (same as Tenant) */}
-          <div className="h-[280px] overflow-y-auto p-3 bg-gray-50 dark:bg-gray-800/50 space-y-3">
+          {/* Messages Area */}
+          <div className="h-[350px] overflow-y-auto p-3 bg-gray-50 dark:bg-gray-800/50 space-y-4">
             {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
+              <div key={message.id} className="flex flex-col">
                 <div
-                  className={`max-w-[85%] rounded-2xl px-3 py-2 ${
-                    message.type === 'user'
-                      ? 'bg-amber-500 text-white rounded-br-none'
-                      : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-bl-none'
-                  }`}
+                  className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <p className="text-sm break-words">{message.content}</p>
-                  <p className={`text-xs mt-1 ${message.type === 'user' ? 'text-amber-100' : 'text-gray-400 dark:text-gray-500'}`}>
-                    {message.timestamp.toLocaleTimeString()}
-                  </p>
+                  <div
+                    className={`max-w-[85%] rounded-2xl px-3 py-2 ${
+                      message.type === 'user'
+                        ? 'bg-amber-500 text-white rounded-br-none'
+                        : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-bl-none'
+                    }`}
+                  >
+                    <p className="text-sm break-words">{message.content}</p>
+                    <p className={`text-xs mt-1 ${message.type === 'user' ? 'text-amber-100' : 'text-gray-400 dark:text-gray-500'}`}>
+                      {message.timestamp.toLocaleTimeString()}
+                    </p>
+                  </div>
                 </div>
+                {/* Feedback buttons - only for AI messages (not the welcome message) */}
+                {message.type === 'ai' && message.id !== '1' && !feedbackStatus[message.id] && (
+                  <div className="flex gap-3 mt-1 ml-2">
+                    <button
+                      onClick={() => sendFeedback(message.id, message.content, true)}
+                      className="text-[10px] text-gray-400 hover:text-green-600 transition flex items-center gap-1"
+                      title="This answer was helpful"
+                    >
+                      <span>👍</span> Helpful
+                    </button>
+                    <button
+                      onClick={() => sendFeedback(message.id, message.content, false)}
+                      className="text-[10px] text-gray-400 hover:text-red-600 transition flex items-center gap-1"
+                      title="This answer was not helpful"
+                    >
+                      <span>👎</span> Not Helpful
+                    </button>
+                  </div>
+                )}
+                {message.type === 'ai' && message.id !== '1' && feedbackStatus[message.id] && (
+                  <div className="flex gap-3 mt-1 ml-2">
+                    <span className="text-[10px] text-green-600 flex items-center gap-1">
+                      ✓ Thanks for your feedback!
+                    </span>
+                  </div>
+                )}
               </div>
             ))}
             {loading && (
@@ -177,22 +241,20 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
           </div>
           
           {/* Suggestions */}
-          {suggestions.length > 0 && (
-            <div className="px-3 py-2 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/30">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Suggested Questions:</p>
-              <div className="flex flex-wrap gap-2">
-                {suggestions.slice(0, 3).map((suggestion, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleSuggestionClick(suggestion)}
-                    className="text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full px-2.5 py-1 hover:border-amber-300 hover:text-amber-600 dark:hover:text-amber-400 transition text-gray-600 dark:text-gray-300"
-                  >
-                    {suggestion.length > 35 ? suggestion.substring(0, 35) + '...' : suggestion}
-                  </button>
-                ))}
-              </div>
+          <div className="px-3 py-2 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/30">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Suggested Questions:</p>
+            <div className="flex flex-wrap gap-2">
+              {suggestions.slice(0, 3).map((suggestion, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  className="text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full px-2.5 py-1 hover:border-amber-300 hover:text-amber-600 dark:hover:text-amber-400 transition text-gray-600 dark:text-gray-300"
+                >
+                  {suggestion}
+                </button>
+              ))}
             </div>
-          )}
+          </div>
           
           {/* Input Area */}
           <div className="p-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
@@ -203,7 +265,7 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
                 onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), askQuestion())}
                 placeholder="Ask a question..."
                 className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                rows={2}
+                rows={1}
                 style={{ minHeight: '40px', maxHeight: '80px' }}
               />
               <button

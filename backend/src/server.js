@@ -527,6 +527,7 @@ app.use('/api/super-admin', superAdminRoutes);
 
 // ========== AI ROUTES ==========
 const aiController = require('./controllers/aiController');
+const trainingController = require('./controllers/trainingController');
 
 // Tenant/Admin routes (full access)
 app.post('/api/ai/project/:projectId/ask', authenticateToken, aiController.askProject);
@@ -539,6 +540,16 @@ app.get('/api/ai/stakeholder/project/:projectId/suggestions', authenticateToken,
 
 // General AI questions (no project context)
 app.post('/api/ai/ask', authenticateToken, aiController.askGeneral);
+
+
+// ========== AI TRAINING ROUTES ==========
+const trainingController = require('./controllers/trainingController');
+
+// Submit feedback for AI training
+app.post('/api/ai/feedback', authenticateToken, trainingController.submitFeedback);
+
+// Get knowledge base stats (admin only)
+app.get('/api/ai/knowledge-stats', authenticateToken, trainingController.getKnowledgeStats);
 
 
 // ========== LOAD SAMPLE DATA ==========

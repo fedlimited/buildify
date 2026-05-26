@@ -33,6 +33,7 @@ export function TenantChat({ projectId, projectName }: TenantChatProps) {
   ]);
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [feedbackStatus, setFeedbackStatus] = useState<Record<string, boolean>>({});
 
   // Tenant-specific suggestions
   const getTenantSuggestions = () => {
@@ -57,6 +58,39 @@ export function TenantChat({ projectId, projectName }: TenantChatProps) {
   useEffect(() => {
     setSuggestions(getTenantSuggestions());
   }, [projectId]);
+
+  // Send feedback to the backend for training
+  const sendFeedback = async (messageId: string, answer: string, isHelpful: boolean) => {
+    try {
+      const token = localStorage.getItem('token');
+      // Find the corresponding question (the previous message)
+      const messageIndex = messages.findIndex(m => m.id === messageId);
+      const questionMessage = messageIndex > 0 ? messages[messageIndex - 1] : null;
+      
+      if (!questionMessage) return;
+      
+      const response = await fetch(`${API_BASE_URL}/ai/feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          question: questionMessage.content,
+          answer: answer,
+          isCorrect: isHelpful
+        })
+      });
+      
+      if (response.ok) {
+        // Mark this message as feedback given
+        setFeedbackStatus(prev => ({ ...prev, [messageId]: true }));
+        console.log(`Feedback submitted: ${isHelpful ? 'Helpful' : 'Not helpful'}`);
+      }
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+    }
+  };
 
   const askQuestion = async () => {
     if (!question.trim() || loading) return;
@@ -169,24 +203,51 @@ export function TenantChat({ projectId, projectName }: TenantChatProps) {
       {!isMinimized && (
         <>
           {/* Messages Area */}
-          <div className="h-[350px] overflow-y-auto p-3 bg-gray-50 dark:bg-gray-800/50 space-y-3">
+          <div className="h-[350px] overflow-y-auto p-3 bg-gray-50 dark:bg-gray-800/50 space-y-4">
             {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
+              <div key={message.id} className="flex flex-col">
                 <div
-                  className={`max-w-[85%] rounded-2xl px-3 py-2 ${
-                    message.type === 'user'
-                      ? 'bg-amber-500 text-white rounded-br-none'
-                      : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-bl-none'
-                  }`}
+                  className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <p className="text-sm break-words">{message.content}</p>
-                  <p className={`text-xs mt-1 ${message.type === 'user' ? 'text-amber-100' : 'text-gray-400 dark:text-gray-500'}`}>
-                    {message.timestamp.toLocaleTimeString()}
-                  </p>
+                  <div
+                    className={`max-w-[85%] rounded-2xl px-3 py-2 ${
+                      message.type === 'user'
+                        ? 'bg-amber-500 text-white rounded-br-none'
+                        : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-bl-none'
+                    }`}
+                  >
+                    <p className="text-sm break-words">{message.content}</p>
+                    <p className={`text-xs mt-1 ${message.type === 'user' ? 'text-amber-100' : 'text-gray-400 dark:text-gray-500'}`}>
+                      {message.timestamp.toLocaleTimeString()}
+                    </p>
+                  </div>
                 </div>
+                {/* Feedback buttons - only for AI messages (not the welcome message) */}
+                {message.type === 'ai' && message.id !== '1' && !feedbackStatus[message.id] && (
+                  <div className="flex gap-3 mt-1 ml-2">
+                    <button
+                      onClick={() => sendFeedback(message.id, message.content, true)}
+                      className="text-[10px] text-gray-400 hover:text-green-600 transition flex items-center gap-1"
+                      title="This answer was helpful"
+                    >
+                      <span>👍</span> Helpful
+                    </button>
+                    <button
+                      onClick={() => sendFeedback(message.id, message.content, false)}
+                      className="text-[10px] text-gray-400 hover:text-red-600 transition flex items-center gap-1"
+                      title="This answer was not helpful"
+                    >
+                      <span>👎</span> Not Helpful
+                    </button>
+                  </div>
+                )}
+                {message.type === 'ai' && message.id !== '1' && feedbackStatus[message.id] && (
+                  <div className="flex gap-3 mt-1 ml-2">
+                    <span className="text-[10px] text-green-600 flex items-center gap-1">
+                      ✓ Thanks for your feedback!
+                    </span>
+                  </div>
+                )}
               </div>
             ))}
             {loading && (

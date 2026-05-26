@@ -1,5 +1,7 @@
 const Groq = require('groq-sdk');
 const { getDb } = require('../config/database');
+const KnowledgeBase = require('./knowledgeBase');
+const TrainingDataService = require('./trainingDataService');
 
 // Initialize Groq
 const groq = new Groq({
@@ -10,40 +12,54 @@ class AIService {
   /**
    * Answer general questions (no specific project context)
    * Fetches real data from database when possible
+   * Uses knowledge base and training data for accuracy
    */
   static async answerGeneralQuestion(question, userId, companyId) {
     try {
-      // First, try to answer from real database data
+      // 1. First, try to answer from real database data
       const dataAnswer = await this.getDataDrivenAnswer(question, companyId);
       if (dataAnswer) {
         return dataAnswer;
       }
       
-      // If not data-driven, use Groq AI
-      const prompt = `
-You are an AI assistant for Bochi Construction Suite, helping construction professionals manage their projects.
+      // 2. Check knowledge base for app-specific information
+      const knowledge = KnowledgeBase.getFormattedKnowledge(question);
+      
+      // 3. Check similar past questions from training data
+      const similarQuestions = await TrainingDataService.getSimilarQuestions(question);
+      
+      // 4. Build comprehensive prompt with all available context
+      let prompt = `
+You are an AI assistant for Bochi Construction Suite, a comprehensive construction management platform.
+
+${knowledge ? `\n📚 KNOWLEDGE BASE INFORMATION:\n${knowledge}` : ''}
+
+${similarQuestions && similarQuestions.length > 0 ? `\n📖 SIMILAR QUESTIONS ANSWERED BEFORE:\n${similarQuestions.map(q => `Q: ${q.question}\nA: ${q.answer}`).join('\n\n')}` : ''}
 
 USER QUESTION: "${question}"
 
-Provide a helpful, professional answer about construction project management, Bochi features, or general guidance.
-
-If the question asks about specific project data (budget, tasks, progress, timeline), politely explain that the user needs to select a specific project first.
-
-Keep answers concise, practical, and actionable (2-4 sentences max).
+INSTRUCTIONS:
+1. If knowledge base has relevant information, prioritize it for accurate answers
+2. If similar questions exist, learn from those answers
+3. Be specific about Bochi modules and features (Projects, Income, Expenses, Payroll, Procurement, Stores, etc.)
+4. Include step-by-step instructions when applicable
+5. For financial questions, use real data from the database
+6. Keep answers concise, practical, and actionable (3-5 sentences max)
+7. If unsure, say so politely and suggest contacting support
 `;
 
       const response = await groq.chat.completions.create({
         model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 500
+        temperature: 0.3, // Lower temperature for more accurate, consistent responses
+        max_tokens: 600
       });
       
       return response.choices[0].message.content;
       
     } catch (error) {
       console.error('General AI error:', error);
-      return "I'm having trouble answering that right now. Please try again.";
+      return "I'm having trouble answering that right now. Please try again or contact support.";
     }
   }
 
@@ -76,13 +92,14 @@ Keep answers concise, practical, and actionable (2-4 sentences max).
         if (lowerQuestion.includes('income')) {
           return `Your total income is KES ${totalIncome.toLocaleString()}.`;
         }
-        if (lowerQuestion.includes('expense')) {
+        if (lowerQuestion.includes('expense') || lowerQuestion.includes('expenses')) {
           return `Your total expenses are KES ${totalExpenses.toLocaleString()}.`;
         }
       }
       
       // 2. Project Questions
-      if (lowerQuestion.includes('project') && (lowerQuestion.includes('count') || lowerQuestion.includes('how many'))) {
+      if ((lowerQuestion.includes('project') || lowerQuestion.includes('projects')) && 
+          (lowerQuestion.includes('count') || lowerQuestion.includes('how many') || lowerQuestion.includes('total'))) {
         const projects = await db.query(
           `SELECT COUNT(*) as count FROM projects WHERE company_id = $1`,
           [companyId]
@@ -91,18 +108,30 @@ Keep answers concise, practical, and actionable (2-4 sentences max).
           `SELECT COUNT(*) as count FROM projects WHERE company_id = $1 AND status = 'Active'`,
           [companyId]
         );
+        const completedProjects = await db.query(
+          `SELECT COUNT(*) as count FROM projects WHERE company_id = $1 AND progress = 100`,
+          [companyId]
+        );
         
-        return `You have ${projects.rows[0].count} total projects. ${activeProjects.rows[0].count} of them are currently active.`;
+        return `You have ${projects.rows[0].count} total projects. ${activeProjects.rows[0].count} are active, and ${completedProjects.rows[0].count} are completed.`;
       }
       
-      // 3. Worker Questions
-      if (lowerQuestion.includes('worker') || lowerQuestion.includes('employee')) {
+      // 3. Worker/Employee Questions
+      if (lowerQuestion.includes('worker') || lowerQuestion.includes('employee') || lowerQuestion.includes('staff')) {
         const workers = await db.query(
           `SELECT COUNT(*) as count FROM workers WHERE company_id = $1 AND is_active = 1`,
           [companyId]
         );
+        const workerCategories = await db.query(
+          `SELECT category, COUNT(*) as count FROM workers WHERE company_id = $1 AND is_active = 1 GROUP BY category`,
+          [companyId]
+        );
         
-        return `You have ${workers.rows[0].count} active workers in your system.`;
+        let response = `You have ${workers.rows[0].count} active workers in your system.`;
+        if (workerCategories.rows.length > 0) {
+          response += ` By category: ${workerCategories.rows.map(w => `${w.category}: ${w.count}`).join(', ')}.`;
+        }
+        return response;
       }
       
       // 4. Payroll Questions
@@ -116,55 +145,88 @@ Keep answers concise, practical, and actionable (2-4 sentences max).
           WHERE w.company_id = $1 AND pr.status = 'paid'
         `, [companyId]);
         
-        return `You have processed payroll for ${payroll.rows[0].count} workers totaling KES ${payroll.rows[0].total?.toLocaleString() || 0}.`;
+        const pendingPayroll = await db.query(`
+          SELECT COUNT(*) as count, COALESCE(SUM(gross_pay), 0) as total
+          FROM payroll_records pr
+          JOIN workers w ON pr.worker_id = w.id
+          WHERE w.company_id = $1 AND pr.status = 'pending'
+        `, [companyId]);
+        
+        let response = `You have processed payroll for ${payroll.rows[0].count} workers totaling KES ${payroll.rows[0].total?.toLocaleString() || 0}.`;
+        if (pendingPayroll.rows[0].count > 0) {
+          response += ` Pending payroll: ${pendingPayroll.rows[0].count} workers totaling KES ${pendingPayroll.rows[0].total?.toLocaleString()}.`;
+        }
+        return response;
       }
       
-      // 5. Procurement Questions
-      if (lowerQuestion.includes('procurement') || lowerQuestion.includes('purchase order')) {
+      // 5. Procurement / Purchase Order Questions
+      if (lowerQuestion.includes('procurement') || lowerQuestion.includes('purchase order') || lowerQuestion.includes('po')) {
         const orders = await db.query(
-          `SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total FROM purchase_orders WHERE company_id = $1`,
+          `SELECT COUNT(*) as count, 
+                  COALESCE(SUM(total_amount), 0) as total,
+                  COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending
+           FROM purchase_orders 
+           WHERE company_id = $1`,
           [companyId]
         );
         
-        return `You have ${orders.rows[0].count} purchase orders totaling KES ${orders.rows[0].total?.toLocaleString() || 0}.`;
+        let response = `You have ${orders.rows[0].count} purchase orders totaling KES ${orders.rows[0].total?.toLocaleString() || 0}.`;
+        if (orders.rows[0].pending > 0) {
+          response += ` ${orders.rows[0].pending} orders are pending approval.`;
+        }
+        return response;
       }
       
       // 6. Stores/Inventory Questions
-      if (lowerQuestion.includes('stock') || lowerQuestion.includes('inventory') || lowerQuestion.includes('supplies')) {
+      if (lowerQuestion.includes('stock') || lowerQuestion.includes('inventory') || 
+          lowerQuestion.includes('supplies') || lowerQuestion.includes('store')) {
         const supplies = await db.query(
-          `SELECT COUNT(*) as count, COALESCE(SUM(current_stock), 0) as stock FROM supplies WHERE company_id = $1 AND is_active = 1`,
+          `SELECT COUNT(*) as count, 
+                  COALESCE(SUM(current_stock), 0) as stock,
+                  COALESCE(SUM(reorder_level), 0) as reorder_total
+           FROM supplies 
+           WHERE company_id = $1 AND is_active = 1`,
           [companyId]
         );
         const lowStock = await db.query(
-          `SELECT COUNT(*) as count FROM supplies WHERE company_id = $1 AND current_stock < reorder_level AND is_active = 1`,
+          `SELECT COUNT(*) as count, name, current_stock, reorder_level
+           FROM supplies 
+           WHERE company_id = $1 AND current_stock < reorder_level AND is_active = 1
+           LIMIT 5`,
           [companyId]
         );
         
         let response = `You have ${supplies.rows[0].count} supply items with ${supplies.rows[0].stock} units in stock.`;
-        if (lowStock.rows[0].count > 0) {
-          response += ` ${lowStock.rows[0].count} items are below reorder level and need restocking.`;
+        if (lowStock.rows.length > 0) {
+          response += ` ${lowStock.rows.length} items are below reorder level`;
+          if (lowStock.rows.length <= 3) {
+            response += `: ${lowStock.rows.map(i => i.name).join(', ')}`;
+          }
+          response += `. Consider restocking soon.`;
         }
         return response;
       }
       
       // 7. User/Team Questions
-      if (lowerQuestion.includes('user') || lowerQuestion.includes('team member')) {
+      if (lowerQuestion.includes('user') || lowerQuestion.includes('team member') || 
+          lowerQuestion.includes('employee') && !lowerQuestion.includes('worker')) {
         const users = await db.query(
-          `SELECT COUNT(*) as count FROM users WHERE company_id = $1 AND is_active = 1`,
-          [companyId]
-        );
-        const admins = await db.query(
-          `SELECT COUNT(*) as count FROM users WHERE company_id = $1 AND role = 'admin' AND is_active = 1`,
+          `SELECT COUNT(*) as count, 
+                  COUNT(CASE WHEN role = 'admin' THEN 1 END) as admins,
+                  COUNT(CASE WHEN role = 'project_manager' THEN 1 END) as pms
+           FROM users 
+           WHERE company_id = $1 AND is_active = 1`,
           [companyId]
         );
         
-        return `Your team has ${users.rows[0].count} active users, including ${admins.rows[0].count} administrators.`;
+        return `Your team has ${users.rows[0].count} active users, including ${users.rows[0].admins} administrators and ${users.rows[0].pms} project managers.`;
       }
       
-      // 8. Subscription Questions
-      if (lowerQuestion.includes('subscription') || lowerQuestion.includes('plan')) {
+      // 8. Subscription/Billing Questions
+      if (lowerQuestion.includes('subscription') || lowerQuestion.includes('plan') || 
+          lowerQuestion.includes('billing') || lowerQuestion.includes('trial')) {
         const sub = await db.query(`
-          SELECT sp.plan_name, cs.status, cs.end_date, cs.is_trial
+          SELECT sp.plan_name, cs.status, cs.end_date, cs.is_trial, cs.start_date
           FROM company_subscriptions cs
           JOIN subscription_plans sp ON cs.plan_id = sp.id
           WHERE cs.company_id = $1 AND cs.status = 'active'
@@ -174,11 +236,38 @@ Keep answers concise, practical, and actionable (2-4 sentences max).
         if (sub.rows[0]) {
           let response = `You are on the ${sub.rows[0].plan_name} plan.`;
           if (sub.rows[0].is_trial) {
-            response += ` Your trial ends on ${new Date(sub.rows[0].end_date).toLocaleDateString()}.`;
+            const daysLeft = Math.ceil((new Date(sub.rows[0].end_date) - new Date()) / (1000 * 60 * 60 * 24));
+            response += ` Your trial ends on ${new Date(sub.rows[0].end_date).toLocaleDateString()} (${daysLeft} days remaining).`;
+          } else {
+            response += ` Your subscription is active and in good standing.`;
           }
           return response;
         }
-        return "You don't have an active subscription. Please contact support to set up a plan.";
+        return "You don't have an active subscription. Please contact sales@bochi.ke to set up a plan.";
+      }
+      
+      // 9. Task Questions
+      if (lowerQuestion.includes('task') || lowerQuestion.includes('todo') || lowerQuestion.includes('action item')) {
+        const tasks = await db.query(`
+          SELECT COUNT(*) as total,
+                 COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
+                 COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as in_progress,
+                 COUNT(CASE WHEN status = 'not_started' THEN 1 END) as not_started
+          FROM project_gantt_tasks
+          WHERE company_id = $1
+        `, [companyId]);
+        
+        return `You have ${tasks.rows[0].total} total tasks across all projects. ${tasks.rows[0].completed} completed, ${tasks.rows[0].in_progress} in progress, ${tasks.rows[0].not_started} not started.`;
+      }
+      
+      // 10. Document Questions
+      if (lowerQuestion.includes('document') || lowerQuestion.includes('file') || lowerQuestion.includes('upload')) {
+        const docs = await db.query(
+          `SELECT COUNT(*) as count FROM project_documents WHERE company_id = $1`,
+          [companyId]
+        );
+        
+        return `You have ${docs.rows[0].count} documents stored in the system across all projects.`;
       }
       
       return null;
@@ -187,6 +276,13 @@ Keep answers concise, practical, and actionable (2-4 sentences max).
       console.error('Data fetch error:', error);
       return null;
     }
+  }
+
+  /**
+   * Submit feedback for training
+   */
+  static async submitFeedback(question, answer, isCorrect, userId) {
+    return await TrainingDataService.saveTrainingExample(question, answer, isCorrect, userId);
   }
 
   /**
@@ -201,9 +297,14 @@ Keep answers concise, practical, and actionable (2-4 sentences max).
         return "I couldn't find that project. Please make sure you have access to it.";
       }
       
-      // 2. Build the prompt with real data
+      // 2. Check knowledge base for project-related help
+      const knowledge = KnowledgeBase.getFormattedKnowledge(question);
+      
+      // 3. Build the prompt with real data
       const prompt = `
 You are an AI assistant for Bochi Construction Suite, helping construction professionals manage their projects.
+
+${knowledge ? `\n📚 HELPFUL INFORMATION:\n${knowledge}\n` : ''}
 
 PROJECT INFORMATION (REAL DATA):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -233,7 +334,7 @@ ${projectContext.recent_activities || 'No recent activities'}
 USER QUESTION: "${question}"
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Please provide a helpful, professional answer based ONLY on the project data above.
+Please provide a helpful, professional answer based on the project data above.
 - Be concise (2-4 sentences)
 - Include specific numbers where relevant
 - If the question asks about something not in the data, say so politely
@@ -248,7 +349,7 @@ Please provide a helpful, professional answer based ONLY on the project data abo
           },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.5,
+        temperature: 0.4,
         max_tokens: 500
       });
       
@@ -295,7 +396,7 @@ Be professional, transparent, and reassuring (2-4 sentences).
       const response = await groq.chat.completions.create({
         model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.5,
+        temperature: 0.4,
         max_tokens: 500
       });
       
@@ -311,7 +412,6 @@ Be professional, transparent, and reassuring (2-4 sentences).
    * Verify stakeholder has access to a project
    */
   static async verifyStakeholderAccess(projectId, userId) {
-    const { getDb } = require('../config/database');
     const db = await getDb();
     
     try {
@@ -331,7 +431,6 @@ Be professional, transparent, and reassuring (2-4 sentences).
    * Get limited project context for stakeholders (no financial data)
    */
   static async getStakeholderProjectContext(projectId, userId) {
-    const { getDb } = require('../config/database');
     const db = await getDb();
     
     try {
@@ -399,7 +498,6 @@ Be professional, transparent, and reassuring (2-4 sentences).
    * Get all project context data (Full access)
    */
   static async getProjectContext(projectId, userId) {
-    const { getDb } = require('../config/database');
     const db = await getDb();
     
     try {
@@ -486,6 +584,10 @@ Be professional, transparent, and reassuring (2-4 sentences).
     try {
       const context = await this.getProjectContext(projectId, userId);
       
+      if (!context) {
+        return "Unable to generate summary: Project not found.";
+      }
+      
       const prompt = `
 Based on this project data, write a brief executive summary (2-3 sentences):
 
@@ -500,8 +602,8 @@ Summary:`;
       const response = await groq.chat.completions.create({
         model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.5,
-        max_tokens: 150
+        temperature: 0.4,
+        max_tokens: 200
       });
       
       return response.choices[0].message.content;
