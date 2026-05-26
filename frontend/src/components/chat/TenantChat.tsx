@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  MessageCircle, Send, Loader2, X, Sparkles, 
-  ChevronDown, ChevronUp, Building2, Minus
+  Send, Loader2, X, Sparkles, 
+  ChevronDown, Building2
 } from 'lucide-react';
 import { API_BASE_URL } from '@/config/api';
 
@@ -33,24 +33,6 @@ export function TenantChat({ projectId, projectName }: TenantChatProps) {
   ]);
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
-
-  // Detect dark mode
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  useEffect(() => {
-    // Check initial dark mode
-    const checkDarkMode = () => {
-      setIsDarkMode(document.documentElement.classList.contains('dark'));
-    };
-    
-    checkDarkMode();
-    
-    // Watch for dark mode changes
-    const observer = new MutationObserver(checkDarkMode);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    
-    return () => observer.disconnect();
-  }, []);
 
   // Tenant-specific suggestions
   const getTenantSuggestions = () => {
@@ -154,35 +136,39 @@ export function TenantChat({ projectId, projectName }: TenantChatProps) {
 
   return (
     <div className="fixed bottom-6 right-6 w-[380px] max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-3 text-white flex justify-between items-center cursor-pointer"
-           onClick={() => setIsMinimized(!isMinimized)}>
-        <div className="flex items-center gap-2">
-          <Building2 size={18} />
-          <h3 className="font-semibold text-sm">Bochi Assistant</h3>
-          <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">AI</span>
-        </div>
-        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-          <button
+      {/* Header - Fixed layout with buttons always visible */}
+      <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-3 text-white">
+        <div className="flex justify-between items-center w-full">
+          <div 
+            className="flex items-center gap-2 cursor-pointer flex-1 min-w-0"
             onClick={() => setIsMinimized(!isMinimized)}
-            className="p-1 hover:bg-white/20 rounded transition"
-            title={isMinimized ? "Expand" : "Minimize"}
           >
-            <ChevronDown size={16} className={`transition-transform ${isMinimized ? 'rotate-180' : ''}`} />
-          </button>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="p-1 hover:bg-white/20 rounded transition"
-            title="Close"
-          >
-            <X size={16} />
-          </button>
+            <Building2 size={18} className="flex-shrink-0" />
+            <h3 className="font-semibold text-sm truncate">Bochi Assistant</h3>
+            <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full flex-shrink-0">AI</span>
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+            <button
+              onClick={() => setIsMinimized(!isMinimized)}
+              className="p-1.5 hover:bg-white/20 rounded transition"
+              title={isMinimized ? "Expand" : "Minimize"}
+            >
+              <ChevronDown size={16} className={`transition-transform ${isMinimized ? 'rotate-180' : ''}`} />
+            </button>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="p-1.5 hover:bg-white/20 rounded transition"
+              title="Close"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
       </div>
       
       {!isMinimized && (
         <>
-          {/* Messages Area - Limited height with scroll */}
+          {/* Messages Area */}
           <div className="h-[350px] overflow-y-auto p-3 bg-gray-50 dark:bg-gray-800/50 space-y-3">
             {messages.map((message) => (
               <div

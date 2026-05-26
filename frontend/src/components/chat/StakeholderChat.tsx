@@ -113,30 +113,33 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
 
   return (
     <div className="fixed bottom-6 right-6 w-[380px] max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
-      {/* Header - Click to minimize, buttons to close */}
-      <div 
-        className="bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-3 text-white flex justify-between items-center"
-      >
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsMinimized(!isMinimized)}>
-          <Eye size={18} />
-          <h3 className="font-semibold text-sm">Project Assistant</h3>
-          <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Stakeholder AI</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
+      {/* Header - Fixed layout with buttons always visible */}
+      <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-3 text-white">
+        <div className="flex justify-between items-center w-full">
+          <div 
+            className="flex items-center gap-2 cursor-pointer flex-1 min-w-0"
             onClick={() => setIsMinimized(!isMinimized)}
-            className="p-1 hover:bg-white/20 rounded transition"
-            title={isMinimized ? "Expand" : "Minimize"}
           >
-            <ChevronDown size={16} className={`transition-transform ${isMinimized ? 'rotate-180' : ''}`} />
-          </button>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="p-1 hover:bg-white/20 rounded transition"
-            title="Close"
-          >
-            <X size={16} />
-          </button>
+            <Eye size={18} className="flex-shrink-0" />
+            <h3 className="font-semibold text-sm truncate">Project Assistant</h3>
+            <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full flex-shrink-0">Stakeholder AI</span>
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+            <button
+              onClick={() => setIsMinimized(!isMinimized)}
+              className="p-1.5 hover:bg-white/20 rounded transition"
+              title={isMinimized ? "Expand" : "Minimize"}
+            >
+              <ChevronDown size={16} className={`transition-transform ${isMinimized ? 'rotate-180' : ''}`} />
+            </button>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="p-1.5 hover:bg-white/20 rounded transition"
+              title="Close"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
       </div>
       
