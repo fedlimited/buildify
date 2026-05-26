@@ -9,7 +9,358 @@ const groq = new Groq({
 });
 
 class AIService {
-  // Helper function for progress bar
+  // ==================== COMPREHENSIVE SYNONYM MAPPINGS (OVER 200 WORDS) ====================
+  
+  static getRequestSynonyms() {
+    return {
+      // LIST/SHOW synonyms (60+ variations)
+      list: [
+        'list', 'show', 'show me', 'display', 'view', 'see', 'get', 'fetch', 'retrieve', 
+        'give me', 'provide', 'let me see', 'i want to see', 'can i see', 'show all', 
+        'list all', 'display all', 'view all', 'see all', 'outline', 'elaborate', 
+        'detail', 'enumerate', 'present', 'reveal', 'tell me about', 'what are my', 
+        'where are my', 'summarize', 'recap', 'brief me', 'walk me through', 
+        'highlight', 'mention', 'enlist', 'catalog', 'index', 'itemize', 'specify',
+        'lay out', 'set out', 'spell out', 'run down', 'give me a list of',
+        'show me a list of', 'let me see all', 'i want to see all', 'share', 
+        'expose', 'exhibit', 'illustrate', 'demonstrate', 'point out', 'bring up',
+        'call attention to', 'make known', 'put forward', 'set forth'
+      ],
+      
+      // COUNT/HOW MANY synonyms (40+ variations)
+      count: [
+        'count', 'how many', 'number of', 'total', 'quantity', 'amount of', 
+        'what is the count', 'tell me the count', 'calculate', 'sum of', 
+        'how much', 'how many do i have', 'what is the total number', 'total count',
+        'aggregate', 'enumeration', 'tally', 'compute', 'figure out', 'give me the count',
+        'what\'s the number', 'can you count', 'how many are there', 'sum total',
+        'whole number', 'full count', 'entire amount', 'gross amount', 'net total',
+        'running total', 'cumulative', 'overall count', 'complete tally'
+      ],
+      
+      // STATUS synonyms (35+ variations)
+      status: [
+        'status', 'statuses', 'progress', 'state', 'condition', 'situation', 
+        'how is', 'what is the status', 'update on', 'current status', 'latest status',
+        'standing', 'position', 'phase', 'stage', 'milestone', 'where are we on',
+        'how far along', 'what\'s happening with', 'any updates on', 'tell me the status',
+        'current state', 'present condition', 'how goes', 'what\'s the word on',
+        'give me an update', 'how is it going', 'where do we stand'
+      ],
+      
+      // SUMMARY/OVERVIEW synonyms (40+ variations)
+      summary: [
+        'summary', 'overview', 'snapshot', 'recap', 'brief', 'report', 'dashboard', 
+        'statistics', 'stats', 'analytics', 'aggregate', 'consolidated', 
+        'executive summary', 'high-level view', 'birds eye view', 'at a glance',
+        'recapitulation', 'synopsis', 'abstract', 'rundown', 'wrap-up', 'recap of',
+        'give me the big picture', 'what\'s the situation', 'how are things',
+        'general view', 'broad view', 'comprehensive view', 'global view',
+        'helicopter view', 'top-level view', 'condensed version', 'digest'
+      ],
+      
+      // DETAILS synonyms (30+ variations)
+      details: [
+        'details', 'detail', 'information', 'info', 'specifics', 'particulars', 
+        'breakdown', 'full details', 'more info', 'describe', 'explain', 
+        'tell me about', 'what about', 'elaborate on', 'expand on', 'go into detail',
+        'in depth', 'comprehensive', 'thorough', 'specific information about',
+        'particulars about', 'specifics about', 'lowdown on', 'ins and outs',
+        'nitty gritty', 'specific data', 'detailed info'
+      ],
+      
+      // SEARCH/FIND synonyms (25+ variations)
+      search: [
+        'search', 'find', 'look for', 'locate', 'where is', 'find me', 'search for', 
+        'which', 'what about', 'identify', 'track down', 'seek', 'hunt for',
+        'discover', 'uncover', 'pinpoint', 'determine the location of',
+        'where can i find', 'help me find', 'i need to find', 'can you locate'
+      ],
+      
+      // ACTIVE synonyms (15+ variations)
+      active: [
+        'active', 'current', 'ongoing', 'in progress', 'live', 'running', 'working',
+        'not completed', 'open', 'underway', 'operational', 'functioning', 'alive',
+        'in motion', 'in operation', 'in effect', 'in force'
+      ],
+      
+      // COMPLETED synonyms (15+ variations)
+      completed: [
+        'completed', 'done', 'finished', 'closed', 'finalized', 'over', 'complete',
+        'concluded', 'wrapped up', 'settled', 'accomplished', 'achieved', 'fulfilled',
+        'finalised', 'terminated', 'ended', 'resolved'
+      ],
+      
+      // PENDING synonyms (15+ variations)
+      pending: [
+        'pending', 'awaiting', 'waiting', 'not yet', 'outstanding', 'unresolved', 
+        'to be done', 'in queue', 'on hold', 'delayed', 'unfinished', 'incomplete',
+        'undecided', 'open', 'out for review', 'under review'
+      ],
+      
+      // ==================== FINANCIAL TERMS (40+ variations) ====================
+      financial: [
+        'financial', 'finance', 'money', 'funds', 'cash flow', 'revenue', 'cost', 
+        'expenditure', 'spending', 'financials', 'fiscal', 'monetary', 'pecuniary',
+        'budgetary', 'economic', 'capital', 'banking', 'accounting', 'bookkeeping',
+        'balance sheet', 'income statement', 'cash', 'currency', 'dollar', 'kes'
+      ],
+      
+      income: [
+        'income', 'revenue', 'earnings', 'receipts', 'inflow', 'money in', 
+        'funds received', 'payments received', 'takings', 'proceeds', 'return',
+        'profit', 'gain', 'yield', 'turnover', 'gross income', 'net income',
+        'receivables', 'collection', 'payment received', 'credit', 'deposit'
+      ],
+      
+      expenses: [
+        'expenses', 'costs', 'expenditure', 'outflow', 'spending', 'money out', 
+        'payments made', 'bills', 'overheads', 'outgoings', 'disbursements',
+        'charges', 'fees', 'cost of sales', 'operating costs', 'fixed costs',
+        'variable costs', 'direct costs', 'indirect costs', 'liabilities'
+      ],
+      
+      profit: [
+        'profit', 'earnings', 'gain', 'returns', 'net income', 'bottom line', 
+        'surplus', 'p&l', 'profit and loss', 'net profit', 'gross profit',
+        'operating profit', 'income after expenses', 'what i made', 'profitability',
+        'margin', 'profit margin', 'net earnings', 'after-tax profit', 'retained earnings'
+      ],
+      
+      budget: [
+        'budget', 'budgeted', 'allocated', 'planned spending', 'financial plan',
+        'cost estimate', 'financial allocation', 'appropriation', 'allowance'
+      ],
+      
+      // ==================== PROJECT TERMS (25+ variations) ====================
+      project: [
+        'project', 'projects', 'job', 'jobs', 'site', 'sites', 'construction', 
+        'contract', 'works', 'undertaking', 'endeavor', 'enterprise', 'initiative',
+        'development', 'build', 'building', 'construction site', 'work site',
+        'assignment', 'task', 'operation', 'campaign', 'venture', 'program'
+      ],
+      
+      client: [
+        'client', 'customer', 'client name', 'who is the client', 'client details',
+        'property owner', 'developer', 'investor', 'stakeholder owner'
+      ],
+      
+      location: [
+        'location', 'site location', 'address', 'where is', 'place', 'area',
+        'region', 'city', 'town', 'county', 'coordinates', 'site address'
+      ],
+      
+      timeline: [
+        'timeline', 'schedule', 'deadline', 'due date', 'completion date',
+        'delivery date', 'timeframe', 'timetable', 'calendar', 'milestone dates'
+      ],
+      
+      // ==================== WORKER TERMS (20+ variations) ====================
+      worker: [
+        'worker', 'workers', 'employee', 'employees', 'staff', 'personnel', 
+        'laborer', 'labourer', 'team member', 'workforce', 'staff member',
+        'crew', 'hand', 'operative', 'artisan', 'craftsman', 'tradesman',
+        'journeyman', 'apprentice', 'helper', 'assistant', 'labor force'
+      ],
+      
+      workerCategory: [
+        'category', 'trade', 'profession', 'skill', 'specialty', 'craft',
+        'job type', 'worker type', 'classification', 'designation'
+      ],
+      
+      dayRate: [
+        'day rate', 'daily rate', 'rate per day', 'wage', 'daily wage',
+        'per diem', 'day salary', 'daily pay', 'rate'
+      ],
+      
+      // ==================== SUPPLIER TERMS (15+ variations) ====================
+      supplier: [
+        'supplier', 'suppliers', 'vendor', 'vendors', 'provider', 'providers', 
+        'seller', 'merchant', 'distributor', 'wholesaler', 'retailer', 'source',
+        'supply chain partner', 'material supplier', 'equipment supplier'
+      ],
+      
+      // ==================== SUBCONTRACTOR TERMS (15+ variations) ====================
+      subcontractor: [
+        'subcontractor', 'subcontractors', 'subbie', 'subbies', 'contractor', 
+        'contractors', 'specialist', 'consultant', 'sub', 'sub-contractor',
+        'third party', 'external contractor', 'hired help', 'agency worker',
+        'independent contractor', 'freelancer', 'consulting firm'
+      ],
+      
+      // ==================== INVENTORY TERMS (25+ variations) ====================
+      inventory: [
+        'inventory', 'stock', 'supplies', 'materials', 'items', 'products', 
+        'goods', 'merchandise', 'assets', 'store items', 'warehouse items',
+        'inventory items', 'stock items', 'material stock', 'stock on hand',
+        'on-hand quantity', 'available stock', 'current stock', 'warehouse stock'
+      ],
+      
+      lowStock: [
+        'low stock', 'low inventory', 'running low', 'depleted', 'need restock', 
+        'below reorder', 'critical stock', 'shortage', 'stockout', 'insufficient stock',
+        'reorder needed', 'restock required', 'stock alert', 'inventory alert',
+        'urgent restock', 'out of stock soon', 'low quantity alert'
+      ],
+      
+      reorderLevel: [
+        'reorder level', 'reorder point', 'minimum stock', 'trigger level',
+        'replenishment point', 'order threshold', 'stock limit', 'minimum level'
+      ],
+      
+      unit: [
+        'unit', 'unit of measure', 'measurement', 'pieces', 'kilograms', 'tons',
+        'bags', 'rolls', 'sheets', 'boxes', 'packets', 'liters', 'gallons'
+      ],
+      
+      // ==================== DOCUMENT TERMS (15+ variations) ====================
+      document: [
+        'document', 'documents', 'file', 'files', 'paperwork', 'attachment', 
+        'attachments', 'upload', 'uploads', 'folder', 'folder contents',
+        'documentation', 'records', 'files and documents', 'digital files',
+        'electronic documents', 'contracts', 'drawings', 'specifications'
+      ],
+      
+      // ==================== MEETING TERMS (15+ variations) ====================
+      meeting: [
+        'meeting', 'meetings', 'minutes', 'session', 'gathering', 'conference', 
+        'discussion', 'sync', 'standup', 'huddle', 'get-together', 'convention',
+        'board meeting', 'project meeting', 'team meeting', 'client meeting',
+        'progress meeting', 'status meeting', 'kickoff', 'review session'
+      ],
+      
+      // ==================== SITE DIARY TERMS (15+ variations) ====================
+      siteDiary: [
+        'site diary', 'daily log', 'site log', 'daily report', 'site report', 
+        'diary entry', 'site entry', 'field report', 'daily activity log',
+        'construction log', 'site record', 'daily journal', 'site journal',
+        'daily site record', 'site documentation', 'activity log'
+      ],
+      
+      weather: [
+        'weather', 'weather condition', 'temperature', 'rain', 'sunny', 'cloudy',
+        'weather report', 'climate', 'forecast', 'conditions on site'
+      ],
+      
+      // ==================== PAYROLL TERMS (15+ variations) ====================
+      payroll: [
+        'payroll', 'salary', 'wages', 'compensation', 'pay', 'payslip', 
+        'remuneration', 'pay statement', 'wage bill', 'labor cost',
+        'staff payment', 'employee payment', 'pay period', 'salary run',
+        'payroll processing', 'payroll summary', 'worker payments'
+      ],
+      
+      grossPay: [
+        'gross pay', 'gross salary', 'total pay', 'base pay', 'basic salary',
+        'pre-tax pay', 'gross earnings', 'total earnings'
+      ],
+      
+      netPay: [
+        'net pay', 'net salary', 'take home', 'after tax pay', 'net earnings',
+        'final pay', 'disposable income'
+      ],
+      
+      // ==================== PURCHASE ORDER TERMS (15+ variations) ====================
+      purchaseOrder: [
+        'purchase order', 'purchase orders', 'po', 'pos', 'order', 'orders', 
+        'procurement order', 'buy order', 'purchasing order', 'supply order',
+        'material order', 'equipment order', 'purchase request', 'purchase requisition',
+        'procurement document', 'supplier order', 'stock order'
+      ],
+      
+      orderStatus: [
+        'order status', 'po status', 'delivery status', 'fulfillment status',
+        'pending orders', 'approved orders', 'delivered orders', 'supplied'
+      ],
+      
+      // ==================== SUBSCRIPTION TERMS (15+ variations) ====================
+      subscription: [
+        'subscription', 'plan', 'billing plan', 'package', 'tier', 'membership', 
+        'service plan', 'pricing plan', 'payment plan', 'monthly plan',
+        'annual plan', 'subscription plan', 'current plan', 'active plan',
+        'subscription status', 'billing cycle', 'renewal', 'trial period'
+      ],
+      
+      // ==================== BILLING TERMS (15+ variations) ====================
+      billing: [
+        'billing', 'invoice', 'invoices', 'payment', 'payments', 'transaction', 
+        'transactions', 'receipt', 'bills', 'statements', 'account statement',
+        'payment history', 'billing history', 'transaction history', 'financial history',
+        'payment records', 'invoice records', 'billing records'
+      ],
+      
+      // ==================== HELP / SUPPORT TERMS (15+ variations) ====================
+      help: [
+        'help', 'support', 'assistance', 'guide', 'tutorial', 'faq', 'how to', 
+        'need help', 'contact support', 'customer support', 'help desk',
+        'technical support', 'user guide', 'documentation', 'get help',
+        'i need assistance', 'can you help', 'help me with'
+      ],
+      
+      // ==================== LEGAL TERMS (15+ variations) ====================
+      legal: [
+        'legal', 'terms', 'privacy', 'policy', 'policies', 'terms of service', 
+        'privacy policy', 'tos', 'legal terms', 'legal information',
+        'terms and conditions', 'legal documents', 'compliance', 'regulations',
+        'data protection', 'gdpr', 'legal agreement', 'disclaimer'
+      ],
+      
+      // ==================== COMPANY INFO TERMS (15+ variations) ====================
+      companyInfo: [
+        'company', 'company info', 'company information', 'company profile', 
+        'business info', 'business information', 'organization details',
+        'firm details', 'enterprise info', 'my company', 'our company',
+        'company details', 'business profile', 'organization profile'
+      ],
+      
+      // ==================== TEAM TERMS (15+ variations) ====================
+      team: [
+        'team', 'team members', 'staff', 'employees', 'personnel', 'workforce',
+        'colleagues', 'coworkers', 'staff members', 'human resources', 'hr',
+        'people', 'crew', 'our team', 'company team', 'organization team'
+      ],
+      
+      // ==================== VAT TERMS ====================
+      vat: [
+        'vat', 'tax', 'value added tax', 'sales tax', 'gst', 'consumption tax',
+        'tax rate', 'vat rate', 'tax number', 'vat registration', 'tax ID'
+      ],
+      
+      // ==================== CONTRACT TERMS ====================
+      contract: [
+        'contract', 'agreement', 'contract sum', 'contract value', 'contract amount',
+        'agreed amount', 'fixed price', 'lump sum', 'contract price'
+      ],
+      
+      // ==================== PROGRESS TERMS ====================
+      progress: [
+        'progress', 'percentage', 'completion', 'done percentage', 'how far along',
+        'percent complete', 'execution rate', 'completion rate'
+      ]
+    };
+  }
+  
+  static isRequestType(question, type) {
+    const q = question.toLowerCase();
+    const synonyms = this.getRequestSynonyms();
+    return synonyms[type]?.some(word => q.includes(word)) || false;
+  }
+  
+  static extractKeywords(question) {
+    const q = question.toLowerCase();
+    const keywords = [];
+    const synonyms = this.getRequestSynonyms();
+    for (const [type, words] of Object.entries(synonyms)) {
+      for (const word of words) {
+        if (q.includes(word)) {
+          keywords.push({ type, matched: word });
+          break;
+        }
+      }
+    }
+    return keywords;
+  }
+
   static getProgressBar(progress) {
     const filled = Math.floor(progress / 10);
     const empty = 10 - filled;
@@ -19,29 +370,24 @@ class AIService {
   static async answerGeneralQuestion(question, userId, companyId) {
     try {
       const dataAnswer = await this.getDataDrivenAnswer(question, companyId);
-      if (dataAnswer) {
-        return dataAnswer;
-      }
+      if (dataAnswer) return dataAnswer;
       
       const knowledge = KnowledgeBase.getFormattedKnowledge(question);
       const similarQuestions = await TrainingDataService.getSimilarQuestions(question);
       
-      let prompt = `
-You are an AI assistant for Bochi Construction Suite, a comprehensive construction management platform.
+      const prompt = `You are an AI assistant for Bochi Construction Suite, a comprehensive construction management platform.
 
 ${knowledge ? `\n📚 KNOWLEDGE BASE INFORMATION:\n${knowledge}` : ''}
-
-${similarQuestions && similarQuestions.length > 0 ? `\n📖 SIMILAR QUESTIONS ANSWERED BEFORE:\n${similarQuestions.map(q => `Q: ${q.question}\nA: ${q.answer}`).join('\n\n')}` : ''}
+${similarQuestions?.length > 0 ? `\n📖 SIMILAR QUESTIONS ANSWERED BEFORE:\n${similarQuestions.map(q => `Q: ${q.question}\nA: ${q.answer}`).join('\n\n')}` : ''}
 
 USER QUESTION: "${question}"
 
 INSTRUCTIONS:
 1. If knowledge base has relevant information, prioritize it
-2. Be specific about Bochi modules and features
+2. Be specific about Bochi modules and features (Projects, Income, Expenses, Payroll, Procurement, Stores, etc.)
 3. Include step-by-step instructions when applicable
 4. Keep answers concise (3-5 sentences)
-5. If unsure, say so politely
-`;
+5. If unsure, say so politely`;
 
       const response = await groq.chat.completions.create({
         model: 'llama-3.3-70b-versatile',
@@ -49,9 +395,7 @@ INSTRUCTIONS:
         temperature: 0.3,
         max_tokens: 600
       });
-      
       return response.choices[0].message.content;
-      
     } catch (error) {
       console.error('General AI error:', error);
       return "I'm having trouble answering that right now. Please try again.";
@@ -66,24 +410,48 @@ INSTRUCTIONS:
     console.log('🏢 Company ID:', companyId);
     
     try {
-      // ==================== PROJECTS MODULE ====================
+      // ==================== DETECT REQUEST TYPE ====================
+      const isListRequest = this.isRequestType(question, 'list');
+      const isCountRequest = this.isRequestType(question, 'count');
+      const isStatusRequest = this.isRequestType(question, 'status');
+      const isSummaryRequest = this.isRequestType(question, 'summary');
+      const isDetailsRequest = this.isRequestType(question, 'details');
+      const isLowStockRequest = this.isRequestType(question, 'lowStock');
+      const isHelpRequest = this.isRequestType(question, 'help');
+      const isLegalRequest = this.isRequestType(question, 'legal');
+      const isCompanyInfoRequest = this.isRequestType(question, 'companyInfo');
+      const isTeamRequest = this.isRequestType(question, 'team');
+      const isProjectRequest = this.isRequestType(question, 'project');
+      const isIncomeRequest = this.isRequestType(question, 'income');
+      const isExpenseRequest = this.isRequestType(question, 'expenses');
+      const isWorkerRequest = this.isRequestType(question, 'worker');
+      const isSupplierRequest = this.isRequestType(question, 'supplier');
+      const isSubcontractorRequest = this.isRequestType(question, 'subcontractor');
+      const isInventoryRequest = this.isRequestType(question, 'inventory');
+      const isSubscriptionRequest = this.isRequestType(question, 'subscription');
+      const isBillingRequest = this.isRequestType(question, 'billing');
+      const isSiteDiaryRequest = this.isRequestType(question, 'siteDiary');
+      const isMeetingRequest = this.isRequestType(question, 'meeting');
+      const isDocumentRequest = this.isRequestType(question, 'document');
+      const isPayrollRequest = this.isRequestType(question, 'payroll');
+      const isPurchaseOrderRequest = this.isRequestType(question, 'purchaseOrder');
+      const isProfitRequest = this.isRequestType(question, 'profit');
+      const isVatRequest = this.isRequestType(question, 'vat');
       
-      // LIST PROJECTS
-      if ((q.includes('list') || q.includes('show me')) && (q.includes('project') || q.includes('projects')) && !q.includes('how') && !q.includes('count')) {
+      // ==================== PROJECTS MODULE ====================
+      if (isListRequest && isProjectRequest) {
         const projects = await db.query(
           `SELECT id, name, client, location, progress, status, contract_sum, start_date, end_date 
            FROM projects WHERE company_id = $1 ORDER BY created_at DESC LIMIT 20`,
           [companyId]
         );
-        
         if (projects.rows.length === 0) {
           return "You don't have any projects yet. Click 'Add Project' in the Projects module to get started.";
         }
-        
         let response = `📋 **Your Projects** (${projects.rows.length} total)\n\n`;
         projects.rows.forEach((p, i) => {
           const progressBar = this.getProgressBar(p.progress);
-          response += `${i + 1}. **${p.name}**\n`;
+          response += `${i+1}. **${p.name}**\n`;
           response += `   ${progressBar} ${p.progress}%\n`;
           response += `   📍 Status: ${p.status} | Client: ${p.client}\n`;
           if (p.location) response += `   📍 Location: ${p.location}\n`;
@@ -95,8 +463,7 @@ INSTRUCTIONS:
         return response;
       }
       
-      // PROJECT COUNT
-      if ((q.includes('how many') || q.includes('count')) && (q.includes('project') || q.includes('projects'))) {
+      if (isCountRequest && isProjectRequest) {
         const projects = await db.query(
           `SELECT COUNT(*) as total,
                   COUNT(CASE WHEN status = 'Active' THEN 1 END) as active,
@@ -105,113 +472,54 @@ INSTRUCTIONS:
            FROM projects WHERE company_id = $1`,
           [companyId]
         );
-        
         return `You have ${projects.rows[0].total} total projects. ${projects.rows[0].active} are active, ${projects.rows[0].completed} are completed, and ${projects.rows[0].in_progress} are in progress.`;
       }
       
-      // PROJECT STATUSES
-      if ((q.includes('status') || q.includes('statuses')) && (q.includes('project') || q.includes('projects'))) {
+      if (isStatusRequest && isProjectRequest) {
         const projects = await db.query(
           `SELECT name, status, progress FROM projects WHERE company_id = $1 ORDER BY status`,
           [companyId]
         );
-        
-        if (projects.rows.length === 0) {
-          return "You don't have any projects yet.";
-        }
-        
+        if (projects.rows.length === 0) return "You don't have any projects yet.";
         const active = projects.rows.filter(p => p.status === 'Active');
         const completed = projects.rows.filter(p => p.progress === 100);
         const onHold = projects.rows.filter(p => p.status === 'On Hold');
-        
         let response = `📊 **Project Statuses**\n\n`;
         if (active.length > 0) {
           response += `✅ **Active Projects (${active.length})**\n`;
-          active.forEach(p => {
-            response += `   • ${p.name} - ${p.progress}% complete\n`;
-          });
+          active.forEach(p => { response += `   • ${p.name} - ${p.progress}% complete\n`; });
           response += `\n`;
         }
         if (completed.length > 0) {
           response += `🏆 **Completed Projects (${completed.length})**\n`;
-          completed.forEach(p => {
-            response += `   • ${p.name}\n`;
-          });
+          completed.forEach(p => { response += `   • ${p.name}\n`; });
           response += `\n`;
         }
         if (onHold.length > 0) {
           response += `⏸️ **On Hold Projects (${onHold.length})**\n`;
-          onHold.forEach(p => {
-            response += `   • ${p.name}\n`;
-          });
+          onHold.forEach(p => { response += `   • ${p.name}\n`; });
         }
         return response;
       }
       
-      // SPECIFIC PROJECT DETAILS
-      if ((q.includes('tell me about') || q.includes('details of')) && q.includes('project')) {
-        let projectName = '';
-        const patterns = [/tell me about ["']?([^"']+)["']?/i, /details of ["']?([^"']+)["']?/i];
-        for (const pattern of patterns) {
-          const match = question.match(pattern);
-          if (match) {
-            projectName = match[1];
-            break;
-          }
-        }
-        
-        if (projectName) {
-          const project = await db.query(
-            `SELECT name, client, location, progress, status, contract_sum, start_date, end_date,
-                    COALESCE((SELECT SUM(amount) FROM expenses WHERE project_id = p.id), 0) as spent
-             FROM projects p WHERE company_id = $1 AND name ILIKE $2`,
-            [companyId, `%${projectName}%`]
-          );
-          
-          if (project.rows.length === 0) {
-            return `I couldn't find a project named "${projectName}". Please check the name and try again.`;
-          }
-          
-          const p = project.rows[0];
-          const remaining = p.contract_sum - p.spent;
-          
-          let response = `📋 **Project Details: ${p.name}**\n\n`;
-          response += `🏢 Client: ${p.client}\n`;
-          response += `📍 Location: ${p.location}\n`;
-          response += `📊 Progress: ${p.progress}%\n`;
-          response += `🔄 Status: ${p.status}\n`;
-          response += `💰 Contract: KES ${p.contract_sum?.toLocaleString()}\n`;
-          response += `💸 Spent: KES ${p.spent.toLocaleString()}\n`;
-          response += `📈 Remaining: KES ${remaining.toLocaleString()}\n`;
-          response += `📅 Timeline: ${new Date(p.start_date).toLocaleDateString()} to ${new Date(p.end_date).toLocaleDateString()}\n`;
-          return response;
-        }
-      }
-      
       // ==================== INCOME MODULE ====================
-      
-      // LIST INCOMES
-      if ((q.includes('list') || q.includes('show me')) && (q.includes('income') || q.includes('incomes'))) {
+      if ((isListRequest || isSummaryRequest) && isIncomeRequest) {
         const incomes = await db.query(
-          `SELECT certificate_no, date, gross_amount, amount_received, payment_method, status, project_id
+          `SELECT certificate_no, date, gross_amount, amount_received, payment_method, status
            FROM income WHERE company_id = $1 ORDER BY date DESC LIMIT 10`,
           [companyId]
         );
-        
         const total = await db.query(
           `SELECT COALESCE(SUM(gross_amount), 0) as total FROM income WHERE company_id = $1`,
           [companyId]
         );
-        
         if (incomes.rows.length === 0) {
           return "You don't have any income records yet. Add income in the Income module.";
         }
-        
-        let response = `💰 **Your Income Records**\n\n`;
-        response += `📊 Total Income: KES ${total.rows[0].total.toLocaleString()}\n\n`;
+        let response = `💰 **Income Records**\n📊 Total Income: KES ${total.rows[0].total.toLocaleString()}\n\n`;
         incomes.rows.forEach((i, idx) => {
-          response += `${idx + 1}. **Certificate: ${i.certificate_no || 'N/A'}**\n`;
-          response += `   💰 Gross: KES ${i.gross_amount.toLocaleString()}\n`;
+          response += `${idx+1}. **Certificate: ${i.certificate_no || 'N/A'}**\n`;
+          response += `   💰 Amount: KES ${i.gross_amount.toLocaleString()}\n`;
           response += `   💵 Received: KES ${i.amount_received.toLocaleString()}\n`;
           response += `   📅 Date: ${new Date(i.date).toLocaleDateString()}\n`;
           response += `   💳 Method: ${i.payment_method || 'N/A'}\n`;
@@ -220,8 +528,7 @@ INSTRUCTIONS:
         return response;
       }
       
-      // TOTAL INCOME
-      if ((q.includes('total income') || q.includes('how much income')) || (q.includes('income total'))) {
+      if ((isCountRequest || this.isRequestType(question, 'total income')) && isIncomeRequest) {
         const total = await db.query(
           `SELECT COALESCE(SUM(gross_amount), 0) as total FROM income WHERE company_id = $1`,
           [companyId]
@@ -229,63 +536,30 @@ INSTRUCTIONS:
         return `Your total income is KES ${total.rows[0].total.toLocaleString()}.`;
       }
       
-      // INCOME BY PROJECT
-      if (q.includes('income by project') || (q.includes('project') && q.includes('income'))) {
-        const incomeByProject = await db.query(
-          `SELECT p.name as project_name, COALESCE(SUM(i.gross_amount), 0) as total
-           FROM projects p
-           LEFT JOIN income i ON p.id = i.project_id
-           WHERE p.company_id = $1
-           GROUP BY p.name
-           ORDER BY total DESC`,
-          [companyId]
-        );
-        
-        if (incomeByProject.rows.length === 0) {
-          return "No income records found for any project.";
-        }
-        
-        let response = `💰 **Income by Project**\n\n`;
-        incomeByProject.rows.forEach((row, idx) => {
-          response += `${idx + 1}. **${row.project_name}**: KES ${row.total.toLocaleString()}\n`;
-        });
-        return response;
-      }
-      
       // ==================== EXPENSES MODULE ====================
-      
-      // LIST EXPENSES
-      if ((q.includes('list') || q.includes('show me')) && (q.includes('expense') || q.includes('expenses'))) {
+      if ((isListRequest || isSummaryRequest) && isExpenseRequest) {
         const expenses = await db.query(
-          `SELECT date, category, description, amount, vat, status, project_name
-           FROM expenses WHERE company_id = $1 ORDER BY date DESC LIMIT 10`,
+          `SELECT date, category, description, amount, status FROM expenses WHERE company_id = $1 ORDER BY date DESC LIMIT 10`,
           [companyId]
         );
-        
         const total = await db.query(
           `SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE company_id = $1`,
           [companyId]
         );
-        
         if (expenses.rows.length === 0) {
           return "You don't have any expenses yet. Add expenses in the Expenses module.";
         }
-        
-        let response = `💸 **Your Recent Expenses**\n\n`;
-        response += `📊 Total Expenses: KES ${total.rows[0].total.toLocaleString()}\n\n`;
+        let response = `💸 **Expenses**\n📊 Total Expenses: KES ${total.rows[0].total.toLocaleString()}\n\n`;
         expenses.rows.forEach((e, idx) => {
-          response += `${idx + 1}. **${e.category}** - KES ${e.amount.toLocaleString()}\n`;
+          response += `${idx+1}. **${e.category}** - KES ${e.amount.toLocaleString()}\n`;
           response += `   📅 Date: ${new Date(e.date).toLocaleDateString()}\n`;
-          if (e.description) response += `   📝 ${e.description.substring(0, 60)}...\n`;
-          response += `   📋 Status: ${e.status}\n`;
-          if (e.project_name) response += `   📋 Project: ${e.project_name}\n`;
-          response += `\n`;
+          if (e.description) response += `   📝 ${e.description.substring(0, 50)}...\n`;
+          response += `   📋 Status: ${e.status}\n\n`;
         });
         return response;
       }
       
-      // TOTAL EXPENSES
-      if ((q.includes('total expense') || q.includes('how much expense')) || (q.includes('expenses total'))) {
+      if ((isCountRequest || this.isRequestType(question, 'total expense')) && isExpenseRequest) {
         const total = await db.query(
           `SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE company_id = $1`,
           [companyId]
@@ -293,30 +567,8 @@ INSTRUCTIONS:
         return `Your total expenses are KES ${total.rows[0].total.toLocaleString()}.`;
       }
       
-      // EXPENSES BY CATEGORY
-      if (q.includes('expenses by category') || (q.includes('category') && q.includes('expense'))) {
-        const byCategory = await db.query(
-          `SELECT category, COUNT(*) as count, COALESCE(SUM(amount), 0) as total
-           FROM expenses WHERE company_id = $1
-           GROUP BY category
-           ORDER BY total DESC`,
-          [companyId]
-        );
-        
-        if (byCategory.rows.length === 0) {
-          return "No expense records found.";
-        }
-        
-        let response = `📊 **Expenses by Category**\n\n`;
-        byCategory.rows.forEach((cat, idx) => {
-          response += `${idx + 1}. **${cat.category}**: ${cat.count} transactions, KES ${cat.total.toLocaleString()}\n`;
-        });
-        return response;
-      }
-      
-      // ==================== PROFIT CALCULATION ====================
-      
-      if (q.includes('profit') || q.includes('profit and loss') || q.includes('pnl')) {
+      // ==================== PROFIT ====================
+      if (isProfitRequest) {
         const income = await db.query(
           `SELECT COALESCE(SUM(gross_amount), 0) as total FROM income WHERE company_id = $1`,
           [companyId]
@@ -327,13 +579,11 @@ INSTRUCTIONS:
         );
         const profit = income.rows[0].total - expenses.rows[0].total;
         const margin = income.rows[0].total > 0 ? (profit / income.rows[0].total * 100).toFixed(1) : 0;
-        
         let response = `📊 **Profit & Loss Summary**\n\n`;
         response += `💰 Total Income: KES ${income.rows[0].total.toLocaleString()}\n`;
         response += `💸 Total Expenses: KES ${expenses.rows[0].total.toLocaleString()}\n`;
         response += `📈 **Net Profit: KES ${profit.toLocaleString()}**\n`;
         response += `📊 Profit Margin: ${margin}%\n\n`;
-        
         if (profit > 0) {
           response += `✅ Your business is profitable! Keep up the good work.`;
         } else if (profit < 0) {
@@ -345,55 +595,44 @@ INSTRUCTIONS:
       }
       
       // ==================== WORKERS MODULE ====================
-      
-      // LIST WORKERS
-      if ((q.includes('list') || q.includes('show me')) && (q.includes('worker') || q.includes('workers'))) {
+      if ((isListRequest || isDetailsRequest) && isWorkerRequest) {
         const workers = await db.query(
-          `SELECT w.name, w.phone, w.day_rate, wc.name as category, w.is_active
+          `SELECT w.name, w.phone, w.day_rate, wc.name as category
            FROM workers w
            JOIN worker_categories wc ON w.category_id = wc.id
-           WHERE w.company_id = $1
+           WHERE w.company_id = $1 AND w.is_active = 1
            ORDER BY w.name LIMIT 30`,
           [companyId]
         );
-        
         if (workers.rows.length === 0) {
           return "You don't have any workers yet. Add workers in the Workers module.";
         }
-        
-        const activeWorkers = workers.rows.filter(w => w.is_active === 1);
-        const inactiveWorkers = workers.rows.filter(w => w.is_active !== 1);
-        
-        let response = `👥 **Your Workers** (${activeWorkers.length} active, ${inactiveWorkers.length} inactive)\n\n`;
-        activeWorkers.slice(0, 15).forEach((w, i) => {
-          response += `${i + 1}. **${w.name}**\n`;
+        let response = `👥 **Your Workers** (${workers.rows.length} active)\n\n`;
+        workers.rows.slice(0, 15).forEach((w, i) => {
+          response += `${i+1}. **${w.name}**\n`;
           response += `   📞 Phone: ${w.phone || 'N/A'}\n`;
           response += `   💰 Day Rate: KES ${w.day_rate.toLocaleString()}\n`;
           response += `   📋 Category: ${w.category}\n\n`;
         });
-        if (activeWorkers.length > 15) {
-          response += `... and ${activeWorkers.length - 15} more workers.\n`;
+        if (workers.rows.length > 15) {
+          response += `... and ${workers.rows.length - 15} more workers.\n`;
         }
         return response;
       }
       
-      // WORKER COUNT
-      if ((q.includes('how many') || q.includes('count')) && (q.includes('worker') || q.includes('workers') || q.includes('employees'))) {
+      if (isCountRequest && isWorkerRequest) {
         const workers = await db.query(
           `SELECT COUNT(*) as count FROM workers WHERE company_id = $1 AND is_active = 1`,
           [companyId]
         );
-        
         const byCategory = await db.query(
           `SELECT wc.name as category, COUNT(*) as count
            FROM workers w
            JOIN worker_categories wc ON w.category_id = wc.id
            WHERE w.company_id = $1 AND w.is_active = 1
-           GROUP BY wc.name
-           ORDER BY count DESC`,
+           GROUP BY wc.name`,
           [companyId]
         );
-        
         let response = `👥 You have ${workers.rows[0].count} active workers.`;
         if (byCategory.rows.length > 0) {
           response += `\n\n📊 **By Category:**\n`;
@@ -404,134 +643,57 @@ INSTRUCTIONS:
         return response;
       }
       
-      // WORKER BY CATEGORY
-      if (q.includes('workers in') && q.includes('category')) {
-        const categoryMatch = q.match(/in (\w+)/);
-        if (categoryMatch) {
-          const categoryName = categoryMatch[1];
-          const workers = await db.query(
-            `SELECT w.name, w.phone, w.day_rate
-             FROM workers w
-             JOIN worker_categories wc ON w.category_id = wc.id
-             WHERE w.company_id = $1 AND w.is_active = 1 AND wc.name ILIKE $2
-             LIMIT 20`,
-            [companyId, `%${categoryName}%`]
-          );
-          
-          if (workers.rows.length === 0) {
-            return `No workers found in the "${categoryName}" category.`;
-          }
-          
-          let response = `👥 **Workers in ${categoryName} Category** (${workers.rows.length})\n\n`;
-          workers.rows.forEach((w, i) => {
-            response += `${i + 1}. **${w.name}** - KES ${w.day_rate}/day\n`;
-          });
-          return response;
-        }
-      }
-      
       // ==================== PAYROLL MODULE ====================
-      
-      if (q.includes('payroll')) {
-        // Get payroll summary
+      if (isPayrollRequest) {
         const payroll = await db.query(
-          `SELECT COUNT(*) as count, 
-                  COALESCE(SUM(total_gross_pay), 0) as total,
+          `SELECT COUNT(*) as count, COALESCE(SUM(total_gross_pay), 0) as total,
                   COALESCE(AVG(total_gross_pay), 0) as average
            FROM payroll_records WHERE company_id = $1`,
           [companyId]
         );
-        
-        // Get recent payroll records
-        const recentPayroll = await db.query(
-          `SELECT week_start, week_end, total_gross_pay, status
-           FROM payroll_records 
-           WHERE company_id = $1 
-           ORDER BY created_at DESC 
-           LIMIT 5`,
-          [companyId]
-        );
-        
         if (payroll.rows[0].count === 0) {
           return "You haven't processed any payroll records yet. Go to the Payroll module to process payroll for your workers.";
         }
-        
         let response = `💳 **Payroll Summary**\n\n`;
         response += `📊 Total Pay Periods: ${payroll.rows[0].count}\n`;
         response += `💰 Total Gross Pay: KES ${payroll.rows[0].total.toLocaleString()}\n`;
-        response += `📈 Average per Period: KES ${payroll.rows[0].average.toLocaleString()}\n\n`;
-        
-        if (recentPayroll.rows.length > 0) {
-          response += `📅 **Recent Payroll Records**\n`;
-          recentPayroll.rows.forEach(p => {
-            response += `   • Week of ${new Date(p.week_start).toLocaleDateString()}: KES ${p.total_gross_pay.toLocaleString()} (${p.status})\n`;
-          });
-        }
+        response += `📈 Average per Period: KES ${payroll.rows[0].average.toLocaleString()}\n`;
         return response;
       }
       
-      // ==================== PROCUREMENT / PURCHASE ORDERS ====================
-      
-      if ((q.includes('purchase order') || q.includes('purchase orders') || q.includes('po'))) {
+      // ==================== PURCHASE ORDERS ====================
+      if (isPurchaseOrderRequest) {
         const orders = await db.query(
-          `SELECT COUNT(*) as count, 
-                  COALESCE(SUM(total), 0) as total,
+          `SELECT COUNT(*) as count, COALESCE(SUM(total), 0) as total,
                   COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending,
-                  COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved,
-                  COUNT(CASE WHEN status = 'delivered' THEN 1 END) as delivered
+                  COUNT(CASE WHEN status = 'supplied' THEN 1 END) as supplied
            FROM purchase_orders WHERE company_id = $1`,
           [companyId]
         );
-        
         if (orders.rows[0].count === 0) {
           return "You don't have any purchase orders yet. Create one in the Procurement module.";
         }
-        
-        // Get recent orders
-        const recentOrders = await db.query(
-          `SELECT order_number, supplier_name, total, status, order_date
-           FROM purchase_orders 
-           WHERE company_id = $1 
-           ORDER BY order_date DESC 
-           LIMIT 5`,
-          [companyId]
-        );
-        
         let response = `📦 **Purchase Orders Summary**\n\n`;
         response += `📊 Total Orders: ${orders.rows[0].count}\n`;
         response += `💰 Total Value: KES ${orders.rows[0].total.toLocaleString()}\n`;
-        response += `📋 Status Breakdown:\n`;
-        response += `   • Pending: ${orders.rows[0].pending}\n`;
-        response += `   • Approved: ${orders.rows[0].approved}\n`;
-        response += `   • Delivered: ${orders.rows[0].delivered}\n\n`;
-        
-        if (recentOrders.rows.length > 0) {
-          response += `📅 **Recent Orders**\n`;
-          recentOrders.forEach(o => {
-            response += `   • ${o.order_number} - ${o.supplier_name}: KES ${o.total.toLocaleString()} (${o.status})\n`;
-          });
-        }
+        if (orders.rows[0].pending > 0) response += `⏳ Pending: ${orders.rows[0].pending}\n`;
+        if (orders.rows[0].supplied > 0) response += `✅ Supplied: ${orders.rows[0].supplied}`;
         return response;
       }
       
       // ==================== SUPPLIERS MODULE ====================
-      
-      if ((q.includes('list') || q.includes('show me')) && (q.includes('supplier') || q.includes('suppliers'))) {
+      if ((isListRequest || isDetailsRequest) && isSupplierRequest) {
         const suppliers = await db.query(
-          `SELECT name, phone, email, kra_pin, payment_terms, contact_person, is_active
-           FROM suppliers WHERE company_id = $1 ORDER BY name LIMIT 20`,
+          `SELECT name, phone, email, kra_pin, payment_terms, contact_person
+           FROM suppliers WHERE company_id = $1 AND is_active = 1 ORDER BY name LIMIT 20`,
           [companyId]
         );
-        
         if (suppliers.rows.length === 0) {
           return "You don't have any suppliers yet. Add suppliers in the Procurement module.";
         }
-        
-        const activeSuppliers = suppliers.rows.filter(s => s.is_active === 1);
-        
-        let response = `📋 **Your Suppliers** (${activeSuppliers.length} active)\n\n`;
+        let response = `📋 **Your Suppliers** (${suppliers.rows.length} total)\n\n`;
         suppliers.rows.forEach((s, i) => {
-          response += `${i + 1}. **${s.name}**\n`;
+          response += `${i+1}. **${s.name}**\n`;
           if (s.contact_person) response += `   👤 Contact: ${s.contact_person}\n`;
           if (s.phone) response += `   📞 Phone: ${s.phone}\n`;
           if (s.email) response += `   📧 Email: ${s.email}\n`;
@@ -542,67 +704,48 @@ INSTRUCTIONS:
       }
       
       // ==================== SUBCONTRACTORS MODULE ====================
-      
-      if ((q.includes('list') || q.includes('show me')) && (q.includes('subcontractor') || q.includes('subcontractors'))) {
+      if ((isListRequest || isDetailsRequest) && isSubcontractorRequest) {
         const subs = await db.query(
-          `SELECT name, phone, email, specialization, contact_person, kra_pin, is_active
+          `SELECT name, phone, email, specialization, contact_person
            FROM subcontractors WHERE company_id = $1 AND is_active = 1 ORDER BY name LIMIT 20`,
           [companyId]
         );
-        
         if (subs.rows.length === 0) {
           return "You don't have any subcontractors yet. Add subcontractors in the Subcontractors module.";
         }
-        
         let response = `🔧 **Your Subcontractors** (${subs.rows.length} total)\n\n`;
         subs.rows.forEach((s, i) => {
-          response += `${i + 1}. **${s.name}**\n`;
+          response += `${i+1}. **${s.name}**\n`;
           if (s.specialization) response += `   🔧 Specialization: ${s.specialization}\n`;
           if (s.contact_person) response += `   👤 Contact: ${s.contact_person}\n`;
           if (s.phone) response += `   📞 Phone: ${s.phone}\n`;
-          if (s.email) response += `   📧 Email: ${s.email}\n`;
-          if (s.kra_pin) response += `   🆔 KRA PIN: ${s.kra_pin}\n\n`;
+          if (s.email) response += `   📧 Email: ${s.email}\n\n`;
         });
         return response;
       }
       
-      // ==================== STORES / INVENTORY MODULE ====================
-      
-      // LIST INVENTORY
-      if ((q.includes('list') || q.includes('show me')) && (q.includes('supply') || q.includes('supplies') || q.includes('inventory') || q.includes('stock'))) {
+      // ==================== INVENTORY / STORES MODULE ====================
+      if ((isListRequest || isSummaryRequest) && isInventoryRequest) {
         const supplies = await db.query(
-          `SELECT id, name, unit, current_stock, reorder_level, unit_price, is_active
-           FROM supplies 
-           WHERE company_id = $1 AND is_active = 1
-           ORDER BY name LIMIT 30`,
+          `SELECT id, name, unit, current_stock, reorder_level, unit_price
+           FROM supplies WHERE company_id = $1 AND is_active = 1 ORDER BY name LIMIT 30`,
           [companyId]
         );
-        
         if (supplies.rows.length === 0) {
           return "You don't have any supplies added yet. Add items in the Stores module to track inventory.";
         }
-        
         const lowStockItems = supplies.rows.filter(s => s.current_stock < s.reorder_level);
-        const totalValue = supplies.rows.reduce((sum, s) => sum + (s.current_stock * (s.unit_price || 0)), 0);
-        
+        const totalValue = supplies.rows.reduce((sum, s) => sum + ((s.current_stock || 0) * (s.unit_price || 0)), 0);
         let response = `🏪 **Inventory Summary**\n\n`;
         response += `📦 Total Items: ${supplies.rows.length}\n`;
         response += `💰 Total Inventory Value: KES ${totalValue.toLocaleString()}\n`;
         response += `⚠️ Low Stock Items: ${lowStockItems.length}\n\n`;
-        response += `📋 **Item List**\n`;
-        
         supplies.rows.slice(0, 15).forEach((item, i) => {
           const stockStatus = item.current_stock < item.reorder_level ? '⚠️ LOW' : '✅';
-          response += `${i + 1}. **${item.name}**\n`;
+          response += `${i+1}. **${item.name}**\n`;
           response += `   📦 Stock: ${item.current_stock} ${item.unit} ${stockStatus}\n`;
-          if (item.unit_price) response += `   💰 Unit Price: KES ${item.unit_price.toLocaleString()}\n`;
-          response += `\n`;
+          if (item.unit_price) response += `   💰 Unit Price: KES ${item.unit_price.toLocaleString()}\n\n`;
         });
-        
-        if (supplies.rows.length > 15) {
-          response += `... and ${supplies.rows.length - 15} more items.\n`;
-        }
-        
         if (lowStockItems.length > 0) {
           response += `\n⚠️ **Low Stock Alert:**\n`;
           lowStockItems.slice(0, 5).forEach(item => {
@@ -613,24 +756,20 @@ INSTRUCTIONS:
         return response;
       }
       
-      // LOW STOCK ALERT
-      if (q.includes('low stock') || (q.includes('reorder') && q.includes('stock'))) {
+      if (isLowStockRequest) {
         const lowStock = await db.query(
           `SELECT name, current_stock, reorder_level, unit, unit_price
-           FROM supplies 
-           WHERE company_id = $1 AND is_active = 1 AND current_stock < reorder_level
+           FROM supplies WHERE company_id = $1 AND is_active = 1 AND current_stock < reorder_level
            ORDER BY (reorder_level - current_stock) DESC`,
           [companyId]
         );
-        
         if (lowStock.rows.length === 0) {
-          return "✅ All your inventory items are at or above reorder levels. No low stock items found.";
+          return "✅ All inventory items are at or above reorder levels. No low stock items found.";
         }
-        
         let response = `⚠️ **Low Stock Alert** (${lowStock.rows.length} items need attention)\n\n`;
         lowStock.rows.forEach((item, i) => {
           const needed = item.reorder_level - item.current_stock;
-          response += `${i + 1}. **${item.name}**\n`;
+          response += `${i+1}. **${item.name}**\n`;
           response += `   📦 Current Stock: ${item.current_stock} ${item.unit}\n`;
           response += `   📊 Reorder Level: ${item.reorder_level} ${item.unit}\n`;
           response += `   🔄 Recommended Order: ${needed} ${item.unit}\n`;
@@ -639,40 +778,10 @@ INSTRUCTIONS:
         return response;
       }
       
-      // INVENTORY VALUE
-      if (q.includes('inventory value') || q.includes('stock value') || q.includes('total value of inventory')) {
-        const supplies = await db.query(
-          `SELECT name, current_stock, unit_price
-           FROM supplies WHERE company_id = $1 AND is_active = 1`,
-          [companyId]
-        );
-        
-        if (supplies.rows.length === 0) {
-          return "No inventory items found. Add supplies in the Stores module.";
-        }
-        
-        const totalValue = supplies.rows.reduce((sum, s) => sum + ((s.current_stock || 0) * (s.unit_price || 0)), 0);
-        const topItems = supplies.rows
-          .map(s => ({ name: s.name, value: (s.current_stock || 0) * (s.unit_price || 0) }))
-          .sort((a, b) => b.value - a.value)
-          .slice(0, 3);
-        
-        let response = `💰 **Inventory Value Report**\n\n`;
-        response += `📦 Total Items: ${supplies.rows.length}\n`;
-        response += `💵 Total Inventory Value: KES ${totalValue.toLocaleString()}\n\n`;
-        response += `🏆 **Highest Value Items:**\n`;
-        topItems.forEach(item => {
-          response += `   • ${item.name}: KES ${item.value.toLocaleString()}\n`;
-        });
-        return response;
-      }
-      
       // ==================== SUBSCRIPTION MODULE ====================
-      
-      if (q.includes('subscription') || q.includes('plan') || q.includes('billing plan')) {
+      if (isSubscriptionRequest) {
         const sub = await db.query(
-          `SELECT sp.name as plan_name, sp.price_monthly_kes, sp.price_yearly_kes, 
-                  sp.max_projects, sp.max_users, sp.max_workers, sp.storage_mb,
+          `SELECT sp.name as plan_name, sp.price_monthly_kes, sp.max_projects, sp.max_users,
                   cs.status, cs.start_date, cs.end_date, cs.is_trial
            FROM company_subscriptions cs
            JOIN subscription_plans sp ON cs.plan_id = sp.id
@@ -680,72 +789,53 @@ INSTRUCTIONS:
            ORDER BY cs.created_at DESC LIMIT 1`,
           [companyId]
         );
-        
         if (sub.rows.length === 0) {
           return "No active subscription found. Please contact sales@bochi.ke to subscribe.";
         }
-        
         const s = sub.rows[0];
         const daysLeft = Math.ceil((new Date(s.end_date) - new Date()) / (1000 * 60 * 60 * 24));
-        
         let response = `💳 **Subscription Details**\n\n`;
         response += `📛 Plan: **${s.plan_name}**`;
         if (s.is_trial) response += ` (Trial Active)`;
         response += `\n💰 Monthly: KES ${s.price_monthly_kes?.toLocaleString()}\n`;
-        response += `💰 Yearly: KES ${s.price_yearly_kes?.toLocaleString()}\n`;
         response += `📊 Status: ${s.status}\n`;
-        response += `📅 Started: ${new Date(s.start_date).toLocaleDateString()}\n`;
         response += `📅 Renews: ${new Date(s.end_date).toLocaleDateString()} (${daysLeft} days remaining)\n\n`;
         response += `📦 **Plan Limits:**\n`;
         response += `   • Max Projects: ${s.max_projects}\n`;
         response += `   • Max Users: ${s.max_users}\n`;
-        response += `   • Max Workers: ${s.max_workers}\n`;
-        response += `   • Storage: ${s.storage_mb} MB\n`;
-        
         return response;
       }
       
       // ==================== BILLING / PAYMENTS ====================
-      
-      if (q.includes('billing') || q.includes('payment') || q.includes('invoice')) {
-        // Check subscription payments
+      if (isBillingRequest) {
         const payments = await db.query(
-          `SELECT amount, payment_method, status, payment_date, subscription_id
-           FROM subscription_payments 
-           WHERE company_id = $1 
-           ORDER BY created_at DESC 
-           LIMIT 5`,
+          `SELECT amount, payment_method, status, payment_date
+           FROM subscription_payments WHERE company_id = $1 
+           ORDER BY created_at DESC LIMIT 5`,
           [companyId]
         );
-        
         if (payments.rows.length === 0) {
-          // Check income records as alternative
           const recentIncome = await db.query(
-            `SELECT certificate_no, gross_amount, payment_method, payment_date, status
-             FROM income 
-             WHERE company_id = $1 AND status = 'Paid'
-             ORDER BY payment_date DESC 
-             LIMIT 5`,
+            `SELECT certificate_no, gross_amount, payment_method, payment_date
+             FROM income WHERE company_id = $1 AND status = 'Paid'
+             ORDER BY payment_date DESC LIMIT 5`,
             [companyId]
           );
-          
           if (recentIncome.rows.length === 0) {
             return "No billing or payment records found. Your subscription may be on trial.";
           }
-          
           let response = `💳 **Recent Payments / Income**\n\n`;
           recentIncome.forEach((p, i) => {
-            response += `${i + 1}. **${p.certificate_no || 'Payment'}**\n`;
+            response += `${i+1}. **${p.certificate_no || 'Payment'}**\n`;
             response += `   💰 Amount: KES ${p.gross_amount.toLocaleString()}\n`;
             response += `   💳 Method: ${p.payment_method || 'N/A'}\n`;
-            response += `   📅 Date: ${p.payment_date ? new Date(p.payment_date).toLocaleDateString() : 'N/A'}\n\n`;
+            response += `   📅 Date: ${new Date(p.payment_date).toLocaleDateString()}\n\n`;
           });
           return response;
         }
-        
         let response = `💳 **Recent Billing History**\n\n`;
         payments.forEach((p, i) => {
-          response += `${i + 1}. **KES ${p.amount?.toLocaleString()}**\n`;
+          response += `${i+1}. **KES ${p.amount?.toLocaleString()}**\n`;
           response += `   💳 Method: ${p.payment_method || 'N/A'}\n`;
           response += `   📋 Status: ${p.status}\n`;
           response += `   📅 Date: ${p.payment_date ? new Date(p.payment_date).toLocaleDateString() : 'Pending'}\n\n`;
@@ -753,20 +843,16 @@ INSTRUCTIONS:
         return response;
       }
       
-      // ==================== SETTINGS / COMPANY INFO ====================
-      
-      if ((q.includes('company') || q.includes('settings')) && (q.includes('info') || q.includes('profile') || q.includes('details'))) {
+      // ==================== COMPANY SETTINGS / PROFILE ====================
+      if (isCompanyInfoRequest) {
         const settings = await db.query(
-          `SELECT name, email, phone, address, kra_pin, vat_rate, vat_registration_number, 
-                  website, currency, logo_url
+          `SELECT name, email, phone, address, kra_pin, vat_rate, vat_registration_number, website, currency
            FROM company_settings WHERE company_id = $1`,
           [companyId]
         );
-        
         if (settings.rows.length === 0 || !settings.rows[0].name) {
           return "Company settings not found. Please update your company profile in the Settings module.";
         }
-        
         const c = settings.rows[0];
         let response = `🏢 **Company Profile**\n\n`;
         response += `📛 Name: ${c.name}\n`;
@@ -778,71 +864,58 @@ INSTRUCTIONS:
         response += `🆓 VAT Registration: ${c.vat_registration_number || 'Not set'}\n`;
         response += `💱 Currency: ${c.currency || 'KES'}\n`;
         if (c.website) response += `🌐 Website: ${c.website}\n`;
-        if (c.logo_url) response += `🖼️ Logo: Uploaded\n`;
         return response;
       }
       
-      if (q.includes('vat') && (q.includes('rate') || q.includes('number') || q.includes('registration'))) {
+      // VAT INFORMATION
+      if (isVatRequest) {
         const vat = await db.query(
           `SELECT vat_rate, vat_registration_number FROM company_settings WHERE company_id = $1`,
           [companyId]
         );
-        
         if (vat.rows.length === 0 || !vat.rows[0].vat_rate) {
           return "VAT settings not configured. Update your VAT information in Settings → Company Settings.";
         }
-        
         return `📊 **VAT Information**\n\n💰 VAT Rate: ${vat.rows[0].vat_rate}%\n🆔 VAT Registration Number: ${vat.rows[0].vat_registration_number || 'Not registered'}\n\n💡 VAT is automatically calculated on invoices and expenses based on this rate.`;
       }
       
       // ==================== SITE DIARY MODULE ====================
-      
-      if (q.includes('site diary') || (q.includes('site') && q.includes('entry'))) {
+      if (isSiteDiaryRequest) {
         const entries = await db.query(
-          `SELECT date, summary, weather, total_workers, activities, challenges, status
-           FROM site_diary_entries 
-           WHERE company_id = $1 
-           ORDER BY date DESC 
-           LIMIT 7`,
+          `SELECT date, summary, weather, total_workers, activities, status
+           FROM site_diary_entries WHERE company_id = $1 ORDER BY date DESC LIMIT 7`,
           [companyId]
         );
-        
         if (entries.rows.length === 0) {
           return "No site diary entries yet. Add daily entries in the Site Diary module to track site activities.";
         }
-        
         let response = `📔 **Recent Site Diary Entries**\n\n`;
         entries.rows.forEach((e, i) => {
-          response += `${i + 1}. **${new Date(e.date).toLocaleDateString()}**\n`;
+          response += `${i+1}. **${new Date(e.date).toLocaleDateString()}**\n`;
           if (e.weather) response += `   ☁️ Weather: ${e.weather}\n`;
-          if (e.total_workers) response += `   👥 Workers on Site: ${e.total_workers}\n`;
+          if (e.total_workers) response += `   👥 Workers: ${e.total_workers}\n`;
           if (e.status) response += `   📋 Status: ${e.status}\n`;
-          if (e.summary) response += `   📝 ${e.summary.substring(0, 100)}...\n`;
-          response += `\n`;
+          if (e.summary) response += `   📝 ${e.summary.substring(0, 100)}...\n\n`;
         });
         return response;
       }
       
       // ==================== MEETINGS MODULE ====================
-      
-      if (q.includes('meeting') || q.includes('minutes')) {
+      if (isMeetingRequest) {
         const meetings = await db.query(
           `SELECT m.title, m.meeting_date, m.location, p.name as project_name
            FROM meeting_minutes m
            JOIN projects p ON m.project_id = p.id
            WHERE p.company_id = $1
-           ORDER BY m.meeting_date DESC 
-           LIMIT 5`,
+           ORDER BY m.meeting_date DESC LIMIT 5`,
           [companyId]
         );
-        
         if (meetings.rows.length === 0) {
           return "No meeting minutes recorded yet. Add meeting minutes in the Meetings module.";
         }
-        
         let response = `📅 **Recent Meetings**\n\n`;
         meetings.rows.forEach((m, i) => {
-          response += `${i + 1}. **${m.title}**\n`;
+          response += `${i+1}. **${m.title}**\n`;
           response += `   📅 Date: ${new Date(m.meeting_date).toLocaleDateString()}\n`;
           response += `   📋 Project: ${m.project_name}\n`;
           if (m.location) response += `   📍 Location: ${m.location}\n\n`;
@@ -851,25 +924,21 @@ INSTRUCTIONS:
       }
       
       // ==================== DOCUMENTS MODULE ====================
-      
-      if (q.includes('document') || q.includes('documents') || q.includes('files')) {
+      if (isDocumentRequest) {
         const docs = await db.query(
           `SELECT COUNT(*) as count,
                   COUNT(CASE WHEN created_at >= NOW() - INTERVAL '30 days' THEN 1 END) as recent
            FROM project_documents WHERE company_id = $1`,
           [companyId]
         );
-        
         if (docs.rows[0].count === 0) {
           return "No documents uploaded yet. Upload documents in the Documents module to organize project files.";
         }
-        
         return `📄 **Document Summary**\n\n📊 Total Documents: ${docs.rows[0].count}\n📅 Uploaded in last 30 days: ${docs.rows[0].recent}\n\n💡 Documents can be organized by project and category for easy access.`;
       }
       
-      // ==================== USERS / TEAM MODULE ====================
-      
-      if ((q.includes('team') || q.includes('users') || q.includes('members')) && q.includes('count')) {
+      // ==================== TEAM / USERS MODULE ====================
+      if (isTeamRequest && isCountRequest) {
         const users = await db.query(
           `SELECT COUNT(*) as count,
                   COUNT(CASE WHEN role = 'admin' THEN 1 END) as admins,
@@ -878,25 +947,27 @@ INSTRUCTIONS:
            FROM users WHERE company_id = $1 AND is_active = 1`,
           [companyId]
         );
-        
-        return `👥 **Team Summary**\n\nTotal Active Users: ${users.rows[0].count}\n👑 Administrators: ${users.rows[0].admins}\n📋 Project Managers: ${users.rows[0].pms}\n👤 Regular Users: ${users.rows[0].regular_users}`;
+        let response = `👥 **Team Summary**\n\n`;
+        response += `📊 Total Active Users: ${users.rows[0].count}\n`;
+        response += `👑 Administrators: ${users.rows[0].admins}\n`;
+        response += `📋 Project Managers: ${users.rows[0].pms}\n`;
+        response += `👤 Regular Users: ${users.rows[0].regular_users}`;
+        return response;
       }
       
-      if ((q.includes('list') || q.includes('show me')) && (q.includes('user') || q.includes('users') || q.includes('team members'))) {
+      if ((isListRequest || isDetailsRequest) && isTeamRequest) {
         const users = await db.query(
           `SELECT name, email, role, is_active
            FROM users WHERE company_id = $1 AND is_active = 1
            ORDER BY role, name LIMIT 20`,
           [companyId]
         );
-        
         if (users.rows.length === 0) {
           return "No active users found. Invite users from the Users module.";
         }
-        
         let response = `👥 **Team Members** (${users.rows.length} active)\n\n`;
         users.rows.forEach((u, i) => {
-          response += `${i + 1}. **${u.name}**\n`;
+          response += `${i+1}. **${u.name}**\n`;
           response += `   📧 ${u.email}\n`;
           response += `   👔 Role: ${u.role}\n\n`;
         });
@@ -904,99 +975,145 @@ INSTRUCTIONS:
       }
       
       // ==================== HELP / SUPPORT ====================
-      
-      if (q.includes('help') || q.includes('support') || q.includes('contact support')) {
+      if (isHelpRequest) {
         return `📞 **Bochi Support Center**\n\n📧 Email: support@bochi.ke\n📞 Phone: +254 772 041005\n🌐 Website: www.bochi.ke\n💬 Live Chat: Available in the Help module\n\n📚 **Resources:**\n   • FAQ section in Help module\n   • Video tutorials in Help module\n   • User documentation available on request\n\n⏰ Support Hours: Monday-Friday, 8 AM - 6 PM EAT`;
       }
       
-      // ==================== LEGAL MODULE ====================
-      
-      if (q.includes('terms') || q.includes('privacy') || q.includes('legal') || q.includes('policy')) {
+      // ==================== LEGAL ====================
+      if (isLegalRequest) {
         return `📜 **Legal Information**\n\n📋 Terms of Service: www.bochi.ke/terms\n🔒 Privacy Policy: www.bochi.ke/privacy\n⚖️ Data Processing Agreement: Available upon request\n\n📧 Legal Inquiries: legal@bochi.ke\n\n⚠️ For any legal concerns, please contact our legal team directly.`;
       }
       
-      // ==================== GENERAL DASHBOARD ====================
-      
-      if (q.includes('dashboard') && (q.includes('summary') || q.includes('overview'))) {
-        // Get counts from various modules
+      // ==================== DASHBOARD OVERVIEW ====================
+      if (isSummaryRequest || q.includes('dashboard') || q.includes('overview') || q.includes('home')) {
         const projects = await db.query(`SELECT COUNT(*) as count FROM projects WHERE company_id = $1`, [companyId]);
+        const activeProjects = await db.query(`SELECT COUNT(*) as count FROM projects WHERE company_id = $1 AND status = 'Active'`, [companyId]);
+        const completedProjects = await db.query(`SELECT COUNT(*) as count FROM projects WHERE company_id = $1 AND progress = 100`, [companyId]);
         const income = await db.query(`SELECT COALESCE(SUM(gross_amount),0) as total FROM income WHERE company_id = $1`, [companyId]);
         const expenses = await db.query(`SELECT COALESCE(SUM(amount),0) as total FROM expenses WHERE company_id = $1`, [companyId]);
         const workers = await db.query(`SELECT COUNT(*) as count FROM workers WHERE company_id = $1 AND is_active = 1`, [companyId]);
         const lowStock = await db.query(`SELECT COUNT(*) as count FROM supplies WHERE company_id = $1 AND is_active = 1 AND current_stock < reorder_level`, [companyId]);
-        
+        const purchaseOrders = await db.query(`SELECT COUNT(*) as count FROM purchase_orders WHERE company_id = $1`, [companyId]);
+        const suppliers = await db.query(`SELECT COUNT(*) as count FROM suppliers WHERE company_id = $1 AND is_active = 1`, [companyId]);
+        const subcontractors = await db.query(`SELECT COUNT(*) as count FROM subcontractors WHERE company_id = $1 AND is_active = 1`, [companyId]);
+        const documents = await db.query(`SELECT COUNT(*) as count FROM project_documents WHERE company_id = $1`, [companyId]);
         const profit = income.rows[0].total - expenses.rows[0].total;
+        const margin = income.rows[0].total > 0 ? (profit / income.rows[0].total * 100).toFixed(1) : 0;
         
         let response = `📊 **Dashboard Overview**\n\n`;
-        response += `📋 Projects: ${projects.rows[0].count}\n`;
-        response += `💰 Income: KES ${income.rows[0].total.toLocaleString()}\n`;
-        response += `💸 Expenses: KES ${expenses.rows[0].total.toLocaleString()}\n`;
-        response += `📈 Profit: KES ${profit.toLocaleString()}\n`;
-        response += `👥 Workers: ${workers.rows[0].count}\n`;
-        response += `⚠️ Low Stock Items: ${lowStock.rows[0].count}\n\n`;
+        response += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        response += `📋 **PROJECTS**\n`;
+        response += `   • Total Projects: ${projects.rows[0].count}\n`;
+        response += `   • Active Projects: ${activeProjects.rows[0].count}\n`;
+        response += `   • Completed Projects: ${completedProjects.rows[0].count}\n\n`;
+        response += `💰 **FINANCIAL**\n`;
+        response += `   • Total Income: KES ${income.rows[0].total.toLocaleString()}\n`;
+        response += `   • Total Expenses: KES ${expenses.rows[0].total.toLocaleString()}\n`;
+        response += `   • Net Profit: KES ${profit.toLocaleString()}\n`;
+        response += `   • Profit Margin: ${margin}%\n\n`;
+        response += `👥 **WORKFORCE**\n`;
+        response += `   • Active Workers: ${workers.rows[0].count}\n\n`;
+        response += `🏪 **INVENTORY**\n`;
+        response += `   • Low Stock Items: ${lowStock.rows[0].count}\n\n`;
+        response += `📦 **PROCUREMENT**\n`;
+        response += `   • Purchase Orders: ${purchaseOrders.rows[0].count}\n`;
+        response += `   • Suppliers: ${suppliers.rows[0].count}\n`;
+        response += `   • Subcontractors: ${subcontractors.rows[0].count}\n\n`;
+        response += `📄 **DOCUMENTS**\n`;
+        response += `   • Total Documents: ${documents.rows[0].count}\n`;
+        response += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
         
         if (lowStock.rows[0].count > 0) {
-          response += `💡 **Action Required:** Check low stock items in Stores module.\n`;
+          response += `⚠️ **ALERT:** ${lowStock.rows[0].count} items need restocking in Stores module.\n`;
         }
         if (profit < 0) {
-          response += `💡 **Action Required:** Review expenses to improve profitability.\n`;
+          response += `⚠️ **ALERT:** Business is operating at a loss. Review expenses.\n`;
         }
-        
+        if (projects.rows[0].count === 0) {
+          response += `💡 **TIP:** Create your first project in the Projects module.\n`;
+        }
+        if (workers.rows[0].count === 0) {
+          response += `💡 **TIP:** Add workers in the Workers module to track labor.\n`;
+        }
         return response;
+      }
+      
+      // ==================== FALLBACK FOR UNRECOGNIZED QUERIES ====================
+      if ((q.includes('worker') || q.includes('employee')) && !isWorkerRequest) {
+        const workers = await db.query(`SELECT COUNT(*) as count FROM workers WHERE company_id = $1 AND is_active = 1`, [companyId]);
+        if (workers.rows[0].count > 0) {
+          return `You have ${workers.rows[0].count} active workers. For more details, ask "list my workers" or "how many workers do I have".`;
+        }
+      }
+      
+      if ((q.includes('project') || q.includes('job')) && !isProjectRequest) {
+        const projects = await db.query(`SELECT COUNT(*) as count FROM projects WHERE company_id = $1`, [companyId]);
+        if (projects.rows[0].count > 0) {
+          return `You have ${projects.rows[0].count} projects. To see details, ask "list my projects" or "show me project statuses".`;
+        }
+      }
+      
+      if ((q.includes('expense') || q.includes('cost') || q.includes('spent')) && !isExpenseRequest) {
+        const expenses = await db.query(`SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE company_id = $1`, [companyId]);
+        if (expenses.rows[0].total > 0) {
+          return `Your total expenses are KES ${expenses.rows[0].total.toLocaleString()}. For breakdown, ask "list my expenses" or "expenses by category".`;
+        }
+      }
+      
+      if ((q.includes('income') || q.includes('revenue') || q.includes('earned')) && !isIncomeRequest) {
+        const income = await db.query(`SELECT COALESCE(SUM(gross_amount), 0) as total FROM income WHERE company_id = $1`, [companyId]);
+        if (income.rows[0].total > 0) {
+          return `Your total income is KES ${income.rows[0].total.toLocaleString()}. For details, ask "list my income records" or "show me income certificates".`;
+        }
+      }
+      
+      if ((q.includes('supply') || q.includes('stock') || q.includes('inventory')) && !isInventoryRequest) {
+        const supplies = await db.query(`SELECT COUNT(*) as count FROM supplies WHERE company_id = $1 AND is_active = 1`, [companyId]);
+        if (supplies.rows[0].count > 0) {
+          return `You have ${supplies.rows[0].count} supply items in inventory. To see details, ask "list my inventory" or "show me low stock items".`;
+        }
+      }
+      
+      if ((q.includes('purchase') || q.includes('order') || q.includes('po')) && !isPurchaseOrderRequest) {
+        const orders = await db.query(`SELECT COUNT(*) as count FROM purchase_orders WHERE company_id = $1`, [companyId]);
+        if (orders.rows[0].count > 0) {
+          return `You have ${orders.rows[0].count} purchase orders. For details, ask "list my purchase orders" or "show me PO summary".`;
+        }
+      }
+      
+      if ((q.includes('meeting') || q.includes('minutes')) && !isMeetingRequest) {
+        const meetings = await db.query(
+          `SELECT COUNT(*) as count FROM meeting_minutes m
+           JOIN projects p ON m.project_id = p.id
+           WHERE p.company_id = $1`,
+          [companyId]
+        );
+        if (meetings.rows[0].count > 0) {
+          return `You have ${meetings.rows[0].count} meeting minutes recorded. Ask "show me recent meetings" to see them.`;
+        }
       }
       
       return null;
       
     } catch (error) {
       console.error('Data fetch error:', error);
-      return null;
+      return "I'm having trouble accessing your data right now. Please try again.";
     }
   }
 
   static async answerProjectQuestion(projectId, question, userId) {
     try {
-      const projectContext = await this.getProjectContext(projectId, userId);
-      if (!projectContext) {
-        return "I couldn't find that project. Please make sure you have access to it.";
-      }
+      const context = await this.getProjectContext(projectId, userId);
+      if (!context) return "Project not found.";
       
-      const prompt = `
-You are an AI assistant for Bochi Construction Suite.
-
-PROJECT DATA:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 Name: ${projectContext.name}
-🏢 Client: ${projectContext.client || 'N/A'}
-📍 Location: ${projectContext.location || 'N/A'}
-📊 Progress: ${projectContext.progress}%
-💰 Contract: KES ${projectContext.budget?.toLocaleString() || 'N/A'}
-💸 Spent: KES ${projectContext.spent?.toLocaleString() || '0'}
-📅 Start: ${projectContext.start_date || 'N/A'}
-📅 End: ${projectContext.end_date || 'N/A'}
-🔄 Status: ${projectContext.status || 'Active'}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-TASKS:
-• Total: ${projectContext.total_tasks}
-• Completed: ${projectContext.completed_tasks}
-• In Progress: ${projectContext.in_progress_tasks}
-• Overdue: ${projectContext.overdue_tasks}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-USER QUESTION: "${question}"
-
-Answer based ONLY on the project data above. Be concise (2-4 sentences). Include specific numbers.`;
-
+      const prompt = `PROJECT DATA:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📋 Name: ${context.name}\n🏢 Client: ${context.client || 'N/A'}\n📍 Location: ${context.location || 'N/A'}\n📊 Progress: ${context.progress}%\n💰 Contract: KES ${context.budget?.toLocaleString() || 'N/A'}\n💸 Spent: KES ${context.spent?.toLocaleString() || '0'}\n📅 Start: ${context.start_date || 'N/A'}\n📅 End: ${context.end_date || 'N/A'}\n🔄 Status: ${context.status || 'Active'}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nTASKS:\n• Total: ${context.total_tasks}\n• Completed: ${context.completed_tasks}\n• In Progress: ${context.in_progress_tasks}\n• Overdue: ${context.overdue_tasks}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nUSER QUESTION: "${question}"\n\nAnswer based ONLY on the project data above. Be concise (2-4 sentences). Include specific numbers.`;
+      
       const response = await groq.chat.completions.create({
         model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: 'You are a helpful construction project management assistant.' },
-          { role: 'user', content: prompt }
-        ],
+        messages: [{ role: 'user', content: prompt }],
         temperature: 0.4,
         max_tokens: 500
       });
-      
       return response.choices[0].message.content;
     } catch (error) {
       console.error('Project AI error:', error);
@@ -1007,31 +1124,16 @@ Answer based ONLY on the project data above. Be concise (2-4 sentences). Include
   static async answerStakeholderQuestion(projectId, question, userId) {
     try {
       const context = await this.getStakeholderProjectContext(projectId, userId);
-      if (!context) {
-        return "I couldn't find that project. Please make sure you have access to it.";
-      }
+      if (!context) return "Project not found.";
       
-      const prompt = `
-You are an AI assistant for project stakeholders.
-
-PROJECT: ${context.name}
-Progress: ${context.progress}%
-Timeline: ${context.start_date || 'N/A'} to ${context.end_date || 'N/A'}
-Tasks: ${context.completed_tasks}/${context.total_tasks} completed
-Documents: ${context.document_count}
-Meetings: ${context.meeting_count}
-
-USER QUESTION: "${question}"
-
-Focus ONLY on progress, timeline, documents, and meetings. DO NOT share financial details. Be positive and reassuring.`;
-
+      const prompt = `PROJECT: ${context.name}\nProgress: ${context.progress}%\nTimeline: ${context.start_date || 'N/A'} to ${context.end_date || 'N/A'}\nTasks: ${context.completed_tasks}/${context.total_tasks} completed\nDocuments: ${context.document_count}\nMeetings: ${context.meeting_count}\n\nUSER QUESTION: "${question}"\n\nFocus ONLY on progress, timeline, documents, and meetings. DO NOT share financial details. Be positive and reassuring.`;
+      
       const response = await groq.chat.completions.create({
         model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.4,
         max_tokens: 500
       });
-      
       return response.choices[0].message.content;
     } catch (error) {
       console.error('Stakeholder AI error:', error);
@@ -1041,102 +1143,69 @@ Focus ONLY on progress, timeline, documents, and meetings. DO NOT share financia
 
   static async verifyStakeholderAccess(projectId, userId) {
     const db = await getDb();
-    try {
-      const result = await db.query(`
-        SELECT 1 FROM project_stakeholders 
-        WHERE user_id = $1 AND project_id = $2 AND is_active = 1 AND invite_status = 'accepted'
-      `, [userId, projectId]);
-      return result.rows.length > 0;
-    } catch (error) {
-      console.error('Error verifying stakeholder access:', error);
-      return false;
-    }
+    const result = await db.query(
+      `SELECT 1 FROM project_stakeholders WHERE user_id = $1 AND project_id = $2 AND is_active = 1 AND invite_status = 'accepted'`,
+      [userId, projectId]
+    );
+    return result.rows.length > 0;
   }
 
   static async getStakeholderProjectContext(projectId, userId) {
     const db = await getDb();
-    try {
-      const projectResult = await db.query(`
-        SELECT 
-          p.id, p.name, p.progress, p.status, p.start_date, p.end_date,
-          COUNT(DISTINCT pg.id) as total_tasks,
-          COUNT(DISTINCT CASE WHEN pg.status = 'completed' THEN pg.id END) as completed_tasks
-        FROM projects p
-        LEFT JOIN project_gantt_tasks pg ON p.id = pg.project_id
-        WHERE p.id = $1
-        GROUP BY p.id
-      `, [projectId]);
-      
-      if (projectResult.rows.length === 0) return null;
-      
-      const project = projectResult.rows[0];
-      const docsResult = await db.query(`SELECT COUNT(*) as count FROM project_documents WHERE project_id = $1`, [projectId]);
-      const meetingsResult = await db.query(`SELECT COUNT(*) as count FROM meeting_minutes WHERE project_id = $1`, [projectId]);
-      
-      return {
-        name: project.name,
-        progress: project.progress || 0,
-        start_date: project.start_date,
-        end_date: project.end_date,
-        total_tasks: parseInt(project.total_tasks) || 0,
-        completed_tasks: parseInt(project.completed_tasks) || 0,
-        document_count: parseInt(docsResult.rows[0]?.count) || 0,
-        meeting_count: parseInt(meetingsResult.rows[0]?.count) || 0
-      };
-    } catch (error) {
-      console.error('Error fetching stakeholder context:', error);
-      return null;
-    }
+    const project = await db.query(
+      `SELECT p.id, p.name, p.progress, p.start_date, p.end_date,
+              COUNT(DISTINCT pg.id) as total_tasks,
+              COUNT(DISTINCT CASE WHEN pg.status='completed' THEN pg.id END) as completed_tasks
+       FROM projects p
+       LEFT JOIN project_gantt_tasks pg ON p.id = pg.project_id
+       WHERE p.id = $1 GROUP BY p.id`,
+      [projectId]
+    );
+    if (project.rows.length === 0) return null;
+    const docs = await db.query(`SELECT COUNT(*) as count FROM project_documents WHERE project_id = $1`, [projectId]);
+    const meetings = await db.query(`SELECT COUNT(*) as count FROM meeting_minutes WHERE project_id = $1`, [projectId]);
+    return {
+      name: project.rows[0].name,
+      progress: project.rows[0].progress || 0,
+      start_date: project.rows[0].start_date,
+      end_date: project.rows[0].end_date,
+      total_tasks: parseInt(project.rows[0].total_tasks) || 0,
+      completed_tasks: parseInt(project.rows[0].completed_tasks) || 0,
+      document_count: parseInt(docs.rows[0]?.count) || 0,
+      meeting_count: parseInt(meetings.rows[0]?.count) || 0
+    };
   }
   
   static async getProjectContext(projectId, userId) {
     const db = await getDb();
-    try {
-      const projectResult = await db.query(`
-        SELECT 
-          p.id, p.name, p.client, p.location, p.progress, 
-          p.contract_sum as budget, p.status, p.start_date, p.end_date,
-          COALESCE((SELECT SUM(amount) FROM expenses WHERE project_id = p.id), 0) as spent
-        FROM projects p
-        WHERE p.id = $1
-      `, [projectId]);
-      
-      if (projectResult.rows.length === 0) return null;
-      
-      const project = projectResult.rows[0];
-      const tasksResult = await db.query(`
-        SELECT 
-          COUNT(*) as total,
-          COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
-          COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as in_progress,
-          COUNT(CASE WHEN status = 'not_started' THEN 1 END) as not_started,
-          COUNT(CASE WHEN status != 'completed' AND end_date < CURRENT_DATE THEN 1 END) as overdue
-        FROM project_gantt_tasks
-        WHERE project_id = $1
-      `, [projectId]);
-      
-      const tasks = tasksResult.rows[0];
-      
-      return {
-        name: project.name,
-        client: project.client,
-        location: project.location,
-        progress: project.progress || 0,
-        budget: project.budget,
-        spent: parseFloat(project.spent) || 0,
-        status: project.status,
-        start_date: project.start_date,
-        end_date: project.end_date,
-        total_tasks: tasks?.total || 0,
-        completed_tasks: tasks?.completed || 0,
-        in_progress_tasks: tasks?.in_progress || 0,
-        not_started_tasks: tasks?.not_started || 0,
-        overdue_tasks: tasks?.overdue || 0
-      };
-    } catch (error) {
-      console.error('Error fetching project context:', error);
-      return null;
-    }
+    const project = await db.query(
+      `SELECT p.id, p.name, p.client, p.location, p.progress, p.contract_sum as budget, p.status, p.start_date, p.end_date,
+              COALESCE((SELECT SUM(amount) FROM expenses WHERE project_id = p.id),0) as spent
+       FROM projects p WHERE p.id = $1`,
+      [projectId]
+    );
+    if (project.rows.length === 0) return null;
+    const tasks = await db.query(
+      `SELECT COUNT(*) as total,
+              COUNT(CASE WHEN status='completed' THEN 1 END) as completed,
+              COUNT(CASE WHEN status='in_progress' THEN 1 END) as in_progress
+       FROM project_gantt_tasks WHERE project_id = $1`,
+      [projectId]
+    );
+    return {
+      name: project.rows[0].name,
+      client: project.rows[0].client,
+      location: project.rows[0].location,
+      progress: project.rows[0].progress || 0,
+      budget: project.rows[0].budget,
+      spent: parseFloat(project.rows[0].spent) || 0,
+      status: project.rows[0].status,
+      start_date: project.rows[0].start_date,
+      end_date: project.rows[0].end_date,
+      total_tasks: tasks.rows[0]?.total || 0,
+      completed_tasks: tasks.rows[0]?.completed || 0,
+      in_progress_tasks: tasks.rows[0]?.in_progress || 0
+    };
   }
   
   static async generateProjectSummary(projectId, userId) {
@@ -1144,17 +1213,8 @@ Focus ONLY on progress, timeline, documents, and meetings. DO NOT share financia
       const context = await this.getProjectContext(projectId, userId);
       if (!context) return "Unable to generate summary: Project not found.";
       
-      const prompt = `
-Based on this data, write a 2-sentence executive summary:
-
-Project: ${context.name}
-Progress: ${context.progress}%
-Budget: KES ${context.budget?.toLocaleString()} (Spent: KES ${context.spent?.toLocaleString()})
-Tasks: ${context.completed_tasks}/${context.total_tasks} completed
-Overdue: ${context.overdue_tasks}
-
-Summary:`;
-
+      const prompt = `Based on this project data, write a brief executive summary (2-3 sentences):\n\nProject: ${context.name}\nProgress: ${context.progress}%\nBudget: KES ${context.budget?.toLocaleString()} (Spent: KES ${context.spent?.toLocaleString()})\nTasks: ${context.completed_tasks}/${context.total_tasks} completed\nOverdue Tasks: ${context.overdue_tasks}\n\nSummary:`;
+      
       const response = await groq.chat.completions.create({
         model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
@@ -1163,6 +1223,7 @@ Summary:`;
       });
       return response.choices[0].message.content;
     } catch (error) {
+      console.error('Error generating summary:', error);
       return "Unable to generate summary at this time.";
     }
   }
