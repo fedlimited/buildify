@@ -593,6 +593,76 @@ INSTRUCTIONS:
         }
         return response;
       }
+
+
+ // ==================== GANTT CHART / TASKS MODULE ==================== 
+      const isTaskRequest = q.includes('task') || q.includes('gantt') || q.includes('timeline') || q.includes('schedule') || q.includes('milestone');
+      
+      if (isTaskRequest && isListRequest) {
+        const tasks = await db.query(
+          `SELECT id, name, start_date, end_date, progress, status, parent_id, is_milestone
+           FROM project_gantt_tasks 
+           WHERE project_id IN (SELECT id FROM projects WHERE company_id = $1)
+           ORDER BY start_date ASC LIMIT 30`,
+          [companyId]
+        );
+        
+        if (tasks.rows.length === 0) {
+          return "You don't have any tasks yet. Add tasks to the Gantt chart in your projects.";
+        }
+        
+        const overdueTasks = tasks.rows.filter(t => new Date(t.end_date) < new Date() && t.status !== 'completed');
+        const completedTasks = tasks.rows.filter(t => t.status === 'completed');
+        const milestones = tasks.rows.filter(t => t.is_milestone === 1);
+        
+        let response = `📊 **Tasks & Gantt Summary**\n\n`;
+        response += `📋 Total Tasks: ${tasks.rows.length}\n`;
+        response += `✅ Completed: ${completedTasks.length}\n`;
+        response += `⚠️ Overdue: ${overdueTasks.length}\n`;
+        response += `🏆 Milestones: ${milestones.length}\n\n`;
+        response += `📅 **Upcoming Tasks (Next 7 days)**\n`;
+        
+        const upcomingTasks = tasks.rows.filter(t => {
+          const endDate = new Date(t.end_date);
+          const now = new Date();
+          const daysDiff = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+          return daysDiff <= 7 && daysDiff >= 0 && t.status !== 'completed';
+        }).slice(0, 5);
+        
+        if (upcomingTasks.length > 0) {
+          upcomingTasks.forEach(task => {
+            response += `   • ${task.name} - Due: ${new Date(task.end_date).toLocaleDateString()}\n`;
+          });
+        } else {
+          response += `   • No upcoming tasks in the next 7 days\n`;
+        }
+        
+        if (overdueTasks.length > 0) {
+          response += `\n⚠️ **Overdue Tasks**\n`;
+          overdueTasks.slice(0, 3).forEach(task => {
+            response += `   • ${task.name} - Was due: ${new Date(task.end_date).toLocaleDateString()}\n`;
+          });
+        }
+        return response;
+      }
+      
+      if (isCountRequest && isTaskRequest) {
+        const tasks = await db.query(
+          `SELECT 
+             COUNT(*) as total,
+             COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
+             COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as in_progress,
+             COUNT(CASE WHEN status = 'not_started' THEN 1 END) as not_started,
+             COUNT(CASE WHEN status != 'completed' AND end_date < CURRENT_DATE THEN 1 END) as overdue
+           FROM project_gantt_tasks 
+           WHERE project_id IN (SELECT id FROM projects WHERE company_id = $1)`,
+          [companyId]
+        );
+        return `📊 Task Summary: ${tasks.rows[0].total} total tasks, ${tasks.rows[0].completed} completed, ${tasks.rows[0].in_progress} in progress, ${tasks.rows[0].overdue} overdue.`;
+      }
+
+
+
       
       // ==================== WORKERS MODULE ====================
       if ((isListRequest || isDetailsRequest) && isWorkerRequest) {
@@ -777,6 +847,71 @@ INSTRUCTIONS:
         });
         return response;
       }
+
+
+// ==================== STORE TRANSACTIONS / STOCK MOVEMENT ====================  // ← ADD THIS LINE AND EVERYTHING BELOW
+      if ((q.includes('transaction') || q.includes('stock movement') || q.includes('incoming') || q.includes('outgoing')) && isInventoryRequest) {
+        const transactions = await db.query(
+          `SELECT st.id, st.date, st.type, st.quantity, st.notes, s.name as item_name, s.unit
+           FROM store_transactions st
+           JOIN supplies s ON st.supply_id = s.id
+           WHERE s.company_id = $1
+           ORDER BY st.date DESC
+           LIMIT 20`,
+          [companyId]
+        );
+        
+        if (transactions.rows.length === 0) {
+          return "No store transactions recorded yet. Add incoming/outgoing stock movements in the Stores module.";
+        }
+        
+        const totalIncoming = transactions.rows.filter(t => t.type === 'incoming').reduce((sum, t) => sum + t.quantity, 0);
+        const totalOutgoing = transactions.rows.filter(t => t.type === 'outgoing').reduce((sum, t) => sum + t.quantity, 0);
+        
+        let response = `📦 **Store Transactions**\n\n`;
+        response += `📊 Incoming: ${totalIncoming} units\n`;
+        response += `📤 Outgoing: ${totalOutgoing} units\n\n`;
+        response += `📋 **Recent Transactions**\n`;
+        
+        transactions.rows.slice(0, 10).forEach(t => {
+          const arrow = t.type === 'incoming' ? '⬇️ IN' : '⬆️ OUT';
+          response += `   • ${arrow} ${t.quantity} ${t.unit} - ${t.item_name}\n`;
+          response += `     📅 ${new Date(t.date).toLocaleDateString()}\n`;
+          if (t.notes) response += `     📝 ${t.notes.substring(0, 50)}\n`;
+        });
+        return response;
+      }
+      
+      // Inventory by category
+      if ((q.includes('category') || q.includes('group by')) && isInventoryRequest && isSummaryRequest) {
+        const suppliesByCategory = await db.query(
+          `SELECT category, COUNT(*) as count, COALESCE(SUM(current_stock), 0) as total_stock,
+                  COALESCE(SUM(current_stock * unit_price), 0) as total_value
+           FROM supplies 
+           WHERE company_id = $1 AND is_active = 1
+           GROUP BY category
+           ORDER BY total_value DESC`,
+          [companyId]
+        );
+        
+        if (suppliesByCategory.rows.length === 0) {
+          return "No supplies categorized yet. Add categories to your inventory items.";
+        }
+        
+        let response = `🏪 **Inventory by Category**\n\n`;
+        suppliesByCategory.rows.forEach(cat => {
+          response += `📂 **${cat.category || 'Uncategorized'}**\n`;
+          response += `   • Items: ${cat.count}\n`;
+          response += `   • Total Stock: ${cat.total_stock} units\n`;
+          response += `   • Total Value: KES ${parseFloat(cat.total_value).toLocaleString()}\n\n`;
+        });
+        return response;
+      }
+
+
+
+
+
       
       // ==================== SUBSCRIPTION MODULE ====================
       if (isSubscriptionRequest) {
@@ -922,6 +1057,81 @@ INSTRUCTIONS:
         });
         return response;
       }
+
+
+
+// ==================== MEETING ACTION ITEMS / TASKS ====================  // ← ADD THIS LINE AND EVERYTHING BELOW
+      if ((isTaskRequest || q.includes('action item') || q.includes('action items')) && isListRequest) {
+        const actionItems = await db.query(
+          `SELECT m.title as meeting_title, m.meeting_date, 
+                  COALESCE(ai->>'task', ai->>'description', '') as task,
+                  COALESCE(ai->>'assigned_to', '') as assigned_to,
+                  COALESCE(ai->>'due_date', '') as due_date,
+                  COALESCE(ai->>'status', 'pending') as status
+           FROM meeting_minutes m,
+           JSONB_ARRAY_ELEMENTS(m.action_items) AS ai
+           WHERE m.project_id IN (SELECT id FROM projects WHERE company_id = $1)
+           ORDER BY (ai->>'due_date')::date ASC
+           LIMIT 20`,
+          [companyId]
+        );
+        
+        if (actionItems.rows.length === 0) {
+          return "No action items found in meeting minutes. Add action items when creating meeting minutes.";
+        }
+        
+        const pendingTasks = actionItems.rows.filter(t => t.status === 'pending' || t.status === 'in_progress');
+        const overdueTasks = actionItems.rows.filter(t => new Date(t.due_date) < new Date() && t.status !== 'completed');
+        
+        let response = `📋 **Meeting Action Items**\n\n`;
+        response += `📊 Total Action Items: ${actionItems.rows.length}\n`;
+        response += `⏳ Pending: ${pendingTasks.length}\n`;
+        response += `⚠️ Overdue: ${overdueTasks.length}\n\n`;
+        
+        if (pendingTasks.length > 0) {
+          response += `⏰ **Pending Tasks (by due date)**\n`;
+          pendingTasks.slice(0, 5).forEach((task, i) => {
+            response += `${i+1}. **${task.task}**\n`;
+            response += `   📅 Due: ${task.due_date ? new Date(task.due_date).toLocaleDateString() : 'Not set'}\n`;
+            if (task.assigned_to) response += `   👤 Assigned to: ${task.assigned_to}\n`;
+            response += `   📋 Meeting: ${task.meeting_title}\n\n`;
+          });
+        }
+        return response;
+      }
+      
+      // Upcoming tasks from action items
+      if ((q.includes('upcoming') || q.includes('my tasks')) && (isTaskRequest || isMeetingRequest)) {
+        const upcomingTasks = await db.query(
+          `SELECT COALESCE(ai->>'task', ai->>'description', '') as task,
+                  COALESCE(ai->>'due_date', '') as due_date,
+                  COALESCE(ai->>'assigned_to', '') as assigned_to,
+                  m.title as meeting_title
+           FROM meeting_minutes m,
+           JSONB_ARRAY_ELEMENTS(m.action_items) AS ai
+           WHERE m.project_id IN (SELECT id FROM projects WHERE company_id = $1)
+             AND (ai->>'status') IS DISTINCT FROM 'completed'
+             AND (ai->>'due_date') IS NOT NULL
+           ORDER BY (ai->>'due_date')::date ASC
+           LIMIT 10`,
+          [companyId]
+        );
+        
+        if (upcomingTasks.rows.length === 0) {
+          return "No upcoming tasks found in meeting action items.";
+        }
+        
+        let response = `📅 **Upcoming Tasks from Meetings**\n\n`;
+        upcomingTasks.rows.forEach((task, i) => {
+          response += `${i+1}. **${task.task}**\n`;
+          response += `   📅 Due: ${new Date(task.due_date).toLocaleDateString()}\n`;
+          if (task.assigned_to) response += `   👤 Assigned to: ${task.assigned_to}\n`;
+          response += `   📋 From: ${task.meeting_title}\n\n`;
+        });
+        return response;
+      }
+
+
       
       // ==================== DOCUMENTS MODULE ====================
       if (isDocumentRequest) {
@@ -973,6 +1183,31 @@ INSTRUCTIONS:
         });
         return response;
       }
+
+
+
+ // ==================== STAKEHOLDER DASHBOARD ====================  // ← ADD THIS LINE AND EVERYTHING BELOW
+      if (isTeamRequest && q.includes('stakeholder') && isSummaryRequest) {
+        const stakeholderProjects = await db.query(
+          `SELECT COUNT(*) as count,
+                  COUNT(CASE WHEN status = 'Active' THEN 1 END) as active
+           FROM project_stakeholders ps
+           JOIN projects p ON ps.project_id = p.id
+           WHERE ps.user_id = $1 AND ps.is_active = 1 AND ps.invite_status = 'accepted'`,
+          [userId]
+        );
+        
+        const recentDocuments = await db.query(
+          `SELECT COUNT(*) as count FROM project_documents 
+           WHERE project_id IN (SELECT project_id FROM project_stakeholders WHERE user_id = $1)
+           AND created_at >= NOW() - INTERVAL '30 days'`,
+          [userId]
+        );
+        
+        return `📊 **Your Stakeholder Dashboard**\n\n📋 Projects: ${stakeholderProjects.rows[0].count} (${stakeholderProjects.rows[0].active} active)\n📄 New Documents (30 days): ${recentDocuments.rows[0].count}\n💡 Ask "show me my projects" for details.`;
+      }
+
+
       
       // ==================== HELP / SUPPORT ====================
       if (isHelpRequest) {
