@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   MessageCircle, Send, Loader2, X, Sparkles, 
-  ChevronDown, ChevronUp, Eye, Calendar, FileText,
-  CheckCircle, Clock
+  ChevronDown, ChevronUp, Eye
 } from 'lucide-react';
 import { API_BASE_URL } from '@/config/api';
 
@@ -43,6 +42,21 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
     "Any upcoming meetings?",
     "What's the next milestone?"
   ]);
+
+  // Detect dark mode
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'));
+    };
+    
+    checkDarkMode();
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    
+    return () => observer.disconnect();
+  }, []);
 
   const askQuestion = async () => {
     if (!question.trim() || loading) return;
@@ -113,26 +127,29 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-[450px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
-      {/* Header - Green theme for Stakeholder */}
-      <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3 text-white flex justify-between items-center">
+    <div className="fixed bottom-6 right-6 w-[380px] max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-3 text-white flex justify-between items-center cursor-pointer"
+           onClick={() => setIsMinimized(!isMinimized)}>
         <div className="flex items-center gap-2">
-          <Eye size={20} />
-          <h3 className="font-semibold">Project Assistant</h3>
+          <Eye size={18} />
+          <h3 className="font-semibold text-sm">Project Assistant</h3>
           <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Stakeholder AI</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => setIsMinimized(!isMinimized)}
             className="p-1 hover:bg-white/20 rounded transition"
+            title={isMinimized ? "Expand" : "Minimize"}
           >
-            {isMinimized ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            <ChevronDown size={16} className={`transition-transform ${isMinimized ? 'rotate-180' : ''}`} />
           </button>
           <button
             onClick={() => setIsOpen(false)}
             className="p-1 hover:bg-white/20 rounded transition"
+            title="Close"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
       </div>
@@ -140,21 +157,21 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
       {!isMinimized && (
         <>
           {/* Messages Area */}
-          <div className="h-[400px] overflow-y-auto p-4 bg-gray-50">
+          <div className="h-[350px] overflow-y-auto p-3 bg-gray-50 dark:bg-gray-800/50 space-y-3">
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`mb-4 flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                  className={`max-w-[85%] rounded-2xl px-3 py-2 ${
                     message.type === 'user'
                       ? 'bg-emerald-500 text-white rounded-br-none'
-                      : 'bg-white border border-gray-200 text-gray-700 rounded-bl-none'
+                      : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-bl-none'
                   }`}
                 >
-                  <p className="text-sm">{message.content}</p>
-                  <p className={`text-xs mt-1 ${message.type === 'user' ? 'text-emerald-100' : 'text-gray-400'}`}>
+                  <p className="text-sm break-words">{message.content}</p>
+                  <p className={`text-xs mt-1 ${message.type === 'user' ? 'text-emerald-100' : 'text-gray-400 dark:text-gray-500'}`}>
                     {message.timestamp.toLocaleTimeString()}
                   </p>
                 </div>
@@ -162,22 +179,22 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
             ))}
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-none px-4 py-2">
-                  <Loader2 size={18} className="animate-spin text-emerald-500" />
+                <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl rounded-bl-none px-3 py-2">
+                  <Loader2 size={16} className="animate-spin text-emerald-500" />
                 </div>
               </div>
             )}
           </div>
           
           {/* Suggestions */}
-          <div className="px-4 py-2 border-t border-gray-100 bg-gray-50">
-            <p className="text-xs text-gray-500 mb-2">Suggested Questions:</p>
+          <div className="px-3 py-2 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/30">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Suggested Questions:</p>
             <div className="flex flex-wrap gap-2">
               {suggestions.map((suggestion, index) => (
                 <button
                   key={index}
                   onClick={() => handleSuggestionClick(suggestion)}
-                  className="text-xs bg-white border border-gray-200 rounded-full px-3 py-1 hover:border-emerald-300 hover:text-emerald-600 transition"
+                  className="text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full px-2.5 py-1 hover:border-emerald-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition text-gray-600 dark:text-gray-300"
                 >
                   {suggestion}
                 </button>
@@ -186,20 +203,21 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
           </div>
           
           {/* Input Area */}
-          <div className="p-4 border-t border-gray-100 bg-white">
+          <div className="p-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
             <div className="flex gap-2">
               <textarea
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), askQuestion())}
-                placeholder="Ask about progress, documents, timeline..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
-                rows={2}
+                placeholder="Ask a question..."
+                className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                rows={1}
+                style={{ minHeight: '40px', maxHeight: '80px' }}
               />
               <button
                 onClick={askQuestion}
                 disabled={loading || !question.trim()}
-                className="p-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition self-end"
+                className="p-2 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition self-end"
               >
                 {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
               </button>
