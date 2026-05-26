@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Send, Loader2, X, Sparkles, 
-  ChevronDown, Building2
+  ChevronDown, Building2, Trash2
 } from 'lucide-react';
 import { API_BASE_URL } from '@/config/api';
 
@@ -34,6 +34,21 @@ export function TenantChat({ projectId, projectName }: TenantChatProps) {
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [feedbackStatus, setFeedbackStatus] = useState<Record<string, boolean>>({});
+
+  // Clear chat history
+  const clearChat = () => {
+    setMessages([
+      {
+        id: '1',
+        type: 'ai',
+        content: projectId 
+          ? `Hello! I'm your AI assistant for "${projectName}". Ask me about budget, timeline, tasks, or any project concerns.`
+          : "Hello! I'm your AI assistant for Bochi. Ask me about managing projects, team coordination, or financial tracking.",
+        timestamp: new Date()
+      }
+    ]);
+    setFeedbackStatus({});
+  };
 
   // Tenant-specific suggestions
   const getTenantSuggestions = () => {
@@ -182,6 +197,14 @@ export function TenantChat({ projectId, projectName }: TenantChatProps) {
             <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full flex-shrink-0">AI</span>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+            {/* Clear Chat button */}
+            <button
+              onClick={clearChat}
+              className="p-1.5 hover:bg-white/20 rounded transition"
+              title="Clear chat history"
+            >
+              <Trash2 size={14} />
+            </button>
             <button
               onClick={() => setIsMinimized(!isMinimized)}
               className="p-1.5 hover:bg-white/20 rounded transition"
