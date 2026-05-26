@@ -1,4 +1,5 @@
 const Groq = require('groq-sdk');
+const { getDb } = require('../config/database');
 
 // Initialize Groq
 const groq = new Groq({
@@ -8,9 +9,17 @@ const groq = new Groq({
 class AIService {
   /**
    * Answer general questions (no specific project context)
+   * Fetches real data from database when possible
    */
   static async answerGeneralQuestion(question, userId, companyId) {
     try {
+      // First, try to answer from real database data
+      const dataAnswer = await this.getDataDrivenAnswer(question, companyId);
+      if (dataAnswer) {
+        return dataAnswer;
+      }
+      
+      // If not data-driven, use Groq AI
       const prompt = `
 You are an AI assistant for Bochi Construction Suite, helping construction professionals manage their projects.
 
@@ -39,6 +48,148 @@ Keep answers concise, practical, and actionable (2-4 sentences max).
   }
 
   /**
+   * Answer questions using real database data
+   */
+  static async getDataDrivenAnswer(question, companyId) {
+    const db = await getDb();
+    const lowerQuestion = question.toLowerCase();
+    
+    try {
+      // 1. Financial Questions
+      if (lowerQuestion.includes('profit') || lowerQuestion.includes('income') || lowerQuestion.includes('expense')) {
+        const income = await db.query(
+          `SELECT COALESCE(SUM(amount), 0) as total FROM income WHERE company_id = $1`,
+          [companyId]
+        );
+        const expenses = await db.query(
+          `SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE company_id = $1`,
+          [companyId]
+        );
+        
+        const totalIncome = income.rows[0].total;
+        const totalExpenses = expenses.rows[0].total;
+        const profit = totalIncome - totalExpenses;
+        
+        if (lowerQuestion.includes('profit')) {
+          return `Your current profit is KES ${profit.toLocaleString()}. (Income: KES ${totalIncome.toLocaleString()}, Expenses: KES ${totalExpenses.toLocaleString()})`;
+        }
+        if (lowerQuestion.includes('income')) {
+          return `Your total income is KES ${totalIncome.toLocaleString()}.`;
+        }
+        if (lowerQuestion.includes('expense')) {
+          return `Your total expenses are KES ${totalExpenses.toLocaleString()}.`;
+        }
+      }
+      
+      // 2. Project Questions
+      if (lowerQuestion.includes('project') && (lowerQuestion.includes('count') || lowerQuestion.includes('how many'))) {
+        const projects = await db.query(
+          `SELECT COUNT(*) as count FROM projects WHERE company_id = $1`,
+          [companyId]
+        );
+        const activeProjects = await db.query(
+          `SELECT COUNT(*) as count FROM projects WHERE company_id = $1 AND status = 'Active'`,
+          [companyId]
+        );
+        
+        return `You have ${projects.rows[0].count} total projects. ${activeProjects.rows[0].count} of them are currently active.`;
+      }
+      
+      // 3. Worker Questions
+      if (lowerQuestion.includes('worker') || lowerQuestion.includes('employee')) {
+        const workers = await db.query(
+          `SELECT COUNT(*) as count FROM workers WHERE company_id = $1 AND is_active = 1`,
+          [companyId]
+        );
+        
+        return `You have ${workers.rows[0].count} active workers in your system.`;
+      }
+      
+      // 4. Payroll Questions
+      if (lowerQuestion.includes('payroll')) {
+        const payroll = await db.query(`
+          SELECT 
+            COUNT(*) as count,
+            COALESCE(SUM(gross_pay), 0) as total
+          FROM payroll_records pr
+          JOIN workers w ON pr.worker_id = w.id
+          WHERE w.company_id = $1 AND pr.status = 'paid'
+        `, [companyId]);
+        
+        return `You have processed payroll for ${payroll.rows[0].count} workers totaling KES ${payroll.rows[0].total?.toLocaleString() || 0}.`;
+      }
+      
+      // 5. Procurement Questions
+      if (lowerQuestion.includes('procurement') || lowerQuestion.includes('purchase order')) {
+        const orders = await db.query(
+          `SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total FROM purchase_orders WHERE company_id = $1`,
+          [companyId]
+        );
+        
+        return `You have ${orders.rows[0].count} purchase orders totaling KES ${orders.rows[0].total?.toLocaleString() || 0}.`;
+      }
+      
+      // 6. Stores/Inventory Questions
+      if (lowerQuestion.includes('stock') || lowerQuestion.includes('inventory') || lowerQuestion.includes('supplies')) {
+        const supplies = await db.query(
+          `SELECT COUNT(*) as count, COALESCE(SUM(current_stock), 0) as stock FROM supplies WHERE company_id = $1 AND is_active = 1`,
+          [companyId]
+        );
+        const lowStock = await db.query(
+          `SELECT COUNT(*) as count FROM supplies WHERE company_id = $1 AND current_stock < reorder_level AND is_active = 1`,
+          [companyId]
+        );
+        
+        let response = `You have ${supplies.rows[0].count} supply items with ${supplies.rows[0].stock} units in stock.`;
+        if (lowStock.rows[0].count > 0) {
+          response += ` ${lowStock.rows[0].count} items are below reorder level and need restocking.`;
+        }
+        return response;
+      }
+      
+      // 7. User/Team Questions
+      if (lowerQuestion.includes('user') || lowerQuestion.includes('team member')) {
+        const users = await db.query(
+          `SELECT COUNT(*) as count FROM users WHERE company_id = $1 AND is_active = 1`,
+          [companyId]
+        );
+        const admins = await db.query(
+          `SELECT COUNT(*) as count FROM users WHERE company_id = $1 AND role = 'admin' AND is_active = 1`,
+          [companyId]
+        );
+        
+        return `Your team has ${users.rows[0].count} active users, including ${admins.rows[0].count} administrators.`;
+      }
+      
+      // 8. Subscription Questions
+      if (lowerQuestion.includes('subscription') || lowerQuestion.includes('plan')) {
+        const sub = await db.query(`
+          SELECT sp.plan_name, cs.status, cs.end_date, cs.is_trial
+          FROM company_subscriptions cs
+          JOIN subscription_plans sp ON cs.plan_id = sp.id
+          WHERE cs.company_id = $1 AND cs.status = 'active'
+          ORDER BY cs.created_at DESC LIMIT 1
+        `, [companyId]);
+        
+        if (sub.rows[0]) {
+          let response = `You are on the ${sub.rows[0].plan_name} plan.`;
+          if (sub.rows[0].is_trial) {
+            response += ` Your trial ends on ${new Date(sub.rows[0].end_date).toLocaleDateString()}.`;
+          }
+          return response;
+        }
+        return "You don't have an active subscription. Please contact support to set up a plan.";
+      }
+      
+      return null;
+      
+    } catch (error) {
+      console.error('Data fetch error:', error);
+      return null;
+    }
+  }
+
+  /**
    * Answer questions about a specific project (Full access for tenants/admins)
    */
   static async answerProjectQuestion(projectId, question, userId) {
@@ -50,11 +201,11 @@ Keep answers concise, practical, and actionable (2-4 sentences max).
         return "I couldn't find that project. Please make sure you have access to it.";
       }
       
-      // 2. Build the prompt
+      // 2. Build the prompt with real data
       const prompt = `
 You are an AI assistant for Bochi Construction Suite, helping construction professionals manage their projects.
 
-PROJECT INFORMATION:
+PROJECT INFORMATION (REAL DATA):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 Project Name: ${projectContext.name}
 🏢 Client: ${projectContext.client || 'Not specified'}
@@ -97,7 +248,7 @@ Please provide a helpful, professional answer based ONLY on the project data abo
           },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.7,
+        temperature: 0.5,
         max_tokens: 500
       });
       
@@ -123,7 +274,7 @@ Please provide a helpful, professional answer based ONLY on the project data abo
       const prompt = `
 You are an AI assistant for project stakeholders (clients, consultants) in Bochi Construction Suite.
 
-PROJECT INFORMATION (Limited Access):
+PROJECT INFORMATION (Limited Access - Real Data):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 Project: ${context.name}
 📊 Progress: ${context.progress}%
@@ -144,7 +295,7 @@ Be professional, transparent, and reassuring (2-4 sentences).
       const response = await groq.chat.completions.create({
         model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
+        temperature: 0.5,
         max_tokens: 500
       });
       
@@ -358,71 +509,6 @@ Summary:`;
     } catch (error) {
       console.error('Error generating summary:', error);
       return "Unable to generate summary at this time.";
-    }
-  }
-  
-  /**
-   * Suggest next actions based on project status
-   */
-  static async suggestNextActions(projectId, userId) {
-    try {
-      const context = await this.getProjectContext(projectId, userId);
-      
-      const prompt = `
-Based on this project data, suggest 3 actionable next steps for the project manager:
-
-Project: ${context.name}
-Progress: ${context.progress}%
-Overdue Tasks: ${context.overdue_tasks}
-Budget Remaining: KES ${(context.budget - context.spent).toLocaleString()}
-
-List 3 specific, actionable recommendations:`;
-
-      const response = await groq.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 200
-      });
-      
-      return response.choices[0].message.content;
-      
-    } catch (error) {
-      console.error('Error generating suggestions:', error);
-      return "Unable to generate suggestions at this time.";
-    }
-  }
-  
-  /**
-   * Get stakeholder-friendly suggestions
-   */
-  static async suggestStakeholderActions(projectId, userId) {
-    try {
-      const context = await this.getStakeholderProjectContext(projectId, userId);
-      
-      const prompt = `
-Based on this project data, suggest 3 helpful updates for a project stakeholder (client/consultant):
-
-Project: ${context.name}
-Progress: ${context.progress}%
-Completed Tasks: ${context.completed_tasks}/${context.total_tasks}
-Documents Available: ${context.document_count}
-Meetings Held: ${context.meeting_count}
-
-List 3 positive, reassuring updates about project progress and what to expect next:`;
-
-      const response = await groq.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 200
-      });
-      
-      return response.choices[0].message.content;
-      
-    } catch (error) {
-      console.error('Error generating stakeholder suggestions:', error);
-      return "Check the project dashboard for the latest updates.";
     }
   }
 }
