@@ -26,6 +26,8 @@ interface StakeholderLayoutProps {
   children: React.ReactNode;
 }
 
+
+import { StakeholderChat } from '@/components/chat/StakeholderChat';
 export function StakeholderLayout({ children }: StakeholderLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -253,6 +255,9 @@ const getNavPath = (basePath: string) => {
           {children}
         </main>
       </div>
+      
+      {/* AI Chatbot for Stakeholders */}
+      <StakeholderChat projectId={activeProjectId || 0} projectName="Project" />
     </div>
   );
 }

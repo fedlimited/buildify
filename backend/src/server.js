@@ -524,6 +524,21 @@ app.post('/api/projects/:projectId/gantt', authenticateToken, projectController.
 // ========== SUPER ADMIN ROUTES ==========
 app.use('/api/super-admin', superAdminRoutes);
 
+
+// ========== AI ROUTES ==========
+const aiController = require('./controllers/aiController');
+
+// Tenant/Admin routes (full access)
+app.post('/api/ai/project/:projectId/ask', authenticateToken, aiController.askProject);
+app.get('/api/ai/project/:projectId/summary', authenticateToken, aiController.generateSummary);
+app.get('/api/ai/project/:projectId/suggestions', authenticateToken, aiController.suggestActions);
+
+// Stakeholder routes (limited access)
+app.post('/api/ai/stakeholder/project/:projectId/ask', authenticateToken, aiController.askStakeholder);
+app.get('/api/ai/stakeholder/project/:projectId/suggestions', authenticateToken, aiController.suggestStakeholderActions);
+
+
+
 // ========== LOAD SAMPLE DATA ==========
 app.post('/api/load-sample-data', authenticateToken, requireAdmin, async (req, res) => {
   try {

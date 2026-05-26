@@ -1,3 +1,4 @@
+import { TenantChat } from '@/components/chat/TenantChat';
 import React from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '@/hooks/useAppStore';
@@ -280,6 +281,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </main>
         </div>
       </div>
+      
+      {/* AI Chatbot for Tenants */}
+      <TenantChat />
     </>
   );
 }
