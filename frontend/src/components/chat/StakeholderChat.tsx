@@ -57,12 +57,8 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
     try {
       const token = localStorage.getItem('token');
       
-      let endpoint;
-      if (projectId) {
-        endpoint = `${API_BASE_URL}/ai/stakeholder/project/${projectId}/ask`;
-      } else {
-        endpoint = `${API_BASE_URL}/ai/ask`;
-      }
+      // Always use general endpoint
+      const endpoint = `${API_BASE_URL}/ai/ask`;
       
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -106,43 +102,43 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 p-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-full shadow-lg hover:from-amber-600 hover:to-amber-700 transition-all duration-300 z-50 group"
+        className="fixed bottom-6 right-6 p-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-full shadow-lg hover:from-amber-600 hover:to-amber-700 transition-all duration-300 z-50 group"
       >
         <div className="relative">
-          <Sparkles size={20} className="group-hover:rotate-12 transition-transform" />
-          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></span>
+          <Sparkles size={24} className="group-hover:rotate-12 transition-transform" />
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
         </div>
       </button>
     );
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-[340px] max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
-      {/* Header - Amber theme (same as Tenant) */}
-      <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-3 py-2.5 text-white">
+    <div className="fixed bottom-6 right-6 w-[380px] max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+      {/* Header - Amber theme */}
+      <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-3 text-white">
         <div className="flex justify-between items-center w-full">
           <div 
             className="flex items-center gap-2 cursor-pointer flex-1 min-w-0"
             onClick={() => setIsMinimized(!isMinimized)}
           >
-            <Building2 size={16} className="flex-shrink-0" />
+            <Building2 size={18} className="flex-shrink-0" />
             <h3 className="font-semibold text-sm truncate">Bochi Assistant</h3>
-            <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full flex-shrink-0">AI</span>
+            <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full flex-shrink-0">Stakeholder AI</span>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0 ml-2">
             <button
               onClick={() => setIsMinimized(!isMinimized)}
-              className="p-1 hover:bg-white/20 rounded transition"
+              className="p-1.5 hover:bg-white/20 rounded transition"
               title={isMinimized ? "Expand" : "Minimize"}
             >
-              <ChevronDown size={14} className={`transition-transform ${isMinimized ? 'rotate-180' : ''}`} />
+              <ChevronDown size={16} className={`transition-transform ${isMinimized ? 'rotate-180' : ''}`} />
             </button>
             <button
               onClick={() => setIsOpen(false)}
-              className="p-1 hover:bg-white/20 rounded transition"
+              className="p-1.5 hover:bg-white/20 rounded transition"
               title="Close"
             >
-              <X size={14} />
+              <X size={16} />
             </button>
           </div>
         </div>
@@ -150,22 +146,22 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
       
       {!isMinimized && (
         <>
-          {/* Messages Area */}
-          <div className="h-[250px] overflow-y-auto p-2.5 bg-gray-50 dark:bg-gray-800/50 space-y-2">
+          {/* Messages Area - Height 280px (same as Tenant) */}
+          <div className="h-[280px] overflow-y-auto p-3 bg-gray-50 dark:bg-gray-800/50 space-y-3">
             {messages.map((message) => (
               <div
                 key={message.id}
                 className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[85%] rounded-xl px-2.5 py-1.5 ${
+                  className={`max-w-[85%] rounded-2xl px-3 py-2 ${
                     message.type === 'user'
                       ? 'bg-amber-500 text-white rounded-br-none'
                       : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-bl-none'
                   }`}
                 >
-                  <p className="text-xs break-words">{message.content}</p>
-                  <p className={`text-[10px] mt-1 ${message.type === 'user' ? 'text-amber-100' : 'text-gray-400 dark:text-gray-500'}`}>
+                  <p className="text-sm break-words">{message.content}</p>
+                  <p className={`text-xs mt-1 ${message.type === 'user' ? 'text-amber-100' : 'text-gray-400 dark:text-gray-500'}`}>
                     {message.timestamp.toLocaleTimeString()}
                   </p>
                 </div>
@@ -173,8 +169,8 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
             ))}
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl rounded-bl-none px-2.5 py-1.5">
-                  <Loader2 size={14} className="animate-spin text-amber-500" />
+                <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl rounded-bl-none px-3 py-2">
+                  <Loader2 size={16} className="animate-spin text-amber-500" />
                 </div>
               </div>
             )}
@@ -182,16 +178,16 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
           
           {/* Suggestions */}
           {suggestions.length > 0 && (
-            <div className="px-2.5 py-1.5 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/30">
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1.5">Suggested:</p>
-              <div className="flex flex-wrap gap-1.5">
+            <div className="px-3 py-2 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/30">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Suggested Questions:</p>
+              <div className="flex flex-wrap gap-2">
                 {suggestions.slice(0, 3).map((suggestion, index) => (
                   <button
                     key={index}
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="text-[10px] bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full px-2 py-0.5 hover:border-amber-300 hover:text-amber-600 dark:hover:text-amber-400 transition text-gray-600 dark:text-gray-300"
+                    className="text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full px-2.5 py-1 hover:border-amber-300 hover:text-amber-600 dark:hover:text-amber-400 transition text-gray-600 dark:text-gray-300"
                   >
-                    {suggestion.length > 25 ? suggestion.substring(0, 25) + '...' : suggestion}
+                    {suggestion.length > 35 ? suggestion.substring(0, 35) + '...' : suggestion}
                   </button>
                 ))}
               </div>
@@ -199,23 +195,23 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
           )}
           
           {/* Input Area */}
-          <div className="p-2.5 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+          <div className="p-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
             <div className="flex gap-2">
               <textarea
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), askQuestion())}
                 placeholder="Ask a question..."
-                className="flex-1 px-2.5 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                rows={1}
-                style={{ minHeight: '32px', maxHeight: '60px' }}
+                className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                rows={2}
+                style={{ minHeight: '40px', maxHeight: '80px' }}
               />
               <button
                 onClick={askQuestion}
                 disabled={loading || !question.trim()}
-                className="p-1.5 bg-amber-500 text-white rounded-xl hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition self-end"
+                className="p-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition self-end"
               >
-                {loading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
               </button>
             </div>
           </div>
