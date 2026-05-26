@@ -137,5 +137,6 @@ const Index = () => {
       <TenantChat />
     </AuthGate>
   );
+}
 
 export default Index;
