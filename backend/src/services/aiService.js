@@ -1,9 +1,7 @@
-const OpenAI = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Initialize OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+// Initialize Gemini
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 class AIService {
   /**
@@ -11,6 +9,8 @@ class AIService {
    */
   static async answerGeneralQuestion(question, userId, companyId) {
     try {
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      
       const prompt = `
 You are an AI assistant for Bochi Construction Suite, helping construction professionals manage their projects.
 
@@ -20,17 +20,13 @@ Provide a helpful, professional answer about construction project management, Bo
 
 If the question asks about specific project data (budget, tasks, progress, timeline), politely explain that the user needs to select a specific project first.
 
-Keep answers concise, practical, and actionable.
+Keep answers concise, practical, and actionable (2-4 sentences max).
 `;
 
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 500
-      });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
       
-      return response.choices[0].message.content;
+      return response.text();
       
     } catch (error) {
       console.error('General AI error:', error);
@@ -49,6 +45,8 @@ Keep answers concise, practical, and actionable.
       if (!projectContext) {
         return "I couldn't find that project. Please make sure you have access to it.";
       }
+      
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       
       // 2. Build the prompt
       const prompt = `
@@ -83,27 +81,15 @@ USER QUESTION: "${question}"
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Please provide a helpful, professional answer based ONLY on the project data above.
-- Be concise but informative
+- Be concise (2-4 sentences)
 - Include specific numbers where relevant
 - If the question asks about something not in the data, say so politely
-- Suggest next steps if appropriate
 `;
 
-      // 3. Call OpenAI API
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          { 
-            role: 'system', 
-            content: 'You are a helpful construction project management assistant. Answer questions accurately based on the project data provided.' 
-          },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 500
-      });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
       
-      return response.choices[0].message.content;
+      return response.text();
       
     } catch (error) {
       console.error('AI Service Error:', error);
@@ -121,6 +107,8 @@ Please provide a helpful, professional answer based ONLY on the project data abo
       if (!context) {
         return "I couldn't find that project. Please make sure you have access to it.";
       }
+      
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       
       const prompt = `
 You are an AI assistant for project stakeholders (clients, consultants) in Bochi Construction Suite.
@@ -140,17 +128,13 @@ USER QUESTION: "${question}"
 
 Provide a helpful answer. DO NOT share financial details (costs, budget, payments).
 Focus on progress, timeline, documents, meetings, and task completion.
-Be professional, transparent, and reassuring.
+Be professional, transparent, and reassuring (2-4 sentences).
 `;
 
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 500
-      });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
       
-      return response.choices[0].message.content;
+      return response.text();
       
     } catch (error) {
       console.error('Stakeholder AI error:', error);
@@ -337,6 +321,8 @@ Be professional, transparent, and reassuring.
     try {
       const context = await this.getProjectContext(projectId, userId);
       
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      
       const prompt = `
 Based on this project data, write a brief executive summary (2-3 sentences):
 
@@ -348,14 +334,10 @@ Overdue Tasks: ${context.overdue_tasks}
 
 Summary:`;
 
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.5,
-        max_tokens: 150
-      });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
       
-      return response.choices[0].message.content;
+      return response.text();
       
     } catch (error) {
       console.error('Error generating summary:', error);
@@ -370,6 +352,8 @@ Summary:`;
     try {
       const context = await this.getProjectContext(projectId, userId);
       
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      
       const prompt = `
 Based on this project data, suggest 3 actionable next steps for the project manager:
 
@@ -380,14 +364,10 @@ Budget Remaining: KES ${(context.budget - context.spent).toLocaleString()}
 
 List 3 specific, actionable recommendations:`;
 
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 200
-      });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
       
-      return response.choices[0].message.content;
+      return response.text();
       
     } catch (error) {
       console.error('Error generating suggestions:', error);
@@ -402,6 +382,8 @@ List 3 specific, actionable recommendations:`;
     try {
       const context = await this.getStakeholderProjectContext(projectId, userId);
       
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      
       const prompt = `
 Based on this project data, suggest 3 helpful updates for a project stakeholder (client/consultant):
 
@@ -413,14 +395,10 @@ Meetings Held: ${context.meeting_count}
 
 List 3 positive, reassuring updates about project progress and what to expect next:`;
 
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 200
-      });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
       
-      return response.choices[0].message.content;
+      return response.text();
       
     } catch (error) {
       console.error('Error generating stakeholder suggestions:', error);
