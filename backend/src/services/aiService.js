@@ -74,7 +74,7 @@ INSTRUCTIONS:
     console.log('🔍 getDataDrivenAnswer - Question:', question);
     
     try {
-      // 1. Financial Questions - Expanded matching
+      // 1. Financial Questions - USING CORRECT COLUMN NAMES
       const isProfitQuestion = lowerQuestion.includes('profit') || 
                                lowerQuestion.includes('total profit') || 
                                lowerQuestion.includes('how much profit') ||
@@ -95,13 +95,13 @@ INSTRUCTIONS:
       if (isProfitQuestion || isIncomeQuestion || isExpenseQuestion) {
         console.log('📊 Financial question detected');
         
-        // Get income total
+        // FIXED: Use gross_amount for income table
         const income = await db.query(
-          `SELECT COALESCE(SUM(amount), 0) as total FROM income WHERE company_id = $1`,
+          `SELECT COALESCE(SUM(gross_amount), 0) as total FROM income WHERE company_id = $1`,
           [companyId]
         );
         
-        // Get expenses total
+        // FIXED: Use amount for expenses table
         const expenses = await db.query(
           `SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE company_id = $1`,
           [companyId]
@@ -171,8 +171,13 @@ INSTRUCTIONS:
           return "You don't have any workers added yet. Go to the Workers module to add your team members.";
         }
         
+        // Get workers by category - FIXED: join with worker_categories
         const workerCategories = await db.query(
-          `SELECT category, COUNT(*) as count FROM workers WHERE company_id = $1 AND is_active = 1 GROUP BY category`,
+          `SELECT wc.name as category, COUNT(*) as count 
+           FROM workers w
+           JOIN worker_categories wc ON w.category_id = wc.id
+           WHERE w.company_id = $1 AND w.is_active = 1 
+           GROUP BY wc.name`,
           [companyId]
         );
         
