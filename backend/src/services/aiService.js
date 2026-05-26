@@ -9,7 +9,7 @@ class AIService {
    */
   static async answerGeneralQuestion(question, userId, companyId) {
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
       
       const prompt = `
 You are an AI assistant for Bochi Construction Suite, helping construction professionals manage their projects.
@@ -46,7 +46,7 @@ Keep answers concise, practical, and actionable (2-4 sentences max).
         return "I couldn't find that project. Please make sure you have access to it.";
       }
       
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
       
       // 2. Build the prompt
       const prompt = `
@@ -108,7 +108,7 @@ Please provide a helpful, professional answer based ONLY on the project data abo
         return "I couldn't find that project. Please make sure you have access to it.";
       }
       
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
       
       const prompt = `
 You are an AI assistant for project stakeholders (clients, consultants) in Bochi Construction Suite.
@@ -321,7 +321,7 @@ Be professional, transparent, and reassuring (2-4 sentences).
     try {
       const context = await this.getProjectContext(projectId, userId);
       
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
       
       const prompt = `
 Based on this project data, write a brief executive summary (2-3 sentences):
@@ -352,7 +352,7 @@ Summary:`;
     try {
       const context = await this.getProjectContext(projectId, userId);
       
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
       
       const prompt = `
 Based on this project data, suggest 3 actionable next steps for the project manager:
@@ -382,7 +382,7 @@ List 3 specific, actionable recommendations:`;
     try {
       const context = await this.getStakeholderProjectContext(projectId, userId);
       
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
       
       const prompt = `
 Based on this project data, suggest 3 helpful updates for a project stakeholder (client/consultant):
