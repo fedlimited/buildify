@@ -1,3 +1,7 @@
+// Revised stakeholder chatbot with height fix (280px) and clear chat functionality
+// Updated: Reduced chat height to prevent screen overflow
+// Changes: h-[280px] from previous h-[350px] for better fit on all screens
+
 import React, { useState, useEffect } from 'react';
 import { 
   Send, Loader2, X, Sparkles, 
@@ -207,7 +211,7 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
       {!isMinimized && (
         <>
           {/* Messages Area */}
-          <div className="h-[350px] overflow-y-auto p-3 bg-gray-50 dark:bg-gray-800/50 space-y-4">
+          <div className="h-[280px] overflow-y-auto p-3 bg-gray-50 dark:bg-gray-800/50 space-y-4">
             {messages.map((message) => (
               <div key={message.id} className="flex flex-col">
                 <div
