@@ -146,7 +146,7 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
       {!isMinimized && (
         <>
           {/* Messages Area */}
-          <div className="h-[350px] overflow-y-auto p-3 bg-gray-50 dark:bg-gray-800/50 space-y-3">
+          <div className="h-[315px] overflow-y-auto p-3 bg-gray-50 dark:bg-gray-800/50 space-y-3">
             {messages.map((message) => (
               <div
                 key={message.id}
