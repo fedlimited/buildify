@@ -221,12 +221,16 @@ INSTRUCTIONS:
         return response;
       }
       
-      // 5. Procurement / Purchase Order Questions
+      // 5. Procurement / Purchase Order Questions - RETURNS REAL DATA
       if (lowerQuestion.includes('procurement') || lowerQuestion.includes('purchase order') || lowerQuestion.includes('po')) {
+        console.log('📦 Purchase order question detected');
+        
         const orders = await db.query(
-          `SELECT COUNT(*) as count, 
-                  COALESCE(SUM(total_amount), 0) as total,
-                  COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending
+          `SELECT 
+             COUNT(*) as count,
+             COALESCE(SUM(total_amount), 0) as total,
+             COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending,
+             COUNT(CASE WHEN status = 'supplied' THEN 1 END) as supplied
            FROM purchase_orders 
            WHERE company_id = $1`,
           [companyId]
@@ -239,10 +243,23 @@ INSTRUCTIONS:
           return "You don't have any purchase orders yet. Create one in the Procurement module.";
         }
         
+        // Get recent purchase orders
+        const recentOrders = await db.query(
+          `SELECT order_number, supplier_name, total_amount, status 
+           FROM purchase_orders 
+           WHERE company_id = $1 
+           ORDER BY order_date DESC 
+           LIMIT 5`,
+          [companyId]
+        );
+        
         let response = `You have ${orderCount} purchase orders totaling KES ${orderTotal.toLocaleString()}.`;
-        if (orders.rows[0].pending > 0) {
-          response += ` ${orders.rows[0].pending} orders are pending approval.`;
+        response += ` ${orders.rows[0].supplied || 0} supplied, ${orders.rows[0].pending || 0} pending.`;
+        
+        if (recentOrders.rows.length > 0) {
+          response += ` Recent orders: ${recentOrders.rows.map(o => `${o.order_number} (${o.supplier_name}): KES ${o.total_amount?.toLocaleString()}`).join('; ')}.`;
         }
+        
         return response;
       }
       
