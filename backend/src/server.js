@@ -542,9 +542,6 @@ app.get('/api/ai/stakeholder/project/:projectId/suggestions', authenticateToken,
 app.post('/api/ai/ask', authenticateToken, aiController.askGeneral);
 
 
-// ========== AI TRAINING ROUTES ==========
-const trainingController = require('./controllers/trainingController');
-
 // Submit feedback for AI training
 app.post('/api/ai/feedback', authenticateToken, trainingController.submitFeedback);
 
