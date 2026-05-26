@@ -51,7 +51,7 @@ INSTRUCTIONS:
       const response = await groq.chat.completions.create({
         model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.3, // Lower temperature for more accurate, consistent responses
+        temperature: 0.3,
         max_tokens: 600
       });
       
@@ -70,64 +70,113 @@ INSTRUCTIONS:
     const db = await getDb();
     const lowerQuestion = question.toLowerCase();
     
+    console.log('🔍 getDataDrivenAnswer - CompanyId:', companyId);
+    console.log('🔍 getDataDrivenAnswer - Question:', question);
+    
     try {
-      // 1. Financial Questions
-      if (lowerQuestion.includes('profit') || lowerQuestion.includes('income') || lowerQuestion.includes('expense')) {
+      // 1. Financial Questions - Expanded matching
+      const isProfitQuestion = lowerQuestion.includes('profit') || 
+                               lowerQuestion.includes('total profit') || 
+                               lowerQuestion.includes('how much profit') ||
+                               lowerQuestion.includes('profit?');
+      
+      const isIncomeQuestion = lowerQuestion.includes('income') || 
+                               lowerQuestion.includes('revenue') || 
+                               lowerQuestion.includes('total income') ||
+                               lowerQuestion.includes('how much income');
+      
+      const isExpenseQuestion = lowerQuestion.includes('expense') || 
+                                lowerQuestion.includes('expenses') || 
+                                lowerQuestion.includes('total expense') ||
+                                lowerQuestion.includes('how much expense') ||
+                                lowerQuestion.includes('costs') ||
+                                lowerQuestion.includes('spending');
+      
+      if (isProfitQuestion || isIncomeQuestion || isExpenseQuestion) {
+        console.log('📊 Financial question detected');
+        
+        // Get income total
         const income = await db.query(
           `SELECT COALESCE(SUM(amount), 0) as total FROM income WHERE company_id = $1`,
           [companyId]
         );
+        
+        // Get expenses total
         const expenses = await db.query(
           `SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE company_id = $1`,
           [companyId]
         );
         
-        const totalIncome = income.rows[0].total;
-        const totalExpenses = expenses.rows[0].total;
+        const totalIncome = parseFloat(income.rows[0].total) || 0;
+        const totalExpenses = parseFloat(expenses.rows[0].total) || 0;
         const profit = totalIncome - totalExpenses;
         
-        if (lowerQuestion.includes('profit')) {
-          return `Your current profit is KES ${profit.toLocaleString()}. (Income: KES ${totalIncome.toLocaleString()}, Expenses: KES ${totalExpenses.toLocaleString()})`;
+        console.log(`💰 Income: ${totalIncome}, Expenses: ${totalExpenses}, Profit: ${profit}`);
+        
+        if (isProfitQuestion) {
+          if (profit === 0 && totalIncome === 0 && totalExpenses === 0) {
+            return "You don't have any income or expense records yet. Add your income and expenses first to see your profit calculation.";
+          }
+          return `Your total profit is KES ${profit.toLocaleString()}. (Income: KES ${totalIncome.toLocaleString()}, Expenses: KES ${totalExpenses.toLocaleString()})`;
         }
-        if (lowerQuestion.includes('income')) {
+        if (isIncomeQuestion) {
+          if (totalIncome === 0) {
+            return "You don't have any income records yet. Add income in the Income module to track your revenue.";
+          }
           return `Your total income is KES ${totalIncome.toLocaleString()}.`;
         }
-        if (lowerQuestion.includes('expense') || lowerQuestion.includes('expenses')) {
+        if (isExpenseQuestion) {
+          if (totalExpenses === 0) {
+            return "You don't have any expense records yet. Add expenses in the Expenses module to track your spending.";
+          }
           return `Your total expenses are KES ${totalExpenses.toLocaleString()}.`;
         }
       }
       
       // 2. Project Questions
-      if ((lowerQuestion.includes('project') || lowerQuestion.includes('projects')) && 
-          (lowerQuestion.includes('count') || lowerQuestion.includes('how many') || lowerQuestion.includes('total'))) {
+      const isProjectCountQuestion = (lowerQuestion.includes('project') || lowerQuestion.includes('projects')) && 
+                                     (lowerQuestion.includes('count') || lowerQuestion.includes('how many') || 
+                                      lowerQuestion.includes('total') || lowerQuestion.includes('number of'));
+      
+      if (isProjectCountQuestion) {
         const projects = await db.query(
-          `SELECT COUNT(*) as count FROM projects WHERE company_id = $1`,
-          [companyId]
-        );
-        const activeProjects = await db.query(
-          `SELECT COUNT(*) as count FROM projects WHERE company_id = $1 AND status = 'Active'`,
-          [companyId]
-        );
-        const completedProjects = await db.query(
-          `SELECT COUNT(*) as count FROM projects WHERE company_id = $1 AND progress = 100`,
+          `SELECT COUNT(*) as count, 
+                  COUNT(CASE WHEN status = 'Active' THEN 1 END) as active,
+                  COUNT(CASE WHEN progress = 100 THEN 1 END) as completed
+           FROM projects WHERE company_id = $1`,
           [companyId]
         );
         
-        return `You have ${projects.rows[0].count} total projects. ${activeProjects.rows[0].count} are active, and ${completedProjects.rows[0].count} are completed.`;
+        const totalProjects = parseInt(projects.rows[0].count) || 0;
+        const activeProjects = parseInt(projects.rows[0].active) || 0;
+        const completedProjects = parseInt(projects.rows[0].completed) || 0;
+        
+        if (totalProjects === 0) {
+          return "You don't have any projects yet. Click 'Add Project' in the Projects module to get started.";
+        }
+        
+        return `You have ${totalProjects} total projects. ${activeProjects} are currently active, and ${completedProjects} are completed.`;
       }
       
-      // 3. Worker/Employee Questions
+      // 3. Worker Questions
       if (lowerQuestion.includes('worker') || lowerQuestion.includes('employee') || lowerQuestion.includes('staff')) {
         const workers = await db.query(
           `SELECT COUNT(*) as count FROM workers WHERE company_id = $1 AND is_active = 1`,
           [companyId]
         );
+        
+        const workerCount = parseInt(workers.rows[0].count) || 0;
+        
+        if (workerCount === 0) {
+          return "You don't have any workers added yet. Go to the Workers module to add your team members.";
+        }
+        
         const workerCategories = await db.query(
           `SELECT category, COUNT(*) as count FROM workers WHERE company_id = $1 AND is_active = 1 GROUP BY category`,
           [companyId]
         );
         
-        let response = `You have ${workers.rows[0].count} active workers in your system.`;
+        let response = `You have ${workerCount} active workers.`;
         if (workerCategories.rows.length > 0) {
           response += ` By category: ${workerCategories.rows.map(w => `${w.category}: ${w.count}`).join(', ')}.`;
         }
@@ -145,6 +194,15 @@ INSTRUCTIONS:
           WHERE w.company_id = $1 AND pr.status = 'paid'
         `, [companyId]);
         
+        const payrollCount = parseInt(payroll.rows[0].count) || 0;
+        const payrollTotal = parseFloat(payroll.rows[0].total) || 0;
+        
+        if (payrollCount === 0) {
+          return "You haven't processed any payroll records yet. Go to the Payroll module to process payroll for your workers.";
+        }
+        
+        let response = `You have processed payroll for ${payrollCount} workers totaling KES ${payrollTotal.toLocaleString()}.`;
+        
         const pendingPayroll = await db.query(`
           SELECT COUNT(*) as count, COALESCE(SUM(gross_pay), 0) as total
           FROM payroll_records pr
@@ -152,7 +210,6 @@ INSTRUCTIONS:
           WHERE w.company_id = $1 AND pr.status = 'pending'
         `, [companyId]);
         
-        let response = `You have processed payroll for ${payroll.rows[0].count} workers totaling KES ${payroll.rows[0].total?.toLocaleString() || 0}.`;
         if (pendingPayroll.rows[0].count > 0) {
           response += ` Pending payroll: ${pendingPayroll.rows[0].count} workers totaling KES ${pendingPayroll.rows[0].total?.toLocaleString()}.`;
         }
@@ -170,7 +227,14 @@ INSTRUCTIONS:
           [companyId]
         );
         
-        let response = `You have ${orders.rows[0].count} purchase orders totaling KES ${orders.rows[0].total?.toLocaleString() || 0}.`;
+        const orderCount = parseInt(orders.rows[0].count) || 0;
+        const orderTotal = parseFloat(orders.rows[0].total) || 0;
+        
+        if (orderCount === 0) {
+          return "You don't have any purchase orders yet. Create one in the Procurement module.";
+        }
+        
+        let response = `You have ${orderCount} purchase orders totaling KES ${orderTotal.toLocaleString()}.`;
         if (orders.rows[0].pending > 0) {
           response += ` ${orders.rows[0].pending} orders are pending approval.`;
         }
@@ -182,34 +246,34 @@ INSTRUCTIONS:
           lowerQuestion.includes('supplies') || lowerQuestion.includes('store')) {
         const supplies = await db.query(
           `SELECT COUNT(*) as count, 
-                  COALESCE(SUM(current_stock), 0) as stock,
-                  COALESCE(SUM(reorder_level), 0) as reorder_total
+                  COALESCE(SUM(current_stock), 0) as stock
            FROM supplies 
            WHERE company_id = $1 AND is_active = 1`,
           [companyId]
         );
+        
+        const itemCount = parseInt(supplies.rows[0].count) || 0;
+        
+        if (itemCount === 0) {
+          return "You don't have any supplies added yet. Add items in the Stores module to track inventory.";
+        }
+        
+        let response = `You have ${itemCount} supply items in your inventory.`;
+        
         const lowStock = await db.query(
-          `SELECT COUNT(*) as count, name, current_stock, reorder_level
-           FROM supplies 
-           WHERE company_id = $1 AND current_stock < reorder_level AND is_active = 1
-           LIMIT 5`,
+          `SELECT COUNT(*) as count FROM supplies 
+           WHERE company_id = $1 AND current_stock < reorder_level AND is_active = 1`,
           [companyId]
         );
         
-        let response = `You have ${supplies.rows[0].count} supply items with ${supplies.rows[0].stock} units in stock.`;
-        if (lowStock.rows.length > 0) {
-          response += ` ${lowStock.rows.length} items are below reorder level`;
-          if (lowStock.rows.length <= 3) {
-            response += `: ${lowStock.rows.map(i => i.name).join(', ')}`;
-          }
-          response += `. Consider restocking soon.`;
+        if (lowStock.rows[0].count > 0) {
+          response += ` ${lowStock.rows[0].count} items are below reorder level and need restocking.`;
         }
         return response;
       }
       
       // 7. User/Team Questions
-      if (lowerQuestion.includes('user') || lowerQuestion.includes('team member') || 
-          lowerQuestion.includes('employee') && !lowerQuestion.includes('worker')) {
+      if (lowerQuestion.includes('user') || lowerQuestion.includes('team member')) {
         const users = await db.query(
           `SELECT COUNT(*) as count, 
                   COUNT(CASE WHEN role = 'admin' THEN 1 END) as admins,
@@ -219,7 +283,13 @@ INSTRUCTIONS:
           [companyId]
         );
         
-        return `Your team has ${users.rows[0].count} active users, including ${users.rows[0].admins} administrators and ${users.rows[0].pms} project managers.`;
+        const userCount = parseInt(users.rows[0].count) || 0;
+        
+        if (userCount === 0) {
+          return "You don't have any users added yet. Invite users from the Users module.";
+        }
+        
+        return `Your team has ${userCount} active users, including ${users.rows[0].admins} administrators and ${users.rows[0].pms} project managers.`;
       }
       
       // 8. Subscription/Billing Questions
@@ -246,30 +316,6 @@ INSTRUCTIONS:
         return "You don't have an active subscription. Please contact sales@bochi.ke to set up a plan.";
       }
       
-      // 9. Task Questions
-      if (lowerQuestion.includes('task') || lowerQuestion.includes('todo') || lowerQuestion.includes('action item')) {
-        const tasks = await db.query(`
-          SELECT COUNT(*) as total,
-                 COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
-                 COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as in_progress,
-                 COUNT(CASE WHEN status = 'not_started' THEN 1 END) as not_started
-          FROM project_gantt_tasks
-          WHERE company_id = $1
-        `, [companyId]);
-        
-        return `You have ${tasks.rows[0].total} total tasks across all projects. ${tasks.rows[0].completed} completed, ${tasks.rows[0].in_progress} in progress, ${tasks.rows[0].not_started} not started.`;
-      }
-      
-      // 10. Document Questions
-      if (lowerQuestion.includes('document') || lowerQuestion.includes('file') || lowerQuestion.includes('upload')) {
-        const docs = await db.query(
-          `SELECT COUNT(*) as count FROM project_documents WHERE company_id = $1`,
-          [companyId]
-        );
-        
-        return `You have ${docs.rows[0].count} documents stored in the system across all projects.`;
-      }
-      
       return null;
       
     } catch (error) {
@@ -290,17 +336,14 @@ INSTRUCTIONS:
    */
   static async answerProjectQuestion(projectId, question, userId) {
     try {
-      // 1. Gather project context
       const projectContext = await this.getProjectContext(projectId, userId);
       
       if (!projectContext) {
         return "I couldn't find that project. Please make sure you have access to it.";
       }
       
-      // 2. Check knowledge base for project-related help
       const knowledge = KnowledgeBase.getFormattedKnowledge(question);
       
-      // 3. Build the prompt with real data
       const prompt = `
 You are an AI assistant for Bochi Construction Suite, helping construction professionals manage their projects.
 
@@ -332,12 +375,10 @@ ${projectContext.recent_activities || 'No recent activities'}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 USER QUESTION: "${question}"
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Please provide a helpful, professional answer based on the project data above.
 - Be concise (2-4 sentences)
 - Include specific numbers where relevant
-- If the question asks about something not in the data, say so politely
 `;
 
       const response = await groq.chat.completions.create({
@@ -373,9 +414,9 @@ Please provide a helpful, professional answer based on the project data above.
       }
       
       const prompt = `
-You are an AI assistant for project stakeholders (clients, consultants) in Bochi Construction Suite.
+You are an AI assistant for project stakeholders in Bochi Construction Suite.
 
-PROJECT INFORMATION (Limited Access - Real Data):
+PROJECT INFORMATION:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 Project: ${context.name}
 📊 Progress: ${context.progress}%
@@ -383,14 +424,11 @@ PROJECT INFORMATION (Limited Access - Real Data):
 ✅ Completed Tasks: ${context.completed_tasks}/${context.total_tasks}
 📄 Documents: ${context.document_count || 0}
 📝 Meetings: ${context.meeting_count || 0}
-📋 Recent Updates: ${context.recent_updates || 'No recent updates'}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 USER QUESTION: "${question}"
 
-Provide a helpful answer. DO NOT share financial details (costs, budget, payments).
-Focus on progress, timeline, documents, meetings, and task completion.
-Be professional, transparent, and reassuring (2-4 sentences).
+Provide a helpful answer. DO NOT share financial details. Focus on progress, timeline, documents, and meetings.
 `;
 
       const response = await groq.chat.completions.create({
@@ -454,26 +492,13 @@ Be professional, transparent, and reassuring (2-4 sentences).
       
       const project = projectResult.rows[0];
       
-      // Get document count
       const docsResult = await db.query(`
         SELECT COUNT(*) as count FROM project_documents WHERE project_id = $1
       `, [projectId]);
       
-      // Get meeting count
       const meetingsResult = await db.query(`
         SELECT COUNT(*) as count FROM meeting_minutes WHERE project_id = $1
       `, [projectId]);
-      
-      // Get recent updates
-      const updatesResult = await db.query(`
-        SELECT action, created_at FROM user_activities 
-        WHERE entity_type = 'project' AND entity_id = $1
-        ORDER BY created_at DESC LIMIT 3
-      `, [projectId]);
-      
-      const recentUpdates = updatesResult.rows.map(u => 
-        `• ${u.action} on ${new Date(u.created_at).toLocaleDateString()}`
-      ).join('\n');
       
       return {
         name: project.name,
@@ -484,8 +509,7 @@ Be professional, transparent, and reassuring (2-4 sentences).
         total_tasks: parseInt(project.total_tasks) || 0,
         completed_tasks: parseInt(project.completed_tasks) || 0,
         document_count: parseInt(docsResult.rows[0]?.count) || 0,
-        meeting_count: parseInt(meetingsResult.rows[0]?.count) || 0,
-        recent_updates: recentUpdates || 'No recent updates'
+        meeting_count: parseInt(meetingsResult.rows[0]?.count) || 0
       };
       
     } catch (error) {
@@ -501,7 +525,6 @@ Be professional, transparent, and reassuring (2-4 sentences).
     const db = await getDb();
     
     try {
-      // Get project basic info
       const projectResult = await db.query(`
         SELECT 
           p.id,
@@ -524,7 +547,6 @@ Be professional, transparent, and reassuring (2-4 sentences).
       
       const project = projectResult.rows[0];
       
-      // Get tasks summary
       const tasksResult = await db.query(`
         SELECT 
           COUNT(*) as total,
@@ -538,7 +560,6 @@ Be professional, transparent, and reassuring (2-4 sentences).
       
       const tasks = tasksResult.rows[0];
       
-      // Get recent activities
       const activitiesResult = await db.query(`
         SELECT action, entity_name, created_at 
         FROM user_activities 
