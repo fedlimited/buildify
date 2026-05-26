@@ -75,10 +75,14 @@ export function TenantChat({ projectId, projectName }: TenantChatProps) {
     
     try {
       const token = localStorage.getItem('token');
-      let endpoint = `${API_BASE_URL}/ai/ask`;
       
+      // Use the correct endpoint based on whether a project is selected
+      let endpoint;
       if (projectId) {
         endpoint = `${API_BASE_URL}/ai/project/${projectId}/ask`;
+      } else {
+        // Use the general AI endpoint for non-project questions
+        endpoint = `${API_BASE_URL}/ai/ask`;
       }
       
       const response = await fetch(endpoint, {
