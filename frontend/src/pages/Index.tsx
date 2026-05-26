@@ -1,3 +1,4 @@
+import { TenantChat } from '@/components/chat/TenantChat';
 import { useEffect, useState } from 'react';
 import { HelpModule } from '@/components/modules/HelpModule';
 import { LegalModule } from '@/components/modules/LegalModule';
@@ -120,6 +121,9 @@ const Index = () => {
     );
   }
 
+
+
+
   return (
     <AuthGate>
       <div className="min-h-screen bg-background">
@@ -129,8 +133,9 @@ const Index = () => {
           <main className="p-6">{renderModule()}</main>
         </div>
       </div>
+      {/* AI Chatbot for Tenants */}
+      <TenantChat />
     </AuthGate>
   );
-};
 
 export default Index;
