@@ -1,4 +1,3 @@
-// Updated: May 2026 - Stakeholder Chatbot v2
 import React, { useState, useEffect } from 'react';
 import { 
   Send, Loader2, X, Sparkles, 
@@ -19,10 +18,10 @@ interface StakeholderChatProps {
 }
 
 export function StakeholderChat({ projectId, projectName }: StakeholderChatProps) {
-  // Don't show chat if no project is selected
-  if (!projectId || projectId === 0) {
-    return null;
-  }
+  // TEMPORARILY REMOVED - Always show chat for debugging
+  // if (!projectId || projectId === 0) {
+  //   return null;
+  // }
   
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -31,7 +30,9 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
     {
       id: '1',
       type: 'ai',
-      content: `Hello! I'm your project assistant for "${projectName}". Ask me about project progress, documents, meetings, or timeline.`,
+      content: projectId && projectId !== 0 
+        ? `Hello! I'm your project assistant for "${projectName}". Ask me about project progress, documents, meetings, or timeline.`
+        : "Hello! I'm your project assistant. Please select a project to get started.",
       timestamp: new Date()
     }
   ]);
@@ -146,8 +147,8 @@ export function StakeholderChat({ projectId, projectName }: StakeholderChatProps
       
       {!isMinimized && (
         <>
-          {/* Messages Area - Reduced height by 10% (350px -> 315px) */}
-          <div className="h-[315px] overflow-y-auto p-3 bg-gray-50 dark:bg-gray-800/50 space-y-3">
+          {/* Messages Area - Reduced height to 280px */}
+          <div className="h-[280px] overflow-y-auto p-3 bg-gray-50 dark:bg-gray-800/50 space-y-3">
             {messages.map((message) => (
               <div
                 key={message.id}
