@@ -53,6 +53,8 @@ export const BillingModule = () => {
   const [installmentPaymentStatus, setInstallmentPaymentStatus] = useState('idle');
   const [paystackLoading, setPaystackLoading] = useState(false);
   const [userEmail, setUserEmail] = useState<string>('');
+  const [paystackUrl, setPaystackUrl] = useState('');
+  const [showPaystack, setShowPaystack] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -237,6 +239,7 @@ export const BillingModule = () => {
       setError('');
 
       const amount = getPrice(selectedPlan);
+      const token = localStorage.getItem('token');
       
       // Debug logging
       console.log('=== PAYSTACK REQUEST ===');
@@ -261,7 +264,7 @@ export const BillingModule = () => {
       const reference = `BOCHI-${selectedPlan?.id}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
       try {
-        const response = await fetch(`${API_URL}/paystack/initialize`, {
+        const response = await fetch(`${API_BASE_URL}/paystack/initialize`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -281,14 +284,17 @@ export const BillingModule = () => {
         console.log('Paystack response:', data);
 
         if (data.success && data.authorization_url) {
-          setPaystackUrl(data.authorization_url);
-          setShowPaystack(true);
+          // Open Paystack payment window in a new tab
+          window.open(data.authorization_url, '_blank');
           setPaystackLoading(false);
+          setShowModal(false);
+          // Optional: Show success message
+          alert('Payment window opened. Complete payment to activate your subscription.');
         } else {
           setError(data.error || data.message || 'Payment initialization failed');
           setPaystackLoading(false);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Paystack error:', err);
         setError(err.message || 'Payment failed');
         setPaystackLoading(false);
@@ -649,7 +655,6 @@ export const BillingModule = () => {
         </div>
       </div>
 
-      {/* Rest of modals remain the same... */}
       {/* Regular Payment Modal */}
       {showModal && selectedPlan && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
