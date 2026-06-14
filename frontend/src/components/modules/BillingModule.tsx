@@ -231,78 +231,70 @@ export const BillingModule = () => {
       return;
     }
 
+    // Handle Paystack Payment
+    if (paymentMethod === 'paystack') {
+      setPaystackLoading(true);
+      setError('');
 
+      const amount = getPrice(selectedPlan);
+      
+      // Debug logging
+      console.log('=== PAYSTACK REQUEST ===');
+      console.log('Selected plan:', selectedPlan?.display_name);
+      console.log('Raw amount from getPrice:', amount);
+      console.log('Amount type:', typeof amount);
+      
+      // Validate amount
+      if (!amount || amount <= 0) {
+        setError(`Invalid amount: ${amount}. Please select a valid plan.`);
+        setPaystackLoading(false);
+        return;
+      }
+      
+      // Convert to cents as required by backend (amount × 100)
+      const amountInCents = Math.round(amount * 100);
+      
+      console.log('Amount in cents to send:', amountInCents);
+      console.log('Plan ID:', selectedPlan?.id);
+      console.log('Selected cycle:', selectedCycle);
+      
+      const reference = `BOCHI-${selectedPlan?.id}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
+      try {
+        const response = await fetch(`${API_URL}/paystack/initialize`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            planId: selectedPlan?.id,
+            billingCycle: selectedCycle,
+            email: userEmail,
+            amount: amountInCents,
+            currency: 'KES',
+            reference: reference
+          })
+        });
 
+        const data = await response.json();
+        console.log('Paystack response:', data);
 
-
-// Handle Paystack Payment
-if (paymentMethod === 'paystack') {
-  setPaystackLoading(true);
-  setError('');
-
-  const amount = getPrice(selectedPlan);
-  
-  // Debug logging
-  console.log('=== PAYSTACK REQUEST ===');
-  console.log('Selected plan:', selectedPlan?.display_name);
-  console.log('Raw amount from getPrice:', amount);
-  console.log('Amount type:', typeof amount);
-  
-  // Validate amount
-  if (!amount || amount <= 0) {
-    setError(`Invalid amount: ${amount}. Please select a valid plan.`);
-    setPaystackLoading(false);
-    return;
-  }
-  
-  // Convert to cents as required by backend (amount × 100)
-  const amountInCents = Math.round(amount * 100);
-  
-  console.log('Amount in cents to send:', amountInCents);
-  console.log('Plan ID:', selectedPlan?.id);
-  console.log('Selected cycle:', selectedCycle);
-  
-  const reference = `BOCHI-${selectedPlan?.id}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-
-  try {
-    const response = await fetch(`${API_URL}/paystack/initialize`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        planId: selectedPlan?.id,
-        billingCycle: selectedCycle,
-        email: userEmail,
-        amount: amountInCents,  // Send cents (2500 × 100 = 250000)
-        currency: 'KES',
-        reference: reference
-      })
-    });
-
-    const data = await response.json();
-    console.log('Paystack response:', data);
-
-    if (data.success && data.authorization_url) {
-      setPaystackUrl(data.authorization_url);
-      setShowPaystack(true);
-      setPaystackLoading(false);
-    } else {
-      setError(data.error || data.message || 'Payment initialization failed');
-      setPaystackLoading(false);
+        if (data.success && data.authorization_url) {
+          setPaystackUrl(data.authorization_url);
+          setShowPaystack(true);
+          setPaystackLoading(false);
+        } else {
+          setError(data.error || data.message || 'Payment initialization failed');
+          setPaystackLoading(false);
+        }
+      } catch (err) {
+        console.error('Paystack error:', err);
+        setError(err.message || 'Payment failed');
+        setPaystackLoading(false);
+      }
+      return;
     }
-  } catch (err) {
-    console.error('Paystack error:', err);
-    setError(err.message || 'Payment failed');
-    setPaystackLoading(false);
-  }
-  return;
-}
-
-
-
 
     // Handle M-Pesa payment
     if (paymentMethod === 'mpesa') {
@@ -397,36 +389,46 @@ if (paymentMethod === 'paystack') {
 
   const getPlanBadge = (plan: Plan) => {
     if (isCurrentPlan(plan)) {
-      return <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-500 text-white text-xs font-medium px-3 py-0.5 rounded-full shadow-md flex items-center gap-1"><Crown size={10} /> Current</span>;
+      return <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-500 text-white text-xs font-medium px-3 py-0.5 rounded-full shadow-md flex items-center gap-1"><Crown size={10} /> Current Plan</span>;
     }
     if (plan.name === 'pro') {
-      return <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-medium px-3 py-0.5 rounded-full shadow-md flex items-center gap-1"><Sparkles size={10} /> Most Popular</span>;
+      return <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs font-medium px-3 py-0.5 rounded-full shadow-md flex items-center gap-1"><Sparkles size={10} /> Most Popular</span>;
+    }
+    if (plan.name === 'premier') {
+      return <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-medium px-3 py-0.5 rounded-full shadow-md flex items-center gap-1"><Crown size={10} /> Enterprise</span>;
     }
     return null;
+  };
+
+  // Helper function to get daily cost
+  const getDailyCost = (monthlyPrice: number) => {
+    return Math.round(monthlyPrice / 30);
+  };
+
+  // Helper function to get value message
+  const getValueMessage = (plan: Plan) => {
+    if (plan.name === 'basic') {
+      return `≈ ${getDailyCost(plan.price_monthly_kes)} KES/day`;
+    }
+    if (plan.name === 'pro') {
+      return "Best value for growing teams";
+    }
+    if (plan.name === 'premier') {
+      return "For large contractors";
+    }
+    return "";
   };
 
   return (
     <div id="payment-section" className="p-6 max-w-7xl mx-auto">
 
-
-
-      {/* Header */}
-      <div className="text-center mb-4">
-        <div className="inline-flex items-center gap-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-4 py-1.5 rounded-full mb-2">
-          <span className="text-sm">🎉</span>
-          <span className="text-xs font-semibold">PROMOTION STILL LASTS!</span>
-          <span className="text-sm">🎉</span>
-        </div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Subscription Plans</h2>
-        <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
-          <span className="line-through">Original prices up to 64,870 KES</span>
-          <span className="mx-1">→</span>
-          <span className="font-bold text-green-600 dark:text-green-400">Now from just 499 KES!</span>
-          <span className="ml-1 text-red-500">🔥 75% OFF</span>
+      {/* Header - Updated for new strategic pricing */}
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Simple, Transparent Pricing</h2>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
+          No hidden fees • Cancel anytime • Secure payment
         </p>
       </div>
-
-
 
       {/* Controls Row */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
@@ -471,7 +473,7 @@ if (paymentMethod === 'paystack') {
             }`}
           >
             Yearly
-            <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400">Save 15%</span>
+            <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400">Save 2 months free</span>
           </button>
         </div>
       </div>
@@ -507,11 +509,12 @@ if (paymentMethod === 'paystack') {
           const price = getPrice(plan);
           const currencySymbol = getCurrencySymbol();
           const isPopular = plan.name === 'pro';
+          const valueMessage = getValueMessage(plan);
           
           return (
             <div key={plan.id}
               className={`relative bg-white dark:bg-gray-800/50 rounded-xl border p-5 flex flex-col ${
-                isPopular ? 'border-amber-500 shadow-lg shadow-amber-500/10' : 'border-gray-200 dark:border-gray-700'
+                isPopular ? 'border-blue-500 shadow-lg shadow-blue-500/10' : 'border-gray-200 dark:border-gray-700'
               } hover:shadow-md transition-all`}
             >
               {getPlanBadge(plan)}
@@ -526,13 +529,35 @@ if (paymentMethod === 'paystack') {
                   </span>
                 </div>
                 <span className="text-xs text-gray-500">/{selectedCycle}</span>
+                
+                {/* Value message */}
+                {plan.name !== 'free' && valueMessage && (
+                  <div className="mt-2">
+                    {plan.name === 'basic' && (
+                      <div className="text-xs text-green-600 dark:text-green-400">
+                        💡 {valueMessage}
+                      </div>
+                    )}
+                    {plan.name === 'pro' && (
+                      <div className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                        ⭐ {valueMessage}
+                      </div>
+                    )}
+                    {plan.name === 'premier' && (
+                      <div className="text-xs text-amber-600 dark:text-amber-400">
+                        👑 {valueMessage}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* Annual savings note */}
+                {selectedCycle === 'yearly' && plan.name !== 'free' && (
+                  <div className="mt-1 text-xs text-green-600 dark:text-green-400">
+                    🎉 Save 2 months free!
+                  </div>
+                )}
               </div>
-
-
-
-
-
-
 
               <ul className="space-y-2 mb-4 flex-grow">
                 <li className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
@@ -546,18 +571,12 @@ if (paymentMethod === 'paystack') {
                 <li className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
                   <Check size={14} className="text-green-500" />
                   {plan.max_users === 999999 ? 'Unlimited' : plan.max_users} Users
-
-
-<li className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
-  <Check size={14} className="text-green-500" />
-  {plan.max_stakeholders === 0 ? 'No' : plan.max_stakeholders === 999999 ? 'Unlimited' : plan.max_stakeholders} Stakeholders
-</li>
-
+                </li>
+                <li className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
+                  <Check size={14} className="text-green-500" />
+                  {plan.max_stakeholders === 0 ? 'No' : plan.max_stakeholders === 999999 ? 'Unlimited' : plan.max_stakeholders} Stakeholders
                 </li>
               </ul>
-
-
-
 
               <button
                 onClick={() => handleUpgrade(plan)}
@@ -625,11 +644,12 @@ if (paymentMethod === 'paystack') {
           </div>
           <div className="flex items-center gap-1.5">
             <Smartphone size={12} className="text-green-500" />
-            <span className="text-[11px] text-gray-500 dark:text-gray-400">Instant M-Pesa</span>
+            <span className="text-[11px] text-gray-500 dark:text-gray-400">No Contracts</span>
           </div>
         </div>
       </div>
 
+      {/* Rest of modals remain the same... */}
       {/* Regular Payment Modal */}
       {showModal && selectedPlan && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
