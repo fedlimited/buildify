@@ -255,7 +255,7 @@ export const BillingModule = () => {
       }
       
       // Convert to cents as required by backend (amount × 100)
-      const amountInCents = Math.round(amount * 100);
+      const amountToSend = Math.round(amount);
       
       console.log('Amount in cents to send:', amountInCents);
       console.log('Plan ID:', selectedPlan?.id);
