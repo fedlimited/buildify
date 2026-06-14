@@ -407,11 +407,26 @@ if (paymentMethod === 'paystack') {
 
   return (
     <div id="payment-section" className="p-6 max-w-7xl mx-auto">
+
+
+
       {/* Header */}
       <div className="text-center mb-4">
+        <div className="inline-flex items-center gap-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-4 py-1.5 rounded-full mb-2">
+          <span className="text-sm">🎉</span>
+          <span className="text-xs font-semibold">PROMOTION STILL LASTS!</span>
+          <span className="text-sm">🎉</span>
+        </div>
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">Subscription Plans</h2>
-        <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">Choose the plan that fits your business</p>
+        <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
+          <span className="line-through">Original prices up to 64,870 KES</span>
+          <span className="mx-1">→</span>
+          <span className="font-bold text-green-600 dark:text-green-400">Now from just 499 KES!</span>
+          <span className="ml-1 text-red-500">🔥 75% OFF</span>
+        </p>
       </div>
+
+
 
       {/* Controls Row */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
