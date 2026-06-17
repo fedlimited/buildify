@@ -252,13 +252,20 @@ const PurchaseOrderController = {
             company_id, project_id, project_name, date, category,
             description, amount, vat, payment_method, status, reference, created_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-          [
-            company_id, order.project_id, order.project_name,
-            new Date().toISOString().split('T')[0], 'Supplier',
-            `PO ${order.order_number} - ${order.supplier_name}`,
-            order.total, order.vat || 0, 'Bank Transfer', 'Paid',
-            `PO-${order.order_number}`
-          ]
+
+
+
+[
+  company_id, order.project_id, order.project_name,
+  new Date().toISOString().split('T')[0], 'Supplier',
+  `PO ${order.order_number} - ${order.supplier_name}`,
+  order.subtotal,   // ← SEND NET AMOUNT (100)
+  order.vat || 0,
+  'Bank Transfer', 'Paid',
+  `PO-${order.order_number}`
+]
+
+
         );
       }
 
